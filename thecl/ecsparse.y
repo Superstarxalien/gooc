@@ -740,6 +740,7 @@ ExpressionSubset:
     | Expression "&"   Expression { $$ = EXPR_2(B_AND,    $1, $3); }
     | Expression "\\"  Expression { $$ = EXPR_2(TEST,     $1, $3); }
     | "seek" "(" Expression "," Expression "," Expression ")" { $$ = EXPR_3(SEEK, $3, $5, $7); }
+    | "seek" "(" Expression "," Expression ")" { $$ = EXPR_2(SEEK, $3, $5); }
     | "degseek" "(" Expression "," Expression "," Expression ")" { $$ = EXPR_3(DEGSEEK, $3, $5, $7); }
 
     /* Custom expressions. */
@@ -1120,9 +1121,11 @@ expression_operation_new(
     ret->value = NULL;
     list_init(&ret->children);
     for (size_t o = 0; o < expr->stack_arity; ++o) {
-        if (!operands[o] && !expr->has_double_param) {
+        if (!operands[o] && (!expr->has_double_param || (expr->has_double_param && o != expr->stack_arity - 1))) {
             yyerror(state, "not enough params for operation %d", symbol);
         }
+		else if (!operands[o] && expr->has_double_param && o == expr->stack_arity - 1)
+			break;
         list_append_new(&ret->children, operands[o]);
     }
 

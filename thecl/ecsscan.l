@@ -158,7 +158,7 @@
 }
 "true" {
     /* boolean "true" */
-    yylval.integer = 1;
+    yylval.integer = 0x100;
     return INTEGER;
 }
 
