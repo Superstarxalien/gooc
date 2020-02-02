@@ -229,6 +229,7 @@ int yydebug = 0;
 %token B_AND "&"
 %token TEST "\\"
 %token SEEK "seek"
+%token DEGSEEK "degseek"
 
 %type <list> Instruction_Parameters_List
 %type <list> Instruction_Parameters
@@ -740,10 +741,8 @@ ExpressionSubset:
     | Expression "|" Expression   { $$ = EXPR_2(B_OR,     $1, $3); }
     | Expression "&" Expression   { $$ = EXPR_2(B_AND,    $1, $3); }
     | Expression "\\" Expression { $$ = EXPR_2L(TEST,     $1, $3); }
-    | "seek" "(" Expression "," Expression "," Expression ")"
-    {
-        $$ = EXPR_3(SEEK, $3, $5, $7);
-    }
+    | "seek" "(" Expression "," Expression "," Expression ")" { $$ = EXPR_3(SEEK, $3, $5, $7); }
+    | "degseek" "(" Expression "," Expression "," Expression ")" { $$ = EXPR_3(DEGSEEK, $3, $5, $7); }
 
     /* Custom expressions. */
     /*

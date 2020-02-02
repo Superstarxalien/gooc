@@ -68,6 +68,7 @@ c1_expressions[] = {
     { B_AND,      7, NULL, 2, 0, "SS" }, /* s1 & s0 */
     { TEST,      15, NULL, 2, 0, "SS" }, /* s1 has s0 */
     { SEEK,      34, NULL, 3, 1, "SSS" }, /* seek(s0, s1, s2) */
+    { DEGSEEK,   37, NULL, 3, 1, "SSS" }, /* degseek(s0, s1, s2) */
     { 0,          0, NULL, 0, 0, NULL }
 };
 
