@@ -646,6 +646,7 @@ Instruction:
 
 Assignment:
       Address "=" Expression {
+		expression_optimize(state, $3);
         const expr_t* expr = expr_get_by_symbol(state->version, ASSIGN);
         thecl_param_t* src_param = NULL;
         if ($3->type == EXPRESSION_VAL) {
