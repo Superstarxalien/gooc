@@ -68,8 +68,6 @@ static void expression_optimize(parser_state_t* state, expression_t* expr);
 #define EXPR_3(a, A, B, C) \
     expression_operation_new(state, a, (expression_t*[]){ A, B, C, NULL })
 #define EXPR_2(a, A, B) \
-    expression_operation_new(state, a, (expression_t*[]){ B, A, NULL })
-#define EXPR_2L(a, A, B) \
     expression_operation_new(state, a, (expression_t*[]){ A, B, NULL })
 #define EXPR_1(a, A) \
     expression_operation_new(state, a, (expression_t*[]){ A, NULL })
@@ -738,9 +736,9 @@ ExpressionSubset:
     | Expression "||"  Expression { $$ = EXPR_2(OR,       $1, $3); }
     | Expression "&&"  Expression { $$ = EXPR_2(AND,      $1, $3); }
     | Expression "^"   Expression { $$ = EXPR_2(XOR,      $1, $3); }
-    | Expression "|" Expression   { $$ = EXPR_2(B_OR,     $1, $3); }
-    | Expression "&" Expression   { $$ = EXPR_2(B_AND,    $1, $3); }
-    | Expression "\\" Expression { $$ = EXPR_2L(TEST,     $1, $3); }
+    | Expression "|"   Expression { $$ = EXPR_2(B_OR,     $1, $3); }
+    | Expression "&"   Expression { $$ = EXPR_2(B_AND,    $1, $3); }
+    | Expression "\\"  Expression { $$ = EXPR_2(TEST,     $1, $3); }
     | "seek" "(" Expression "," Expression "," Expression ")" { $$ = EXPR_3(SEEK, $3, $5, $7); }
     | "degseek" "(" Expression "," Expression "," Expression ")" { $$ = EXPR_3(DEGSEEK, $3, $5, $7); }
 
@@ -767,8 +765,6 @@ Expression_Safe:
 Address:
       IDENTIFIER {
         thecl_variable_t* arg;
-        expr_macro_t* macro;
-        size_t anim_offset;
         if (var_exists(state, state->current_sub, $1)) {
             $$ = param_new('S');
             $$->stack = 1;
@@ -777,35 +773,48 @@ Address:
             $$ = param_new('S');
             $$->stack = 1;
             $$->value.val.S = arg->stack;
-		} else if (macro = macro_get(state, $1)) {
-			
         } else {
-            const field_t* field = field_get($1);
-            if (field != NULL) {
-                $$ = param_new('S');
-                $$->stack = 1;
-                $$->value.val.S = field->offset;
-                $$->object_link = 0;
-            } else {
-                thecl_globalvar_t* globalvar = globalvar_get(state, $1);
-                if (globalvar) {
-                    $$ = param_new('S');
-                    $$->stack = 1;
-                    $$->value.val.S = globalvar->offset + 64;
-                    $$->object_link = 0;
-                } else if ((anim_offset = anim_get_offset(state, $1)) != 0xFFFF) {
-                    $$ = param_new('S');
-                    $$->value.val.S = anim_offset << 8;
-                } else {
-                    if ((state->current_sub == NULL || strncmp($1, state->current_sub->name, strlen(state->current_sub->name)) != 0)
-                    ) {
-                        yyerror(state, "warning: %s not found as a variable, treating like a label instead.", $1);
-                    }
-                    $$ = param_new('o');
-                    $$->value.type = 'z';
-                    $$->value.val.z = strdup($1);
-                }
-            }
+			size_t anim_offset = 0;
+			bool found_spawn = false;
+			thecl_spawn_t* spawn;
+			list_for_each(&state->ecl->spawns, spawn) {
+				if (!strcmp(spawn->name, $1)) {
+					found_spawn = true;
+					break;
+				}
+				++anim_offset;
+			}
+			if (found_spawn) {
+				$$ = param_new('S');
+				$$->value.val.S = anim_offset;
+			} else {
+				const field_t* field = field_get($1);
+				if (field != NULL) {
+					$$ = param_new('S');
+					$$->stack = 1;
+					$$->value.val.S = field->offset;
+					$$->object_link = 0;
+				} else {
+					thecl_globalvar_t* globalvar = globalvar_get(state, $1);
+					if (globalvar) {
+						$$ = param_new('S');
+						$$->stack = 1;
+						$$->value.val.S = globalvar->offset + 64;
+						$$->object_link = 0;
+					} else if ((anim_offset = anim_get_offset(state, $1)) != 0xFFFF) {
+						$$ = param_new('S');
+						$$->value.val.S = anim_offset << 8;
+					} else {
+						if ((state->current_sub == NULL || strncmp($1, state->current_sub->name, strlen(state->current_sub->name)) != 0)
+						) {
+							yyerror(state, "warning: %s not found as a variable, treating like a label instead.", $1);
+						}
+						$$ = param_new('o');
+						$$->value.type = 'z';
+						$$->value.val.z = strdup($1);
+					}
+				}
+			}
         }
         free($1);
       }
@@ -1196,17 +1205,16 @@ expression_output(
                     val_param1 = child_expr->value;
                     continue;
                 } else if (val_param2 == NULL && c <= 2) {
-                    if (expression->has_double_param && !child_node->next) {
-                        val_param2 = child_expr->value;
-                        continue;
-                    }
-                    else if (!expression->has_double_param) {
+                    if ((expression->has_double_param && !child_node->next) || !expression->has_double_param) {
                         val_param2 = child_expr->value;
                         continue;
                     }
                 }
             }
-            list_prepend_new(push_list, child_expr);
+			if (c <= 2)
+				list_prepend_new(push_list, child_expr);
+			else
+				list_append_new(push_list, child_expr);
         }
         list_for_each(push_list, child_expr) {
             expression_output(state, child_expr, 0);

@@ -88,7 +88,7 @@ gool_fields[] = {
     { "zindex",       54 },
     { "event",        55 },
     { "camzoom",      56 },
-    { "camangle",     57 },
+    { "yzapproach",   57 },
     { "field_58",     58 },
     { "field_59",     59 },
     { "field_60",     60 },
