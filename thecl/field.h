@@ -26,45 +26,17 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH
  * DAMAGE.
  */
-
-#ifndef SEQMAP_H_
-#define SEQMAP_H_
+#ifndef FIELD_H_
+#define FIELD_H_
 
 #include <config.h>
-#include <stdbool.h>
-#include <stddef.h>
-#include <stdio.h>
-#include "list.h"
 
-#define SEQMAP_FLAG_ALLOC (1<<0)
-typedef struct seqmap_entry_t {
-    int key;
-    char *value;
-    int flags;
-} seqmap_entry_t;
+typedef struct {
+    char* name;
+    int offset;
+} field_t;
 
-typedef list_t seqmap_t;
-
-typedef int (*seqmap_setfunc_t)(
-    void *state,
-    int linenum,
-    const seqmap_entry_t *ent);
-typedef int (*seqmap_controlfunc_t)(
-    void *state,
-    int linenum,
-    const char *cline);
-
-/* Allocates and initalizes a new seqmap */
-#define seqmap_new() ((seqmap_t*)list_new())
-/* Frees a seqmap */
-void seqmap_free(seqmap_t *map);
-/* Sets an entry in a seqmap */
-void seqmap_set(seqmap_t *map, const seqmap_entry_t *ent);
-/* Finds an entry in a seqmap by key */
-seqmap_entry_t *seqmap_get(seqmap_t *map, int key);
-/* Finds an entry in a seqmap by value */
-seqmap_entry_t *seqmap_find(seqmap_t *map, const char *value);
-/* Loads entries from seqmap file (thread unsafe) */
-void seqmap_load(const char *magic, void *state, seqmap_setfunc_t set, seqmap_controlfunc_t control, FILE *f, const char *fn);
+/* Returns an object field by its name. */
+const field_t* field_get(char* name);
 
 #endif

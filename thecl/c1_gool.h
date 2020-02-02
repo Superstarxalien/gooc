@@ -26,28 +26,16 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH
  * DAMAGE.
  */
-#ifndef EXPR_H_
-#define EXPR_H_
+#ifndef C1_GOOL_H_
+#define C1_GOOL_H_
 
-#include <config.h>
 #include <stdint.h>
+#include "thecl.h"
 
 typedef struct {
-    int symbol;
-    uint8_t id;
-    /* 0 indicates no return value. */
-    char* param_format;
-    size_t stack_arity;
-    int has_double_param;
-    /* / can be used to separate several patterns ... or NULL to match anything
-     * ... maybe a special symbol for that would be better. */
-    char* stack_formats;
-} expr_t;
-
-/* Returns an expression by its symbol. */
-const expr_t* expr_get_by_symbol(unsigned int version, int symbol);
-
-/* Returns an expression by its id. */
-const expr_t* expr_get_by_id(unsigned int version, int id);
+    uint16_t type; /* 1 */
+    uint16_t frames;
+    int eid;
+} c1_anim_t;
 
 #endif

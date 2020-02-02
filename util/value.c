@@ -62,7 +62,7 @@ value_from_data(
 
     value->type = type;
 
-    switch (value->type) {
+    switch (value->type) {/*
     case 'f':
         READ(f, sizeof(float));
     case 'd':
@@ -81,16 +81,18 @@ value_from_data(
         READ(S, sizeof(int32_t));
     case 'C':
         READ(C, sizeof(uint32_t));
-        break;
+        break;*/
+    case 'S':
+        READ(S, sizeof(int32_t));
     case 'z':
         value->val.z = malloc(data_length);
         memcpy(value->val.z, data, data_length);
-        return data_length;
+        return data_length;/*
     case 'm':
         value->val.m.length = data_length;
         value->val.m.data = malloc(data_length);
         memcpy(value->val.m.data, data, data_length);
-        return data_length;
+        return data_length;*/
     default:
         fprintf(stderr, "%s:value_from_data: invalid type '%c'\n", argv0, value->type);
         return -1;
@@ -167,7 +169,7 @@ value_from_text(
 
     value->type = type;
 
-    switch (value->type) {
+    switch (value->type) {/*
     case 'f':
         READ(f, value->val.f);
         break;
@@ -192,27 +194,27 @@ value_from_text(
         break;
     case 'U':
         READ(u, value->val.U);
-        break;
+        break;*/
     case 'S':
         READ(d, value->val.S);
-        break;
+        break;/*
     case 'C':
         if (sscanf(text, "#%02hhx%02hhx%02hhx%02hhx", &value->val.C[0], &value->val.C[1], &value->val.C[2], &value->val.C[3]) != 4) {
                 fprintf(stderr, "%s:value_from_text: couldn't parse '%c' from  \"%s\"\n", argv0, value->type, text);
                 return 0;
         }
         READ(u, value->val.C);
-        break;
+        break;*/
     case 'z':
         value->val.z = strdup(text);
-        break;
+        break;/*
     case 'm': {
         size_t zlen = strlen(text);
         value->val.m.data = malloc(zlen);
         memcpy(value->val.m.data, text, zlen);
         value->val.m.length = zlen;
         break;
-    }
+    }*/
     default:
         fprintf(stderr, "%s:value_from_text: invalid type '%c'\n", argv0, value->type);
         return 0;
@@ -231,7 +233,7 @@ value_to_text(
     /* XXX: This might be too short. */
     char temp[256];
 
-    switch (value->type) {
+    switch (value->type) {/*
     case 'f':
         snprintf(temp, 256, "%sf", util_printfloat(&value->val.f));
         break;
@@ -252,13 +254,13 @@ value_to_text(
         break;
     case 'U':
         snprintf(temp, 256, "%u", value->val.U);
-        break;
+        break;*/
     case 'S':
         snprintf(temp, 256, "%i", value->val.S);
         break;
     case 'z':
         snprintf(temp, 256, "%s", value->val.z);
-        break;
+        break;/*
     case 'm':
         memcpy(temp, value->val.m.data, value->val.m.length);
         temp[value->val.m.length] = '\0';
@@ -266,7 +268,7 @@ value_to_text(
     case 'C':
         snprintf(temp, 256, "#%02hhx%02hhx%02hhx%02hhx",
                  value->val.C[0], value->val.C[1], value->val.C[2], value->val.C[3]);
-      break;
+      break;*/
     default:
         fprintf(stderr, "%s:value_to_text: invalid type '%c'\n", argv0, value->type);
         return NULL;
@@ -289,7 +291,7 @@ value_to_data(
     memcpy(data, &value->val.x, n); \
     return n;
 
-    switch (value->type) {
+    switch (value->type) {/*
     case 'f':
         WRITE(f, sizeof(float));
     case 'd':
@@ -304,10 +306,10 @@ value_to_data(
         WRITE(s, sizeof(int16_t));
     case 'U':
         WRITE(U, sizeof(uint32_t));
-    case 'S':
-        WRITE(S, sizeof(int32_t));
+    case 'S':*/
+        WRITE(S, sizeof(int32_t));/*
     case 'C':
-        WRITE(C, sizeof(uint32_t));
+        WRITE(C, sizeof(uint32_t));*/
     case 'z': {
         size_t zlen = strlen(value->val.z);
         if (data_length < zlen) {
@@ -316,14 +318,14 @@ value_to_data(
         }
         memcpy(data, value->val.z, zlen);
         return zlen;
-    }
+    }/*
     case 'm':
         if (data_length < value->val.m.length) {
             fprintf(stderr, "%s:value_to_data: unexpected end of data, wanted to write %zu bytes for format 'm'\n", argv0, value->val.m.length);
             return -1;
         }
         memcpy(data, value->val.m.data, value->val.m.length);
-        return value->val.m.length;
+        return value->val.m.length;*/
     default:
         fprintf(stderr, "%s:value_to_data: invalid type '%c'\n", argv0, value->type);
         return -1;
@@ -336,7 +338,7 @@ ssize_t
 value_size(
     const value_t* value)
 {
-    switch (value->type) {
+    switch (value->type) {/*
     case 'f':
         return sizeof(float);
     case 'd':
@@ -350,15 +352,15 @@ value_size(
     case 's':
         return sizeof(int16_t);
     case 'U':
-        return sizeof(uint32_t);
+        return sizeof(uint32_t);*/
     case 'S':
-        return sizeof(int32_t);
+        return sizeof(int32_t);/*
     case 'C':
-        return sizeof(uint32_t);
+        return sizeof(uint32_t);*/
     case 'z':
-        return strlen(value->val.z);
+        return strlen(value->val.z);/*
     case 'm':
-        return value->val.m.length;
+        return value->val.m.length;*/
     default:
         fprintf(stderr, "%s:value_size: invalid type '%c'\n", argv0, value->type);
         return -1;
@@ -372,10 +374,10 @@ value_free(
     if (value->type == 'z') {
         free(value->val.z);
         value->val.z = NULL;
-    } else if (value->type == 'm') {
+    }/* else if (value->type == 'm') {
         free(value->val.m.data);
         value->val.m.data = NULL;
         value->val.m.length = 0;
-    }
+    }*/
     value->type = 0;
 }

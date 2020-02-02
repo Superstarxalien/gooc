@@ -36,6 +36,7 @@
     #include "thecl.h"
     #include "ecsparse.h"
     #include "util.h"
+    #include "gool_ins.h"
     void yyerror(parser_state_t*, const char*);
     /* yylloc.first_column is initialized to 1. */
     #define YY_USER_INIT yylloc.first_column = 0
@@ -63,26 +64,22 @@
 %x COMMENT COMMENT_SINGLE CSTRING STRING ESCAPE_CHAR
 %%
 ","        return COMMA;
-"?"        return QUESTION;
-":"        return COLON;
 ";"        return SEMICOLON;
-"["        return SQUARE_OPEN;
-"]"        return SQUARE_CLOSE;
 "{"        return BRACE_OPEN;
 "}"        return BRACE_CLOSE;
 "("        return PARENTHESIS_OPEN;
 ")"        return PARENTHESIS_CLOSE;
-"anim"     return ANIM;
-"ecli"     return ECLI;
+"->"       return DEREFERENCE;
 "sub"      return SUB;
-"timeline" return TIMELINE;
 "var"      return VAR;
-"int"      return INT;
-"float"    return FLOAT;
-"void"     return VOID;
-"inline"   return INLINE;
+"trans"    return TRANS;
+"code"     return CODE;
+"handles"  return HANDLES;
+"event"    return EVENT;
+"state"    return STATE;
 "return"   return RETURN;
-"@"        return AT;
+"statusc"  return STATUSC;
+"expr"     return EXPRESSION;
 
 "goto"     return GOTO;
 "unless"   return UNLESS;
@@ -90,13 +87,8 @@
 "else"     return ELSE;
 "do"       return DO;
 "while"    return WHILE;
-"times"    return TIMES;
-"switch"   return SWITCH;
-"case"     return CASE;
-"default"  return DEFAULT;
+"until"    return UNTIL;
 "break"    return BREAK;
-"async"    return ASYNC;
-"global"   return GLOBAL;
 "="        return ASSIGN;
 "+="       return ASSIGNADD;
 "-="       return ASSIGNSUB;
@@ -112,7 +104,6 @@
 "/"        return DIVIDE;
 "%"        return MODULO;
 "=="       return EQUAL;
-"!="       return INEQUAL;
 "<"        return LT;
 "<="       return LTEQ;
 ">"        return GT;
@@ -123,39 +114,32 @@
 "^"        return XOR;
 "|"        return B_OR;
 "&"        return B_AND;
-"--"       return DEC;
-"sin"      return SIN;
-"cos"      return COS;
-"sqrt"     return SQRT;
+"\\"       return TEST;
+"seek"     return SEEK;
 
-"$"        return DOLLAR;
-
-_S return CAST_INTEGER;
-_f return CAST_FLOATING;
-_SS return CAST_II;
-_Sf return CAST_IF;
-_ff return CAST_FF;
-_fS return CAST_FI;
-
-(-|\+)?[0-9]+(\.([0-9]*f|[0-9]+)|f) {
-    yylval.floating = strtof(yytext, NULL);
-    return FLOATING;
+(-|\+)?[0-9]+(\.[0-9]+)?\s*deg {
+    yylval.integer = (int)(strtod(yytext, NULL) / 180.0 * 0x800);
+    return GOOL_INTEGER;
 }
-rad\((-|\+)?[0-9]+(\.([0-9]*f|[0-9]+)|f)?\) {
-    yylval.floating = strtof(yytext+4, NULL) / 180.0f * 3.14159265359f;
-    return FLOATING;
+(-|\+)?[0-9]+\.[0-9]+[Mm]? {
+    char* afternum;
+    double num = strtod(yytext, &afternum);
+    if (strchr(afternum, 'M') || strchr(afternum, 'm'))
+        yylval.integer = (int)(num * 102400);
+    else
+        yylval.integer = (int)(num * 0x100);
+    return GOOL_INTEGER;
 }
-ins_[0-9]+ {
-    yylval.integer = strtol(yytext + 4, NULL, 10);
-    return INSTRUCTION;
-}
--?[0-9]+ {
-    yylval.integer = strtol(yytext, NULL, 10);
-    return INTEGER;
-}
-\+[0-9]+ {
-    yylval.integer = strtol(yytext, NULL, 10);
-    return PLUS_INTEGER;
+(-|\+)?[0-9]+[GgMm]? {
+    char* afternum;
+    yylval.integer = strtol(yytext, &afternum, 10);
+    if (strchr(afternum, 'M') || strchr(afternum, 'm'))
+        yylval.integer *= 102400;
+    else if (strchr(afternum, 'G') || strchr(afternum, 'g'))
+        yylval.integer *= 0x100;
+    else
+        return INTEGER;
+    return GOOL_INTEGER;
 }
 (-|\+)?0x[0-9a-fA-F]+ {
     yylval.integer = strtol(yytext, NULL, 16);
@@ -178,16 +162,10 @@ ins_[0-9]+ {
     return INTEGER;
 }
 
-![-*ENHLWXYZO4567]+ {
-    yylval.string = strdup(yytext + 1);
-    return RANK;
-}
-
 [a-zA-Z_][a-zA-Z0-9_]* {
     yylval.string = strdup(yytext);
-
-    if (eclmap_is_mnemonic(g_eclmap, yytext))
-        return MNEMONIC;
+	if (macro_get(g_parser_state, yytext))
+		return MACRO;
     return IDENTIFIER;
 }
 

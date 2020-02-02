@@ -33,65 +33,42 @@
 #include "expr.h"
 
 static const expr_t
-th10_expressions[] = {
+c1_expressions[] = {
     /* The program checks against the number of params, as well as the
      * requested stack depth, and does the replacements. */
     /* p0 is the first param, p1 the second ... */
     /* s0 is the previous instruction, s1 the one previous to s0 ... */
 
-    /*SYM         ID  RET     P  A    S   DISP                      NB */
-    { RETURN,     10,   0, NULL, 0,  NULL,          "return", 0 },
+    /*SYM        ID     P  A    S    */
+    { RETURN,  0x82, NULL, 0, 0,  NULL, }, /* return */
 
-    { GOTO,       12,   0, "ot", 0,  "S",           "goto p0 @ p1", 0 },
-    { UNLESS,     13,   0, "ot", 1,  "S", "unless (s0) goto p0 @ p1", 1 },
-    { IF,         14,   0, "ot", 1,  "S",     "if (s0) goto p0 @ p1", 1 },
+    { GOTO,    0x82,  "o", 0, 0,  "S" }, /* goto p0 */
+    { UNLESS,  0x82,  "o", 1, 0,  "S" }, /* unless (s0) goto p0 */
+    { IF,      0x82,  "o", 1, 0,  "S" }, /* if (s0) goto p0 */
 
-    { LOADI,      42, 'S',  "S", 0, NULL, "p0", 0 },
-    { ASSIGNI,    43,   0,  "S", 1,  "S", "p0 = s0", 1 },
-    { LOADF,      44, 'f',  "f", 0, NULL, "p0", 0 },
-    { ASSIGNF,    45,   0,  "f", 1,  "f", "p0 = s0", 1 },
+    { LOAD,      22,  "S", 0, 0, NULL }, /* p0 */
+    { ASSIGN,    17,  "S", 1, 0,  "S" }, /* p0 = s0 */
 
-    { ADDI,       50, 'S', NULL, 2, "SS", "s1 + s0", 0 },
-    { ADDF,       51, 'f', NULL, 2, "ff", "s1 + s0", 0 },
-    { SUBTRACTI,  52, 'S', NULL, 2, "SS", "s1 - s0", 0 },
-    { SUBTRACTF,  53, 'f', NULL, 2, "ff", "s1 - s0", 0 },
-    { MULTIPLYI,  54, 'S', NULL, 2, "SS", "s1 * s0", 0 },
-    { MULTIPLYF,  55, 'f', NULL, 2, "ff", "s1 * s0", 0 },
-    { DIVIDEI,    56, 'S', NULL, 2, "SS", "s1 / s0", 0 },
-    { DIVIDEF,    57, 'f', NULL, 2, "ff", "s1 / s0", 0 },
-    { MODULO,     58, 'S', NULL, 2, "SS", "s1 % s0", 0 },
-    { EQUALI,     59, 'S', NULL, 2, "SS", "s1 == s0", 0 },
-    { EQUALF,     60, 'S', NULL, 2, "ff", "s1 == s0", 0 },
-    { INEQUALI,   61, 'S', NULL, 2, "SS", "s1 != s0", 0 },
-    { INEQUALF,   62, 'S', NULL, 2, "ff", "s1 != s0", 0 },
-    { LTI,        63, 'S', NULL, 2, "SS", "s1 < s0", 0 },
-    { LTF,        64, 'S', NULL, 2, "ff", "s1 < s0", 0 },
-    { LTEQI,      65, 'S', NULL, 2, "SS", "s1 <= s0", 0 },
-    { LTEQF,      66, 'S', NULL, 2, "ff", "s1 <= s0", 0 },
-    { GTI,        67, 'S', NULL, 2, "SS", "s1 > s0", 0 },
-    { GTF,        68, 'S', NULL, 2, "ff", "s1 > s0", 0 },
-    { GTEQI,      69, 'S', NULL, 2, "SS", "s1 >= s0", 0 },
-    { GTEQF,      70, 'S', NULL, 2, "ff", "s1 >= s0", 0 },
-    { NOT,        71, 'S', NULL, 1,  "S", "!s0", 0 },
-/*  { XXX,        72,   0, NULL, 0, NULL, NULL },*/
-    { OR,         73, 'S', NULL, 2, "SS", "s1 || s0", 0 },
-    { AND,        74, 'S', NULL, 2, "SS", "s1 && s0", 0 },
-    { XOR,        75, 'S', NULL, 2, "SS", "s1 ^ s0", 0 },
-    { B_OR,       76, 'S', NULL, 2, "SS", "s1 | s0", 0 },
-    { B_AND,      77, 'S', NULL, 2, "SS", "s1 & s0", 0 },
-    { DEC,        78, 'S',  "S", 0, NULL, "p0--", 0 },
-    { SIN,        79, 'f', NULL, 1, "f", "sin(s0)", 1 },
-    { COS,        80, 'f', NULL, 1, "f", "cos(s0)", 1 },
-    { SQRT,       88, 'f', NULL, 1, "f", "sqrt(s0)", 1 },
-    { 0,           0,   0, NULL, 0, NULL, NULL, 0 }
-};
-
-static const expr_t
-th13_expressions[] = {
-    /*SYM         ID  RET     P  A    S   DISP */
-    { NEGI,       83, 'S', NULL, 1, "S", "-s0", 0 },
-    { NEGF,       84, 'f', NULL, 1, "f", "-s0", 0 },
-    { 0,           0,   0, NULL, 0, NULL, NULL, 0 }
+    { ADD,        0, NULL, 2, 0, "SS" }, /* s1 + s0 */
+    { SUBTRACT,   1, NULL, 2, 0, "SS" }, /* s1 - s0 */
+    { MULTIPLY,   2, NULL, 2, 0, "SS" }, /* s1 * s0 */
+    { DIVIDE,     3, NULL, 2, 0, "SS" }, /* s1 / s0 */
+    { MODULO,    13, NULL, 2, 0, "SS" }, /* s1 % s0 */
+    { EQUAL,      4, NULL, 2, 0, "SS" }, /* s1 == s0 */
+    /* { INEQUAL,   61, NULL, 2, 0, "SS" }, GOOL does not have this instruction, use NOT + CEQ instead /* s1 != s0 */
+    { LT,         9, NULL, 2, 0, "SS" }, /* s1 < s0 */
+    { LTEQ,      10, NULL, 2, 0, "SS" }, /* s1 <= s0 */
+    { GT,        11, NULL, 2, 0, "SS" }, /* s1 > s0 */
+    { GTEQ,      12, NULL, 2, 0, "SS" }, /* s1 >= s0 */
+    { NOT,       18, NULL, 1, 0,  "S" }, /* !s0 */
+    { OR,         6, NULL, 2, 0, "SS" }, /* s1 || s0 */
+    { AND,        5, NULL, 2, 0, "SS" }, /* s1 && s0 */
+    { XOR,       14, NULL, 2, 0, "SS" }, /* s1 ^ s0 */
+    { B_OR,       8, NULL, 2, 0, "SS" }, /* s1 | s0 */
+    { B_AND,      7, NULL, 2, 0, "SS" }, /* s1 & s0 */
+    { TEST,      15, NULL, 2, 0, "SS" }, /* s1 has s0 */
+    { SEEK,      34, NULL, 3, 1, "SSS" }, /* seek(s0, s1, s2) */
+    { 0,          0, NULL, 0, 0, NULL }
 };
 
 static const expr_t*
@@ -115,8 +92,7 @@ expr_get_by_symbol(
 {
     const expr_t* ret = NULL;
 
-    if (!ret && is_post_th13(version)) ret = expr_get_by_symbol_from_table(th13_expressions, symbol);
-    if (!ret && is_post_th10(version)) ret = expr_get_by_symbol_from_table(th10_expressions, symbol);
+    if (!ret) ret = expr_get_by_symbol_from_table(c1_expressions, symbol);
 
     return ret;
 }
@@ -142,22 +118,7 @@ expr_get_by_id(
 {
     const expr_t* ret = NULL;
 
-    if (!ret && is_post_th13(version)) ret = expr_get_by_id_from_table(th13_expressions, id);
-    if (!ret && is_post_th10(version)) ret = expr_get_by_id_from_table(th10_expressions, id);
+    if (!ret) ret = expr_get_by_id_from_table(c1_expressions, id);
 
     return ret;
-}
-
-int
-expr_is_leaf(
-    unsigned int version,
-    int id)
-{
-    const expr_t* expr = expr_get_by_id(version, id);
-
-    if (!expr)
-        return 0;
-
-    return expr->stack_arity == 0 &&
-           expr->return_type != 0;
 }

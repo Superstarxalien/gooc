@@ -202,3 +202,15 @@ list_free_nodes(
     
     list_init(list);
 }
+
+size_t
+list_count(
+    list_t* list)
+{
+    size_t count = 0;
+    list_node_t* node;
+    list_for_each_node(list, node) {
+        ++count;
+    }
+    return count;
+}

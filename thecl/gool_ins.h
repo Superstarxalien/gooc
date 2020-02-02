@@ -26,36 +26,30 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH
  * DAMAGE.
  */
-
-#ifndef ECLMAP_H_
-#define ECLMAP_H_
+#ifndef GOOL_INS_H_
+#define GOOL_INS_H_
 
 #include <config.h>
-#include <stdbool.h>
 #include <stddef.h>
-#include <stdio.h>
-#include "seqmap.h"
+#include "list.h"
 
-typedef struct eclmap_t {
-    seqmap_t *ins_names;
-    seqmap_t *ins_signatures;
-    seqmap_t *gvar_names;
-    seqmap_t *gvar_types;
-    seqmap_t *timeline_ins_names;
-    seqmap_t *timeline_ins_signatures;
-    char **mnem_set;
-    size_t mnem_set_len;
-} eclmap_t;
+typedef enum {
+    GOOL_INS_ANIM,
+    GOOL_INS_PLAYFRAME
+} gool_ins_type;
 
-/* Allocates and initalizes a new eclmap */
-eclmap_t* eclmap_new();
-/* Frees an eclmap */
-void eclmap_free(eclmap_t* map);
-/* Loads entries from eclmap file (thread unsafe) */
-void eclmap_load(unsigned int version, eclmap_t* emap, FILE* f, const char* fn);
-/* Rebuilds mnemonic set. Do this after adding entries to mnemonic maps. */
-void eclmap_rebuild(eclmap_t *emap);
-/* Returns whether identifier is a mnemonic */
-int eclmap_is_mnemonic(eclmap_t *emap, const char *mnem);
+typedef struct {
+    char* name;
+    enum gool_ins_type type;
+    uint8_t id;
+
+    list_t* (*param_list_validate)(list_t* params);
+} gool_ins_t;
+
+/* Returns an expression by its symbol. */
+const gool_ins_t* gool_ins_get_by_name(unsigned int version, char* name);
+
+/* Returns an expression by its id. */
+const gool_ins_t* gool_ins_get_by_id(unsigned int version, uint8_t id);
 
 #endif

@@ -76,6 +76,8 @@ void list_del(list_t* list, list_node_t* node);
  * Resets the list.
  * Does not free the data or the list. */
 void list_free_nodes(list_t* list);
+/* Returns the amount of nodes on the list */
+size_t list_count(list_t* list);
 
 #define list_is_last_iteration() (node->next == NULL)
 

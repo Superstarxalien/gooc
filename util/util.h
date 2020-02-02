@@ -40,6 +40,9 @@
 #ifndef MAX
 #  define MAX(a, b) ((a) > (b) ? (a) : (b))
 #endif
+#ifndef strchr_o
+#  define strchr_o(str, chr) (strchr(str, chr) - str)
+#endif
 
 typedef struct {
     const char *str;

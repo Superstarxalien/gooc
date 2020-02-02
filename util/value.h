@@ -33,7 +33,7 @@
 #include <inttypes.h>
 
 typedef struct {
-    int id;
+    uint8_t id;
     const char* format;
 } id_format_pair_t;
 
@@ -45,20 +45,20 @@ const char* find_format(
 typedef struct value_t {
     int type;
     union {
-        float f;
-        double d;
-        unsigned char b;
-        signed char c;
-        uint16_t u;
-        int16_t s;
-        uint32_t U;
+        //float f;
+        //double d;
+        //unsigned char b;
+        //signed char c;
+        //uint16_t u;
+        //int16_t s;
+        //uint32_t U;
         int32_t S;
         char* z;
-        char C[4];
-        struct {
+        //char C[4];
+        /*struct {
             size_t length;
             unsigned char* data;
-        } m;
+        } m;*/
     } val;
 } value_t;
 
