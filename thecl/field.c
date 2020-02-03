@@ -89,7 +89,7 @@ gool_fields[] = {
     { "event",        55 },
     { "camzoom",      56 },
     { "yzapproach",   57 },
-    { "field_58",     58 },
+    { "density",      58 },
     { "field_59",     59 },
     { "field_60",     60 },
     { "field_61",     61 },
