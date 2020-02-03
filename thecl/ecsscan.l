@@ -164,8 +164,8 @@
 
 [a-zA-Z_][a-zA-Z0-9_]* {
     yylval.string = strdup(yytext);
-	if (macro_get(g_parser_state, yytext))
-		return MACRO;
+    if (macro_get(g_parser_state, yytext))
+        return MACRO;
     return IDENTIFIER;
 }
 

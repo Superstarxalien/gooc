@@ -427,7 +427,7 @@ ParenExpression:
 Block:
       IfBlock
     | WhileBlock
-	| CodeBlock
+    | CodeBlock
     ;
 
 CodeBlock:
@@ -646,7 +646,7 @@ Instruction:
 
 Assignment:
       Address "=" Expression {
-		expression_optimize(state, $3);
+        expression_optimize(state, $3);
         const expr_t* expr = expr_get_by_symbol(state->version, ASSIGN);
         thecl_param_t* src_param = NULL;
         if ($3->type == EXPRESSION_VAL) {
@@ -701,9 +701,9 @@ Instruction_Parameter:
 Expression:
       ExpressionLoadType
     | ExpressionSubset
-	| MACRO {
-		$$ = expression_copy(macro_get(state, $1)->expr);
-	  }
+    | MACRO {
+        $$ = expression_copy(macro_get(state, $1)->expr);
+      }
     ;
 
 ExpressionSubsetInstParam:
@@ -776,47 +776,47 @@ Address:
             $$->stack = 1;
             $$->value.val.S = arg->stack;
         } else {
-			size_t anim_offset = 0;
-			bool found_spawn = false;
-			thecl_spawn_t* spawn;
-			list_for_each(&state->ecl->spawns, spawn) {
-				if (!strcmp(spawn->name, $1)) {
-					found_spawn = true;
-					break;
-				}
-				++anim_offset;
-			}
-			if (found_spawn) {
-				$$ = param_new('S');
-				$$->value.val.S = anim_offset;
-			} else {
-				const field_t* field = field_get($1);
-				if (field != NULL) {
-					$$ = param_new('S');
-					$$->stack = 1;
-					$$->value.val.S = field->offset;
-					$$->object_link = 0;
-				} else {
-					thecl_globalvar_t* globalvar = globalvar_get(state, $1);
-					if (globalvar) {
-						$$ = param_new('S');
-						$$->stack = 1;
-						$$->value.val.S = globalvar->offset + 64;
-						$$->object_link = 0;
-					} else if ((anim_offset = anim_get_offset(state, $1)) != 0xFFFF) {
-						$$ = param_new('S');
-						$$->value.val.S = anim_offset << 8;
-					} else {
-						if ((state->current_sub == NULL || strncmp($1, state->current_sub->name, strlen(state->current_sub->name)) != 0)
-						) {
-							yyerror(state, "warning: %s not found as a variable, treating like a label instead.", $1);
-						}
-						$$ = param_new('o');
-						$$->value.type = 'z';
-						$$->value.val.z = strdup($1);
-					}
-				}
-			}
+            size_t anim_offset = 0;
+            bool found_spawn = false;
+            thecl_spawn_t* spawn;
+            list_for_each(&state->ecl->spawns, spawn) {
+                if (!strcmp(spawn->name, $1)) {
+                    found_spawn = true;
+                    break;
+                }
+                ++anim_offset;
+            }
+            if (found_spawn) {
+                $$ = param_new('S');
+                $$->value.val.S = anim_offset;
+            } else {
+                const field_t* field = field_get($1);
+                if (field != NULL) {
+                    $$ = param_new('S');
+                    $$->stack = 1;
+                    $$->value.val.S = field->offset;
+                    $$->object_link = 0;
+                } else {
+                    thecl_globalvar_t* globalvar = globalvar_get(state, $1);
+                    if (globalvar) {
+                        $$ = param_new('S');
+                        $$->stack = 1;
+                        $$->value.val.S = globalvar->offset + 64;
+                        $$->object_link = 0;
+                    } else if ((anim_offset = anim_get_offset(state, $1)) != 0xFFFF) {
+                        $$ = param_new('S');
+                        $$->value.val.S = anim_offset << 8;
+                    } else {
+                        if ((state->current_sub == NULL || strncmp($1, state->current_sub->name, strlen(state->current_sub->name)) != 0)
+                        ) {
+                            yyerror(state, "warning: %s not found as a variable, treating like a label instead.", $1);
+                        }
+                        $$ = param_new('o');
+                        $$->value.type = 'z';
+                        $$->value.val.z = strdup($1);
+                    }
+                }
+            }
         }
         free($1);
       }
@@ -1125,8 +1125,8 @@ expression_operation_new(
         if (!operands[o] && (!expr->has_double_param || (expr->has_double_param && o != expr->stack_arity - 1))) {
             yyerror(state, "not enough params for operation %d", symbol);
         }
-		else if (!operands[o] && expr->has_double_param && o == expr->stack_arity - 1)
-			break;
+        else if (!operands[o] && expr->has_double_param && o == expr->stack_arity - 1)
+            break;
         list_append_new(&ret->children, operands[o]);
     }
 
@@ -1215,10 +1215,10 @@ expression_output(
                     }
                 }
             }
-			if (c <= 2)
-				list_prepend_new(push_list, child_expr);
-			else
-				list_append_new(push_list, child_expr);
+            if (c <= 2)
+                list_prepend_new(push_list, child_expr);
+            else
+                list_append_new(push_list, child_expr);
         }
         list_for_each(push_list, child_expr) {
             expression_output(state, child_expr, 0);
@@ -1443,7 +1443,7 @@ sub_finish(
     parser_state_t* state)
 {
     scope_finish(state);
-	
+
     if (state->current_sub->is_inline) {
         thecl_instr_t* last_ins = list_tail(&state->current_sub->instrs);
         const expr_t* tmp = expr_get_by_symbol(state->version, GOTO);
@@ -1484,21 +1484,21 @@ scope_finish(
     parser_state_t* state
 ) {
     --state->scope_cnt;
-	
-	/* pop GOOL stack variables */
-	int pop = 0;
-	thecl_variable_t* var;
-	for (int v=0; v < state->current_sub->var_count; ++v)
-		if (state->current_sub->vars[v]->scope == state->scope_stack[state->scope_cnt]) {
-			memmove(state->current_sub->vars + v, state->current_sub->vars + (v + 1), (--state->current_sub->var_count - v) * sizeof(int));
-			--v;
-			++pop;
-		}
-	if (pop > 0) {
-		const expr_t* expr = expr_get_by_symbol(state->version, GOTO);
-		instr_add(state->current_sub, instr_new(state, expr->id, "SSSSS", 0, pop, 0x25, 0, 0));
-	}
-	
+
+    /* pop GOOL stack variables */
+    int pop = 0;
+    thecl_variable_t* var;
+    for (int v=0; v < state->current_sub->var_count; ++v)
+        if (state->current_sub->vars[v]->scope == state->scope_stack[state->scope_cnt]) {
+            memmove(state->current_sub->vars + v, state->current_sub->vars + (v + 1), (--state->current_sub->var_count - v) * sizeof(int));
+            --v;
+            ++pop;
+        }
+    if (pop > 0) {
+        const expr_t* expr = expr_get_by_symbol(state->version, GOTO);
+        instr_add(state->current_sub, instr_new(state, expr->id, "SSSSS", 0, pop, 0x25, 0, 0));
+    }
+
     state->scope_stack = realloc(state->scope_stack, sizeof(int)*state->scope_cnt);
 }
 
@@ -1593,10 +1593,10 @@ var_create(
 
     if (var->stack == sub->stack) /* Only increment the stack if the variable uses aa new offset. */
         ++sub->stack;
-		
-	const expr_t* expr = expr_get_by_symbol(state->version, LOAD);
-	instr_add(sub, instr_new(state, expr->id, "p", param_sp_new()));
-		
+
+    const expr_t* expr = expr_get_by_symbol(state->version, LOAD);
+    instr_add(sub, instr_new(state, expr->id, "p", param_sp_new()));
+
     return var;
 }
 
