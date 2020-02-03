@@ -123,10 +123,10 @@ c1_gool_ins_playtext_params(
 
 static const gool_ins_t
 c1_gool_ins[] = {
-     /* NAME               TYPE           ID          VALIDATE */
+     /* NAME               TYPE           ID     VA    POP   C                VALIDATE */
      { "playtext",  GOOL_INS_PLAYTEXT,  0x83,  true,  true,  2, c1_gool_ins_playtext_params },
-     { "anim",      GOOL_INS_ANIM,        39, false, false, -1, c1_gool_ins_anim_params },
-     { "playframe", GOOL_INS_PLAYFRAME, 0x84, false, false, -1, c1_gool_ins_playframe_params },
+     { "anim",      GOOL_INS_ANIM,        39, false, false,  2, c1_gool_ins_anim_params },
+     { "playframe", GOOL_INS_PLAYFRAME, 0x84,  true,  true,  3, c1_gool_ins_playframe_params },
      { NULL, 0, 0, NULL }
 };
 
