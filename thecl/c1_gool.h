@@ -35,7 +35,29 @@
 typedef struct {
     uint16_t type; /* 1 */
     uint16_t frames;
-    int eid;
+    uint32_t eid;
 } c1_anim_t;
+
+typedef struct {
+    uint32_t tex1;
+    uint32_t tex2;
+    uint16_t w;
+    uint16_t h;
+} c1_char_t;
+
+typedef struct {
+    uint16_t type; /* 3 */
+    uint16_t char_count;
+    uint32_t eid;
+    c1_char_t chars[];
+} c1_font_t;
+
+typedef struct {
+    uint16_t type; /* 4 */
+    uint16_t string_count;
+    uint32_t unknown;
+    uint32_t font;
+    char strings[];
+} c1_text_t;
 
 #endif

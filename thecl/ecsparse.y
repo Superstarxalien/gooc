@@ -169,6 +169,9 @@ int yydebug = 0;
 %token <integer> INTEGER "integer"
 %token <integer> GOOL_INTEGER "gool integer"
 %token <string> DIRECTIVE "directive"
+%token <string> DIRECTIVE_FONT "#font"
+%token <string> DIRECTIVE_CHAR "#char"
+%token <string> DIRECTIVE_TEXT "#text"
 %token COMMA ","
 %token SEMICOLON ";"
 %token SUB "sub"
@@ -334,6 +337,48 @@ Statement:
         free($1);
         free($2);
       }
+    | DIRECTIVE_FONT IDENTIFIER IDENTIFIER {
+        gool_anim_t* anim = malloc(sizeof(gool_anim_t));
+        anim->name = strdup($2);
+        anim->size = sizeof(c1_font_t);
+
+        c1_font_t* font = malloc(sizeof(c1_font_t));
+        font->type = 3;
+        font->char_count = 0;
+        font->eid = gool_to_eid($3);
+
+        anim->anim = font;
+        state->current_anim = anim;
+
+        free($1);
+        free($2);
+        free($3);
+      }
+      Font_Chars {
+        list_append_new(&state->ecl->anims, state->current_anim);
+        state->current_anim = NULL;
+      }
+	| DIRECTIVE_TEXT IDENTIFIER INTEGER {
+        gool_anim_t* anim = malloc(sizeof(gool_anim_t));
+        anim->name = strdup($2);
+        anim->size = sizeof(c1_text_t);
+
+        c1_text_t* text = malloc(sizeof(c1_text_t));
+        text->type = 4;
+        text->string_count = 0;
+        text->unknown = $3;
+		text->font = anim_get_offset(state, $2);
+
+        anim->anim = text;
+        state->current_anim = anim;
+
+        free($1);
+        free($2);
+	  }
+	  String_List {
+        list_append_new(&state->ecl->anims, state->current_anim);
+        state->current_anim = NULL;
+	  }
     | GlobalVarDeclaration
     ;
 
@@ -356,6 +401,53 @@ GlobalVarDeclaration:
         globalvar_create(state, $3);
         free($3);
       }
+    ;
+
+Font_Chars:
+    %empty
+    | Font_Chars Font_Char
+    ;
+
+Font_Char:
+    DIRECTIVE_CHAR INTEGER INTEGER INTEGER INTEGER INTEGER INTEGER INTEGER INTEGER INTEGER INTEGER INTEGER { /* jesus christ */
+        free($1);
+
+        c1_font_t* font = state->current_anim->anim;
+        font = realloc(font, sizeof(c1_font_t) + sizeof(c1_char_t) * ++font->char_count);
+        state->current_anim->anim = font;
+		state->current_anim->size = sizeof(c1_font_t) + sizeof(c1_char_t) * font->char_count;
+
+        c1_char_t* character = font->chars + font->char_count - 1;
+        character->tex1 = $2 & 0xFFFFFF;
+        character->tex1 |= ($5 & 0xF) << 24;
+        character->tex1 |= ($4 & 0x3) << 29;
+        character->tex2 = $9 & 0x1F;
+        character->tex2 |= ($6 & 0x7F) << 6;
+        character->tex2 |= ($8 & 0x1F) << 13;
+        character->tex2 |= ($7 & 0x3) << 18;
+        character->tex2 |= ($3 & 0x3) << 20;
+        character->tex2 |= ($10 & 0x3FF) << 22;
+        character->w = $11;
+        character->h = $12;
+    }
+    ;
+
+String_List:
+    %empty
+    | String_List TEXT {
+		size_t stringlen = strlen($2) + 1;
+		
+		state->current_anim->anim = realloc(state->current_anim->anim, state->current_anim->size + stringlen);
+		
+		c1_text_t* text = state->current_anim->anim;
+		
+		char *string = (char*)state->current_anim->anim + state->current_anim->size;
+		strcpy(string, $2);
+		
+		state->current_anim->size += stringlen;
+		
+        free($2);
+	}
     ;
 
 VarDeclaration:
@@ -1788,8 +1880,10 @@ anim_get_offset(
     gool_anim_t* anim;
     list_for_each(&state->ecl->anims, anim) {
         if (!strcmp(name, anim->name))
-            return offset;
+            return offset / 4;
         offset += anim->size;
+		if (offset % 4)
+			offset += 4 - (offset % 4);
     }
     return 0xFFFF; /* this is never a valid offset within context */
 }

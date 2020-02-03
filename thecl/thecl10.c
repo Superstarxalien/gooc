@@ -465,6 +465,12 @@ c1_compile(
     list_for_each(&ecl->anims, anim) {
         if (!file_write(out, anim->anim, anim->size))
             return 0;
+        pos = file_tell(out) % 4;
+        if (pos != 0) {
+            uint32_t a = 0;
+            if (!file_write(out, &a, 4 - pos))
+                return 0;
+        }
     }
 
     entry_header.offsets[6] = file_tell(out);

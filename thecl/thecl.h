@@ -182,6 +182,12 @@ typedef struct {
     bool no_warn;
 } thecl_t;
 
+typedef struct {
+    char* name;
+    size_t size; /* sizeof anim member */
+    void* anim; /* pointer to anim data */
+} gool_anim_t;
+
 thecl_t* thecl_new(
     void);
 
@@ -190,7 +196,7 @@ int gool_to_eid(
 
 int gool_pool_force_get_index(
     thecl_t* ecl,
-    int val);
+    uint32_t val);
 
 typedef struct {
     thecl_t* (*open)(FILE* stream, unsigned int ver);
@@ -216,6 +222,7 @@ typedef struct {
     int scope_id;
     thecl_sub_t* current_sub;
     thecl_state_t* current_state;
+    gool_anim_t* current_anim;
     thecl_t* ecl;
     int path_cnt;
     char** path_stack;
@@ -257,12 +264,6 @@ void expression_free(expression_t* expr);
 
 /* Returns macro of the given name, or NULL if the macro doesn't exist */
 expr_macro_t* macro_get(parser_state_t* state, const char* name);
-
-typedef struct {
-    char* name;
-    size_t size; /* sizeof anim member */
-    void* anim; /* pointer to anim data */
-} gool_anim_t;
 
 /* TODO: Deletion and creation functions for parser state. */
 

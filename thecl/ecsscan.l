@@ -214,6 +214,12 @@
 
 #([a-zA-Z]+) {
     yylval.string = strdup(yytext + 1);
+    if (!strcmp(yylval.string, "font"))
+        return DIRECTIVE_FONT;
+    else if (!strcmp(yylval.string, "char"))
+        return DIRECTIVE_CHAR;
+    else if (!strcmp(yylval.string, "text"))
+        return DIRECTIVE_TEXT;
     return DIRECTIVE;
 }
 
