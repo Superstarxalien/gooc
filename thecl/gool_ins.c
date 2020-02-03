@@ -76,6 +76,12 @@ c1_gool_ins_anim_params(
     thecl_param_t* param;
     size_t c = list_count(params);
     if (c == 1) {
+        param = list_head(params);
+
+        if (!param->stack) {
+            param->value.val.S <<= 8;
+        }
+
         param = param_new('S');
         param->stack = 1;
         param->object_link = 0;
@@ -92,11 +98,35 @@ c1_gool_ins_anim_params(
     }
 }
 
+static list_t*
+c1_gool_ins_playtext_params(
+    list_t* params)
+{
+    thecl_param_t* param;
+    size_t c = list_count(params);
+    if (c == 2) {
+        param = param_new('S');
+        param->value.val.S = 1;
+        list_append_new(params, param);
+
+        param = param_new('S');
+        param->value.val.S = 3;
+        list_append_new(params, param);
+
+        return params;
+    }
+    else {
+        fprintf(stderr, "%s: anim: wrong number of arguments (expected 1 or 2, got %zu)\n", argv0, c);
+        return NULL;
+    }
+}
+
 static const gool_ins_t
 c1_gool_ins[] = {
      /* NAME               TYPE           ID          VALIDATE */
-     { "anim",      GOOL_INS_ANIM,        39, c1_gool_ins_anim_params },
-     { "playframe", GOOL_INS_PLAYFRAME, 0x84, c1_gool_ins_playframe_params },
+     { "playtext",  GOOL_INS_PLAYTEXT,  0x83,  true,  true,  2, c1_gool_ins_playtext_params },
+     { "anim",      GOOL_INS_ANIM,        39, false, false, -1, c1_gool_ins_anim_params },
+     { "playframe", GOOL_INS_PLAYFRAME, 0x84, false, false, -1, c1_gool_ins_playframe_params },
      { NULL, 0, 0, NULL }
 };
 

@@ -358,7 +358,7 @@ Statement:
         list_append_new(&state->ecl->anims, state->current_anim);
         state->current_anim = NULL;
       }
-	| DIRECTIVE_TEXT IDENTIFIER INTEGER {
+	| DIRECTIVE_TEXT IDENTIFIER IDENTIFIER INTEGER {
         gool_anim_t* anim = malloc(sizeof(gool_anim_t));
         anim->name = strdup($2);
         anim->size = sizeof(c1_text_t);
@@ -366,14 +366,15 @@ Statement:
         c1_text_t* text = malloc(sizeof(c1_text_t));
         text->type = 4;
         text->string_count = 0;
-        text->unknown = $3;
-		text->font = anim_get_offset(state, $2);
+        text->unknown = $4;
+		text->font = anim_get_offset(state, $3);
 
         anim->anim = text;
         state->current_anim = anim;
 
         free($1);
         free($2);
+        free($3);
 	  }
 	  String_List {
         list_append_new(&state->ecl->anims, state->current_anim);
@@ -708,14 +709,48 @@ Instruction:
       IDENTIFIER "(" Instruction_Parameters ")" {
         const gool_ins_t* gool_ins = gool_ins_get_by_name(state->version, $1);
         if (gool_ins) {
-            instr_add(state->current_sub, instr_new_list(state, gool_ins->id, gool_ins->param_list_validate($3)));
+			if (gool_ins->varargs) {
+				list_t* param_list = list_new();
+				list_t* arg_list = list_new();
+				
+				int argc = gool_ins->param_count;
+				list_node_t* node, *next_node;
+				list_for_each_node_safe($3, node, next_node) {
+					if (argc-- > 0)
+						list_append_new(param_list, node->data);
+					else
+						list_prepend_new(arg_list, node->data);
+				}
+				
+				thecl_param_t* param;
+				list_for_each(arg_list, param) {
+					instr_add(state->current_sub, instr_new(state, 22, "p", param));
+				}
+				
+				instr_add(state->current_sub, instr_new_list(state, gool_ins->id, gool_ins->param_list_validate(param_list)));
+				
+				if (gool_ins->pop_args) {
+					if (argc = list_count(arg_list)) {
+						const expr_t* expr = expr_get_by_symbol(state->version, GOTO);
+						instr_add(state->current_sub, instr_new(state, expr->id, "SSSSS", 0, argc, 0x25, 0, 0));
+					}
+				}
+				
+				list_free_nodes(param_list);
+				free(param_list);
+				
+				list_free_nodes(arg_list);
+				free(arg_list);
+			}
+			else
+				instr_add(state->current_sub, instr_new_list(state, gool_ins->id, gool_ins->param_list_validate($3)));
         }
         else {
             instr_create_call(state, state->ins_jal, $1, $3, false);
-            if ($3 != NULL) {
-                list_free_nodes($3);
-                free($3);
-            }
+        }
+        if ($3 != NULL) {
+            list_free_nodes($3);
+            free($3);
         }
       }
     | "goto" IDENTIFIER {
@@ -897,7 +932,7 @@ Address:
                         $$->object_link = 0;
                     } else if ((anim_offset = anim_get_offset(state, $1)) != 0xFFFF) {
                         $$ = param_new('S');
-                        $$->value.val.S = anim_offset << 8;
+                        $$->value.val.S = anim_offset;
                     } else {
                         if ((state->current_sub == NULL || strncmp($1, state->current_sub->name, strlen(state->current_sub->name)) != 0)
                         ) {
