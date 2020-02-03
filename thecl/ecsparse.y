@@ -211,6 +211,8 @@ int yydebug = 0;
 %token ASSIGNXOR "^="
 %token ASSIGNBOR "|="
 %token ASSIGNBAND "&="
+%token ASSIGNSHIFT "<<="
+%token ASSIGNTEST "\\="
 %token ADD "+"
 %token SUBTRACT "-"
 %token MULTIPLY "*"
@@ -228,6 +230,7 @@ int yydebug = 0;
 %token XOR "^"
 %token B_OR "|"
 %token B_AND "&"
+%token SHIFT "<<"
 %token TEST "\\"
 %token SEEK "seek"
 %token DEGSEEK "degseek"
@@ -252,12 +255,13 @@ int yydebug = 0;
 %left QUESTION
 %left OR
 %left AND
-%right TEST
 %left B_OR
 %left XOR
+%right TEST
 %left B_AND
 %left EQUAL /* INEQUAL */
 %left LT LTEQ GT GTEQ
+%left SHIFT
 %left ADD SUBTRACT
 %left MULTIPLY DIVIDE MODULO
 %precedence NOT
@@ -358,7 +362,7 @@ Statement:
         list_append_new(&state->ecl->anims, state->current_anim);
         state->current_anim = NULL;
       }
-	| DIRECTIVE_TEXT IDENTIFIER IDENTIFIER INTEGER {
+    | DIRECTIVE_TEXT IDENTIFIER IDENTIFIER INTEGER {
         gool_anim_t* anim = malloc(sizeof(gool_anim_t));
         anim->name = strdup($2);
         anim->size = sizeof(c1_text_t);
@@ -367,7 +371,7 @@ Statement:
         text->type = 4;
         text->string_count = 0;
         text->unknown = $4;
-		text->font = anim_get_offset(state, $3);
+        text->font = anim_get_offset(state, $3);
 
         anim->anim = text;
         state->current_anim = anim;
@@ -375,11 +379,11 @@ Statement:
         free($1);
         free($2);
         free($3);
-	  }
-	  String_List {
+      }
+      String_List {
         list_append_new(&state->ecl->anims, state->current_anim);
         state->current_anim = NULL;
-	  }
+      }
     | GlobalVarDeclaration
     ;
 
@@ -416,7 +420,7 @@ Font_Char:
         c1_font_t* font = state->current_anim->anim;
         font = realloc(font, sizeof(c1_font_t) + sizeof(c1_char_t) * ++font->char_count);
         state->current_anim->anim = font;
-		state->current_anim->size = sizeof(c1_font_t) + sizeof(c1_char_t) * font->char_count;
+        state->current_anim->size = sizeof(c1_font_t) + sizeof(c1_char_t) * font->char_count;
 
         c1_char_t* character = font->chars + font->char_count - 1;
         character->tex1 = $2 & 0xFFFFFF;
@@ -436,19 +440,19 @@ Font_Char:
 String_List:
     %empty
     | String_List TEXT {
-		size_t stringlen = strlen($2) + 1;
-		
-		state->current_anim->anim = realloc(state->current_anim->anim, state->current_anim->size + stringlen);
-		
-		c1_text_t* text = state->current_anim->anim;
-		
-		char *string = (char*)state->current_anim->anim + state->current_anim->size;
-		strcpy(string, $2);
-		
-		state->current_anim->size += stringlen;
-		
+        size_t stringlen = strlen($2) + 1;
+
+        state->current_anim->anim = realloc(state->current_anim->anim, state->current_anim->size + stringlen);
+
+        c1_text_t* text = state->current_anim->anim;
+
+        char *string = (char*)state->current_anim->anim + state->current_anim->size;
+        strcpy(string, $2);
+
+        state->current_anim->size += stringlen;
+
         free($2);
-	}
+    }
     ;
 
 VarDeclaration:
@@ -709,41 +713,41 @@ Instruction:
       IDENTIFIER "(" Instruction_Parameters ")" {
         const gool_ins_t* gool_ins = gool_ins_get_by_name(state->version, $1);
         if (gool_ins) {
-			if (gool_ins->varargs) {
-				list_t* param_list = list_new();
-				list_t* arg_list = list_new();
-				
-				int argc = gool_ins->param_count;
-				list_node_t* node, *next_node;
-				list_for_each_node_safe($3, node, next_node) {
-					if (argc-- > 0)
-						list_append_new(param_list, node->data);
-					else
-						list_prepend_new(arg_list, node->data);
-				}
-				
-				thecl_param_t* param;
-				list_for_each(arg_list, param) {
-					instr_add(state->current_sub, instr_new(state, 22, "p", param));
-				}
-				
-				instr_add(state->current_sub, instr_new_list(state, gool_ins->id, gool_ins->param_list_validate(param_list)));
-				
-				if (gool_ins->pop_args) {
-					if (argc = list_count(arg_list)) {
-						const expr_t* expr = expr_get_by_symbol(state->version, GOTO);
-						instr_add(state->current_sub, instr_new(state, expr->id, "SSSSS", 0, argc, 0x25, 0, 0));
-					}
-				}
-				
-				list_free_nodes(param_list);
-				free(param_list);
-				
-				list_free_nodes(arg_list);
-				free(arg_list);
-			}
-			else
-				instr_add(state->current_sub, instr_new_list(state, gool_ins->id, gool_ins->param_list_validate($3)));
+            if (gool_ins->varargs) {
+                list_t* param_list = list_new();
+                list_t* arg_list = list_new();
+
+                int argc = gool_ins->param_count;
+                list_node_t* node, *next_node;
+                list_for_each_node_safe($3, node, next_node) {
+                    if (argc-- > 0)
+                        list_append_new(param_list, node->data);
+                    else
+                        list_prepend_new(arg_list, node->data);
+                }
+
+                thecl_param_t* param;
+                list_for_each(arg_list, param) {
+                    instr_add(state->current_sub, instr_new(state, 22, "p", param));
+                }
+
+                instr_add(state->current_sub, instr_new_list(state, gool_ins->id, gool_ins->param_list_validate(param_list)));
+
+                if (gool_ins->pop_args) {
+                    if (argc = list_count(arg_list)) {
+                        const expr_t* expr = expr_get_by_symbol(state->version, GOTO);
+                        instr_add(state->current_sub, instr_new(state, expr->id, "SSSSS", 0, argc, 0x25, 0, 0));
+                    }
+                }
+
+                list_free_nodes(param_list);
+                free(param_list);
+
+                list_free_nodes(arg_list);
+                free(arg_list);
+            }
+            else
+                instr_add(state->current_sub, instr_new_list(state, gool_ins->id, gool_ins->param_list_validate($3)));
         }
         else {
             instr_create_call(state, state->ins_jal, $1, $3, false);
@@ -793,6 +797,7 @@ Assignment:
     | Address "^=" Expression { var_shorthand_assign(state, $1, $3, XOR); }
     | Address "|=" Expression { var_shorthand_assign(state, $1, $3, B_OR); }
     | Address "&=" Expression { var_shorthand_assign(state, $1, $3, B_AND); }
+    | Address "<<=" Expression { var_shorthand_assign(state, $1, $3, SHIFT); }
     | Address "\\=" Expression { var_shorthand_assign(state, $1, $3, TEST); }
     ;
 
@@ -866,6 +871,7 @@ ExpressionSubset:
     | Expression "^"   Expression { $$ = EXPR_2(XOR,      $1, $3); }
     | Expression "|"   Expression { $$ = EXPR_2(B_OR,     $1, $3); }
     | Expression "&"   Expression { $$ = EXPR_2(B_AND,    $1, $3); }
+    | Expression "<<"  Expression { $$ = EXPR_2(SHIFT,    $1, $3); }
     | Expression "\\"  Expression { $$ = EXPR_2(TEST,     $1, $3); }
     | "seek" "(" Expression "," Expression "," Expression ")" { $$ = EXPR_3(SEEK, $3, $5, $7); }
     | "seek" "(" Expression "," Expression ")" { $$ = EXPR_2(SEEK, $3, $5); }
@@ -1475,6 +1481,9 @@ expression_optimize(
         case B_AND:
             param->value.val.S = val1 & val2;
         break;
+        case SHIFT:
+            param->value.val.S = val1 << val2;
+        break;
         case TEST:
             param->value.val.S = (val1 & val2) == val2;
         break;
@@ -1917,8 +1926,8 @@ anim_get_offset(
         if (!strcmp(name, anim->name))
             return offset / 4;
         offset += anim->size;
-		if (offset % 4)
-			offset += 4 - (offset % 4);
+        if (offset % 4)
+            offset += 4 - (offset % 4);
     }
     return 0xFFFF; /* this is never a valid offset within context */
 }

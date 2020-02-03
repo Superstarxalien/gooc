@@ -98,6 +98,8 @@
 "^="       return ASSIGNXOR;
 "|="       return ASSIGNBOR;
 "&="       return ASSIGNBAND;
+"<<="      return ASSIGNSHIFT;
+"\\="      return ASSIGNTEST;
 "+"        return ADD;
 "-"        return SUBTRACT;
 "*"        return MULTIPLY;
@@ -114,6 +116,7 @@
 "^"        return XOR;
 "|"        return B_OR;
 "&"        return B_AND;
+"<<"       return SHIFT;
 "\\"       return TEST;
 "seek"     return SEEK;
 
