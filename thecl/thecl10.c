@@ -41,6 +41,7 @@
 
 #define GOOL_JAL_OP           (0x86)
 #define GOOL_RET_OP           (0x82)
+#define GOOL_BRA_OP           (0x82)
 
 typedef struct {
 PACK_BEGIN
@@ -94,9 +95,15 @@ static const id_format_pair_t th10_fmts[] = {
     { 16, "RR" },
     { 17, "RR" },
     { 18, "RR" },
-
+    { 19, "RR" },
+    { 20, "RR" },
     { 21, "RR" },
     { 22, "RR" },
+    { 23, "RR" },
+
+    { 25, "RR" },
+
+    { 27, "RR" },
 
     { 31, "RR" },
     { 32, "RR" },
@@ -194,6 +201,7 @@ c1_parse(
     state.state_count = 0;
     state.ins_ret = GOOL_RET_OP;
     state.ins_jal = GOOL_JAL_OP;
+    state.ins_bra = GOOL_BRA_OP;
 
     g_parser_state = &state;
     yyin = in;

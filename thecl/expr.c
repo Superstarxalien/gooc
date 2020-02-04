@@ -57,12 +57,12 @@ c1_expressions[] = {
     { DIVIDE,     3, NULL, 2, 0, "SS" }, /* s1 / s0 */
     { MODULO,    13, NULL, 2, 0, "SS" }, /* s1 % s0 */
     { EQUAL,      4, NULL, 2, 0, "SS" }, /* s1 == s0 */
-    /* { INEQUAL,   61, NULL, 2, 0, "SS" }, GOOL does not have this instruction, use NOT + CEQ instead /* s1 != s0 */
+    { INEQUAL,    4, NULL, 2, 0, "SS" }, /* GOOL does not have this instruction, use NOT + CEQ instead /* s1 != s0 */
     { LT,         9, NULL, 2, 0, "SS" }, /* s1 < s0 */
     { LTEQ,      10, NULL, 2, 0, "SS" }, /* s1 <= s0 */
     { GT,        11, NULL, 2, 0, "SS" }, /* s1 > s0 */
     { GTEQ,      12, NULL, 2, 0, "SS" }, /* s1 >= s0 */
-    { NOT,       18, NULL, 1, 0,  "S" }, /* !s0 */
+    { NOT,       18, NULL, 2, 0,  "S" }, /* !s0 */
     { OR,         6, NULL, 2, 0, "SS" }, /* s1 || s0 */
     { AND,        5, NULL, 2, 0, "SS" }, /* s1 && s0 */
     { XOR,       14, NULL, 2, 0, "SS" }, /* s1 ^ s0 */

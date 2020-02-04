@@ -106,6 +106,7 @@
 "/"        return DIVIDE;
 "%"        return MODULO;
 "=="       return EQUAL;
+"!="       return INEQUAL;
 "<"        return LT;
 "<="       return LTEQ;
 ">"        return GT;

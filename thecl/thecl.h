@@ -233,6 +233,7 @@ typedef struct {
 
     uint8_t ins_ret;
     uint8_t ins_jal;
+    uint8_t ins_bra;
 
     list_t expr_macros;
 } parser_state_t;

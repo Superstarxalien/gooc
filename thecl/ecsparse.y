@@ -54,7 +54,7 @@ static void string_list_free(list_t* list);
 
 static thecl_instr_t* instr_new(parser_state_t* state, uint8_t id, const char* format, ...);
 static thecl_instr_t* instr_new_list(parser_state_t* state, uint8_t id, list_t* list);
-static void instr_add(thecl_sub_t* sub, thecl_instr_t* instr);
+static void instr_add(parser_state_t* state, thecl_sub_t* sub, thecl_instr_t* instr);
 static void instr_prepend(thecl_sub_t* sub, thecl_instr_t* instr);
 /* Returns true if the created call was inline. */
 static bool instr_create_call(parser_state_t *state, uint8_t type, char *name, list_t *params, bool needs_ret);
@@ -221,7 +221,7 @@ int yydebug = 0;
 %token DIVIDE "/"
 %token MODULO "%"
 %token EQUAL "=="
-//%token INEQUAL "!="
+%token INEQUAL "!="
 %token LT "<"
 %token LTEQ "<="
 %token GT ">"
@@ -261,7 +261,7 @@ int yydebug = 0;
 %left XOR
 %right TEST
 %left B_AND
-%left EQUAL /* INEQUAL */
+%left EQUAL INEQUAL
 %left LT LTEQ GT GTEQ
 %left SHIFT
 %left ADD SUBTRACT
@@ -736,15 +736,15 @@ Instruction:
 
                 thecl_param_t* param;
                 list_for_each(arg_list, param) {
-                    instr_add(state->current_sub, instr_new(state, 22, "p", param));
+                    instr_add(state, state->current_sub, instr_new(state, 22, "p", param));
                 }
 
-                instr_add(state->current_sub, instr_new_list(state, gool_ins->id, gool_ins->param_list_validate(param_list)));
+                instr_add(state, state->current_sub, instr_new_list(state, gool_ins->id, gool_ins->param_list_validate(param_list)));
 
                 if (gool_ins->pop_args) {
                     if (argc = list_count(arg_list)) {
                         const expr_t* expr = expr_get_by_symbol(state->version, GOTO);
-                        instr_add(state->current_sub, instr_new(state, expr->id, "SSSSS", 0, argc, 0x25, 0, 0));
+                        instr_add(state, state->current_sub, instr_new(state, expr->id, "SSSSS", 0, argc, 0x25, 0, 0));
                     }
                 }
 
@@ -755,7 +755,7 @@ Instruction:
                 free(arg_list);
             }
             else
-                instr_add(state->current_sub, instr_new_list(state, gool_ins->id, gool_ins->param_list_validate($3)));
+                instr_add(state, state->current_sub, instr_new_list(state, gool_ins->id, gool_ins->param_list_validate($3)));
         }
         else {
             instr_create_call(state, state->ins_jal, $1, $3, false);
@@ -779,7 +779,7 @@ Instruction:
         if (state->current_sub->is_inline)
             expression_create_goto(state, GOTO, "inline_end");
         else 
-            instr_add(state->current_sub, instr_new(state, state->ins_ret, "SSSSS", 0, 0, 0x25, 0, 2));
+            instr_add(state, state->current_sub, instr_new(state, state->ins_ret, "SSSSS", 0, 0, 0x25, 0, 2));
     }
     ;
 
@@ -797,7 +797,7 @@ Assignment:
         if ($1->stack != 2) {
             const expr_t* expr = expr_get_by_symbol(state->version, ASSIGN);
 
-            instr_add(state->current_sub, instr_new(state, expr->id, "pp", $1, src_param));
+            instr_add(state, state->current_sub, instr_new(state, expr->id, "pp", $1, src_param));
         } else { /* WGL */
             const expr_t* expr = expr_get_by_symbol(state->version, GASSIGN);
 
@@ -808,7 +808,7 @@ Assignment:
             list_del(&last_ins->params, last_ins->params.tail);
             thecl_instr_free(last_ins);
 
-            instr_add(state->current_sub, instr_new(state, expr->id, "pp", last_param, src_param));
+            instr_add(state, state->current_sub, instr_new(state, expr->id, "pp", last_param, src_param));
         }
       }
     | Address "+=" Expression { var_shorthand_assign(state, $1, $3, ADD); }
@@ -882,12 +882,11 @@ ExpressionSubset:
     | Expression "/"   Expression { $$ = EXPR_2(DIVIDE,   $1, $3); }
     | Expression "%"   Expression { $$ = EXPR_2(MODULO,   $1, $3); }
     | Expression "=="  Expression { $$ = EXPR_2(EQUAL,    $1, $3); }
-    //| Expression "!="  Expression { $$ = EXPR_2(INEQUAL,  $1, $3); }
     | Expression "<"   Expression { $$ = EXPR_2(LT,       $1, $3); }
     | Expression "<="  Expression { $$ = EXPR_2(LTEQ,     $1, $3); }
     | Expression ">"   Expression { $$ = EXPR_2(GT,       $1, $3); }
     | Expression ">="  Expression { $$ = EXPR_2(GTEQ,     $1, $3); }
-    | "!" Expression              { $$ = EXPR_1(NOT,      $2); }
+    | "!" Expression              { $$ = EXPR_2(NOT,      expression_load_new(state, param_sp_new()), $2); }
     | Expression "||"  Expression { $$ = EXPR_2(OR,       $1, $3); }
     | Expression "&&"  Expression { $$ = EXPR_2(AND,      $1, $3); }
     | Expression "^"   Expression { $$ = EXPR_2(XOR,      $1, $3); }
@@ -898,6 +897,10 @@ ExpressionSubset:
     | "seek" "(" Expression "," Expression "," Expression ")" { $$ = EXPR_3(SEEK, $3, $5, $7); }
     | "seek" "(" Expression "," Expression ")" { $$ = EXPR_2(SEEK, $3, $5); }
     | "degseek" "(" Expression "," Expression "," Expression ")" { $$ = EXPR_3(DEGSEEK, $3, $5, $7); }
+    | Expression "!="  Expression {
+		$$ = EXPR_2(INEQUAL,  $1, $3);
+		$$ = EXPR_2(NOT,      expression_load_new(state, param_sp_new()), $$);
+	  }
 
     /* Custom expressions. */
     /*
@@ -935,7 +938,7 @@ Address:
             $$ = param_sp_new();
             $$->stack = 2;
             const expr_t* expr = expr_get_by_symbol(state->version, GLOAD);
-            instr_add(state->current_sub, instr_new(state, expr->id, "S", gvar->offset << 8));
+            instr_add(state, state->current_sub, instr_new(state, expr->id, "S", gvar->offset << 8));
         } else {
             size_t anim_offset = 0;
             bool found_spawn = false;
@@ -1122,6 +1125,7 @@ instr_new_list(
 
 static void
 instr_add(
+	parser_state_t* state,
     thecl_sub_t* sub,
     thecl_instr_t* instr)
 {
@@ -1143,6 +1147,35 @@ instr_add(
                     thecl_instr_free(instr);
                     return;
                 }
+            }
+        }
+    }
+    /* NOT-branch optimization */
+    else if (instr->id == state->ins_bra && instr->param_count == 5 &&
+		((state->version != 1) ||
+		((state->version == 1) &&
+		((thecl_param_t*)instr->params.tail->data)->value.val.S == 0 &&
+		((thecl_param_t*)instr->params.tail->prev->data)->value.val.S != 0))) {
+        thecl_instr_t* last_ins = list_tail(&sub->instrs);
+        if (last_ins != NULL) {
+            thecl_label_t* tmp_label;
+            list_for_each(&sub->labels, tmp_label) {
+                if (tmp_label->offset == sub->offset)
+                    goto NO_OPTIM;
+            }
+
+            if (last_ins->id == 18 && last_ins->param_count == 2) {
+				thecl_param_t* param;
+				list_for_each(&last_ins->params, param) {
+					if (param->value.val.S != 0x1F || !param->stack || param->object_link)
+						goto NO_OPTIM;
+				}
+				param = instr->params.tail->prev->data;
+				param->value.val.S = param->value.val.S == 1 ? 2 : 1;
+                
+				list_del(&sub->instrs, sub->instrs.tail);
+                thecl_instr_free(last_ins);
+				--sub->offset;
             }
         }
     }
@@ -1238,7 +1271,7 @@ instr_create_call(
                 }
             }
 
-            instr_add(state->current_sub, instr_new(state, 22, "p", param));
+            instr_add(state, state->current_sub, instr_new(state, 22, "p", param));
 
             ++argc;
         }
@@ -1252,7 +1285,7 @@ instr_create_call(
     }
     list_free_nodes(&state->expressions);
 
-    instr_add(state->current_sub, instr_new(state, type, "pS", name_param, argc));
+    instr_add(state, state->current_sub, instr_new(state, type, "pS", name_param, argc));
     return false;
 }
 
@@ -1339,7 +1372,7 @@ expression_create_goto(
     thecl_param_t *p1 = param_new('o');
     p1->value.type = 'z';
     p1->value.val.z = strdup(labelstr);
-    instr_add(state->current_sub, instr_new(state, expr->id, "pSSSS", p1, 0, 0x1F, state->version == 1 ? (type == GOTO ? 0 : (type == IF ? 1 : (type == UNLESS ? 2 : 3))) : 0, 0));
+    instr_add(state, state->current_sub, instr_new(state, expr->id, "pSSSS", p1, 0, 0x1F, state->version == 1 ? (type == GOTO ? 0 : (type == IF ? 1 : (type == UNLESS ? 2 : 3))) : 0, 0));
 }
 
 static void
@@ -1353,7 +1386,7 @@ expression_output(
         expression_optimize(state, expr);
 
     if (expr->type == EXPRESSION_VAL) {
-        instr_add(state->current_sub, instr_new(state, expr->id, "p", expr->value));
+        instr_add(state, state->current_sub, instr_new(state, expr->id, "p", expr->value));
     } else if (expr->type == EXPRESSION_OP) {
         const expr_t* expression = expr_get_by_id(state->version, expr->id);
         expression_t* child_expr;
@@ -1395,7 +1428,7 @@ expression_output(
             val_param2 = param_sp_new();
         }
 
-        instr_add(state->current_sub, instr_new(state, expr->id, "pp", val_param1, val_param2));
+        instr_add(state, state->current_sub, instr_new(state, expr->id, "pp", val_param1, val_param2));
     } else if (expr->type == EXPRESSION_TERNARY) {
         char labelstr_unless[256];
         char labelstr_end[256];
@@ -1625,7 +1658,7 @@ sub_finish(
     else {
         thecl_instr_t* last_ins = state->version == 1 ? NULL : list_tail(&state->current_sub->instrs);
         if (last_ins == NULL || last_ins->id != state->ins_ret) {
-            instr_add(state->current_sub, instr_new(state, state->ins_ret, "SSSSS", 0, 0, 0x25, 0, 2));
+            instr_add(state, state->current_sub, instr_new(state, state->ins_ret, "SSSSS", 0, 0, 0x25, 0, 2));
         }
     }
 
@@ -1660,7 +1693,7 @@ scope_finish(
         }
     if (pop > 0) {
         const expr_t* expr = expr_get_by_symbol(state->version, GOTO);
-        instr_add(state->current_sub, instr_new(state, expr->id, "SSSSS", 0, pop, 0x25, 0, 0));
+        instr_add(state, state->current_sub, instr_new(state, expr->id, "SSSSS", 0, pop, 0x25, 0, 0));
     }
 
     state->scope_stack = realloc(state->scope_stack, sizeof(int)*state->scope_cnt);
@@ -1759,7 +1792,7 @@ var_create(
         ++sub->stack;
 
     const expr_t* expr = expr_get_by_symbol(state->version, LOAD);
-    instr_add(sub, instr_new(state, expr->id, "p", param_sp_new()));
+    instr_add(state, sub, instr_new(state, expr->id, "p", param_sp_new()));
 
     return var;
 }
@@ -1873,7 +1906,7 @@ var_shorthand_assign(
     if (param->stack != 2) {
         const expr_t* expr = expr_get_by_symbol(state->version, ASSIGN);
 
-        instr_add(state->current_sub, instr_new(state, expr->id, "pp", param, param_sp_new()));
+        instr_add(state, state->current_sub, instr_new(state, expr->id, "pp", param, param_sp_new()));
     } else { /* WGL */
         const expr_t* expr = expr_get_by_symbol(state->version, GASSIGN);
 
@@ -1881,7 +1914,7 @@ var_shorthand_assign(
 
         thecl_param_t* last_param = param_copy(list_tail(&last_ins->params));
 
-        instr_add(state->current_sub, instr_new(state, expr->id, "pp", last_param, param_sp_new()));
+        instr_add(state, state->current_sub, instr_new(state, expr->id, "pp", last_param, param_sp_new()));
     }
 }
 
