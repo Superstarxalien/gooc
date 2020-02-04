@@ -34,6 +34,7 @@
 #include "list.h"
 
 typedef enum {
+    GOOL_INS_STATE,
     GOOL_INS_PLAYTEXT,
     GOOL_INS_ANIM,
     GOOL_INS_PLAYFRAME

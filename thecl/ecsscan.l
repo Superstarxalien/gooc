@@ -120,6 +120,7 @@
 "<<"       return SHIFT;
 "\\"       return TEST;
 "seek"     return SEEK;
+"degseek"  return DEGSEEK;
 
 (-|\+)?[0-9]+(\.[0-9]+)?\s*deg {
     yylval.integer = (int)(strtod(yytext, NULL) / 180.0 * 0x800);

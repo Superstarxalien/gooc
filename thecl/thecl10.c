@@ -233,6 +233,17 @@ c1_set_opcode(
 }
 
 static int
+c1_is_statechange(
+    thecl_instr_t* instr)
+{
+    if (instr->param_count == 5) {
+        if (((thecl_param_t*)instr->params.tail->data)->value.val.S == 1)
+            return 1;
+    }
+    return 0;
+}
+
+static int
 c1_instr_serialize(
     thecl_t* ecl,
     thecl_sub_t* sub,
@@ -272,6 +283,41 @@ c1_instr_serialize(
             sub_name_param->type = 'S';
             sub_name_param->value.type = 'S';
             sub_name_param->value.val.S = called_sub->start_offset;
+        }
+    }
+    else if (c1_is_statechange(instr)) {
+        /* Validate state change parameters. */
+        list_node_t* node = instr->params.head;
+        thecl_param_t* state_name_param = node->data;
+        char* state_name = state_name_param->value.val.z;
+        thecl_param_t* state_argc_param = node->next->data;
+        const thecl_state_t* called_state;
+        int o = 0;
+        list_for_each(&ecl->states, called_state) {
+            if (!strcmp(called_state->name, state_name))
+                break;
+            ++o;
+            called_state = NULL;
+        }
+        if (!called_state) {
+            fprintf(stderr, "%s:c1_instr_serialize: in sub %s: unknown state \"%s\"\n",
+                argv0, sub->name, state_name);
+        }
+        else {
+            if (called_state->code) {
+                const thecl_sub_t* called_sub = called_state->code;
+                if (state_argc_param->value.val.S > called_sub->arg_count) {
+                    fprintf(stderr, "%s:c1_instr_serialize: in sub %s: too many parameters when changing to state \"%s\" (expected %d)\n",
+                        argv0, sub->name, state_name, called_sub->arg_count);
+                }
+                else if (state_argc_param->value.val.S < called_sub->arg_count)
+                    fprintf(stderr, "%s:c1_instr_serialize: in sub %s: not enough parameters when changing to state %s (expected %d)\n",
+                        argv0, sub->name, state_name, called_sub->arg_count);
+            }
+            free(state_name_param->value.val.z);
+            state_name_param->type = 'S';
+            state_name_param->value.type = 'S';
+            state_name_param->value.val.S = o;
         }
     }
 
@@ -464,6 +510,9 @@ c1_compile(
     entry_header.offsets[4] = file_tell(out);
 
     list_for_each(&ecl->states, state) {
+        if (!state->code) {
+            fprintf(stderr, "%s: warning: state %s has no code block\n", argv0, state->name);
+        }
         c1_state_t gstate = { state->stateflag, state->statusc, gool_pool_force_get_index(ecl, state->exe_eid),
             0x3FFFU,
             state->trans == NULL ? 0x3FFFU : state->trans->start_offset,

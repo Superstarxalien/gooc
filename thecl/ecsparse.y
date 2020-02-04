@@ -898,9 +898,9 @@ ExpressionSubset:
     | "seek" "(" Expression "," Expression ")" { $$ = EXPR_2(SEEK, $3, $5); }
     | "degseek" "(" Expression "," Expression "," Expression ")" { $$ = EXPR_3(DEGSEEK, $3, $5, $7); }
     | Expression "!="  Expression {
-		$$ = EXPR_2(INEQUAL,  $1, $3);
-		$$ = EXPR_2(NOT,      expression_load_new(state, param_sp_new()), $$);
-	  }
+        $$ = EXPR_2(INEQUAL,  $1, $3);
+        $$ = EXPR_2(NOT,      expression_load_new(state, param_sp_new()), $$);
+      }
 
     /* Custom expressions. */
     /*
@@ -973,7 +973,7 @@ Address:
                     } else {
                         if ((state->current_sub == NULL || strncmp($1, state->current_sub->name, strlen(state->current_sub->name)) != 0)
                         ) {
-                            yyerror(state, "warning: %s not found as a variable, treating like a label instead.", $1);
+                            yyerror(state, "warning: %s not found as a variable, treating like a label or state instead.", $1);
                         }
                         $$ = param_new('o');
                         $$->value.type = 'z';
@@ -1125,7 +1125,7 @@ instr_new_list(
 
 static void
 instr_add(
-	parser_state_t* state,
+    parser_state_t* state,
     thecl_sub_t* sub,
     thecl_instr_t* instr)
 {
@@ -1152,10 +1152,10 @@ instr_add(
     }
     /* NOT-branch optimization */
     else if (instr->id == state->ins_bra && instr->param_count == 5 &&
-		((state->version != 1) ||
-		((state->version == 1) &&
-		((thecl_param_t*)instr->params.tail->data)->value.val.S == 0 &&
-		((thecl_param_t*)instr->params.tail->prev->data)->value.val.S != 0))) {
+        ((state->version != 1) ||
+        ((state->version == 1) &&
+        ((thecl_param_t*)instr->params.tail->data)->value.val.S == 0 &&
+        ((thecl_param_t*)instr->params.tail->prev->data)->value.val.S != 0))) {
         thecl_instr_t* last_ins = list_tail(&sub->instrs);
         if (last_ins != NULL) {
             thecl_label_t* tmp_label;
@@ -1165,17 +1165,17 @@ instr_add(
             }
 
             if (last_ins->id == 18 && last_ins->param_count == 2) {
-				thecl_param_t* param;
-				list_for_each(&last_ins->params, param) {
-					if (param->value.val.S != 0x1F || !param->stack || param->object_link)
-						goto NO_OPTIM;
-				}
-				param = instr->params.tail->prev->data;
-				param->value.val.S = param->value.val.S == 1 ? 2 : 1;
+                thecl_param_t* param;
+                list_for_each(&last_ins->params, param) {
+                    if (param->value.val.S != 0x1F || !param->stack || param->object_link)
+                        goto NO_OPTIM;
+                }
+                param = instr->params.tail->prev->data;
+                param->value.val.S = param->value.val.S == 1 ? 2 : 1;
                 
-				list_del(&sub->instrs, sub->instrs.tail);
+                list_del(&sub->instrs, sub->instrs.tail);
                 thecl_instr_free(last_ins);
-				--sub->offset;
+                --sub->offset;
             }
         }
     }

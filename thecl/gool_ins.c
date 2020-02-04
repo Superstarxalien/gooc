@@ -116,7 +116,43 @@ c1_gool_ins_playtext_params(
         return params;
     }
     else {
-        fprintf(stderr, "%s: anim: wrong number of arguments (expected 1 or 2, got %zu)\n", argv0, c);
+        fprintf(stderr, "%s: playtext: wrong number of arguments (expected 1 or 2, got %zu)\n", argv0, c);
+        return NULL;
+    }
+}
+
+static list_t*
+c1_gool_ins_state_params(
+    list_t* params)
+{
+    thecl_param_t* param;
+    size_t c = list_count(params);
+    if (c >= 1) {
+        list_node_t* node = params->head;
+
+        param = param_new('S');
+        param->value.val.S = c - 1;
+        list_append_to(params, param, node);
+        node = node->next;
+
+        param = param_new('S');
+        param->value.val.S = 0x25;
+        list_append_to(params, param, node);
+        node = node->next;
+
+        param = param_new('S');
+        param->value.val.S = 0;
+        list_append_to(params, param, node);
+        node = node->next;
+
+        param = param_new('S');
+        param->value.val.S = 1;
+        list_append_to(params, param, node);
+
+        return params;
+    }
+    else {
+        fprintf(stderr, "%s: state: wrong number of arguments (expected 1 or 2, got %zu)\n", argv0, c);
         return NULL;
     }
 }
@@ -124,9 +160,10 @@ c1_gool_ins_playtext_params(
 static const gool_ins_t
 c1_gool_ins[] = {
      /* NAME               TYPE           ID     VA    POP   C                VALIDATE */
-     { "playtext",  GOOL_INS_PLAYTEXT,  0x83,  true,  true,  2, c1_gool_ins_playtext_params },
-     { "anim",      GOOL_INS_ANIM,        39, false, false,  2, c1_gool_ins_anim_params },
-     { "playframe", GOOL_INS_PLAYFRAME, 0x84,  true,  true,  3, c1_gool_ins_playframe_params },
+     { "changestate", GOOL_INS_STATE,     0x82,  true, false,  1, c1_gool_ins_state_params },
+     { "playtext",    GOOL_INS_PLAYTEXT,  0x83,  true,  true,  2, c1_gool_ins_playtext_params },
+     { "anim",        GOOL_INS_ANIM,        39, false, false,  2, c1_gool_ins_anim_params },
+     { "playframe",   GOOL_INS_PLAYFRAME, 0x84,  true,  true,  3, c1_gool_ins_playframe_params },
      { NULL, 0, 0, NULL }
 };
 
