@@ -48,6 +48,7 @@ c1_expressions[] = {
 
     { GLOAD,     31,  "S", 0, 0, NULL }, /* p0 */
     { LOAD,      22,  "S", 0, 0, NULL }, /* p0 */
+    { GASSIGN,   32,  "S", 1, 0,  "S" }, /* p0 = s0 */
     { ASSIGN,    17,  "S", 1, 0,  "S" }, /* p0 = s0 */
 
     { ADD,        0, NULL, 2, 0, "SS" }, /* s1 + s0 */

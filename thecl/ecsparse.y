@@ -204,6 +204,7 @@ int yydebug = 0;
 %token LOAD
 %token GLOAD
 %token ASSIGN "="
+%token GASSIGN
 %token ASSIGNADD "+="
 %token ASSIGNSUB "-="
 %token ASSIGNMUL "*="
@@ -785,7 +786,6 @@ Instruction:
 Assignment:
       Address "=" Expression {
         expression_optimize(state, $3);
-        const expr_t* expr = expr_get_by_symbol(state->version, ASSIGN);
         thecl_param_t* src_param = NULL;
         if ($3->type == EXPRESSION_VAL) {
             src_param = $3->value;
@@ -794,7 +794,22 @@ Assignment:
             src_param = param_sp_new();
         }
         expression_free($3);
-        instr_add(state->current_sub, instr_new(state, expr->id, "pp", $1, src_param));
+        if ($1->stack != 2) {
+            const expr_t* expr = expr_get_by_symbol(state->version, ASSIGN);
+
+            instr_add(state->current_sub, instr_new(state, expr->id, "pp", $1, src_param));
+        } else { /* WGL */
+            const expr_t* expr = expr_get_by_symbol(state->version, GASSIGN);
+
+            thecl_instr_t* last_ins = list_tail(&state->current_sub->instrs);
+            list_del(&state->current_sub->instrs, state->current_sub->instrs.tail);
+
+            thecl_param_t* last_param = list_tail(&last_ins->params);
+            list_del(&last_ins->params, last_ins->params.tail);
+            thecl_instr_free(last_ins);
+
+            instr_add(state->current_sub, instr_new(state, expr->id, "pp", last_param, src_param));
+        }
       }
     | Address "+=" Expression { var_shorthand_assign(state, $1, $3, ADD); }
     | Address "-=" Expression { var_shorthand_assign(state, $1, $3, SUBTRACT); }
@@ -916,10 +931,11 @@ Address:
             $$ = param_new('S');
             $$->stack = 1;
             $$->value.val.S = arg->stack;
-		} else if (gvar = gvar_get(state->version, $1)) {
+        } else if (gvar = gvar_get(state->version, $1)) {
             $$ = param_sp_new();
-			const expr_t* expr = expr_get_by_symbol(state->version, GLOAD);
-			instr_add(state->current_sub, instr_new(state, expr->id, "S", gvar->offset << 8));
+            $$->stack = 2;
+            const expr_t* expr = expr_get_by_symbol(state->version, GLOAD);
+            instr_add(state->current_sub, instr_new(state, expr->id, "S", gvar->offset << 8));
         } else {
             size_t anim_offset = 0;
             bool found_spawn = false;
