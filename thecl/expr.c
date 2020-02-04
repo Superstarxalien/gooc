@@ -46,6 +46,7 @@ c1_expressions[] = {
     { UNLESS,  0x82,  "o", 1, 0,  "S" }, /* unless (s0) goto p0 */
     { IF,      0x82,  "o", 1, 0,  "S" }, /* if (s0) goto p0 */
 
+    { GLOAD,     31,  "S", 0, 0, NULL }, /* p0 */
     { LOAD,      22,  "S", 0, 0, NULL }, /* p0 */
     { ASSIGN,    17,  "S", 1, 0,  "S" }, /* p0 = s0 */
 

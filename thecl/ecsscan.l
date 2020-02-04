@@ -166,7 +166,9 @@
 }
 
 [a-zA-Z_][a-zA-Z0-9_]* {
-    yylval.string = strdup(yytext);
+	yylval.string = strdup(yytext);
+	if (gvar_get(g_parser_state->version, yytext))
+		return IDENTIFIER;
     if (macro_get(g_parser_state, yytext))
         return MACRO;
     return IDENTIFIER;

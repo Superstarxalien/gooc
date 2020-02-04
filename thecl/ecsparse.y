@@ -145,7 +145,7 @@ int yydebug = 0;
 
 %define parse.error verbose
 %locations
-%param {parser_state_t* state}
+%parse-param {parser_state_t* state}
 %debug
 
 %union {
@@ -202,6 +202,7 @@ int yydebug = 0;
 %token BREAK "break"
 %token KILL
 %token LOAD
+%token GLOAD
 %token ASSIGN "="
 %token ASSIGNADD "+="
 %token ASSIGNSUB "-="
@@ -711,6 +712,12 @@ DoBlock:
 
 Instruction:
       IDENTIFIER "(" Instruction_Parameters ")" {
+        expression_t* expression;
+        list_for_each(&state->expressions, expression) {
+            expression_output(state, expression, 1);
+            expression_free(expression);
+        }
+        list_free_nodes(&state->expressions);
         const gool_ins_t* gool_ins = gool_ins_get_by_name(state->version, $1);
         if (gool_ins) {
             if (gool_ins->varargs) {
@@ -900,6 +907,7 @@ Expression_Safe:
 Address:
       IDENTIFIER {
         thecl_variable_t* arg;
+        const field_t* gvar;
         if (var_exists(state, state->current_sub, $1)) {
             $$ = param_new('S');
             $$->stack = 1;
@@ -908,6 +916,10 @@ Address:
             $$ = param_new('S');
             $$->stack = 1;
             $$->value.val.S = arg->stack;
+		} else if (gvar = gvar_get(state->version, $1)) {
+            $$ = param_sp_new();
+			const expr_t* expr = expr_get_by_symbol(state->version, GLOAD);
+			instr_add(state->current_sub, instr_new(state, expr->id, "S", gvar->offset << 8));
         } else {
             size_t anim_offset = 0;
             bool found_spawn = false;

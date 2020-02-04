@@ -26,7 +26,9 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH
  * DAMAGE.
  */
+#include <config.h>
 #include <string.h>
+#include <stdio.h>
 #include "field.h"
 
 static const field_t
@@ -98,6 +100,44 @@ gool_fields[] = {
     { NULL, 0 }
 };
 
+static char gvar_name_buf[10];
+static field_t gvar_buf = { gvar_name_buf, 0 };
+
+static const field_t
+c1_gool_globals[] = {
+    { "LEVEL",         0 },
+
+    { "FRUITCOUNTER",  6 },
+    { "LIFECOUNTER",   7 },
+
+    { "PAUSEMENU",    12 },
+
+    { "DOCTOR",       16 },
+
+    { "GAMEPROGRESS", 20 },
+
+    { "CAMTRANSX",    37 },
+    { "CAMTRANSY",    38 },
+    { "CAMTRANSZ",    39 },
+    { "CAMROTX",      40 },
+    { "CAMROTY",      41 },
+    { "CAMROTZ",      42 },
+    { "FRAMETIME",    43 },
+
+    { "BONUSROUND",   60 },
+
+    { "BOXCOUNT",     62 },
+
+    { "DEBUG",        68 },
+    { "CHECKPOINTID", 69 },
+
+    { "SPAWNTRANSX", 102 },
+    { "SPAWNTRANSY", 103 },
+    { "SPAWNTRANSZ", 104 },
+
+    { NULL, 0 }
+};
+
 const field_t*
 field_get(
     char* name)
@@ -111,4 +151,43 @@ field_get(
     }
 
     return NULL;
+}
+
+static const field_t*
+gvar_get_from_table(
+    const field_t* table,
+    char* name)
+{
+    while (table->name) {
+        if (!strcmp(table->name, name))
+            return table;
+        ++table;
+    }
+
+    return NULL;
+}
+
+const field_t*
+gvar_get(
+    unsigned int version,
+    char* name)
+{
+    const field_t* ret = NULL;
+
+    switch (version) {
+    case 1:
+        ret = gvar_get_from_table(c1_gool_globals, name);
+        break;
+    }
+
+    if (!ret) {
+        int gvar_id;
+        if (sscanf(name, "GVAR_%d", &gvar_id)) {
+            snprintf(gvar_name_buf, 10, "GVAR_%d", gvar_id);
+            gvar_buf.offset = gvar_id;
+            return &gvar_buf;
+        }
+    }
+
+    return ret;
 }
