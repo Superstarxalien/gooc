@@ -175,12 +175,20 @@ c1_gool_ins_setcolor_params(
     thecl_param_t* param;
     size_t c = list_count(params);
     if (c == 3) {
-        return params;
+    }
+    else if (c == 2) {
+        list_node_t* node = params->head;
+
+        param = param_new('S');
+        param->value.val.S = 0;
+        list_append_to(params, param, node);
+        node = node->next;
     }
     else {
         fprintf(stderr, "%s: setcolor: wrong number of arguments (expected 3, got %zu)\n", argv0, c);
         return NULL;
     }
+    return params;
 }
 
 static const gool_ins_t
