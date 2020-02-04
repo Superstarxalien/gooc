@@ -227,6 +227,7 @@ int yydebug = 0;
 %token GT ">"
 %token GTEQ ">="
 %token NOT "!"
+%token B_NOT "~"
 %token AND "&&"
 %token OR "||"
 %token XOR "^"
@@ -266,7 +267,7 @@ int yydebug = 0;
 %left SHIFT
 %left ADD SUBTRACT
 %left MULTIPLY DIVIDE MODULO
-%precedence NOT
+%precedence NOT B_NOT
 
 %expect 1
 %%
@@ -786,8 +787,11 @@ Instruction:
 Assignment:
       Address "=" Expression {
         expression_optimize(state, $3);
-        thecl_param_t* src_param = NULL;
-        if ($3->type == EXPRESSION_VAL) {
+        thecl_param_t* src_param;
+        const expr_t* expr_notl = expr_get_by_symbol(state->version, NOT);
+        const expr_t* expr_notb = expr_get_by_symbol(state->version, B_NOT);
+        bool is_unary = $3->id == expr_notl->id || $3->id == expr_notb->id;
+        if ($3->type == EXPRESSION_VAL && ($1->stack != 2 || ($1->stack == 2 && !is_unary))) {
             src_param = $3->value;
         } else {
             expression_output(state, $3, 0);
@@ -800,11 +804,14 @@ Assignment:
             instr_add(state, state->current_sub, instr_new(state, expr->id, "pp", $1, src_param));
         } else { /* WGL */
             const expr_t* expr = expr_get_by_symbol(state->version, GASSIGN);
+            
+            list_node_t* node = is_unary ? state->current_sub->instrs.tail->prev : state->current_sub->instrs.tail;
 
-            thecl_instr_t* last_ins = list_tail(&state->current_sub->instrs);
-            list_del(&state->current_sub->instrs, state->current_sub->instrs.tail);
+            thecl_instr_t* last_ins = node->data;
 
             thecl_param_t* last_param = list_tail(&last_ins->params);
+
+            list_del(&state->current_sub->instrs, node);
             list_del(&last_ins->params, last_ins->params.tail);
             thecl_instr_free(last_ins);
 
@@ -887,6 +894,7 @@ ExpressionSubset:
     | Expression ">"   Expression { $$ = EXPR_2(GT,       $1, $3); }
     | Expression ">="  Expression { $$ = EXPR_2(GTEQ,     $1, $3); }
     | "!" Expression              { $$ = EXPR_2(NOT,      expression_load_new(state, param_sp_new()), $2); }
+    | "~" Expression              { $$ = EXPR_2(B_NOT,    expression_load_new(state, param_sp_new()), $2); }
     | Expression "||"  Expression { $$ = EXPR_2(OR,       $1, $3); }
     | Expression "&&"  Expression { $$ = EXPR_2(AND,      $1, $3); }
     | Expression "^"   Expression { $$ = EXPR_2(XOR,      $1, $3); }

@@ -112,6 +112,7 @@
 ">"        return GT;
 ">="       return GTEQ;
 "!"        return NOT;
+"~"        return B_NOT;
 "||"       return OR;
 "&&"       return AND;
 "^"        return XOR;

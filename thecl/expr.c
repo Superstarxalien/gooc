@@ -63,6 +63,7 @@ c1_expressions[] = {
     { GT,        11, NULL, 2, 0, "SS" }, /* s1 > s0 */
     { GTEQ,      12, NULL, 2, 0, "SS" }, /* s1 >= s0 */
     { NOT,       18, NULL, 2, 0,  "S" }, /* !s0 */
+    { B_NOT,     23, NULL, 2, 0,  "S" }, /* ~s0 */
     { OR,         6, NULL, 2, 0, "SS" }, /* s1 || s0 */
     { AND,        5, NULL, 2, 0, "SS" }, /* s1 && s0 */
     { XOR,       14, NULL, 2, 0, "SS" }, /* s1 ^ s0 */
