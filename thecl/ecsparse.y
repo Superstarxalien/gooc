@@ -790,7 +790,7 @@ Assignment:
         if ($3->type == EXPRESSION_VAL) {
             src_param = $3->value;
         } else {
-            expression_output(state, $3, 1);
+            expression_output(state, $3, 0);
             src_param = param_sp_new();
         }
         expression_free($3);
@@ -1399,20 +1399,17 @@ expression_output(
             ++c;
             child_expr = child_node->data;
             if (child_expr->type == EXPRESSION_VAL) {
-                if (val_param1 == NULL) {
+                if (c == 1) {
                     val_param1 = child_expr->value;
                     continue;
-                } else if (val_param2 == NULL && c <= 2) {
+                } else if (c == 2) {
                     if ((expression->has_double_param && !child_node->next) || !expression->has_double_param) {
                         val_param2 = child_expr->value;
                         continue;
                     }
                 }
             }
-            if (c <= 2)
-                list_prepend_new(push_list, child_expr);
-            else
-                list_append_new(push_list, child_expr);
+            list_append_new(push_list, child_expr);
         }
         list_for_each(push_list, child_expr) {
             expression_output(state, child_expr, 0);
@@ -1477,16 +1474,16 @@ expression_optimize(
         ++child_cnt;
     }
 
+    const expr_t* tmp_expr = expr_get_by_id(state->version, expression->id);
+
     /* TODO: handle some single-child expressions, such as sin or cos */
-    if (child_cnt != 2) return;
+    if (tmp_expr->stack_arity != 2) return;
 
     if (   child_expr_1->type != EXPRESSION_VAL
         || child_expr_2->type != EXPRESSION_VAL
         || child_expr_1->value->stack /* Variables are not acceptable, obviously. */
         || child_expr_2->value->stack
     ) return;
-
-    const expr_t* tmp_expr = expr_get_by_id(state->version, expression->id);
 
     thecl_param_t* param = param_new('S');
 
@@ -1511,10 +1508,10 @@ expression_optimize(
         break;
         case EQUAL:
             param->value.val.S = val1 == val2;
-        break;/*
+        break;
         case INEQUAL:
             param->value.val.S = val1 != val2;
-        break;*/
+        break;
         case LT:
             param->value.val.S = val1 < val2;
         break;

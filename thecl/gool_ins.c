@@ -39,27 +39,38 @@ c1_gool_ins_playframe_params(
 {
     thecl_param_t* param;
     if (!params) {
-        list_t* ret = list_new();
+        params = list_new();
 
         param = param_new('S');
         param->stack = 1;
         param->object_link = 0;
         param->value.val.S = field_get("animframe")->offset;
-        list_append_new(ret, param);
+        list_append_new(params, param);
 
         param = param_new('S');
-        param->value.val.S = 50;
-        list_append_new(ret, param);
+        param->value.val.S = 1;
+        list_append_new(params, param);
 
         param = param_new('S');
         param->value.val.S = 3;
-        list_append_new(ret, param);
+        list_append_new(params, param);
 
-        return ret;
+        return params;
     }
     else {
         size_t c = list_count(params);
-        if (c == 3) {
+        if (c == 1) {
+            param = param_new('S');
+            param->value.val.S = 1;
+            list_append_new(params, param);
+
+            param = param_new('S');
+            param->value.val.S = 3;
+            list_append_new(params, param);
+
+            return params;
+        }
+        else if (c == 3) {
             return params;
         }
         else {
@@ -152,7 +163,22 @@ c1_gool_ins_state_params(
         return params;
     }
     else {
-        fprintf(stderr, "%s: state: wrong number of arguments (expected 1 or 2, got %zu)\n", argv0, c);
+        fprintf(stderr, "%s: changestate: wrong number of arguments (expected at least 1, got %zu)\n", argv0, c);
+        return NULL;
+    }
+}
+
+static list_t*
+c1_gool_ins_setcolor_params(
+    list_t* params)
+{
+    thecl_param_t* param;
+    size_t c = list_count(params);
+    if (c == 3) {
+        return params;
+    }
+    else {
+        fprintf(stderr, "%s: setcolor: wrong number of arguments (expected 3, got %zu)\n", argv0, c);
         return NULL;
     }
 }
@@ -160,9 +186,10 @@ c1_gool_ins_state_params(
 static const gool_ins_t
 c1_gool_ins[] = {
      /* NAME               TYPE           ID     VA    POP   C                VALIDATE */
+     { "setcolor",    GOOL_INS_SET_COLOR,   36, false, false,  3, c1_gool_ins_setcolor_params },
+     { "anim",        GOOL_INS_ANIM,        39, false, false,  2, c1_gool_ins_anim_params },
      { "changestate", GOOL_INS_STATE,     0x82,  true, false,  1, c1_gool_ins_state_params },
      { "playtext",    GOOL_INS_PLAYTEXT,  0x83,  true,  true,  2, c1_gool_ins_playtext_params },
-     { "anim",        GOOL_INS_ANIM,        39, false, false,  2, c1_gool_ins_anim_params },
      { "playframe",   GOOL_INS_PLAYFRAME, 0x84,  true,  true,  3, c1_gool_ins_playframe_params },
      { NULL, 0, 0, NULL }
 };
