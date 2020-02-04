@@ -1877,12 +1877,9 @@ var_shorthand_assign(
     } else { /* WGL */
         const expr_t* expr = expr_get_by_symbol(state->version, GASSIGN);
 
-        thecl_instr_t* last_ins = list_tail(&state->current_sub->instrs);
-        list_del(&state->current_sub->instrs, state->current_sub->instrs.tail);
+        thecl_instr_t* last_ins = state->current_sub->instrs.tail->prev->data;
 
-        thecl_param_t* last_param = list_tail(&last_ins->params);
-        list_del(&last_ins->params, last_ins->params.tail);
-        thecl_instr_free(last_ins);
+        thecl_param_t* last_param = param_copy(list_tail(&last_ins->params));
 
         instr_add(state->current_sub, instr_new(state, expr->id, "pp", last_param, param_sp_new()));
     }
