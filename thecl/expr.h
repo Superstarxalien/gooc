@@ -39,9 +39,7 @@ typedef struct {
     char* param_format;
     size_t stack_arity;
     int has_double_param;
-    /* / can be used to separate several patterns ... or NULL to match anything
-     * ... maybe a special symbol for that would be better. */
-    char* stack_formats;
+    int allow_optim;
 } expr_t;
 
 /* Returns an expression by its symbol. */

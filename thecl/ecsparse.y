@@ -239,6 +239,8 @@ int yydebug = 0;
 %token TEST "\\"
 %token SEEK "seek"
 %token DEGSEEK "degseek"
+%token RAND "rand"
+%token TIME "time"
 
 %type <list> Instruction_Parameters_List
 %type <list> Instruction_Parameters
@@ -915,6 +917,9 @@ ExpressionSubset:
     | "seek" "(" Expression "," Expression "," Expression ")" { $$ = EXPR_3(SEEK, $3, $5, $7); }
     | "seek" "(" Expression "," Expression ")" { $$ = EXPR_2(SEEK, $3, $5); }
     | "degseek" "(" Expression "," Expression "," Expression ")" { $$ = EXPR_3(DEGSEEK, $3, $5, $7); }
+    | "rand" "(" Expression "," Expression ")" { $$ = EXPR_2(RAND, $3, $5); }
+    | "time" "(" Expression "," Expression ")" { $$ = EXPR_2(TIME, $3, $5); }
+    | "time" "(" Expression ")" { thecl_param_t* param = param_new('S'); param->value.val.S = 0; $$ = EXPR_2(TIME, $3, expression_load_new(state, param)); }
     | Expression "!="  Expression {
         $$ = EXPR_2(INEQUAL,  $1, $3);
         $$ = EXPR_2(NOT,      expression_load_new(state, param_sp_new()), $$);
@@ -1125,12 +1130,6 @@ instr_new_list(
 
     instr->id = id;
     if (list) {
-        int param_id = -1;
-        if(true)
-            list_for_each(list, param) if(param->is_expression_param) {
-                param->value.val.S = param_id;
-                param_id--;
-            }
         list_for_each(list, param) {
             ++instr->param_count;
             list_append_new(&instr->params, param);
@@ -1495,7 +1494,7 @@ expression_optimize(
     const expr_t* tmp_expr = expr_get_by_id(state->version, expression->id);
 
     /* TODO: handle some single-child expressions, such as sin or cos */
-    if (tmp_expr->stack_arity != 2) return;
+    if (tmp_expr->stack_arity != 2 || !tmp_expr->allow_optim) return;
 
     if (   child_expr_1->type != EXPRESSION_VAL
         || child_expr_2->type != EXPRESSION_VAL

@@ -122,6 +122,8 @@
 "\\"       return TEST;
 "seek"     return SEEK;
 "degseek"  return DEGSEEK;
+"time"     return TIME;
+"rand"     return RAND;
 
 (-|\+)?[0-9]+(\.[0-9]+)?\s*deg {
     yylval.integer = (int)(strtod(yytext, NULL) / 180.0 * 0x800);

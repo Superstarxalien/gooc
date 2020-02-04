@@ -105,6 +105,8 @@ static const id_format_pair_t th10_fmts[] = {
 
     { 27, "RR" },
 
+    { 29, "RR" },
+    { 30, "RR" },
     { 31, "RR" },
     { 32, "RR" },
 
