@@ -1870,8 +1870,22 @@ var_shorthand_assign(
     expression_free(expr_main);
     /* No need to free expr_load or expr, since they both got freed as children of expr_main. */
 
-    const expr_t* expr = expr_get_by_symbol(state->version, ASSIGN);
-    instr_add(state->current_sub, instr_new(state, expr->id, "pp", param, param_sp_new()));
+    if (param->stack != 2) {
+        const expr_t* expr = expr_get_by_symbol(state->version, ASSIGN);
+
+        instr_add(state->current_sub, instr_new(state, expr->id, "pp", param, param_sp_new()));
+    } else { /* WGL */
+        const expr_t* expr = expr_get_by_symbol(state->version, GASSIGN);
+
+        thecl_instr_t* last_ins = list_tail(&state->current_sub->instrs);
+        list_del(&state->current_sub->instrs, state->current_sub->instrs.tail);
+
+        thecl_param_t* last_param = list_tail(&last_ins->params);
+        list_del(&last_ins->params, last_ins->params.tail);
+        thecl_instr_free(last_ins);
+
+        instr_add(state->current_sub, instr_new(state, expr->id, "pp", last_param, param_sp_new()));
+    }
 }
 
 static void
