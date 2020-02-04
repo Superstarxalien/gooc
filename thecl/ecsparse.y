@@ -102,7 +102,9 @@ static thecl_variable_t* arg_create(parser_state_t* state, thecl_sub_t* sub, con
 /* Creates a new global variable. */
 static thecl_globalvar_t* globalvar_create(parser_state_t* state, const char* name);
 /* Creates a new variable in the specified subroutine. */
-static thecl_variable_t* var_create(parser_state_t* state, thecl_sub_t* sub, const char* name);
+static thecl_variable_t* var_create(parser_state_t* state, thecl_sub_t* sub, const char* name, bool push);
+/* Creates a new variable in the specified subroutine, and assigns a value to it. */
+static thecl_variable_t* var_create_assign(parser_state_t* state, thecl_sub_t* sub, const char* name, expression_t* expr);
 /* Returns true if the given variable is accessible in the current scope.. */
 static bool var_accessible(parser_state_t* state, thecl_variable_t* var);
 /* Returns argument of the given name in the specified sub, or NULL if the argument doesn't exist */
@@ -460,11 +462,19 @@ String_List:
 
 VarDeclaration:
       "var" IDENTIFIER {
-          var_create(state, state->current_sub, $2);
+          var_create(state, state->current_sub, $2, true);
+          free($2);
+      }
+    | "var" IDENTIFIER "=" Expression {
+          var_create_assign(state, state->current_sub, $2, $4);
           free($2);
       }
     | VarDeclaration "," IDENTIFIER {
-          var_create(state, state->current_sub, $3);
+          var_create(state, state->current_sub, $3, true);
+          free($3);
+      }
+    | VarDeclaration "," IDENTIFIER "=" Expression {
+          var_create_assign(state, state->current_sub, $3, $5);
           free($3);
       }
     ;
@@ -1777,7 +1787,8 @@ static thecl_variable_t*
 var_create(
     parser_state_t* state,
     thecl_sub_t* sub,
-    const char* name)
+    const char* name,
+    bool push)
 {
     if (var_exists(state, sub, name)) {
         yyerror(state, "redeclaration of variable: %s", name);
@@ -1796,8 +1807,35 @@ var_create(
     if (var->stack == sub->stack) /* Only increment the stack if the variable uses aa new offset. */
         ++sub->stack;
 
-    const expr_t* expr = expr_get_by_symbol(state->version, LOAD);
-    instr_add(state, sub, instr_new(state, expr->id, "p", param_sp_new()));
+    if (push) {
+        const expr_t* expr = expr_get_by_symbol(state->version, LOAD);
+        instr_add(state, sub, instr_new(state, expr->id, "p", param_sp_new()));
+    }
+
+    return var;
+}static thecl_variable_t*
+var_create_assign(
+    parser_state_t* state,
+    thecl_sub_t* sub,
+    const char* name,
+    expression_t* expr)
+{
+    thecl_variable_t* var = var_create(state, sub, name, false);
+    
+    thecl_param_t* param;
+    expression_optimize(state, expr);
+    if (expr->type == EXPRESSION_VAL) {
+        param = expr->value;
+    } else {
+        expression_output(state, expr, 0);
+        param = NULL;
+    }
+    expression_free(expr);
+
+    if (param != NULL) { /* if param is NULL, then an expression was pushed to stack, which is enough */
+        const expr_t* expr_assign = expr_get_by_symbol(state->version, ASSIGN);
+        instr_add(state, state->current_sub, instr_new(state, expr_assign->id, "pp", param_sp_new(), param));
+    }
 
     return var;
 }
