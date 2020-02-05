@@ -526,7 +526,7 @@ c1_compile(
             sub = th10_find_sub(ecl, interrupt->lambda_name);
             interrupt_val = 0x8000 | sub->start_offset;
             if (sub->arg_count < 1) {
-                fprintf(stderr, "%s: warning: interrupt %s sub '%s' may not have enough arguments\n", argv0, interrupt->event->name, interrupt->lambda_name);
+                fprintf(stderr, "%s: warning: interrupt %s sub '%s' does not have enough arguments\n", argv0, interrupt->event->name, interrupt->lambda_name);
             }
         }
         if (!file_write(out, &interrupt_val, sizeof(uint16_t)))
@@ -562,8 +562,8 @@ c1_compile(
             fprintf(stderr, "%s: warning: state %s has no code block\n", argv0, state->name);
         }
         if (state->event) {
-            if (state->event->arg_count < 1) {
-                fprintf(stderr, "%s: warning: state %s event block may not have enough arguments\n", argv0, state->name);
+            if (state->event->arg_count < 2) {
+                fprintf(stderr, "%s: warning: state %s event block does not have enough arguments\n", argv0, state->name);
             }
         }
         c1_state_t gstate = { state->stateflag, state->statusc, gool_pool_force_get_index(ecl, state->exe_eid),
