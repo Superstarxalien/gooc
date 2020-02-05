@@ -55,6 +55,7 @@ thecl_new(
     list_init(&ecl->states);
     list_init(&ecl->anims);
     list_init(&ecl->spawns);
+    list_init(&ecl->interrupts);
     ecl->vars = malloc(0);
     ecl->consts = malloc(0);
     ecl->var_count = 0;
@@ -102,6 +103,7 @@ thecl_free(
     thecl_state_t* state;
     list_for_each(&ecl->states, state) {
         free(state->name);
+        free(state);
     }
     list_free_nodes(&ecl->states);
 
@@ -110,8 +112,26 @@ thecl_free(
         free(anim->name);
 
         free(anim->anim);
+        free(anim);
     }
     list_free_nodes(&ecl->anims);
+
+    thecl_spawn_t* spawn;
+    list_for_each(&ecl->spawns, spawn) {
+        free(spawn->name);
+
+        free(spawn->state_name);
+        free(spawn);
+    }
+    list_free_nodes(&ecl->spawns);
+
+    thecl_interrupt_t* interrupt;
+    list_for_each(&ecl->interrupts, interrupt) {
+        free(interrupt->lambda_name);
+
+        free(interrupt);
+    }
+    list_free_nodes(&ecl->interrupts);
 
     free(ecl);
 }

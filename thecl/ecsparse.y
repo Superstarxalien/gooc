@@ -437,6 +437,11 @@ Interrupt_Body:
         state->current_interrupt->lambda_name = strdup($2);
         free($2);
       }
+    | "sub" IDENTIFIER {
+        state->current_interrupt->type = INTERRUPT_SUB;
+        state->current_interrupt->lambda_name = strdup($2);
+		free($2);
+      }
     | {
         char buf[256];
         snprintf(buf, 256, "%s_INTERRUPT_%i_%i", state->current_interrupt->event->name, yylloc.first_line, yylloc.first_column);
