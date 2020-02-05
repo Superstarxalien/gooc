@@ -191,11 +191,19 @@ c1_gool_ins_setcolor_params(
     return params;
 }
 
+static list_t*
+c1_gool_ins_nop_params(
+    list_t* params)
+{
+    return params;
+}
+
 static const gool_ins_t
 c1_gool_ins[] = {
      /* NAME               TYPE           ID     VA    POP   C                VALIDATE */
      { "setcolor",    GOOL_INS_SET_COLOR,   36, false, false,  3, c1_gool_ins_setcolor_params },
      { "anim",        GOOL_INS_ANIM,        39, false, false,  2, c1_gool_ins_anim_params },
+     { "nop",         GOOL_INS_NOP,       0x81, false, false,  0, c1_gool_ins_nop_params },
      { "changestate", GOOL_INS_STATE,     0x82,  true, false,  1, c1_gool_ins_state_params },
      { "playtext",    GOOL_INS_PLAYTEXT,  0x83,  true,  true,  2, c1_gool_ins_playtext_params },
      { "playframe",   GOOL_INS_PLAYFRAME, 0x84,  true,  true,  3, c1_gool_ins_playframe_params },
