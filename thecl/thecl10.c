@@ -526,7 +526,7 @@ c1_compile(
             sub = th10_find_sub(ecl, interrupt->lambda_name);
             interrupt_val = 0x8000 | sub->start_offset;
             if (sub->arg_count < 1) {
-                fprintf(stderr, "%s: warning: interrupt %s sub may not have enough arguments\n", argv0, interrupt->lambda_name);
+                fprintf(stderr, "%s: warning: interrupt %s sub '%s' may not have enough arguments\n", argv0, interrupt->event->name, interrupt->lambda_name);
             }
         }
         if (!file_write(out, &interrupt_val, sizeof(uint16_t)))
