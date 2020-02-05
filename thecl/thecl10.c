@@ -122,6 +122,10 @@ static const id_format_pair_t th10_fmts[] = {
     { 0x84, "RN4I6I2" },
 
     { 0x86, "I14N6I4" },
+
+    { 0x8A, "I6I6I8I4" },
+
+    { 0x91, "I6I6I8I4" },
     { 0, NULL }
 };
 
@@ -204,6 +208,7 @@ c1_parse(
 
     state.has_mips = false;
     state.state_count = 0;
+    state.spawn_count = 0;
     state.ins_ret = GOOL_RET_OP;
     state.ins_jal = GOOL_JAL_OP;
     state.ins_bra = GOOL_BRA_OP;

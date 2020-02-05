@@ -97,6 +97,7 @@ static void scope_begin(parser_state_t* state);
 /* Ends the most recently started scope. */
 static void scope_finish(parser_state_t* state);
 
+static expr_macro_t* macro_create(parser_state_t* state, const char* name, expression_t* expr);
 /* Creates a new argument in the specified subroutine. */
 static thecl_variable_t* arg_create(parser_state_t* state, thecl_sub_t* sub, const char* name);
 /* Creates a new global variable. */
@@ -123,6 +124,8 @@ static int var_exists(parser_state_t* state, thecl_sub_t* sub, const char* name)
 static void var_shorthand_assign(parser_state_t* state, thecl_param_t* param, expression_t* expr, int EXPR);
 /* Stores a new label in the current subroutine pointing to the current offset. */
 static void label_create(parser_state_t* state, char* label);
+/* Returns the spawn of the given name, or NULL if it doesn't exist */
+static thecl_variable_t* spawn_get(parser_state_t* state, const char* name);
 
 /* Creates a new param equivalent to a GOOL stack push/pop operand */
 static thecl_param_t* param_sp_new(void);
@@ -305,6 +308,11 @@ Statement:
             state->ecl->type = $4;
 
             state->ecl->is_defined = 1;
+            
+            /* automatically create an expression macro that translates the ename to the GOOL ID */
+            thecl_param_t* param = param_new('S');
+            param->value.val.S = $3;
+            macro_create(state, $2, expression_load_new(state, param));
         }
         free($1);
         free($2);
@@ -314,7 +322,9 @@ Statement:
             thecl_spawn_t* spawn = malloc(sizeof(thecl_spawn_t));
             spawn->name = strdup($2);
             spawn->state_name = strdup($3);
+            spawn->offset = state->spawn_count;
             list_append_new(&state->ecl->spawns, spawn);
+            ++state->spawn_count;
         }
         free($1);
         free($2);
@@ -329,10 +339,7 @@ Statement:
         free($3);
       }
     | EXPRESSION IDENTIFIER "=" Expression { /* expression macro */
-        expr_macro_t* macro = malloc(sizeof(expr_macro_t));
-        macro->name = strdup($2);
-        macro->expr = $4;
-        list_append_new(&state->expr_macros, macro);
+        macro_create(state, $2, $4);
         free($2);
       }
     | DIRECTIVE TEXT {
@@ -740,20 +747,23 @@ Instruction:
                 list_t* arg_list = list_new();
 
                 int argc = gool_ins->param_count;
-                list_node_t* node, *next_node;
-                list_for_each_node_safe($3, node, next_node) {
-                    if (argc-- > 0)
-                        list_append_new(param_list, node->data);
-                    else
-                        list_prepend_new(arg_list, node->data);
+                if ($3 != NULL) {
+                    list_node_t* node, *next_node;
+                    list_for_each_node_safe($3, node, next_node) {
+                        if (argc-- > 0)
+                            list_append_new(param_list, node->data);
+                        else
+                            list_prepend_new(arg_list, node->data);
+                    }
                 }
 
                 thecl_param_t* param;
                 list_for_each(arg_list, param) {
-                    instr_add(state, state->current_sub, instr_new(state, 22, "p", param));
+                    if (!(param->stack && param->object_link == 0 && param->value.val.S == 0x1F)) /* argument is already on the stack */
+                        instr_add(state, state->current_sub, instr_new(state, 22, "p", param));
                 }
 
-                instr_add(state, state->current_sub, instr_new_list(state, gool_ins->id, gool_ins->param_list_validate(param_list)));
+                instr_add(state, state->current_sub, instr_new_list(state, gool_ins->id, gool_ins->param_list_validate(param_list, list_count(arg_list))));
 
                 if (gool_ins->pop_args) {
                     if (argc = list_count(arg_list)) {
@@ -769,7 +779,7 @@ Instruction:
                 free(arg_list);
             }
             else
-                instr_add(state, state->current_sub, instr_new_list(state, gool_ins->id, gool_ins->param_list_validate($3)));
+                instr_add(state, state->current_sub, instr_new_list(state, gool_ins->id, gool_ins->param_list_validate($3, 0)));
         }
         else {
             instr_create_call(state, state->ins_jal, $1, $3, false);
@@ -862,22 +872,23 @@ Instruction_Parameters_List:
 Instruction_Parameter:
       Load_Type
     | ExpressionSubsetInstParam {
-          list_prepend_new(&state->expressions, $1);
+          if ($1->type == EXPRESSION_VAL) {
+              $$ = param_copy($1->value);
+          } else {
+              list_prepend_new(&state->expressions, $1);
 
-          $$ = param_new('S');
-          $$->stack = 1;
-          $$->object_link = 0;
-          $$->is_expression_param = 1;
-          $$->value.val.S = 0x1F;
+              $$ = param_new('S');
+              $$->stack = 1;
+              $$->object_link = 0;
+              $$->is_expression_param = 1;
+              $$->value.val.S = 0x1F;
+          }
       }
     ;
 
 Expression:
       ExpressionLoadType
     | ExpressionSubset
-    | MACRO {
-        $$ = expression_copy(macro_get(state, $1)->expr);
-      }
     ;
 
 ExpressionSubsetInstParam:
@@ -895,7 +906,8 @@ ExpressionLoadType:
 
 /* This is the lowest common denominator between expression-instructions and expression-parameters */
 ExpressionSubset:
-                  "(" Expression ")" { $$ = $2; }
+      MACRO { $$ = expression_copy(macro_get(state, $1)->expr); }
+    |             "(" Expression ")" { $$ = $2; }
     | Expression "+"   Expression { $$ = EXPR_2(ADD,      $1, $3); }
     | Expression "-"   Expression { $$ = EXPR_2(SUBTRACT, $1, $3); }
     | Expression "*"   Expression { $$ = EXPR_2(MULTIPLY, $1, $3); }
@@ -952,6 +964,7 @@ Address:
       IDENTIFIER {
         thecl_variable_t* arg;
         const field_t* gvar;
+        thecl_spawn_t* spawn;
         if (var_exists(state, state->current_sub, $1)) {
             $$ = param_new('S');
             $$->stack = 1;
@@ -965,46 +978,35 @@ Address:
             $$->stack = 2;
             const expr_t* expr = expr_get_by_symbol(state->version, GLOAD);
             instr_add(state, state->current_sub, instr_new(state, expr->id, "S", gvar->offset << 8));
+        } else if (spawn = spawn_get(state, $1)) {
+            $$ = param_new('S');
+            $$->value.val.S = spawn->offset;
         } else {
-            size_t anim_offset = 0;
-            bool found_spawn = false;
-            thecl_spawn_t* spawn;
-            list_for_each(&state->ecl->spawns, spawn) {
-                if (!strcmp(spawn->name, $1)) {
-                    found_spawn = true;
-                    break;
-                }
-                ++anim_offset;
-            }
-            if (found_spawn) {
+            const field_t* field = field_get($1);
+            if (field != NULL) {
                 $$ = param_new('S');
-                $$->value.val.S = anim_offset;
+                $$->stack = 1;
+                $$->value.val.S = field->offset;
+                $$->object_link = 0;
             } else {
-                const field_t* field = field_get($1);
-                if (field != NULL) {
+                thecl_globalvar_t* globalvar = globalvar_get(state, $1);
+                size_t anim_offset;
+                if (globalvar) {
                     $$ = param_new('S');
                     $$->stack = 1;
-                    $$->value.val.S = field->offset;
+                    $$->value.val.S = globalvar->offset + 64;
                     $$->object_link = 0;
+                } else if ((anim_offset = anim_get_offset(state, $1)) != 0xFFFF) {
+                    $$ = param_new('S');
+                    $$->value.val.S = anim_offset;
                 } else {
-                    thecl_globalvar_t* globalvar = globalvar_get(state, $1);
-                    if (globalvar) {
-                        $$ = param_new('S');
-                        $$->stack = 1;
-                        $$->value.val.S = globalvar->offset + 64;
-                        $$->object_link = 0;
-                    } else if ((anim_offset = anim_get_offset(state, $1)) != 0xFFFF) {
-                        $$ = param_new('S');
-                        $$->value.val.S = anim_offset;
-                    } else {
-                        if ((state->current_sub == NULL || strncmp($1, state->current_sub->name, strlen(state->current_sub->name)) != 0)
-                        ) {
-                            yyerror(state, "warning: %s not found as a variable, treating like a label or state instead.", $1);
-                        }
-                        $$ = param_new('o');
-                        $$->value.type = 'z';
-                        $$->value.val.z = strdup($1);
+                    if ((state->current_sub == NULL || strncmp($1, state->current_sub->name, strlen(state->current_sub->name)) != 0)
+                    ) {
+                        yyerror(state, "warning: %s not found as a variable, treating like a label or state instead.", $1);
                     }
+                    $$ = param_new('o');
+                    $$->value.type = 'z';
+                    $$->value.val.z = strdup($1);
                 }
             }
         }
@@ -1742,6 +1744,20 @@ var_get_new_stack(
     }
 }
 
+static expr_macro_t*
+macro_create(
+    parser_state_t* state,
+    const char* name,
+    expression_t* expr)
+{
+    expr_macro_t* macro = malloc(sizeof(expr_macro_t));
+    macro->name = strdup(name);
+    expression_optimize(state, expr);
+    macro->expr = expr;
+    list_append_new(&state->expr_macros, macro);
+    return macro;
+}
+
 static thecl_variable_t*
 arg_create(
     parser_state_t* state,
@@ -1815,7 +1831,9 @@ var_create(
     }
 
     return var;
-}static thecl_variable_t*
+}
+
+static thecl_variable_t*
 var_create_assign(
     parser_state_t* state,
     thecl_sub_t* sub,
@@ -1972,6 +1990,19 @@ label_create(
     list_prepend_new(&state->current_sub->labels, label);
     label->offset = state->current_sub->offset;
     strcpy(label->name, name);
+}
+
+static thecl_variable_t*
+spawn_get(
+    parser_state_t* state,
+    const char* name)
+{
+    thecl_spawn_t* spawn;
+    list_for_each(&state->ecl->spawns, spawn) {
+        if (!strcmp(name, spawn->name))
+            return spawn;
+    }
+    return NULL;
 }
 
 static int

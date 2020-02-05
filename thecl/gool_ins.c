@@ -35,12 +35,14 @@
 
 static list_t*
 c1_gool_ins_playframe_params(
-    list_t* params)
+    list_t* params,
+    int argc)
 {
     thecl_param_t* param;
-    if (!params) {
+    if (!params)
         params = list_new();
-
+    size_t c = list_count(params);
+    if (c == 0) {
         param = param_new('S');
         param->stack = 1;
         param->object_link = 0;
@@ -57,32 +59,30 @@ c1_gool_ins_playframe_params(
 
         return params;
     }
+    else if (c == 1) {
+        param = param_new('S');
+        param->value.val.S = 1;
+        list_append_new(params, param);
+
+        param = param_new('S');
+        param->value.val.S = 3;
+        list_append_new(params, param);
+
+        return params;
+    }
+    else if (c == 3) {
+        return params;
+    }
     else {
-        size_t c = list_count(params);
-        if (c == 1) {
-            param = param_new('S');
-            param->value.val.S = 1;
-            list_append_new(params, param);
-
-            param = param_new('S');
-            param->value.val.S = 3;
-            list_append_new(params, param);
-
-            return params;
-        }
-        else if (c == 3) {
-            return params;
-        }
-        else {
-            fprintf(stderr, "%s: playframe: wrong number of arguments (expected 3, got %zu)\n", argv0, c);
-            return NULL;
-        }
+        fprintf(stderr, "%s: playframe: wrong number of arguments (expected 0, 1 or 3+, got %zu)\n", argv0, c);
+        return NULL;
     }
 }
 
 static list_t*
 c1_gool_ins_anim_params(
-    list_t* params)
+    list_t* params,
+    int argc)
 {
     thecl_param_t* param;
     size_t c = list_count(params);
@@ -111,7 +111,8 @@ c1_gool_ins_anim_params(
 
 static list_t*
 c1_gool_ins_playtext_params(
-    list_t* params)
+    list_t* params,
+    int argc)
 {
     thecl_param_t* param;
     size_t c = list_count(params);
@@ -134,7 +135,8 @@ c1_gool_ins_playtext_params(
 
 static list_t*
 c1_gool_ins_state_params(
-    list_t* params)
+    list_t* params,
+    int argc)
 {
     thecl_param_t* param;
     size_t c = list_count(params);
@@ -170,7 +172,8 @@ c1_gool_ins_state_params(
 
 static list_t*
 c1_gool_ins_setcolor_params(
-    list_t* params)
+    list_t* params,
+    int argc)
 {
     thecl_param_t* param;
     size_t c = list_count(params);
@@ -193,20 +196,49 @@ c1_gool_ins_setcolor_params(
 
 static list_t*
 c1_gool_ins_nop_params(
-    list_t* params)
+    list_t* params,
+    int argc)
 {
     return params;
 }
 
+static list_t*
+c1_gool_ins_spawn_params(
+    list_t* params,
+    int argc)
+{
+    thecl_param_t* param;
+    size_t c = list_count(params);
+    if (c == 3) {
+        list_node_t *node, *next;
+        list_for_each_node_safe(params, node, next) {
+            list_prepend_new(params, node->data);
+            list_del(params, node);
+        }
+
+        param = param_new('S');
+        param->value.val.S = argc;
+        list_append_new(params, param);
+
+        return params;
+    }
+    else {
+        fprintf(stderr, "%s: spawn: wrong number of arguments (expected 1 or 2, got %zu)\n", argv0, c);
+        return NULL;
+    }
+}
+
 static const gool_ins_t
 c1_gool_ins[] = {
-     /* NAME            ID    VA    POP   C                VALIDATE */
+     /* NAME            ID    VA     POP    C              VALIDATE */
      { "setcolor",       36, false, false,  3, c1_gool_ins_setcolor_params },
      { "anim",           39, false, false,  2, c1_gool_ins_anim_params },
      { "nop",          0x81, false, false,  0, c1_gool_ins_nop_params },
      { "changestate",  0x82,  true, false,  1, c1_gool_ins_state_params },
      { "playtext",     0x83,  true,  true,  2, c1_gool_ins_playtext_params },
      { "playframe",    0x84,  true,  true,  3, c1_gool_ins_playframe_params },
+     { "spawn",        0x8A,  true, false,  3, c1_gool_ins_spawn_params },
+     { "tryspawn",     0x91,  true, false,  3, c1_gool_ins_spawn_params },
      { NULL, 0, 0, NULL }
 };
 

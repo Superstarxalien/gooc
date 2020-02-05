@@ -143,6 +143,7 @@ typedef struct {
 typedef struct {
     char* name;
     char* state_name;
+    size_t offset;
 } thecl_spawn_t;
 
 int32_t
@@ -230,6 +231,7 @@ typedef struct {
 
     int ins_offset;
     uint16_t state_count;
+    size_t spawn_count;
 
     uint8_t ins_ret;
     uint8_t ins_jal;

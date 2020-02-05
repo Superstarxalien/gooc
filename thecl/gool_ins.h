@@ -40,7 +40,7 @@ typedef struct {
     bool pop_args;
     int param_count;
 
-    list_t* (*param_list_validate)(list_t* params);
+    list_t* (*param_list_validate)(list_t* params, int argc);
 } gool_ins_t;
 
 /* Returns an expression by its symbol. */
