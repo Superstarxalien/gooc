@@ -194,6 +194,7 @@ int yydebug = 0;
 %token PARENTHESIS_CLOSE ")"
 %token DEREFERENCE "->"
 %token EXPRESSION "expr"
+%token LAMBDA "=>"
 %token ILLEGAL_TOKEN "illegal token"
 %token END_OF_FILE 0 "end of file"
 
@@ -301,6 +302,24 @@ Statement:
       State_Body {
         state_finish(state);
       }
+    | "event" IDENTIFIER "=>" {
+        const field_t* event = event_get(state->version, $2);
+        if (!event) {
+            yyerror(state, "unknown event: %s", $2);
+            free($2);
+            break;
+        }
+        
+        state->current_interrupt = malloc(sizeof(thecl_interrupt_t));
+        state->current_interrupt->event = event;
+        
+        free($2);
+      }
+      Interrupt_Body {
+        list_append_new(&state->ecl->interrupts, state->current_interrupt);
+
+        state->current_interrupt = NULL;
+      }
     | DIRECTIVE IDENTIFIER INTEGER INTEGER {
         if (!strcmp($1, "gool")){
             state->ecl->eid = gool_to_eid($2);
@@ -404,12 +423,33 @@ Statement:
 
 Subroutine_Body:
       "{" Instructions "}" {
-          state->current_sub->forward_declaration = false;
+        state->current_sub->forward_declaration = false;
       }
     ;
 
 State_Body:
       "{" State_Instructions "}"
+    ;
+    
+Interrupt_Body:
+      "state" IDENTIFIER {
+        state->current_interrupt->type = INTERRUPT_STATE;
+        state->current_interrupt->lambda_name = strdup($2);
+        free($2);
+      }
+    | {
+        char buf[256];
+        snprintf(buf, 256, "%s_INTERRUPT_%i_%i", state->current_interrupt->event->name, yylloc.first_line, yylloc.first_column);
+        
+        state->current_interrupt->type = INTERRUPT_SUB;
+        state->current_interrupt->lambda_name = strdup(buf);
+
+        sub_begin(state, buf);
+        state->current_sub->is_inline = false;
+      }
+      "(" ArgumentDeclaration ")" Subroutine_Body {
+        sub_finish(state);
+      }
     ;
 
 GlobalVarDeclaration:
@@ -517,7 +557,6 @@ State_Instructions:
       Subroutine_Body {
         sub_finish(state);
       }
-    ;
     | State_Instructions "code" {
         if (state->current_state->code)
             yyerror(state, "duplicate code block in state: %s", state->current_state->name);
@@ -526,6 +565,18 @@ State_Instructions:
         sub_begin(state, buf);
         state->current_sub->is_inline = false;
         state->current_state->code = state->current_sub;
+      }
+      "(" ArgumentDeclaration ")" Subroutine_Body {
+        sub_finish(state);
+      }
+    | State_Instructions "event" {
+        if (state->current_state->event)
+            yyerror(state, "duplicate event block in state: %s", state->current_state->name);
+        char buf[256];
+        snprintf(buf, 256, "%s_EVENT_%i_%i", state->current_state->name, yylloc.first_line, yylloc.first_column);
+        sub_begin(state, buf);
+        state->current_sub->is_inline = false;
+        state->current_state->event = state->current_sub;
       }
       "(" ArgumentDeclaration ")" Subroutine_Body {
         sub_finish(state);
@@ -1604,6 +1655,7 @@ state_begin(
     gstate->name = strdup(name);
     gstate->code = NULL;
     gstate->trans = NULL;
+    gstate->event = NULL;
     gstate->exe_eid = state->ecl->eid;
     gstate->stateflag = 1;
     gstate->statusc = 2;

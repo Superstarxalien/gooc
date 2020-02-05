@@ -70,6 +70,7 @@
 "("        return PARENTHESIS_OPEN;
 ")"        return PARENTHESIS_CLOSE;
 "->"       return DEREFERENCE;
+"=>"       return LAMBDA;
 "sub"      return SUB;
 "var"      return VAR;
 "trans"    return TRANS;
@@ -151,12 +152,12 @@
     return GOOL_INTEGER;
 }
 (-|\+)?0x[0-9a-fA-F]+ {
-    yylval.integer = strtol(yytext, NULL, 16);
+    yylval.integer = strtoul(yytext, NULL, 16);
     return INTEGER;
 }
 (-|\+)?0b[0-1]+ {
     bool hasSign = yytext[0] == '-' || yytext[0] == '+';
-    yylval.integer = strtol(yytext + (hasSign ? 3 : 2), NULL, 2);
+    yylval.integer = strtoul(yytext + (hasSign ? 3 : 2), NULL, 2);
     if (yytext[0] == '-') yylval.integer = -yylval.integer;
     return INTEGER;
 }

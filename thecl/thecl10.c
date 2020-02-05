@@ -496,6 +496,44 @@ c1_compile(
     entry_header.offsets[3] = file_tell(out);
 
     /* write interrupts here */
+    size_t pos = file_tell(out);
+    thecl_interrupt_t* interrupt;
+    list_for_each(&ecl->interrupts, interrupt) {
+        while (header.interrupt_count <= interrupt->event->offset) {
+            ++header.interrupt_count;
+            uint16_t state_id = 255;
+            if (!file_write(out, &state_id, sizeof(uint16_t)))
+                return 0;
+        }
+        if (!file_seek(out, pos + interrupt->event->offset * 2))
+            return 0;
+        uint16_t interrupt_val;
+        if (interrupt->type == INTERRUPT_STATE) {
+            state = c1_find_state(ecl, interrupt->lambda_name);
+            if (state == NULL) {
+                fprintf(stderr, "%s: state for interrupt %s not found: %s\n", argv0, interrupt->event->name, interrupt->lambda_name);
+                interrupt_val = 255;
+            }
+            else {
+                interrupt_val = state->index;
+                if (state->index == 255) { /* lol */
+                    fprintf(stderr, "%s: state '%s' for interrupt %s has index 255 and will be ignored. consider using less states.\n",
+                        argv0, interrupt->lambda_name, interrupt->event->name);
+                }
+            }
+        }
+        else if (interrupt->type == INTERRUPT_SUB) {
+            sub = th10_find_sub(ecl, interrupt->lambda_name);
+            interrupt_val = 0x8000 | sub->start_offset;
+            if (sub->arg_count < 1) {
+                fprintf(stderr, "%s: warning: interrupt %s sub may not have enough arguments\n", argv0, interrupt->lambda_name);
+            }
+        }
+        if (!file_write(out, &interrupt_val, sizeof(uint16_t)))
+            return 0;
+    }
+    if (!file_seek(out, pos + header.interrupt_count * 2))
+        return 0;
 
     thecl_spawn_t* spawn;
     list_for_each(&ecl->spawns, spawn) {
@@ -510,7 +548,7 @@ c1_compile(
                 return 0;
         }
     }
-    size_t pos = file_tell(out) % 4;
+    pos = file_tell(out) % 4;
     if (pos != 0) {
         uint32_t a = 0;
         if (!file_write(out, &a, 4 - pos))
@@ -523,8 +561,13 @@ c1_compile(
         if (!state->code) {
             fprintf(stderr, "%s: warning: state %s has no code block\n", argv0, state->name);
         }
+        if (state->event) {
+            if (state->event->arg_count < 1) {
+                fprintf(stderr, "%s: warning: state %s event block may not have enough arguments\n", argv0, state->name);
+            }
+        }
         c1_state_t gstate = { state->stateflag, state->statusc, gool_pool_force_get_index(ecl, state->exe_eid),
-            0x3FFFU,
+            state->event == NULL ? 0x3FFFU : state->event->start_offset,
             state->trans == NULL ? 0x3FFFU : state->trans->start_offset,
             state->code == NULL ? 0x3FFFU : state->code->start_offset };
 
@@ -546,6 +589,11 @@ c1_compile(
     }
 
     entry_header.offsets[6] = file_tell(out);
+
+    if (!file_seek(out, entry_header.offsets[0]))
+        return 0;
+    if (!file_write(out, &header, sizeof(c1_gool_header_t)))
+        return 0;
 
     if (!file_seek(out, 0))
         return 0;

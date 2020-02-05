@@ -42,4 +42,7 @@ const field_t* field_get(char* name);
 /* Returns a global GOOL variable by its name. */
 const field_t* gvar_get(unsigned int version, char* name);
 
+/* Returns a global GOOL event by its name. */
+const field_t* event_get(unsigned int version, char* name);
+
 #endif

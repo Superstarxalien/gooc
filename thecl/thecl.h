@@ -35,6 +35,7 @@
 #include "list.h"
 #include "value.h"
 #include "util.h"
+#include "field.h"
 
 extern const char* gool_ename_charmap;
 extern const int gool_null_eid;
@@ -131,6 +132,7 @@ typedef struct {
 
     thecl_sub_t* code;
     thecl_sub_t* trans;
+    thecl_sub_t* event;
 
     uint32_t exe_eid;
 
@@ -145,6 +147,17 @@ typedef struct {
     char* state_name;
     size_t offset;
 } thecl_spawn_t;
+
+typedef enum {
+    INTERRUPT_SUB,
+    INTERRUPT_STATE
+} thecl_interrupt_type;
+
+typedef struct {
+    const field_t* event;
+    enum thecl_interrupt_type type;
+    char* lambda_name;
+} thecl_interrupt_t;
 
 int32_t
 label_offset(
@@ -175,6 +188,7 @@ typedef struct {
     size_t var_count;
     thecl_globalvar_t** vars;
 
+    list_t interrupts;
     list_t spawns;
 
     list_t states;
@@ -223,6 +237,7 @@ typedef struct {
     int scope_id;
     thecl_sub_t* current_sub;
     thecl_state_t* current_state;
+    thecl_interrupt_t* current_interrupt;
     gool_anim_t* current_anim;
     thecl_t* ecl;
     int path_cnt;
