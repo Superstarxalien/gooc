@@ -110,6 +110,40 @@ c1_gool_ins_anim_params(
 }
 
 static list_t*
+c1_gool_ins_playanim_params(
+    list_t* params,
+    int argc)
+{
+    thecl_param_t* param;
+    size_t c = list_count(params);
+    if (c == 2) {
+        param = param_new('S');
+        param->value.val.S = 1;
+        list_append_new(params, param);
+
+        param = param_new('S');
+        param->value.val.S = 3;
+        list_append_new(params, param);
+
+        return params;
+    }
+    else if (c == 3) {
+        param = param_new('S');
+        param->value.val.S = 1;
+        list_append_new(params, param);
+
+        return params;
+    }
+    else if (c == 4) {
+        return params;
+    }
+    else {
+        fprintf(stderr, "%s: playtext: wrong number of arguments (expected 2, 3 or 4, got %zu)\n", argv0, c);
+        return NULL;
+    }
+}
+
+static list_t*
 c1_gool_ins_playtext_params(
     list_t* params,
     int argc)
@@ -235,6 +269,7 @@ c1_gool_ins[] = {
      { "anim",           39, false, false,  2, c1_gool_ins_anim_params },
      { "nop",          0x81, false, false,  0, c1_gool_ins_nop_params },
      { "changestate",  0x82,  true, false,  1, c1_gool_ins_state_params },
+     { "playanim",     0x83,  true,  true,  4, c1_gool_ins_playanim_params },
      { "playtext",     0x83,  true,  true,  2, c1_gool_ins_playtext_params },
      { "playframe",    0x84,  true,  true,  3, c1_gool_ins_playframe_params },
      { "spawn",        0x8A,  true, false,  3, c1_gool_ins_spawn_params },

@@ -449,7 +449,7 @@ c1_compile(
     FILE* out)
 {
     c1_entry_header_t entry_header = { 0x100FFFFU, ecl->eid, 11U, 6U, { 0, 0, 0, 0, 0, 0, 0 } };
-    c1_gool_header_t header = { ecl->id, ecl->type << 8, 1, ecl->var_count + 0x40, 0, 8 };
+    c1_gool_header_t header = { ecl->id, ecl->type << 8, 1, ecl->var_count + 0x40, 0, 3 };
     thecl_sub_t* sub;
     thecl_state_t* state;
     gool_anim_t* anim;

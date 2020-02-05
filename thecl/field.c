@@ -88,7 +88,7 @@ gool_fields[] = {
     { "groundtime",   52 },
     { "groundvel",    53 },
     { "zindex",       54 },
-    { "event",        55 },
+    { "eventreceived",55 },
     { "camzoom",      56 },
     { "yzapproach",   57 },
     { "density",      58 },
