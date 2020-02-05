@@ -74,6 +74,7 @@ c1_expressions[] = {
     { RAND,      16, NULL, 2, 0, 0 }, /* rand(s0, s1) */
     { TIME,      30, NULL, 2, 0, 0 }, /* time(s0, s1) */
     { SEEK,      34, NULL, 3, 1, 0 }, /* seek(s0, s1, s2) */
+    { GETCOLOR,  35, NULL, 2, 0, 0 }, /* getcolor(s0, s1) */
     { DEGSEEK,   37, NULL, 3, 1, 0 }, /* degseek(s0, s1, s2) */
     { 0,          0, NULL, 0, 0, NULL }
 };

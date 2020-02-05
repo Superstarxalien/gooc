@@ -241,6 +241,7 @@ int yydebug = 0;
 %token DEGSEEK "degseek"
 %token RAND "rand"
 %token TIME "time"
+%token GETCOLOR "getcolor"
 
 %type <list> Instruction_Parameters_List
 %type <list> Instruction_Parameters
@@ -920,6 +921,8 @@ ExpressionSubset:
     | "rand" "(" Expression "," Expression ")" { $$ = EXPR_2(RAND, $3, $5); }
     | "time" "(" Expression "," Expression ")" { $$ = EXPR_2(TIME, $3, $5); }
     | "time" "(" Expression ")" { thecl_param_t* param = param_new('S'); param->value.val.S = 0; $$ = EXPR_2(TIME, $3, expression_load_new(state, param)); }
+    | "getcolor" "(" Expression "," Expression ")" { $$ = EXPR_2(GETCOLOR, $3, $5); }
+    | "getcolor" "(" Expression ")" { thecl_param_t* param = param_new('S'); param->value.val.S = 0; $$ = EXPR_2(GETCOLOR, expression_load_new(state, param), $3); }
     | Expression "!="  Expression {
         $$ = EXPR_2(INEQUAL,  $1, $3);
         $$ = EXPR_2(NOT,      expression_load_new(state, param_sp_new()), $$);
