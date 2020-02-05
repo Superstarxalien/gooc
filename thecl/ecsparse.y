@@ -183,7 +183,6 @@ int yydebug = 0;
 %token VAR "var"
 %token RETURN "return"
 %token STATE "state"
-%token STATUSC "statusc"
 %token CODE "code"
 %token TRANS "trans"
 %token EVENT "event"
@@ -548,8 +547,17 @@ ArgumentDeclaration:
 
 State_Instructions:
     %empty
-    | State_Instructions "state" INTEGER { state->current_state->stateflag = $3; }
-    | State_Instructions "statusc" INTEGER { state->current_state->statusc = $3; }
+    | State_Instructions IDENTIFIER INTEGER
+	  {
+		if (!strcmp($2, "stateflag"))
+			state->current_state->stateflag = $3;
+		else if (!strcmp($2, "statusc"))
+			state->current_state->statusc = $3;
+		else {
+			yyerror("syntax error, unpexpected %s in state body", $2);
+		}
+		free($2);
+	  }
     | State_Instructions "trans" {
         if (state->current_state->trans)
             yyerror(state, "duplicate trans block in state: %s", state->current_state->name);
@@ -1075,13 +1083,13 @@ Address:
             yyerror(state, "object link not found: %s", $1);
             free($1);
             free($3);
-            return NULL;
+            return 1;
         }
         if (field == NULL) {
             yyerror(state, "object field not found: %s", $3);
             free($1);
             free($3);
-            return NULL;
+            return 1;
         }
         if (link->offset >= 8 || link->offset < 0) {
             yyerror(state, "invalid object link: %s", $1);

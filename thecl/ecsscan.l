@@ -79,7 +79,6 @@
 "event"    return EVENT;
 "state"    return STATE;
 "return"   return RETURN;
-"statusc"  return STATUSC;
 "expr"     return EXPRESSION;
 
 "goto"     return GOTO;

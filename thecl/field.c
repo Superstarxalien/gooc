@@ -194,17 +194,17 @@ gvar_get(
 
 static const field_t
 c1_gool_events[] = {
-    { "Event00",         0 },
+    { "EventJumpedOn",         0 },
     { "Event01",         1 },
     { "Event02",         2 },
-    { "Event03",         3 },
-    { "Event04",         4 },
+    { "EventExploded",         3 },
+    { "EventAttacked",         4 },
     { "Event05",         5 },
     { "Event06",         6 },
     { "Event07",         7 },
     { "Event08",         8 },
     { "Event09",         9 },
-    { "Event10",        10 },
+    { "EventHitInvincible",   10 },
     { "Event11",        11 },
     { "Event12",        12 },
     { "Event13",        13 },
@@ -217,7 +217,7 @@ c1_gool_events[] = {
     { "Event20",        20 },
     { "Event21",        21 },
     { "Event22",        22 },
-    { "Event23",        23 },
+    { "EventKilled",          23 },
     { "Event24",        24 },
     { "Event25",        25 },
     { "Event26",        26 },
@@ -237,7 +237,7 @@ c1_gool_events[] = {
     { "Event40",        40 },
     { "Event41",        41 },
     { "Event42",        42 },
-    { "Event43",        43 },
+    { "EventPlayerDamage",    43 },
     { "Event44",        44 },
 
     { NULL, 0 }
