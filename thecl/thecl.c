@@ -41,6 +41,7 @@ const int gool_null_eid = 0x6396347F;
 const char* gool_null_ename = "NONE!";
 
 parser_state_t* g_parser_state = NULL;
+int g_rate = 30; /* ntsc default */
 
 extern const thecl_module_t c1_gool;
 
@@ -290,12 +291,15 @@ free_globals(void)
 static void
 print_usage(void)
 {
-    printf("Usage: %s [-V] [[-c] VERSION]... [INPUT [OUTPUT]]\n"
+    printf("Usage: %s [-V] [[-c] VERSION] [-m MODE]... [INPUT [OUTPUT]]\n"
            "Options:\n"
            "  -c  create ECL file\n"
            "  -V  display version information and exit\n"
+           "  -m  set the display mode, used for specific time and frame calculations\n"
            "VERSION can be:\n"
            "  1\n"
+           "MODE can be:\n"
+           "  ntsc, pal\n"
            /* NEWHU: */
            "Report bugs to <" PACKAGE_BUGREPORT ">.\n", argv0);
 }
@@ -318,7 +322,7 @@ main(int argc, char* argv[])
     int opt;
     int ind=0;
     while(argv[util_optind]) {
-        switch(opt = util_getopt(argc, argv, ":c:V")) {
+        switch(opt = util_getopt(argc, argv, ":c:Vm:")) {
         case 'c':
             if(mode != -1) {
                 fprintf(stderr,"%s: More than one mode specified\n", argv0);
@@ -327,6 +331,19 @@ main(int argc, char* argv[])
             }
             mode = opt;
             version = parse_version(util_optarg);
+            break;
+        case 'm':
+            if (!strcmp(util_optarg, "ntsc")) {
+                g_rate = 30;
+            }
+            else if (!strcmp(util_optarg, "pal")) {
+                g_rate = 25;
+            }
+            else {
+                fprintf(stderr,"%s: Invalid display mode specified\n", argv0);
+                print_usage();
+                exit(1);
+            }
             break;
         default:
             util_getopt_default(&ind,argv,opt,print_usage);

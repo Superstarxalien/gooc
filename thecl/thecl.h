@@ -256,6 +256,7 @@ typedef struct {
 } parser_state_t;
 
 extern parser_state_t* g_parser_state;
+extern int g_rate;
 
 enum expression_type {
     EXPRESSION_OP,

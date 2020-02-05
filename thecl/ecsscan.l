@@ -171,6 +171,13 @@
     yylval.integer = 0x100;
     return INTEGER;
 }
+"s" |
+"sec" |
+"second" {
+	/* framerate shortcut */
+	yylval.integer = g_rate;
+	return INTEGER;
+}
 
 [a-zA-Z_][a-zA-Z0-9_]* {
     yylval.string = strdup(yytext);
