@@ -33,18 +33,8 @@
 #include <stddef.h>
 #include "list.h"
 
-typedef enum {
-    GOOL_INS_STATE,
-    GOOL_INS_PLAYTEXT,
-    GOOL_INS_SET_COLOR,
-    GOOL_INS_NOP,
-    GOOL_INS_ANIM,
-    GOOL_INS_PLAYFRAME
-} gool_ins_type;
-
 typedef struct {
     char* name;
-    enum gool_ins_type type;
     uint8_t id;
     bool varargs;
     bool pop_args;
