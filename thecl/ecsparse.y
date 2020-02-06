@@ -1136,10 +1136,10 @@ Load_Type:
       Address
     | Integer
     ;
-	
+    
 Pointer_Type:
-	  Entry
-	;
+      Entry
+    ;
 
 %%
 
