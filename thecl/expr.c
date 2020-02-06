@@ -46,8 +46,9 @@ c1_expressions[] = {
     { UNLESS,  0x82,  "o", 1, 0, 0 }, /* unless (s0) goto p0 */
     { IF,      0x82,  "o", 1, 0, 0 }, /* if (s0) goto p0 */
 
-    { GLOAD,     31,  "S", 0, 0, 0 }, /* p0 */
     { LOAD,      22,  "S", 0, 0, 0 }, /* p0 */
+    { GLOAD,     31,  "S", 0, 0, 0 }, /* p0 */
+    { PLOAD,     38,  "S", 0, 0, 0 }, /* [p0] */
     { GASSIGN,   32,  "S", 1, 0, 0 }, /* p0 = s0 */
     { ASSIGN,    17,  "S", 1, 0, 0 }, /* p0 = s0 */
 
@@ -101,7 +102,7 @@ expr_get_by_symbol(
 {
     const expr_t* ret = NULL;
 
-    if (!ret) ret = expr_get_by_symbol_from_table(c1_expressions, symbol);
+    if (!ret && version == 1) ret = expr_get_by_symbol_from_table(c1_expressions, symbol);
 
     return ret;
 }

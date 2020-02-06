@@ -60,6 +60,7 @@ static void instr_prepend(thecl_sub_t* sub, thecl_instr_t* instr);
 static bool instr_create_call(parser_state_t *state, uint8_t type, char *name, list_t *params, bool needs_ret);
 
 static expression_t* expression_load_new(const parser_state_t* state, thecl_param_t* value);
+static expression_t* expression_pointer_new(const parser_state_t* state, thecl_param_t* value);
 static expression_t* expression_operation_new(const parser_state_t* state, const int symbol, expression_t** operands);
 static expression_t* expression_ternary_new(/*const parser_state_t* state, */expression_t* condition, expression_t* val1, expression_t* val2);
 
@@ -205,6 +206,7 @@ int yydebug = 0;
 %token KILL
 %token LOAD
 %token GLOAD
+%token PLOAD
 %token ASSIGN "="
 %token GASSIGN
 %token ASSIGNADD "+="
@@ -258,8 +260,10 @@ int yydebug = 0;
 %type <param> Instruction_Parameter
 %type <param> Address
 %type <param> Integer
+%type <param> Entry
 //%type <param> Text
 %type <param> Load_Type
+%type <param> Pointer_Type
 
 %left QUESTION
 %left OR
@@ -935,6 +939,7 @@ Instruction_Parameters_List:
 
 Instruction_Parameter:
       Load_Type
+    | Pointer_Type
     | ExpressionSubsetInstParam {
           if ($1->type == EXPRESSION_VAL) {
               $$ = param_copy($1->value);
@@ -966,6 +971,7 @@ ExpressionSubsetInstruction:
 
 ExpressionLoadType:
       Load_Type                      { $$ = expression_load_new(state, $1); }
+    | Pointer_Type                   { $$ = expression_pointer_new(state, $1); }
     ;
 
 /* This is the lowest common denominator between expression-instructions and expression-parameters */
@@ -1129,8 +1135,11 @@ Entry:
 Load_Type:
       Address
     | Integer
-    | Entry
     ;
+	
+Pointer_Type:
+	  Entry
+	;
 
 %%
 
@@ -1392,6 +1401,19 @@ expression_load_new(
 {
     expression_t* ret = malloc(sizeof(expression_t));
     const expr_t* expr = expr_get_by_symbol(state->version, LOAD);
+    ret->type = EXPRESSION_VAL;
+    ret->id = expr->id;
+    ret->value = value;
+    return ret;
+}
+
+static expression_t*
+expression_pointer_new(
+    const parser_state_t* state,
+    thecl_param_t* value)
+{
+    expression_t* ret = malloc(sizeof(expression_t));
+    const expr_t* expr = expr_get_by_symbol(state->version, PLOAD);
     ret->type = EXPRESSION_VAL;
     ret->id = expr->id;
     ret->value = value;
