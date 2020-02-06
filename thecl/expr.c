@@ -72,6 +72,7 @@ c1_expressions[] = {
     { SHIFT,     21, NULL, 2, 0, 1 }, /* s1 << s0 */
     { TEST,      15, NULL, 2, 0, 1 }, /* s1 has s0 */
     { RAND,      16, NULL, 2, 0, 0 }, /* rand(s0, s1) */
+    { ABS,       25, NULL, 1, 0, 0 }, /* abs(s0) */
     { TIME,      30, NULL, 2, 0, 0 }, /* time(s0, s1) */
     { SEEK,      34, NULL, 3, 1, 0 }, /* seek(s0, s1, s2) */
     { GETCOLOR,  35, NULL, 2, 0, 0 }, /* getcolor(s0, s1) */

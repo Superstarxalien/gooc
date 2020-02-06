@@ -120,6 +120,7 @@
 "&"        return B_AND;
 "<<"       return SHIFT;
 "\\"       return TEST;
+"abs"      return ABS;
 "seek"     return SEEK;
 "degseek"  return DEGSEEK;
 "time"     return TIME;

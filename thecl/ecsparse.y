@@ -240,6 +240,7 @@ int yydebug = 0;
 %token B_AND "&"
 %token SHIFT "<<"
 %token TEST "\\"
+%token ABS "abs"
 %token SEEK "seek"
 %token DEGSEEK "degseek"
 %token RAND "rand"
@@ -276,6 +277,7 @@ int yydebug = 0;
 %left ADD SUBTRACT
 %left MULTIPLY DIVIDE MODULO
 %precedence NOT B_NOT
+%precedence ABS
 
 %expect 1
 %%
@@ -877,7 +879,8 @@ Assignment:
         thecl_param_t* src_param;
         const expr_t* expr_notl = expr_get_by_symbol(state->version, NOT);
         const expr_t* expr_notb = expr_get_by_symbol(state->version, B_NOT);
-        bool is_unary = $3->id == expr_notl->id || $3->id == expr_notb->id;
+        const expr_t* expr_abs = expr_get_by_symbol(state->version, ABS);
+        bool is_unary = $3->id == expr_notl->id || $3->id == expr_notb->id || $3->id == expr_abs->id;
         if ($3->type == EXPRESSION_VAL && ($1->stack != 2 || ($1->stack == 2 && !is_unary))) {
             src_param = $3->value;
         } else {
@@ -991,6 +994,7 @@ ExpressionSubset:
     | Expression "&"   Expression { $$ = EXPR_2(B_AND,    $1, $3); }
     | Expression "<<"  Expression { $$ = EXPR_2(SHIFT,    $1, $3); }
     | Expression "\\"  Expression { $$ = EXPR_2(TEST,     $1, $3); }
+    | "abs" "(" Expression ")"    { $$ = EXPR_2(B_NOT,    expression_load_new(state, param_sp_new()), $3); }
     | "seek" "(" Expression "," Expression "," Expression ")" { $$ = EXPR_3(SEEK, $3, $5, $7); }
     | "seek" "(" Expression "," Expression ")" { $$ = EXPR_2(SEEK, $3, $5); }
     | "degseek" "(" Expression "," Expression "," Expression ")" { $$ = EXPR_3(DEGSEEK, $3, $5, $7); }
