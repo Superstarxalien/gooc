@@ -125,6 +125,7 @@
 "degseek"  return DEGSEEK;
 "time"     return TIME;
 "rand"     return RAND;
+"path"     return PATH;
 "getcolor" return GETCOLOR;
 
 (-|\+)?[0-9]+(\.[0-9]+)?\s*deg {

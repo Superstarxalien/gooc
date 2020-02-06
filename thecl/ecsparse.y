@@ -243,6 +243,7 @@ int yydebug = 0;
 %token SEEK "seek"
 %token DEGSEEK "degseek"
 %token RAND "rand"
+%token PATH "path"
 %token TIME "time"
 %token GETCOLOR "getcolor"
 
@@ -827,15 +828,15 @@ Instruction:
                 thecl_param_t* param;
                 list_for_each(arg_list, param) {
                     if (!(param->stack && param->object_link == 0 && param->value.val.S == 0x1F)) { /* argument is already on the stack */
-						if (param->object_link == -3) {
-							const expr_t* expr = expr_get_by_symbol(state->version, PLOAD);
-							instr_add(state, state->current_sub, instr_new(state, expr->id, "p", param));
-						}
-						else {
-							const expr_t* expr = expr_get_by_symbol(state->version, LOAD);
-							instr_add(state, state->current_sub, instr_new(state, expr->id, "p", param));
-						}
-					}
+                        if (param->object_link == -3) {
+                            const expr_t* expr = expr_get_by_symbol(state->version, PLOAD);
+                            instr_add(state, state->current_sub, instr_new(state, expr->id, "p", param));
+                        }
+                        else {
+                            const expr_t* expr = expr_get_by_symbol(state->version, LOAD);
+                            instr_add(state, state->current_sub, instr_new(state, expr->id, "p", param));
+                        }
+                    }
                 }
 
                 instr_add(state, state->current_sub, instr_new_list(state, gool_ins->id, gool_ins->param_list_validate(param_list, list_count(arg_list))));
@@ -1006,11 +1007,14 @@ ExpressionSubset:
     | Expression "<<"  Expression { $$ = EXPR_2(SHIFT,    $1, $3); }
     | Expression "\\"  Expression { $$ = EXPR_2(TEST,     $1, $3); }
     | "abs" "(" Expression ")"    { $$ = EXPR_2(ABS,    expression_load_new(state, param_sp_new()), $3); }
-    | "seek" "(" Expression "," Expression "," Expression ")" { $$ = EXPR_3(SEEK, $3, $5, $7); }
-    | "seek" "(" Expression "," Expression ")" { $$ = EXPR_2(SEEK, $3, $5); }
+    | "seek" "(" Expression "," Expression "," Expression ")"    { $$ = EXPR_3(SEEK, $3, $5, $7); }
+    | "seek" "(" Expression "," Expression ")"                   { $$ = EXPR_2(SEEK, $3, $5); }
     | "degseek" "(" Expression "," Expression "," Expression ")" { $$ = EXPR_3(DEGSEEK, $3, $5, $7); }
-    | "rand" "(" Expression "," Expression ")" { $$ = EXPR_2(RAND, $3, $5); }
-    | "time" "(" Expression "," Expression ")" { $$ = EXPR_2(TIME, $3, $5); }
+    | "degseek" "(" Expression "," Expression ")"                { $$ = EXPR_2(DEGSEEK, $3, $5); }
+    | "rand" "(" Expression "," Expression ")"                   { $$ = EXPR_2(RAND, $3, $5); }
+    | "path" "(" Expression "," Expression "," Expression ")"    { $$ = EXPR_3(PATH, $3, $5, $7); }
+    | "path" "(" Expression "," Expression ")"                   { $$ = EXPR_2(PATH, $3, $5); }
+    | "time" "(" Expression "," Expression ")"                   { $$ = EXPR_2(TIME, $3, $5); }
     | "time" "(" Expression ")" { thecl_param_t* param = param_new('S'); param->value.val.S = 0; $$ = EXPR_2(TIME, $3, expression_load_new(state, param)); }
     | "getcolor" "(" Expression "," Expression ")" { $$ = EXPR_2(GETCOLOR, $3, $5); }
     | "getcolor" "(" Expression ")" { thecl_param_t* param = param_new('S'); param->value.val.S = 0; $$ = EXPR_2(GETCOLOR, expression_load_new(state, param), $3); }
@@ -1243,7 +1247,7 @@ instr_add(
     thecl_sub_t* sub,
     thecl_instr_t* instr)
 {
-	const expr_t* expr_ptr = expr_get_by_symbol(state->version, PLOAD);
+    const expr_t* expr_ptr = expr_get_by_symbol(state->version, PLOAD);
     /* push optimization */
     if (instr->id == 22) {
         thecl_instr_t* last_ins = list_tail(&sub->instrs);
