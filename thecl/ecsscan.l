@@ -180,7 +180,6 @@
 	yylval.integer = g_rate;
 	return INTEGER;
 }
-
 [a-zA-Z_][a-zA-Z0-9_]* {
     yylval.string = strdup(yytext);
     if (gvar_get(g_parser_state->version, yytext))
@@ -188,6 +187,11 @@
     if (macro_get(g_parser_state, yytext))
         return MACRO;
     return IDENTIFIER;
+}
+\[[a-zA-Z0-9_!]{5}\] {
+    yylval.string = malloc(6);
+	strncpy(yylval.string, yytext, 6);
+    return ENTRY;
 }
 
 \" {

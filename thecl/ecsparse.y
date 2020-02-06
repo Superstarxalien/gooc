@@ -157,10 +157,6 @@ int yydebug = 0;
     /* Values from Flex: */
     int integer;
     char* string;
-    struct {
-        unsigned int length;
-        unsigned char* data;
-    } bytes;
 
     /* Internal types: */
     struct thecl_param_t* param;
@@ -177,6 +173,7 @@ int yydebug = 0;
 %token <string> DIRECTIVE_FONT "#font"
 %token <string> DIRECTIVE_CHAR "#char"
 %token <string> DIRECTIVE_TEXT "#text"
+%token <string> ENTRY "entry"
 %token COMMA ","
 %token SEMICOLON ";"
 %token SUB "sub"
@@ -441,7 +438,7 @@ Interrupt_Body:
     | "sub" IDENTIFIER {
         state->current_interrupt->type = INTERRUPT_SUB;
         state->current_interrupt->lambda_name = strdup($2);
-		free($2);
+        free($2);
       }
     | {
         char buf[256];
@@ -550,16 +547,16 @@ ArgumentDeclaration:
 State_Instructions:
     %empty
     | State_Instructions IDENTIFIER INTEGER
-	  {
-		if (!strcmp($2, "stateflag"))
-			state->current_state->stateflag = $3;
-		else if (!strcmp($2, "statusc"))
-			state->current_state->statusc = $3;
-		else {
-			yyerror("syntax error, unpexpected %s in state body", $2);
-		}
-		free($2);
-	  }
+      {
+        if (!strcmp($2, "stateflag"))
+            state->current_state->stateflag = $3;
+        else if (!strcmp($2, "statusc"))
+            state->current_state->statusc = $3;
+        else {
+            yyerror("syntax error, unpexpected %s in state body", $2);
+        }
+        free($2);
+      }
     | State_Instructions "trans" {
         if (state->current_state->trans)
             yyerror(state, "duplicate trans block in state: %s", state->current_state->name);
@@ -1121,9 +1118,18 @@ Integer:
       }
     ;
 
+Entry:
+      ENTRY {
+        $$ = param_new('S');
+        $$->value.val.S = gool_to_eid($1);
+        free($1);
+      }
+    ;
+
 Load_Type:
       Address
     | Integer
+    | Entry
     ;
 
 %%
