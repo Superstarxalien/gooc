@@ -828,11 +828,11 @@ Instruction:
                 list_for_each(arg_list, param) {
                     if (!(param->stack && param->object_link == 0 && param->value.val.S == 0x1F)) { /* argument is already on the stack */
 						if (param->object_link == -3) {
-							const expr_t* expr = expr_get_by_symbol(state->, PLOAD);
+							const expr_t* expr = expr_get_by_symbol(state->version, PLOAD);
 							instr_add(state, state->current_sub, instr_new(state, expr->id, "p", param));
 						}
 						else {
-							const expr_t* expr = expr_get_by_symbol(state->, LOAD);
+							const expr_t* expr = expr_get_by_symbol(state->version, LOAD);
 							instr_add(state, state->current_sub, instr_new(state, expr->id, "p", param));
 						}
 					}
