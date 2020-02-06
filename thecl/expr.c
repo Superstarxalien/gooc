@@ -129,7 +129,7 @@ expr_get_by_id(
 {
     const expr_t* ret = NULL;
 
-    if (!ret) ret = expr_get_by_id_from_table(c1_expressions, id);
+    if (!ret && version == 1) ret = expr_get_by_id_from_table(c1_expressions, id);
 
     return ret;
 }
