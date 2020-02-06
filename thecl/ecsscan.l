@@ -130,11 +130,13 @@
     yylval.integer = (int)(strtod(yytext, NULL) / 180.0 * 0x800);
     return GOOL_INTEGER;
 }
-(-|\+)?[0-9]+\.[0-9]+[Mm]? {
+(-|\+)?[0-9]+\.[0-9]+[Mms]? {
     char* afternum;
     double num = strtod(yytext, &afternum);
     if (strchr(afternum, 'M') || strchr(afternum, 'm'))
         yylval.integer = (int)(num * 102400);
+    else if (strchr(afternum, 's'))
+        yylval.integer = (int)(num * g_rate);
     else
         yylval.integer = (int)(num * 0x100);
     return GOOL_INTEGER;
