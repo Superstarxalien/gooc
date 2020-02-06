@@ -994,7 +994,7 @@ ExpressionSubset:
     | Expression "&"   Expression { $$ = EXPR_2(B_AND,    $1, $3); }
     | Expression "<<"  Expression { $$ = EXPR_2(SHIFT,    $1, $3); }
     | Expression "\\"  Expression { $$ = EXPR_2(TEST,     $1, $3); }
-    | "abs" "(" Expression ")"    { $$ = EXPR_2(B_NOT,    expression_load_new(state, param_sp_new()), $3); }
+    | "abs" "(" Expression ")"    { $$ = EXPR_2(ABS,    expression_load_new(state, param_sp_new()), $3); }
     | "seek" "(" Expression "," Expression "," Expression ")" { $$ = EXPR_3(SEEK, $3, $5, $7); }
     | "seek" "(" Expression "," Expression ")" { $$ = EXPR_2(SEEK, $3, $5); }
     | "degseek" "(" Expression "," Expression "," Expression ")" { $$ = EXPR_3(DEGSEEK, $3, $5, $7); }
