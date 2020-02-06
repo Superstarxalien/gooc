@@ -1234,6 +1234,7 @@ instr_add(
     thecl_sub_t* sub,
     thecl_instr_t* instr)
 {
+	const expr_t* expr_ptr = expr_get_by_symbol(state->version, PLOAD);
     /* push optimization */
     if (instr->id == 22) {
         thecl_instr_t* last_ins = list_tail(&sub->instrs);
@@ -1245,6 +1246,27 @@ instr_add(
             }
 
             while (last_ins->id == 22 && last_ins->param_count < 2 && instr->param_count > 0) {
+                ++last_ins->param_count;
+                list_append_new(&last_ins->params, list_head(&instr->params));
+                list_del(&instr->params, instr->params.head);
+                if (--instr->param_count == 0) {
+                    thecl_instr_free(instr);
+                    return;
+                }
+            }
+        }
+    }
+    /* pointer push optimization */
+    else if (instr->id == expr_ptr->id) {
+        thecl_instr_t* last_ins = list_tail(&sub->instrs);
+        if (last_ins != NULL) {
+            thecl_label_t* tmp_label;
+            list_for_each(&sub->labels, tmp_label) {
+                if (tmp_label->offset == sub->offset)
+                    goto NO_OPTIM;
+            }
+
+            while (last_ins->id == expr_ptr->id && last_ins->param_count < 2 && instr->param_count > 0) {
                 ++last_ins->param_count;
                 list_append_new(&last_ins->params, list_head(&instr->params));
                 list_del(&instr->params, instr->params.head);
