@@ -826,8 +826,16 @@ Instruction:
 
                 thecl_param_t* param;
                 list_for_each(arg_list, param) {
-                    if (!(param->stack && param->object_link == 0 && param->value.val.S == 0x1F)) /* argument is already on the stack */
-                        instr_add(state, state->current_sub, instr_new(state, 22, "p", param));
+                    if (!(param->stack && param->object_link == 0 && param->value.val.S == 0x1F)) { /* argument is already on the stack */
+						if (param->object_link == -3) {
+							const expr_t* expr = expr_get_by_symbol(state->, PLOAD);
+							instr_add(state, state->current_sub, instr_new(state, expr->id, "p", param));
+						}
+						else {
+							const expr_t* expr = expr_get_by_symbol(state->, LOAD);
+							instr_add(state, state->current_sub, instr_new(state, expr->id, "p", param));
+						}
+					}
                 }
 
                 instr_add(state, state->current_sub, instr_new_list(state, gool_ins->id, gool_ins->param_list_validate(param_list, list_count(arg_list))));
@@ -1128,6 +1136,7 @@ Entry:
       ENTRY {
         $$ = param_new('S');
         $$->value.val.S = gool_to_eid($1);
+        $$->object_link = -3;
         free($1);
       }
     ;
