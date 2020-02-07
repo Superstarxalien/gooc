@@ -56,28 +56,28 @@ c1_expressions[] = {
     { SUBTRACT,   1, NULL, 2, 0, 1, 0 }, /* s1 - s0 */
     { MULTIPLY,   2, NULL, 2, 0, 1, 0 }, /* s1 * s0 */
     { DIVIDE,     3, NULL, 2, 0, 1, 0 }, /* s1 / s0 */
-    { MODULO,    13, NULL, 2, 0, 1, 0 }, /* s1 % s0 */
     { EQUAL,      4, NULL, 2, 0, 1, 0 }, /* s1 == s0 */
     { INEQUAL,    4, NULL, 2, 0, 1, 0 }, /* GOOL does not have this instruction, use NOT + CEQ instead /* s1 != s0 */
+    { AND,        5, NULL, 2, 0, 1, 0 }, /* s1 && s0 */
+    { OR,         6, NULL, 2, 0, 1, 0 }, /* s1 || s0 */
+    { B_AND,      7, NULL, 2, 0, 1, 0 }, /* s1 & s0 */
+    { B_OR,       8, NULL, 2, 0, 1, 0 }, /* s1 | s0 */
     { LT,         9, NULL, 2, 0, 1, 0 }, /* s1 < s0 */
     { LTEQ,      10, NULL, 2, 0, 1, 0 }, /* s1 <= s0 */
     { GT,        11, NULL, 2, 0, 1, 0 }, /* s1 > s0 */
     { GTEQ,      12, NULL, 2, 0, 1, 0 }, /* s1 >= s0 */
-    { NOT,       18, NULL, 2, 0, 0, 1 }, /* !s0 */
-    { B_NOT,     23, NULL, 2, 0, 0, 1 }, /* ~s0 */
-    { OR,         6, NULL, 2, 0, 1, 0 }, /* s1 || s0 */
-    { AND,        5, NULL, 2, 0, 1, 0 }, /* s1 && s0 */
+    { MODULO,    13, NULL, 2, 0, 1, 0 }, /* s1 % s0 */
     { XOR,       14, NULL, 2, 0, 1, 0 }, /* s1 ^ s0 */
-    { B_OR,       8, NULL, 2, 0, 1, 0 }, /* s1 | s0 */
-    { B_AND,      7, NULL, 2, 0, 1, 0 }, /* s1 & s0 */
-    { SHIFT,     21, NULL, 2, 0, 1, 0 }, /* s1 << s0 */
     { TEST,      15, NULL, 2, 0, 1, 0 }, /* s1 has s0 */
-    { ADDRESSOF, 20, NULL, 2, 0, 0, 1 }, /* &s0 */
     { RAND,      16, NULL, 2, 0, 0, 0 }, /* rand(s0, s1) */
+    { NOT,       18, NULL, 2, 0, 0, 1 }, /* !s0 */
+    { NEARSEEK,  19, NULL, 3, 1, 0, 0 }, /* nearseek(s0, s1, s2) */
+    { ADDRESSOF, 20, NULL, 2, 0, 0, 1 }, /* &s0 */
+    { SHIFT,     21, NULL, 2, 0, 1, 0 }, /* s1 << s0 */
+    { B_NOT,     23, NULL, 2, 0, 0, 1 }, /* ~s0 */
     { ABS,       25, NULL, 2, 0, 0, 1 }, /* abs(s0) */
     { TIME,      30, NULL, 2, 0, 0, 0 }, /* time(s0, s1) */
     { SEEK,      34, NULL, 3, 1, 0, 0 }, /* seek(s0, s1, s2) */
-    { NEARSEEK,  19, NULL, 3, 1, 0, 0 }, /* nearseek(s0, s1, s2) */
     { GETCOLOR,  35, NULL, 2, 0, 0, 0 }, /* getcolor(s0, s1) */
     { DEGSEEK,   37, NULL, 3, 1, 0, 0 }, /* degseek(s0, s1, s2) */
     { 0,          0, NULL, 0, 0, NULL }
