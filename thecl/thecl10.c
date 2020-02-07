@@ -572,8 +572,8 @@ c1_compile(
             fprintf(stderr, "%s: warning: state %s has no code block\n", argv0, state->name);
         }
         if (state->event) {
-            if (state->event->arg_count < 2) {
-                fprintf(stderr, "%s: warning: state %s event block does not have enough arguments\n", argv0, state->name);
+            if (state->event->arg_count != 2) {
+                fprintf(stderr, "%s: warning: state %s event block does not have 2 arguments\n", argv0, state->name);
             }
         }
         c1_state_t gstate = { state->stateflag, state->statusc, gool_pool_force_get_index(ecl, state->exe_eid),
