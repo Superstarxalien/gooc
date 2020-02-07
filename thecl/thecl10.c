@@ -221,6 +221,8 @@ c1_parse(
     state.ins_jal = GOOL_JAL_OP;
     state.ins_bra = GOOL_BRA_OP;
 
+    state.ignore_block = 0;
+
     g_parser_state = &state;
     yyin = in;
 

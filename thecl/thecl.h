@@ -253,6 +253,8 @@ typedef struct {
     uint8_t ins_bra;
 
     list_t expr_macros;
+
+    int ignore_block;
 } parser_state_t;
 
 extern parser_state_t* g_parser_state;

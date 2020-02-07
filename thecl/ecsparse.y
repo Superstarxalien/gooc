@@ -705,6 +705,12 @@ ElseBlock:
 
 WhileBlock:
       "while" ParenExpression[cond] {
+          expression_optimize(state, $cond);
+          if ($cond->type == EXPRESSION_VAL && !$cond->value->stack && !$cond->value->value.val.S) {
+              ++state->ignore_block;
+              expression_free($cond);
+              break;
+          }
           char labelstr[256];
           snprintf(labelstr, 256, "while_%i_%i", yylloc.first_line, yylloc.first_column);
           char labelstr_st[256];
@@ -714,10 +720,14 @@ WhileBlock:
 
           list_prepend_new(&state->block_stack, strdup(labelstr));
           label_create(state, labelstr_st);
-          expression_output(state, $cond, 1);
+          expression_output(state, $cond, 0);
           expression_free($cond);
           expression_create_goto(state, UNLESS, labelstr_end);
       } CodeBlock {
+          if (state->ignore_block) {
+              --state->ignore_block;
+              break;
+          }
           char labelstr_st[256];
           char labelstr_end[256];
           list_node_t *head = state->block_stack.head;
@@ -731,6 +741,12 @@ WhileBlock:
           list_del(&state->block_stack, head);
       }
     | "until" ParenExpression[cond] {
+          expression_optimize(state, $cond);
+          if ($cond->type == EXPRESSION_VAL && !$cond->value->stack && $cond->value->value.val.S) {
+              ++state->ignore_block;
+              expression_free($cond);
+              break;
+          }
           char labelstr[256];
           snprintf(labelstr, 256, "until_%i_%i", yylloc.first_line, yylloc.first_column);
           char labelstr_st[256];
@@ -740,10 +756,14 @@ WhileBlock:
 
           list_prepend_new(&state->block_stack, strdup(labelstr));
           label_create(state, labelstr_st);
-          expression_output(state, $cond, 1);
+          expression_output(state, $cond, 0);
           expression_free($cond);
           expression_create_goto(state, IF, labelstr_end);
       } CodeBlock {
+          if (state->ignore_block) {
+              --state->ignore_block;
+              break;
+          }
           char labelstr_st[256];
           char labelstr_end[256];
           list_node_t *head = state->block_stack.head;
@@ -1246,6 +1266,10 @@ instr_add(
     thecl_sub_t* sub,
     thecl_instr_t* instr)
 {
+    if (state->ignore_block) {
+        thecl_instr_free(instr);
+        return;
+    }
     const expr_t* expr = expr_get_by_symbol(state->version, PLOAD);
     /* push optimization */
     if (instr->id == 22) {
