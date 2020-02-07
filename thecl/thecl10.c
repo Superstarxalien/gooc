@@ -100,16 +100,16 @@ static const id_format_pair_t th10_fmts[] = {
     { 21, "RR" },
     { 22, "RR" },
     { 23, "RR" },
-
+    { 24, "I14I6" },
     { 25, "RR" },
-
+    { 26, "I12I2I2I4I1" },
     { 27, "RR" },
-
+    { 28, "RI3I5I4" },
     { 29, "RR" },
     { 30, "RR" },
     { 31, "RR" },
     { 32, "RR" },
-
+    { 33, "RR" },
     { 34, "RR" },
     { 35, "N12I3I9" },
     { 36, "RI3I9" },
@@ -121,11 +121,18 @@ static const id_format_pair_t th10_fmts[] = {
     { 0x82, "I10I4I6I2I2" },
     { 0x83, "I7I9I6I2" },
     { 0x84, "RN4I6I2" },
-
+    { 0x85, "RI3I3I3I3" },
     { 0x86, "I14N6I4" },
-
+    { 0x87, "RI6I3I3" },
+    { 0x88, "I14N6I4" },
+    { 0x89, "I14N6I4" },
     { 0x8A, "I6I6I8I4" },
-
+    { 0x8B, "RR" },
+    { 0x8C, "RR" },
+    { 0x8D, "RN2I6I4" },
+    { 0x8E, "RI3I3I3I3" },
+    { 0x8F, "RI6I3I3" },
+    { 0x90, "RI6I3I3" },
     { 0x91, "I6I6I8I4" },
     { 0, NULL }
 };
