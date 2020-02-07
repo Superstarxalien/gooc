@@ -39,46 +39,47 @@ c1_expressions[] = {
     /* p0 is the first param, p1 the second ... */
     /* s0 is the previous instruction, s1 the one previous to s0 ... */
 
-    /*SYM        ID     P  A SP2 O  */
-    { RETURN,  0x82, NULL, 0, 0, 0, }, /* return */
+    /*SYM        ID     P  A SP2 O  U */
+    { RETURN,  0x82, NULL, 0, 0, 0, 0 }, /* return */
 
-    { GOTO,    0x82,  "o", 0, 0, 0 }, /* goto p0 */
-    { UNLESS,  0x82,  "o", 1, 0, 0 }, /* unless (s0) goto p0 */
-    { IF,      0x82,  "o", 1, 0, 0 }, /* if (s0) goto p0 */
+    { GOTO,    0x82,  "o", 0, 0, 0, 0 }, /* goto p0 */
+    { UNLESS,  0x82,  "o", 1, 0, 0, 0 }, /* unless (s0) goto p0 */
+    { IF,      0x82,  "o", 1, 0, 0, 0 }, /* if (s0) goto p0 */
 
-    { LOAD,      22,  "S", 0, 0, 0 }, /* p0 */
-    { GLOAD,     31,  "S", 0, 0, 0 }, /* p0 */
-    { PLOAD,     38,  "S", 0, 0, 0 }, /* [p0] */
-    { GASSIGN,   32,  "S", 1, 0, 0 }, /* p0 = s0 */
-    { ASSIGN,    17,  "S", 1, 0, 0 }, /* p0 = s0 */
+    { LOAD,      22,  "S", 0, 0, 0, 0 }, /* p0 */
+    { GLOAD,     31,  "S", 0, 0, 0, 0 }, /* p0 */
+    { PLOAD,     38,  "S", 0, 0, 0, 0 }, /* [p0] */
+    { GASSIGN,   32,  "S", 1, 0, 0, 0 }, /* p0 = s0 */
+    { ASSIGN,    17,  "S", 1, 0, 0, 0 }, /* p0 = s0 */
 
-    { ADD,        0, NULL, 2, 0, 1 }, /* s1 + s0 */
-    { SUBTRACT,   1, NULL, 2, 0, 1 }, /* s1 - s0 */
-    { MULTIPLY,   2, NULL, 2, 0, 1 }, /* s1 * s0 */
-    { DIVIDE,     3, NULL, 2, 0, 1 }, /* s1 / s0 */
-    { MODULO,    13, NULL, 2, 0, 1 }, /* s1 % s0 */
-    { EQUAL,      4, NULL, 2, 0, 1 }, /* s1 == s0 */
-    { INEQUAL,    4, NULL, 2, 0, 1 }, /* GOOL does not have this instruction, use NOT + CEQ instead /* s1 != s0 */
-    { LT,         9, NULL, 2, 0, 1 }, /* s1 < s0 */
-    { LTEQ,      10, NULL, 2, 0, 1 }, /* s1 <= s0 */
-    { GT,        11, NULL, 2, 0, 1 }, /* s1 > s0 */
-    { GTEQ,      12, NULL, 2, 0, 1 }, /* s1 >= s0 */
-    { NOT,       18, NULL, 2, 0, 0 }, /* !s0 */
-    { B_NOT,     23, NULL, 2, 0, 0 }, /* ~s0 */
-    { OR,         6, NULL, 2, 0, 1 }, /* s1 || s0 */
-    { AND,        5, NULL, 2, 0, 1 }, /* s1 && s0 */
-    { XOR,       14, NULL, 2, 0, 1 }, /* s1 ^ s0 */
-    { B_OR,       8, NULL, 2, 0, 1 }, /* s1 | s0 */
-    { B_AND,      7, NULL, 2, 0, 1 }, /* s1 & s0 */
-    { SHIFT,     21, NULL, 2, 0, 1 }, /* s1 << s0 */
-    { TEST,      15, NULL, 2, 0, 1 }, /* s1 has s0 */
-    { RAND,      16, NULL, 2, 0, 0 }, /* rand(s0, s1) */
-    { ABS,       25, NULL, 2, 0, 0 }, /* abs(s0) */
-    { TIME,      30, NULL, 2, 0, 0 }, /* time(s0, s1) */
-    { SEEK,      34, NULL, 3, 1, 0 }, /* seek(s0, s1, s2) */
-    { NEARSEEK,  19, NULL, 3, 1, 0 }, /* nearseek(s0, s1, s2) */
-    { GETCOLOR,  35, NULL, 2, 0, 0 }, /* getcolor(s0, s1) */
-    { DEGSEEK,   37, NULL, 3, 1, 0 }, /* degseek(s0, s1, s2) */
+    { ADD,        0, NULL, 2, 0, 1, 0 }, /* s1 + s0 */
+    { SUBTRACT,   1, NULL, 2, 0, 1, 0 }, /* s1 - s0 */
+    { MULTIPLY,   2, NULL, 2, 0, 1, 0 }, /* s1 * s0 */
+    { DIVIDE,     3, NULL, 2, 0, 1, 0 }, /* s1 / s0 */
+    { MODULO,    13, NULL, 2, 0, 1, 0 }, /* s1 % s0 */
+    { EQUAL,      4, NULL, 2, 0, 1, 0 }, /* s1 == s0 */
+    { INEQUAL,    4, NULL, 2, 0, 1, 0 }, /* GOOL does not have this instruction, use NOT + CEQ instead /* s1 != s0 */
+    { LT,         9, NULL, 2, 0, 1, 0 }, /* s1 < s0 */
+    { LTEQ,      10, NULL, 2, 0, 1, 0 }, /* s1 <= s0 */
+    { GT,        11, NULL, 2, 0, 1, 0 }, /* s1 > s0 */
+    { GTEQ,      12, NULL, 2, 0, 1, 0 }, /* s1 >= s0 */
+    { NOT,       18, NULL, 2, 0, 0, 1 }, /* !s0 */
+    { B_NOT,     23, NULL, 2, 0, 0, 1 }, /* ~s0 */
+    { OR,         6, NULL, 2, 0, 1, 0 }, /* s1 || s0 */
+    { AND,        5, NULL, 2, 0, 1, 0 }, /* s1 && s0 */
+    { XOR,       14, NULL, 2, 0, 1, 0 }, /* s1 ^ s0 */
+    { B_OR,       8, NULL, 2, 0, 1, 0 }, /* s1 | s0 */
+    { B_AND,      7, NULL, 2, 0, 1, 0 }, /* s1 & s0 */
+    { SHIFT,     21, NULL, 2, 0, 1, 0 }, /* s1 << s0 */
+    { TEST,      15, NULL, 2, 0, 1, 0 }, /* s1 has s0 */
+    { ADDRESSOF, 20, NULL, 2, 0, 0, 1 }, /* &s0 */
+    { RAND,      16, NULL, 2, 0, 0, 0 }, /* rand(s0, s1) */
+    { ABS,       25, NULL, 2, 0, 0, 1 }, /* abs(s0) */
+    { TIME,      30, NULL, 2, 0, 0, 0 }, /* time(s0, s1) */
+    { SEEK,      34, NULL, 3, 1, 0, 0 }, /* seek(s0, s1, s2) */
+    { NEARSEEK,  19, NULL, 3, 1, 0, 0 }, /* nearseek(s0, s1, s2) */
+    { GETCOLOR,  35, NULL, 2, 0, 0, 0 }, /* getcolor(s0, s1) */
+    { DEGSEEK,   37, NULL, 3, 1, 0, 0 }, /* degseek(s0, s1, s2) */
     { 0,          0, NULL, 0, 0, NULL }
 };
 

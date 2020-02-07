@@ -40,6 +40,7 @@ typedef struct {
     size_t stack_arity;
     int has_double_param;
     int allow_optim;
+    int is_unary;
 } expr_t;
 
 /* Returns an expression by its symbol. */

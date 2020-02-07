@@ -120,6 +120,7 @@
 "&"        return B_AND;
 "<<"       return SHIFT;
 "\\"       return TEST;
+"#"        return ADDRESSOF;
 "abs"      return ABS;
 "seek"     return SEEK;
 "degseek"  return DEGSEEK;

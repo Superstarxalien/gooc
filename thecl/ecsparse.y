@@ -239,6 +239,7 @@ int yydebug = 0;
 %token B_AND "&"
 %token SHIFT "<<"
 %token TEST "\\"
+%token ADDRESSOF "#"
 %token ABS "abs"
 %token SEEK "seek"
 %token DEGSEEK "degseek"
@@ -278,7 +279,7 @@ int yydebug = 0;
 %left SHIFT
 %left ADD SUBTRACT
 %left MULTIPLY DIVIDE MODULO
-%precedence NOT B_NOT
+%precedence NOT B_NOT ADDRESSOF
 %precedence ABS
 
 %expect 1
@@ -887,11 +888,8 @@ Assignment:
       Address "=" Expression {
         expression_optimize(state, $3);
         thecl_param_t* src_param;
-        const expr_t* expr_notl = expr_get_by_symbol(state->version, NOT);
-        const expr_t* expr_notb = expr_get_by_symbol(state->version, B_NOT);
-        const expr_t* expr_abs = expr_get_by_symbol(state->version, ABS);
-        bool is_unary = $3->id == expr_notl->id || $3->id == expr_notb->id || $3->id == expr_abs->id;
-        if ($3->type == EXPRESSION_VAL && ($1->stack != 2 || ($1->stack == 2 && !is_unary))) {
+        const expr_t* expr = expr_get_by_id(state->version, $3->id);
+        if ($3->type == EXPRESSION_VAL && ($1->stack != 2 || ($1->stack == 2 && !expr->is_unary))) {
             src_param = $3->value;
         } else {
             expression_output(state, $3, 0);
@@ -899,13 +897,13 @@ Assignment:
         }
         expression_free($3);
         if ($1->stack != 2) {
-            const expr_t* expr = expr_get_by_symbol(state->version, ASSIGN);
+            expr = expr_get_by_symbol(state->version, ASSIGN);
 
             instr_add(state, state->current_sub, instr_new(state, expr->id, "pp", $1, src_param));
         } else { /* WGL */
-            const expr_t* expr = expr_get_by_symbol(state->version, GASSIGN);
+            expr = expr_get_by_symbol(state->version, GASSIGN);
             
-            list_node_t* node = is_unary ? state->current_sub->instrs.tail->prev : state->current_sub->instrs.tail;
+            list_node_t* node = expr->is_unary ? state->current_sub->instrs.tail->prev : state->current_sub->instrs.tail;
 
             thecl_instr_t* last_ins = node->data;
 
@@ -1006,6 +1004,7 @@ ExpressionSubset:
     | Expression "&"   Expression { $$ = EXPR_2(B_AND,    $1, $3); }
     | Expression "<<"  Expression { $$ = EXPR_2(SHIFT,    $1, $3); }
     | Expression "\\"  Expression { $$ = EXPR_2(TEST,     $1, $3); }
+    | "#" Expression              { $$ = EXPR_2(ADDRESSOF,expression_load_new(state, param_sp_new()), $2); }
     | "abs" "(" Expression ")"    { $$ = EXPR_2(ABS,    expression_load_new(state, param_sp_new()), $3); }
     | "seek" "(" Expression "," Expression "," Expression ")"     { $$ = EXPR_3(SEEK, $3, $5, $7); }
     | "seek" "(" Expression "," Expression ")"                    { $$ = EXPR_2(SEEK, $3, $5); }
