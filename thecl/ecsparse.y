@@ -243,7 +243,7 @@ int yydebug = 0;
 %token SEEK "seek"
 %token DEGSEEK "degseek"
 %token RAND "rand"
-%token PATH "path"
+%token NEARSEEK "nearseek"
 %token TIME "time"
 %token GETCOLOR "getcolor"
 
@@ -1007,14 +1007,14 @@ ExpressionSubset:
     | Expression "<<"  Expression { $$ = EXPR_2(SHIFT,    $1, $3); }
     | Expression "\\"  Expression { $$ = EXPR_2(TEST,     $1, $3); }
     | "abs" "(" Expression ")"    { $$ = EXPR_2(ABS,    expression_load_new(state, param_sp_new()), $3); }
-    | "seek" "(" Expression "," Expression "," Expression ")"    { $$ = EXPR_3(SEEK, $3, $5, $7); }
-    | "seek" "(" Expression "," Expression ")"                   { $$ = EXPR_2(SEEK, $3, $5); }
-    | "degseek" "(" Expression "," Expression "," Expression ")" { $$ = EXPR_3(DEGSEEK, $3, $5, $7); }
-    | "degseek" "(" Expression "," Expression ")"                { $$ = EXPR_2(DEGSEEK, $3, $5); }
-    | "rand" "(" Expression "," Expression ")"                   { $$ = EXPR_2(RAND, $3, $5); }
-    | "path" "(" Expression "," Expression "," Expression ")"    { $$ = EXPR_3(PATH, $3, $5, $7); }
-    | "path" "(" Expression "," Expression ")"                   { $$ = EXPR_2(PATH, $3, $5); }
-    | "time" "(" Expression "," Expression ")"                   { $$ = EXPR_2(TIME, $3, $5); }
+    | "seek" "(" Expression "," Expression "," Expression ")"     { $$ = EXPR_3(SEEK, $3, $5, $7); }
+    | "seek" "(" Expression "," Expression ")"                    { $$ = EXPR_2(SEEK, $3, $5); }
+    | "degseek" "(" Expression "," Expression "," Expression ")"  { $$ = EXPR_3(DEGSEEK, $3, $5, $7); }
+    | "degseek" "(" Expression "," Expression ")"                 { $$ = EXPR_2(DEGSEEK, $3, $5); }
+    | "rand" "(" Expression "," Expression ")"                    { $$ = EXPR_2(RAND, $3, $5); }
+    | "nearseek" "(" Expression "," Expression "," Expression ")" { $$ = EXPR_3(NEARSEEK, $3, $5, $7); }
+    | "nearseek" "(" Expression "," Expression ")"                { $$ = EXPR_2(NEARSEEK, $3, $5); }
+    | "time" "(" Expression "," Expression ")"                    { $$ = EXPR_2(TIME, $3, $5); }
     | "time" "(" Expression ")" { thecl_param_t* param = param_new('S'); param->value.val.S = 0; $$ = EXPR_2(TIME, $3, expression_load_new(state, param)); }
     | "getcolor" "(" Expression "," Expression ")" { $$ = EXPR_2(GETCOLOR, $3, $5); }
     | "getcolor" "(" Expression ")" { thecl_param_t* param = param_new('S'); param->value.val.S = 0; $$ = EXPR_2(GETCOLOR, expression_load_new(state, param), $3); }
