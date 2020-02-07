@@ -1826,6 +1826,7 @@ sub_begin(
     sub->args = NULL;
     sub->start_offset = state->ins_offset;
     sub->offset = 0;
+	sub->instr_data = NULL;
     list_init(&sub->labels);
 
     list_append_new(&state->ecl->subs, sub);

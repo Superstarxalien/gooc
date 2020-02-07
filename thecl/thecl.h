@@ -105,6 +105,11 @@ void thecl_variable_free(
     thecl_variable_t* var);
 
 typedef struct {
+    int was_written;
+    uint32_t data[];
+} gool_sub_t;
+
+typedef struct {
     char* name;
     bool forward_declaration;
     bool is_inline;
@@ -120,6 +125,8 @@ typedef struct {
 
     uint16_t offset;
     uint16_t start_offset;
+
+    gool_sub_t* instr_data;
 } thecl_sub_t;
 
 typedef struct {

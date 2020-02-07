@@ -464,6 +464,49 @@ c1_compile(
     thecl_state_t* state;
     gool_anim_t* anim;
 
+    list_for_each(&ecl->subs, sub) {
+        if (sub->forward_declaration || sub->is_inline)
+            continue;
+
+        sub->instr_data = malloc(sizeof(gool_sub_t) + sizeof(uint32_t) * sub->offset);
+        sub->instr_data->was_written = 0;
+
+        thecl_instr_t* instr;
+        int i = 0;
+        list_for_each(&sub->instrs, instr) {
+            sub->instr_data->data[i++] = c1_instr_serialize(ecl, sub, instr);
+        }
+
+        thecl_sub_t* comp_sub;
+        list_for_each(&ecl->subs, comp_sub) {
+            if (comp_sub == sub || !comp_sub->instr_data || comp_sub->offset != sub->offset)
+                continue;
+
+            for (i = 0; i < sub->offset; ++i) {
+                if (sub->instr_data->data[i] != comp_sub->instr_data->data[i])
+                    goto different_subs;
+            }
+            free(sub->instr_data);
+            sub->instr_data = comp_sub->instr_data;
+
+            thecl_instr_t* instr;
+            list_for_each(&sub->instrs, instr)
+                thecl_instr_free(instr);
+            list_free_nodes(&sub->instrs);
+
+            thecl_sub_t* sub2;
+            list_for_each(&ecl->subs, sub2) {
+                if (sub2->start_offset > sub->start_offset)
+                    sub2->start_offset -= sub->offset;
+            }
+
+            sub->start_offset = comp_sub->start_offset;
+
+            break;
+        different_subs:;
+        }
+    }
+
     /* write GOOL EIDs to const pool before anything else */
     list_for_each(&ecl->states, state) {
         gool_pool_force_get_index(ecl, state->exe_eid);
@@ -488,14 +531,12 @@ c1_compile(
         if (sub->forward_declaration || sub->is_inline)
             continue;
 
-        thecl_instr_t* instr;
-        sub->offset = file_tell(out);
+        if (sub->instr_data->was_written)
+            continue;
+        sub->instr_data->was_written = 1;
 
-        list_for_each(&sub->instrs, instr) {
-            int data = c1_instr_serialize(ecl, sub, instr);
-            if (!file_write(out, &data, sizeof(data)))
-                return 0;
-        }
+        if (!file_write(out, &sub->instr_data->data, sizeof(uint32_t) * sub->offset))
+            return 0;
     }
 
     entry_header.offsets[2] = file_tell(out);
