@@ -68,7 +68,7 @@ c1_expressions[] = {
     { GTEQ,      12, NULL, 2, 0, 1, 0 }, /* s1 >= s0 */
     { MODULO,    13, NULL, 2, 0, 1, 0 }, /* s1 % s0 */
     { XOR,       14, NULL, 2, 0, 1, 0 }, /* s1 ^ s0 */
-    { TEST,      15, NULL, 2, 0, 1, 0 }, /* s1 has s0 */
+    { TEST,      15, NULL, 2, 0, 1, 0 }, /* s1 \ s0 */
     { RAND,      16, NULL, 2, 0, 0, 0 }, /* rand(s0, s1) */
     { NOT,       18, NULL, 2, 0, 0, 1 }, /* !s0 */
     { NEARSEEK,  19, NULL, 3, 1, 0, 0 }, /* nearseek(s0, s1, s2) */
