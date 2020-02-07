@@ -202,7 +202,7 @@ c1_gool_events[] = {
     { "Event05",         5 },
     { "Event06",         6 },
     { "Event07",         7 },
-    { "Event08",         8 },
+    { "EventTriggered",        8 },
     { "Event09",         9 },
     { "EventHitInvincible",   10 },
     { "Event11",        11 },
