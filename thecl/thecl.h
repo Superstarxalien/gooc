@@ -270,6 +270,7 @@ extern int g_rate;
 enum expression_type {
     EXPRESSION_OP,
     EXPRESSION_VAL,
+    EXPRESSION_GVAR,
     EXPRESSION_TERNARY
 };
 

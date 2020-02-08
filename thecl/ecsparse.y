@@ -313,10 +313,10 @@ Statement:
             free($2);
             break;
         }
-        
+
         state->current_interrupt = malloc(sizeof(thecl_interrupt_t));
         state->current_interrupt->event = event;
-        
+
         free($2);
       }
       Interrupt_Body {
@@ -331,7 +331,7 @@ Statement:
             state->ecl->type = $4;
 
             state->ecl->is_defined = 1;
-            
+
             /* automatically create an expression macro that translates the ename to the GOOL ID */
             thecl_param_t* param = param_new('S');
             param->value.val.S = $3;
@@ -434,7 +434,7 @@ Subroutine_Body:
 State_Body:
       "{" State_Instructions "}"
     ;
-    
+
 Interrupt_Body:
       "state" IDENTIFIER {
         state->current_interrupt->type = INTERRUPT_STATE;
@@ -449,7 +449,7 @@ Interrupt_Body:
     | {
         char buf[256];
         snprintf(buf, 256, "%s_INTERRUPT_%i_%i", state->current_interrupt->event->name, yylloc.first_line, yylloc.first_column);
-        
+
         state->current_interrupt->type = INTERRUPT_SUB;
         state->current_interrupt->lambda_name = strdup(buf);
 
@@ -823,12 +823,6 @@ DoBlock:
 
 Instruction:
       IDENTIFIER "(" Instruction_Parameters ")" {
-        expression_t* expression;
-        list_for_each(&state->expressions, expression) {
-            expression_output(state, expression, 1);
-            expression_free(expression);
-        }
-        list_free_nodes(&state->expressions);
         const gool_ins_t* gool_ins = gool_ins_get_by_name(state->version, $1);
         if (gool_ins) {
             if (gool_ins->varargs) {
@@ -841,12 +835,45 @@ Instruction:
                     list_for_each_node_safe($3, node, next_node) {
                         if (argc-- > 0)
                             list_append_new(param_list, node->data);
-                        else
+                        else if (gool_ins->reverse_args)
                             list_prepend_new(arg_list, node->data);
+                        else
+                            list_append_new(arg_list, node->data);
                     }
                 }
 
                 thecl_param_t* param;
+                expression_t* late_expr = NULL;
+                if (gool_ins->late_param >= 0) {
+                    int i = 0;
+                    list_node_t* e = state->expressions.tail;
+                    list_for_each(param_list, param) {
+                        if (i++ == gool_ins->late_param && param->is_expression_param) {
+                            late_expr = e->data;
+                            list_del(&state->expressions, e);
+                            break;
+                        }
+                        else if (param->is_expression_param) {
+                            e = e->prev;
+                        }
+                    }
+                }
+
+                expression_t* expression;
+                if (gool_ins->reverse_args) {
+                    list_for_each(&state->expressions, expression) {
+                        expression_output(state, expression, 1);
+                        expression_free(expression);
+                    }
+                }
+                else {
+                    for (list_node_t* node = state->expressions.tail; expression = node ? node->data : NULL, node; node = node->prev) {
+                        expression_output(state, expression, 1);
+                        expression_free(expression);
+                    }
+                }
+                list_free_nodes(&state->expressions);
+
                 list_for_each(arg_list, param) {
                     if (!(param->stack && param->object_link == 0 && param->value.val.S == 0x1F)) { /* argument is already on the stack */
                         if (param->object_link == -3) {
@@ -858,6 +885,11 @@ Instruction:
                             instr_add(state, state->current_sub, instr_new(state, expr->id, "p", param));
                         }
                     }
+                }
+
+                if (late_expr) {
+                    expression_output(state, late_expr, 1);
+                    expression_free(late_expr);
                 }
 
                 instr_add(state, state->current_sub, instr_new_list(state, gool_ins->id, gool_ins->param_list_validate(param_list, list_count(arg_list))));
@@ -875,10 +907,23 @@ Instruction:
                 list_free_nodes(arg_list);
                 free(arg_list);
             }
-            else
+            else {
+                expression_t* expression;
+                list_for_each(&state->expressions, expression) {
+                    expression_output(state, expression, 1);
+                    expression_free(expression);
+                }
+                list_free_nodes(&state->expressions);
                 instr_add(state, state->current_sub, instr_new_list(state, gool_ins->id, gool_ins->param_list_validate($3, 0)));
+            }
         }
         else {
+            expression_t* expression;
+            list_for_each(&state->expressions, expression) {
+                expression_output(state, expression, 1);
+                expression_free(expression);
+            }
+            list_free_nodes(&state->expressions);
             instr_create_call(state, state->ins_jal, $1, $3, false);
         }
         if ($3 != NULL) {
@@ -922,18 +967,8 @@ Assignment:
             instr_add(state, state->current_sub, instr_new(state, expr->id, "pp", $1, src_param));
         } else { /* WGL */
             expr = expr_get_by_symbol(state->version, GASSIGN);
-            
-            list_node_t* node = expr->is_unary ? state->current_sub->instrs.tail->prev : state->current_sub->instrs.tail;
 
-            thecl_instr_t* last_ins = node->data;
-
-            thecl_param_t* last_param = list_tail(&last_ins->params);
-
-            list_del(&state->current_sub->instrs, node);
-            list_del(&last_ins->params, last_ins->params.tail);
-            thecl_instr_free(last_ins);
-
-            instr_add(state, state->current_sub, instr_new(state, expr->id, "pp", last_param, src_param));
+            instr_add(state, state->current_sub, instr_new(state, expr->id, "Sp", $1->value.val.S, src_param));
         }
       }
     | Address "+=" Expression { var_shorthand_assign(state, $1, $3, ADD); }
@@ -1076,10 +1111,9 @@ Address:
             $$->stack = 1;
             $$->value.val.S = arg->stack;
         } else if (gvar = gvar_get(state->version, $1)) {
-            $$ = param_sp_new();
+            $$ = param_new('S');
             $$->stack = 2;
-            const expr_t* expr = expr_get_by_symbol(state->version, GLOAD);
-            instr_add(state, state->current_sub, instr_new(state, expr->id, "S", gvar->offset << 8));
+            $$->value.val.S = gvar->offset << 8;
         } else if (spawn = spawn_get(state, $1)) {
             $$ = param_new('S');
             $$->value.val.S = spawn->offset;
@@ -1168,7 +1202,7 @@ Load_Type:
       Address
     | Integer
     ;
-    
+
 Pointer_Type:
       Entry
     ;
@@ -1336,7 +1370,7 @@ instr_add(
                 }
                 param = instr->params.tail->prev->data;
                 param->value.val.S = param->value.val.S == 1 ? 2 : 1;
-                
+
                 list_del(&sub->instrs, sub->instrs.tail);
                 thecl_instr_free(last_ins);
                 --sub->offset;
@@ -1482,8 +1516,15 @@ expression_load_new(
     thecl_param_t* value)
 {
     expression_t* ret = malloc(sizeof(expression_t));
-    const expr_t* expr = expr_get_by_symbol(state->version, LOAD);
-    ret->type = EXPRESSION_VAL;
+    const expr_t* expr;
+    if (value->stack == 2) {
+        expr = expr_get_by_symbol(state->version, GLOAD);
+        ret->type = EXPRESSION_GVAR;
+    }
+    else {
+        expr = expr_get_by_symbol(state->version, LOAD);
+        ret->type = EXPRESSION_VAL;
+    }
     ret->id = expr->id;
     ret->value = value;
     return ret;
@@ -1587,6 +1628,8 @@ expression_output(
 
     if (expr->type == EXPRESSION_VAL) {
         instr_add(state, state->current_sub, instr_new(state, expr->id, "p", expr->value));
+    } else if (expr->type == EXPRESSION_GVAR) {
+        instr_add(state, state->current_sub, instr_new(state, expr->id, "S", expr->value->value.val.S));
     } else if (expr->type == EXPRESSION_OP) {
         const expr_t* expression = expr_get_by_id(state->version, expr->id);
         expression_t* child_expr;
@@ -1826,7 +1869,7 @@ sub_begin(
     sub->args = NULL;
     sub->start_offset = state->ins_offset;
     sub->offset = 0;
-	sub->instr_data = NULL;
+    sub->instr_data = NULL;
     list_init(&sub->labels);
 
     list_append_new(&state->ecl->subs, sub);
@@ -2007,7 +2050,7 @@ var_create(
 
     if (push) {
         const expr_t* expr = expr_get_by_symbol(state->version, LOAD);
-        instr_add(state, sub, instr_new(state, expr->id, "p", param_sp_new()));
+        instr_add(state, sub, instr_new(state, expr->id, "S", 0));
     }
 
     return var;
@@ -2021,7 +2064,7 @@ var_create_assign(
     expression_t* expr)
 {
     thecl_variable_t* var = var_create(state, sub, name, false);
-    
+
     thecl_param_t* param;
     expression_optimize(state, expr);
     if (expr->type == EXPRESSION_VAL) {

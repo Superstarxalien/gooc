@@ -262,18 +262,44 @@ c1_gool_ins_spawn_params(
     }
 }
 
+static list_t*
+c1_gool_ins_sendevent_params(
+    list_t* params,
+    int argc)
+{
+    thecl_param_t* param;
+    size_t c = list_count(params);
+    if (c == 3) {
+        thecl_param_t* receiver = params->head->next->data;
+        list_del(params, params->head->next);
+
+        param = param_new('S');
+        param->value.val.S = argc;
+        list_append_new(params, param);
+
+        list_append_new(params, receiver);
+
+        return params;
+    }
+    else {
+        fprintf(stderr, "%s: sendevent: wrong number of arguments (expected at least 3, got %zu)\n", argv0, c);
+        return NULL;
+    }
+}
+
 static const gool_ins_t
 c1_gool_ins[] = {
-     /* NAME            ID    VA     POP    C              VALIDATE */
-     { "setcolor",       36, false, false,  3, c1_gool_ins_setcolor_params },
-     { "anim",           39, false, false,  2, c1_gool_ins_anim_params },
-     { "nop",          0x81, false, false,  0, c1_gool_ins_nop_params },
-     { "changestate",  0x82,  true, false,  1, c1_gool_ins_state_params },
-     { "playanim",     0x83,  true,  true,  4, c1_gool_ins_playanim_params },
-     { "playtext",     0x83,  true,  true,  2, c1_gool_ins_playtext_params },
-     { "playframe",    0x84,  true,  true,  3, c1_gool_ins_playframe_params },
-     { "spawn",        0x8A,  true, false,  3, c1_gool_ins_spawn_params },
-     { "tryspawn",     0x91,  true, false,  3, c1_gool_ins_spawn_params },
+     /* NAME            ID  VA POP R   L   C              VALIDATE */
+     { "setcolor",       36, 0, 0, 0, -1,  3, c1_gool_ins_setcolor_params },
+     { "anim",           39, 0, 0, 0, -1,  2, c1_gool_ins_anim_params },
+     { "nop",          0x81, 0, 0, 0, -1,  0, c1_gool_ins_nop_params },
+     { "changestate",  0x82, 0, 0, 0, -1,  1, c1_gool_ins_state_params },
+     { "playanim",     0x83, 1, 1, 1, -1,  4, c1_gool_ins_playanim_params },
+     { "playtext",     0x83, 1, 1, 1, -1,  2, c1_gool_ins_playtext_params },
+     { "playframe",    0x84, 1, 1, 1, -1,  3, c1_gool_ins_playframe_params },
+     { "sendevent",    0x87, 1, 0, 0,  2,  3, c1_gool_ins_sendevent_params },
+     { "spawn",        0x8A, 1, 0, 0, -1,  3, c1_gool_ins_spawn_params },
+     { "tryspawn",     0x91, 1, 0, 0, -1,  3, c1_gool_ins_spawn_params },
      { NULL, 0, 0, NULL }
 };
 

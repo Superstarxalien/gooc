@@ -73,6 +73,9 @@ static void
 thecl_free(
     thecl_t* ecl)
 {
+    size_t datacount = 0;
+    gool_sub_t** datas = malloc(0);
+
     free(ecl->consts);
 
     for (size_t v = 0; v < ecl->var_count; ++v)
@@ -97,9 +100,24 @@ thecl_free(
             free(label);
         list_free_nodes(&sub->labels);
 
+        if (sub->instr_data) {
+            for (size_t i = 0; i < datacount; ++i) {
+                if (datas[i] == sub->instr_data)
+                    goto data_exists;
+            }
+            datas = realloc(datas, sizeof(gool_sub_t*) * ++datacount);
+            datas[datacount - 1] = sub->instr_data;
+        data_exists:;
+        }
+
         free(sub);
     }
     list_free_nodes(&ecl->subs);
+
+    for (size_t i = 0; i < datacount; ++i) {
+        free(datas[i]);
+    }
+    free(datas);
 
     thecl_state_t* state;
     list_for_each(&ecl->states, state) {

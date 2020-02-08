@@ -36,8 +36,10 @@
 typedef struct {
     char* name;
     uint8_t id;
-    bool varargs;
-    bool pop_args;
+    int varargs;
+    int pop_args;
+    int reverse_args;
+    int late_param;
     int param_count;
 
     list_t* (*param_list_validate)(list_t* params, int argc);
