@@ -1102,6 +1102,8 @@ Address:
         thecl_variable_t* arg;
         const field_t* gvar;
         thecl_spawn_t* spawn;
+        const field_t* field;
+        const field_t* event;
         if (var_exists(state, state->current_sub, $1)) {
             $$ = param_new('S');
             $$->stack = 1;
@@ -1117,33 +1119,33 @@ Address:
         } else if (spawn = spawn_get(state, $1)) {
             $$ = param_new('S');
             $$->value.val.S = spawn->offset;
+        } else if (field = field_get($1)) {
+            $$ = param_new('S');
+            $$->stack = 1;
+            $$->value.val.S = field->offset;
+            $$->object_link = 0;
+        } else if (event = event_get(state->version, $1)) {
+            $$ = param_new('S');
+            $$->value.val.S = event->offset << 8;
         } else {
-            const field_t* field = field_get($1);
-            if (field != NULL) {
+            thecl_globalvar_t* globalvar = globalvar_get(state, $1);
+            size_t anim_offset;
+            if (globalvar) {
                 $$ = param_new('S');
                 $$->stack = 1;
-                $$->value.val.S = field->offset;
+                $$->value.val.S = globalvar->offset + 64;
                 $$->object_link = 0;
+            } else if ((anim_offset = anim_get_offset(state, $1)) != 0xFFFF) {
+                $$ = param_new('S');
+                $$->value.val.S = anim_offset;
             } else {
-                thecl_globalvar_t* globalvar = globalvar_get(state, $1);
-                size_t anim_offset;
-                if (globalvar) {
-                    $$ = param_new('S');
-                    $$->stack = 1;
-                    $$->value.val.S = globalvar->offset + 64;
-                    $$->object_link = 0;
-                } else if ((anim_offset = anim_get_offset(state, $1)) != 0xFFFF) {
-                    $$ = param_new('S');
-                    $$->value.val.S = anim_offset;
-                } else {
-                    if ((state->current_sub == NULL || strncmp($1, state->current_sub->name, strlen(state->current_sub->name)) != 0)
-                    ) {
-                        yyerror(state, "warning: %s not found as a variable, treating like a label or state instead.", $1);
-                    }
-                    $$ = param_new('o');
-                    $$->value.type = 'z';
-                    $$->value.val.z = strdup($1);
+                if ((state->current_sub == NULL || strncmp($1, state->current_sub->name, strlen(state->current_sub->name)) != 0)
+                ) {
+                    yyerror(state, "warning: %s not found as a variable, treating like a label or state instead.", $1);
                 }
+                $$ = param_new('o');
+                $$->value.type = 'z';
+                $$->value.val.z = strdup($1);
             }
         }
         free($1);

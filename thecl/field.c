@@ -197,7 +197,7 @@ c1_gool_events[] = {
     { "EventJumpedOn",         0 },
     { "Event01",         1 },
     { "Event02",         2 },
-    { "EventExploded",         3 },
+    { "EventHit",              3 },
     { "EventAttacked",         4 },
     { "Event05",         5 },
     { "Event06",         6 },
