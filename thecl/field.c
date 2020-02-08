@@ -239,7 +239,6 @@ c1_gool_events[] = {
     { "Event42",        42 },
     { "EventPlayerDamage",    43 },
     { "Event44",        44 },
-
     { NULL, 0 }
 };
 
