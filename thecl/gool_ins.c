@@ -319,29 +319,156 @@ c1_gool_ins_eventstatus_params(
 
         return params;
     }
+    else if (c == 1) {
+        param = param_new('S');
+        param->value.val.S = 0;
+        list_prepend_new(params, param);
+
+        param = param_new('S');
+        param->value.val.S = 0;
+        list_prepend_new(params, param);
+
+        param = param_new('S');
+        param->value.val.S = 1;
+        list_append_new(params, param);
+
+        param = param_new('S');
+        param->value.val.S = 0;
+        list_append_new(params, param);
+
+        return params;
+    }
     else {
-        fprintf(stderr, "%s: accept/rejectevent: wrong number of arguments (expected 0, got %zu)\n", argv0, c);
+        fprintf(stderr, "%s: accept/rejectevent: wrong number of arguments (expected 0 or 1, got %zu)\n", argv0, c);
+        return NULL;
+    }
+}
+
+static list_t*
+c1_gool_ins_eventstatusreturn_params(
+    list_t* params,
+    int argc)
+{
+    thecl_param_t* param;
+    if (!params)
+        params = list_new();
+    size_t c = list_count(params);
+    if (c == 0) {
+        param = param_new('S');
+        param->value.val.S = 0;
+        list_append_new(params, param);
+
+        param = param_new('S');
+        param->value.val.S = 0;
+        list_append_new(params, param);
+
+        param = param_new('S');
+        param->value.val.S = 0x25;
+        list_append_new(params, param);
+
+        param = param_new('S');
+        param->value.val.S = 0;
+        list_append_new(params, param);
+
+        param = param_new('S');
+        param->value.val.S = 2;
+        list_append_new(params, param);
+
+        return params;
+    }
+    else if (c == 1) {
+        param = param_new('S');
+        param->value.val.S = 0;
+        list_prepend_new(params, param);
+
+        param = param_new('S');
+        param->value.val.S = 0;
+        list_prepend_new(params, param);
+
+        param = param_new('S');
+        param->value.val.S = 1;
+        list_append_new(params, param);
+
+        param = param_new('S');
+        param->value.val.S = 2;
+        list_append_new(params, param);
+
+        return params;
+    }
+    else {
+        fprintf(stderr, "%s: accept/rejectevent: wrong number of arguments (expected 0 or 1, got %zu)\n", argv0, c);
+        return NULL;
+    }
+}
+
+static list_t*
+c1_gool_ins_eventstatusstate_params(
+    list_t* params,
+    int argc)
+{
+    thecl_param_t* param;
+    size_t c = list_count(params);
+    if (c == 1) {
+        param = param_new('S');
+        param->value.val.S = 0;
+        list_append_new(params, param);
+
+        param = param_new('S');
+        param->value.val.S = 0x25;
+        list_append_new(params, param);
+
+        param = param_new('S');
+        param->value.val.S = 0;
+        list_append_new(params, param);
+
+        param = param_new('S');
+        param->value.val.S = 1;
+        list_append_new(params, param);
+
+        return params;
+    }
+    else if (c == 2) {
+        param = param_new('S');
+        param->value.val.S = 0;
+        list_append_to(params, param, params->head);
+
+        param = param_new('S');
+        param->value.val.S = 1;
+        list_append_new(params, param);
+
+        param = param_new('S');
+        param->value.val.S = 1;
+        list_append_new(params, param);
+
+        return params;
+    }
+    else {
+        fprintf(stderr, "%s: accept/rejectevent: wrong number of arguments (expected 0 or 1, got %zu)\n", argv0, c);
         return NULL;
     }
 }
 
 static const gool_ins_t
 c1_gool_ins[] = {
-     /* NAME             ID  VA POP R   L   C              VALIDATE */
-     { "setcolor",        36, 0, 0, 0, -1,  3, c1_gool_ins_setcolor_params },
-     { "anim",            39, 0, 0, 0, -1,  2, c1_gool_ins_anim_params },
-     { "nop",           0x81, 0, 0, 0, -1,  0, c1_gool_ins_nop_params },
-     { "changestate",   0x82, 0, 0, 0, -1,  1, c1_gool_ins_state_params },
-     { "playanim",      0x83, 1, 1, 1, -1,  4, c1_gool_ins_playanim_params },
-     { "playtext",      0x83, 1, 1, 1, -1,  2, c1_gool_ins_playtext_params },
-     { "playframe",     0x84, 1, 1, 1, -1,  3, c1_gool_ins_playframe_params },
-     { "sendevent",     0x87, 1, 0, 0,  2,  3, c1_gool_ins_sendevent_params },
-     { "rejectevent",   0x88, 0, 0, 0, -1,  3, c1_gool_ins_eventstatus_params },
-     { "acceptevent",   0x89, 0, 0, 0, -1,  3, c1_gool_ins_eventstatus_params },
-     { "spawn",         0x8A, 1, 0, 0, -1,  3, c1_gool_ins_spawn_params },
-     { "broadcastevent",0x8F, 1, 0, 0,  2,  3, c1_gool_ins_sendevent_params },
-     { "cascadeevent",  0x90, 1, 0, 0,  2,  3, c1_gool_ins_sendevent_params },
-     { "tryspawn",      0x91, 1, 0, 0, -1,  3, c1_gool_ins_spawn_params },
+     /* NAME                   ID  VA POP R   L   C              VALIDATE */
+     { "setcolor",                   36, 0, 0, 0, -1,  3, c1_gool_ins_setcolor_params },
+     { "anim",                       39, 0, 0, 0, -1,  2, c1_gool_ins_anim_params },
+     { "nop",                      0x81, 0, 0, 0, -1,  0, c1_gool_ins_nop_params },
+     { "changestate",              0x82, 0, 0, 0, -1,  1, c1_gool_ins_state_params },
+     { "playanim",                 0x83, 1, 1, 1, -1,  4, c1_gool_ins_playanim_params },
+     { "playtext",                 0x83, 1, 1, 1, -1,  2, c1_gool_ins_playtext_params },
+     { "playframe",                0x84, 1, 1, 1, -1,  3, c1_gool_ins_playframe_params },
+     { "sendevent",                0x87, 1, 0, 0,  2,  3, c1_gool_ins_sendevent_params },
+     { "rejectevent",              0x88, 0, 0, 0, -1,  1, c1_gool_ins_eventstatus_params },
+     { "acceptevent",              0x89, 0, 0, 0, -1,  1, c1_gool_ins_eventstatus_params },
+     { "rejecteventandreturn",     0x88, 0, 0, 0, -1,  1, c1_gool_ins_eventstatusreturn_params },
+     { "accepteventandreturn",     0x89, 0, 0, 0, -1,  1, c1_gool_ins_eventstatusreturn_params },
+     { "rejecteventandchangestate",0x88, 0, 0, 0, -1,  2, c1_gool_ins_eventstatusstate_params },
+     { "accepteventandchangestate",0x89, 0, 0, 0, -1,  2, c1_gool_ins_eventstatusstate_params },
+     { "spawn",                    0x8A, 1, 0, 0, -1,  3, c1_gool_ins_spawn_params },
+     { "broadcastevent",           0x8F, 1, 0, 0,  2,  3, c1_gool_ins_sendevent_params },
+     { "cascadeevent",             0x90, 1, 0, 0,  2,  3, c1_gool_ins_sendevent_params },
+     { "tryspawn",                 0x91, 1, 0, 0, -1,  3, c1_gool_ins_spawn_params },
      { NULL, 0, 0, NULL }
 };
 
