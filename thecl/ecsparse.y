@@ -1856,10 +1856,18 @@ expression_optimize(
     /* TODO: handle some single-child expressions, such as sin or cos */
     if (tmp_expr->stack_arity != 2 || !tmp_expr->allow_optim) return;
 
-    if (   child_expr_1->type != EXPRESSION_VAL
+    if (   !tmp_expr->is_unary && (
+		   child_expr_1->type != EXPRESSION_VAL
         || child_expr_2->type != EXPRESSION_VAL
         || child_expr_1->value->stack /* Variables are not acceptable, obviously. */
         || child_expr_2->value->stack
+      ) || tmp_expr->is_unary && (
+	       child_expr_2->type != EXPRESSION_VAL
+	    || child_expr_2->value->stack
+	    || child_expr_1->value->value.val.S != 0x1F
+	    || child_expr_1->value->object_link != 0
+	    || !child_expr_1->value->stack
+	  )
     ) return;
 
     thecl_param_t* param = param_new('S');
@@ -1922,6 +1930,15 @@ expression_optimize(
         case TEST:
             param->value.val.S = (val1 & val2) == val2;
         break;
+		case NOT:
+			param->value.val.S = !val2;
+		break;
+		case B_NOT:
+			param->value.val.S = ~val2;
+		break;
+		case ABS:
+			param->value.val.S = val2 < 0 ? -val2 : val2;
+		break;
         default:
             /* Since the cases above cover all existing 2-parameter expressions there is no possibility of this ever hapenning.
                Just putting this error message in case someone adds new expressions and forgets about handling them here... */

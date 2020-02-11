@@ -70,12 +70,12 @@ c1_expressions[] = {
     { XOR,       14, NULL, 2, 0, 1, 0 }, /* s1 ^ s0 */
     { TEST,      15, NULL, 2, 0, 1, 0 }, /* s1 \ s0 */
     { RAND,      16, NULL, 2, 0, 0, 0 }, /* rand(s0, s1) */
-    { NOT,       18, NULL, 2, 0, 0, 1 }, /* !s0 */
+    { NOT,       18, NULL, 2, 0, 1, 1 }, /* !s0 */
     { NEARSEEK,  19, NULL, 3, 1, 0, 0 }, /* nearseek(s0, s1, s2) */
     { ADDRESSOF, 20, NULL, 2, 0, 0, 1 }, /* &s0 */
     { LSHIFT,    21, NULL, 2, 0, 1, 0 }, /* s1 << s0 */
-    { B_NOT,     23, NULL, 2, 0, 0, 1 }, /* ~s0 */
-    { ABS,       25, NULL, 2, 0, 0, 1 }, /* abs(s0) */
+    { B_NOT,     23, NULL, 2, 0, 1, 1 }, /* ~s0 */
+    { ABS,       25, NULL, 2, 0, 1, 1 }, /* abs(s0) */
     { PAD,       26, NULL, 5, 0, 0, 0 }, /* pad(s0, s1, s2, s3, s4) */
     { TIME,      30, NULL, 2, 0, 0, 0 }, /* time(s0, s1) */
     { SEEK,      34, NULL, 3, 1, 0, 0 }, /* seek(s0, s1, s2) */
