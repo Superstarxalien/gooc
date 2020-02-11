@@ -1105,7 +1105,7 @@ ExpressionSubset:
     | Expression "|"   Expression { $$ = EXPR_2(B_OR,     $1, $3); }
     | Expression "&"   Expression { $$ = EXPR_2(B_AND,    $1, $3); }
     | Expression "<<"  Expression { $$ = EXPR_2(LSHIFT,   $1, $3); }
-    | Expression ">>"  Expression { thecl_param_t* param = param_new('S'); param->value.val.S = 0; $$ = EXPR_2(LSHIFT,   EXPR_2(SUBTRACT, expression_load_new(state, param), $3), $3); }
+    | Expression ">>"  Expression { thecl_param_t* param = param_new('S'); param->value.val.S = 0; $$ = EXPR_2(LSHIFT, $1, EXPR_2(SUBTRACT, expression_load_new(state, param), $3)); }
     | Expression "\\"  Expression { $$ = EXPR_2(TEST,     $1, $3); }
     | "#" Expression              { $$ = EXPR_2(ADDRESSOF,expression_load_new(state, param_sp_new()), $2); }
     | "abs" "(" Expression ")"    { $$ = EXPR_2(ABS,    expression_load_new(state, param_sp_new()), $3); }
