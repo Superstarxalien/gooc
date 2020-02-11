@@ -66,6 +66,8 @@ static expression_t* expression_ternary_new(/*const parser_state_t* state, */exp
 
 static void expression_output(parser_state_t* state, expression_t* expr, int has_no_parents);
 static void expression_optimize(parser_state_t* state, expression_t* expr);
+#define EXPR_5(a, A, B, C, D, E) \
+    expression_operation_new(state, a, (expression_t*[]){ A, B, C, D, E, NULL })
 #define EXPR_3(a, A, B, C) \
     expression_operation_new(state, a, (expression_t*[]){ A, B, C, NULL })
 #define EXPR_2(a, A, B) \
@@ -247,6 +249,13 @@ int yydebug = 0;
 %token NEARSEEK "nearseek"
 %token TIME "time"
 %token GETCOLOR "getcolor"
+%token PAD "pad"
+%token BPRESS "buttonpress"
+%token BHOLD "buttonhold"
+%token BBUFFER "buttonbuffer"
+%token DPRESS "dirpress"
+%token DHOLD "dirhold"
+%token DBUFFER "dirbuffer"
 
 %type <list> Instruction_Parameters_List
 %type <list> Instruction_Parameters
@@ -859,21 +868,29 @@ Instruction:
                     }
                 }
 
-                expression_t* expression;
-                if (gool_ins->reverse_args) {
-                    list_for_each(&state->expressions, expression) {
-                        expression_output(state, expression, 1);
-                        expression_free(expression);
-                    }
-                }
-                else {
-                    for (list_node_t* node = state->expressions.tail; expression = node ? node->data : NULL, node; node = node->prev) {
-                        expression_output(state, expression, 1);
-                        expression_free(expression);
-                    }
-                }
-                list_free_nodes(&state->expressions);
+                list_node_t* expr_node;
+                if (gool_ins->reverse_args)
+                    expr_node = state->expressions.head;
+                else
+                    expr_node = state->expressions.tail;
 
+                if (!gool_ins->reverse_args) {
+                    int i = 0;
+                    list_for_each(param_list, param) {
+                        if (param->is_expression_param && i != gool_ins->late_param) {
+                            expression_t* expression = expr_node->data;
+                            expression_output(state, expression, 1);
+                            expression_free(expression);
+                            if (gool_ins->reverse_args) {
+                                expr_node = expr_node->next;
+                            }
+                            else {
+                                expr_node = expr_node->prev;
+                            }
+                        }
+                        ++i;
+                    }
+                }
                 list_for_each(arg_list, param) {
                     if (!(param->stack && param->object_link == 0 && param->value.val.S == 0x1F)) { /* argument is already on the stack */
                         if (param->object_link == -3) {
@@ -885,7 +902,34 @@ Instruction:
                             instr_add(state, state->current_sub, instr_new(state, expr->id, "p", param));
                         }
                     }
+                    else if (param->is_expression_param) {
+                        expression_t* expression = expr_node->data;
+                        expression_output(state, expression, 1);
+                        expression_free(expression);
+                        if (gool_ins->reverse_args) {
+                            expr_node = expr_node->next;
+                        }
+                        else {
+                            expr_node = expr_node->prev;
+                        }
+                    }
                 }
+                if (gool_ins->reverse_args) {
+                    list_for_each(param_list, param) {
+                        if (param->is_expression_param) {
+                            expression_t* expression = expr_node->data;
+                            expression_output(state, expression, 1);
+                            expression_free(expression);
+                            if (gool_ins->reverse_args) {
+                                expr_node = expr_node->next;
+                            }
+                            else {
+                                expr_node = expr_node->prev;
+                            }
+                        }
+                    }
+                }
+                list_free_nodes(&state->expressions);
 
                 if (late_expr) {
                     expression_output(state, late_expr, 1);
@@ -1072,6 +1116,79 @@ ExpressionSubset:
     | "time" "(" Expression ")" { thecl_param_t* param = param_new('S'); param->value.val.S = 0; $$ = EXPR_2(TIME, $3, expression_load_new(state, param)); }
     | "getcolor" "(" Expression "," Expression ")" { $$ = EXPR_2(GETCOLOR, $3, $5); }
     | "getcolor" "(" Expression ")" { thecl_param_t* param = param_new('S'); param->value.val.S = 0; $$ = EXPR_2(GETCOLOR, expression_load_new(state, param), $3); }
+    | "pad" "(" Expression "," Expression "," Expression "," Expression "," Expression ")" { $$ = EXPR_5(PAD, $3, $5, $7, $9, $11); }
+    | "buttonpress" "(" Expression ")" {
+        thecl_param_t *p1, *p2, *p3, *p4;
+        p1 = param_new('S'); p2 = param_new('S'); p3 = param_new('S'); p4 = param_new('S');
+        p1->value.val.S = 1; p2->value.val.S = 0; p3->value.val.S = 0; p4->value.val.S = 0;
+        $$ = EXPR_5(PAD, $3, expression_load_new(state, p1), expression_load_new(state, p2), expression_load_new(state, p3), expression_load_new(state, p4));
+      }
+    | "buttonhold" "(" Expression ")" {
+        thecl_param_t *p1, *p2, *p3, *p4;
+        p1 = param_new('S'); p2 = param_new('S'); p3 = param_new('S'); p4 = param_new('S');
+        p1->value.val.S = 2; p2->value.val.S = 0; p3->value.val.S = 0; p4->value.val.S = 0;
+        $$ = EXPR_5(PAD, $3, expression_load_new(state, p1), expression_load_new(state, p2), expression_load_new(state, p3), expression_load_new(state, p4));
+      }
+    | "buttonbuffer" "(" Expression ")" {
+        thecl_param_t *p1, *p2, *p3, *p4;
+        p1 = param_new('S'); p2 = param_new('S'); p3 = param_new('S'); p4 = param_new('S');
+        p1->value.val.S = 3; p2->value.val.S = 0; p3->value.val.S = 0; p4->value.val.S = 0;
+        $$ = EXPR_5(PAD, $3, expression_load_new(state, p1), expression_load_new(state, p2), expression_load_new(state, p3), expression_load_new(state, p4));
+      }
+    | "buttonpress" "(" Expression "," Expression ")" {
+        thecl_param_t *p1, *p2, *p3;
+        p1 = param_new('S'); p2 = param_new('S'); p3 = param_new('S');
+        p1->value.val.S = 1; p2->value.val.S = 0; p3->value.val.S = 0;
+        $$ = EXPR_5(PAD, $3, expression_load_new(state, p1), expression_load_new(state, p2), expression_load_new(state, p3), $5);
+      }
+    | "buttonhold" "(" Expression "," Expression ")" {
+        thecl_param_t *p1, *p2, *p3;
+        p1 = param_new('S'); p2 = param_new('S'); p3 = param_new('S');
+        p1->value.val.S = 2; p2->value.val.S = 0; p3->value.val.S = 0;
+        $$ = EXPR_5(PAD, $3, expression_load_new(state, p1), expression_load_new(state, p2), expression_load_new(state, p3), $5);
+      }
+    | "buttonbuffer" "(" Expression "," Expression ")" {
+        thecl_param_t *p1, *p2, *p3;
+        p1 = param_new('S'); p2 = param_new('S'); p3 = param_new('S');
+        p1->value.val.S = 3; p2->value.val.S = 0; p3->value.val.S = 0;
+        $$ = EXPR_5(PAD, $3, expression_load_new(state, p1), expression_load_new(state, p2), expression_load_new(state, p3), $5);
+      }
+    | "dirpress" "(" Expression ")" {
+        thecl_param_t *p1, *p2, *p3, *p4;
+        p1 = param_new('S'); p2 = param_new('S'); p3 = param_new('S'); p4 = param_new('S');
+        p1->value.val.S = 0; p2->value.val.S = 0; p3->value.val.S = 1; p4->value.val.S = 0;
+        $$ = EXPR_5(PAD, expression_load_new(state, p1), expression_load_new(state, p2), expression_load_new(state, p3), $3, expression_load_new(state, p4));
+      }
+    | "dirhold" "(" Expression ")" {
+        thecl_param_t *p1, *p2, *p3, *p4;
+        p1 = param_new('S'); p2 = param_new('S'); p3 = param_new('S'); p4 = param_new('S');
+        p1->value.val.S = 0; p2->value.val.S = 0; p3->value.val.S = 2; p4->value.val.S = 0;
+        $$ = EXPR_5(PAD, expression_load_new(state, p1), expression_load_new(state, p2), expression_load_new(state, p3), $3, expression_load_new(state, p4));
+      }
+    | "dirbuffer" "(" Expression ")" {
+        thecl_param_t *p1, *p2, *p3, *p4;
+        p1 = param_new('S'); p2 = param_new('S'); p3 = param_new('S'); p4 = param_new('S');
+        p1->value.val.S = 0; p2->value.val.S = 0; p3->value.val.S = 3; p4->value.val.S = 0;
+        $$ = EXPR_5(PAD, expression_load_new(state, p1), expression_load_new(state, p2), expression_load_new(state, p3), $3, expression_load_new(state, p4));
+      }
+    | "dirpress" "(" Expression "," Expression ")" {
+        thecl_param_t *p1, *p2, *p3;
+        p1 = param_new('S'); p2 = param_new('S'); p3 = param_new('S');
+        p1->value.val.S = 0; p2->value.val.S = 0; p3->value.val.S = 1;
+        $$ = EXPR_5(PAD, expression_load_new(state, p1), expression_load_new(state, p2), expression_load_new(state, p3), $3, $5);
+      }
+    | "dirhold" "(" Expression "," Expression ")" {
+        thecl_param_t *p1, *p2, *p3;
+        p1 = param_new('S'); p2 = param_new('S'); p3 = param_new('S');
+        p1->value.val.S = 0; p2->value.val.S = 0; p3->value.val.S = 2;
+        $$ = EXPR_5(PAD, expression_load_new(state, p1), expression_load_new(state, p2), expression_load_new(state, p3), $3, $5);
+      }
+    | "dirbuffer" "(" Expression "," Expression ")" {
+        thecl_param_t *p1, *p2, *p3;
+        p1 = param_new('S'); p2 = param_new('S'); p3 = param_new('S');
+        p1->value.val.S = 0; p2->value.val.S = 0; p3->value.val.S = 3;
+        $$ = EXPR_5(PAD, expression_load_new(state, p1), expression_load_new(state, p2), expression_load_new(state, p3), $3, $5);
+      }
     | Expression "!="  Expression {
         $$ = EXPR_2(INEQUAL,  $1, $3);
         $$ = EXPR_2(NOT,      expression_load_new(state, param_sp_new()), $$);
@@ -1384,18 +1501,19 @@ instr_add(
                         thecl_param_t* branch_type_param = (thecl_param_t*)instr->params.tail->prev->data;
                         int branch_type = branch_type_param->value.val.S;
                         --branch_type;
-                        if (!!param->value.val.S == branch_type) { /* will never branch */
-                            thecl_instr_free(instr);
-                            return;
-                        } else { /* will always branch */
-                            branch_type_param->value.val.S = 0;
-                        }
-                        param_free(param);
                         list_del(&last_ins->params, last_ins->params.tail);
                         if (--last_ins->param_count == 0) {
                             list_del(&sub->instrs, sub->instrs.tail);
                             thecl_instr_free(last_ins);
                             --sub->offset;
+                        }
+                        if (!!param->value.val.S == branch_type) { /* will never branch */
+                            thecl_instr_free(instr);
+                            param_free(param);
+                            return;
+                        } else { /* will always branch */
+                            param_free(param);
+                            branch_type_param->value.val.S = 0;
                         }
                     }
                 }
@@ -1643,7 +1761,7 @@ expression_output(
         list_for_each_node(&expr->children, child_node) {
             ++c;
             child_expr = child_node->data;
-            if (child_expr->type == EXPRESSION_VAL) {
+            if (child_expr->type == EXPRESSION_VAL && expression->symbol != PAD) {
                 if (c == 1) {
                     val_param1 = child_expr->value;
                     continue;
@@ -1655,6 +1773,16 @@ expression_output(
                 }
             }
             list_append_new(push_list, child_expr);
+        }
+        if (expression->symbol == PAD) {
+            instr_add(state, state->current_sub, instr_new(state, expr->id, "ppppp",
+            ((expression_t*)push_list->head->data)->value,
+            ((expression_t*)push_list->head->next->data)->value,
+            ((expression_t*)push_list->head->next->next->data)->value,
+            ((expression_t*)push_list->head->next->next->next->data)->value,
+            ((expression_t*)push_list->head->next->next->next->next->data)->value
+            ));
+            return;
         }
         list_for_each(push_list, child_expr) {
             expression_output(state, child_expr, 0);

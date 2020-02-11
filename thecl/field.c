@@ -192,53 +192,24 @@ gvar_get(
     return ret;
 }
 
+static char event_name_buf[8];
+static field_t event_buf = { event_name_buf, 0 };
+
 static const field_t
 c1_gool_events[] = {
     { "EventJumpedOn",         0 },
-    { "Event01",         1 },
-    { "Event02",         2 },
+
     { "EventHit",              3 },
     { "EventAttacked",         4 },
-    { "Event05",         5 },
-    { "Event06",         6 },
-    { "Event07",         7 },
+
     { "EventTriggered",        8 },
-    { "Event09",         9 },
+
     { "EventHitInvincible",   10 },
-    { "Event11",        11 },
-    { "Event12",        12 },
-    { "Event13",        13 },
-    { "Event14",        14 },
-    { "Event15",        15 },
-    { "Event16",        16 },
-    { "Event17",        17 },
-    { "Event18",        18 },
-    { "Event19",        19 },
-    { "Event20",        20 },
-    { "Event21",        21 },
-    { "Event22",        22 },
-    { "Event23",          23 },
-    { "Event24",        24 },
-    { "Event25",        25 },
+
     { "EventDespawn",         26 },
-    { "Event27",        27 },
-    { "Event28",        28 },
-    { "Event29",        29 },
-    { "Event30",        30 },
-    { "Event31",        31 },
-    { "Event32",        32 },
-    { "Event33",        33 },
-    { "Event34",        34 },
-    { "Event35",        35 },
-    { "Event36",        36 },
-    { "Event37",        37 },
-    { "Event38",        38 },
-    { "Event39",        39 },
-    { "Event40",        40 },
-    { "Event41",        41 },
-    { "Event42",        42 },
+
     { "EventPlayerDamage",    43 },
-    { "Event44",        44 },
+
     { NULL, 0 }
 };
 
@@ -267,6 +238,15 @@ event_get(
     case 1:
         ret = event_get_from_table(c1_gool_events, name);
         break;
+    }
+
+    if (!ret) {
+        int event_id;
+        if (sscanf(name, "Event%02d", &event_id)) {
+            snprintf(event_name_buf, 8, "Event%02d", event_id);
+            event_buf.offset = event_id;
+            return &event_buf;
+        }
     }
 
     return ret;

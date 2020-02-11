@@ -128,6 +128,13 @@
 "rand"     return RAND;
 "nearseek" return NEARSEEK;
 "getcolor" return GETCOLOR;
+"pad"      return PAD;
+"buttonpress"  return BPRESS;
+"buttonhold"   return BHOLD;
+"buttonbuffer" return BBUFFER;
+"dirpress"     return DPRESS;
+"dirhold"      return DHOLD;
+"dirbuffer"    return DBUFFER;
 
 (-|\+)?[0-9]+(\.[0-9]+)?\s*deg {
     yylval.integer = (int)(strtod(yytext, NULL) / 180.0 * 0x800);

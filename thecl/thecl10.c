@@ -256,7 +256,7 @@ static int
 c1_is_statechange(
     thecl_instr_t* instr)
 {
-    if (instr->param_count == 5) {
+    if (instr->param_count == 5 && instr->id == GOOL_BRA_OP) {
         if (((thecl_param_t*)instr->params.tail->data)->value.val.S == 1)
             return 1;
     }
@@ -459,7 +459,7 @@ c1_compile(
     FILE* out)
 {
     c1_entry_header_t entry_header = { 0x100FFFFU, ecl->eid, 11U, 6U, { 0, 0, 0, 0, 0, 0, 0 } };
-    c1_gool_header_t header = { ecl->id, ecl->type << 8, 1, ecl->var_count + 0x40, 0, 3 };
+    c1_gool_header_t header = { ecl->id, ecl->type << 8, 1, ecl->var_count + 0x40, 0, 8 };
     thecl_sub_t* sub;
     thecl_state_t* state;
     gool_anim_t* anim;
