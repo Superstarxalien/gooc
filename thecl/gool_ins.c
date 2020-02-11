@@ -443,14 +443,14 @@ c1_gool_ins_eventstatusstate_params(
         return params;
     }
     else {
-        fprintf(stderr, "%s: accept/rejectevent: wrong number of arguments (expected 0 or 1, got %zu)\n", argv0, c);
+        fprintf(stderr, "%s: accept/rejectevent: wrong number of arguments (expected 1 or 2, got %zu)\n", argv0, c);
         return NULL;
     }
 }
 
 static const gool_ins_t
 c1_gool_ins[] = {
-     /* NAME                   ID  VA POP R   L   C              VALIDATE */
+     /* NAME                        ID  VA POP R   L   C              VALIDATE */
      { "setcolor",                   36, 0, 0, 0, -1,  3, c1_gool_ins_setcolor_params },
      { "anim",                       39, 0, 0, 0, -1,  2, c1_gool_ins_anim_params },
      { "nop",                      0x81, 0, 0, 0, -1,  0, c1_gool_ins_nop_params },
