@@ -219,7 +219,8 @@ int yydebug = 0;
 %token ASSIGNXOR "^="
 %token ASSIGNBOR "|="
 %token ASSIGNBAND "&="
-%token ASSIGNSHIFT "<<="
+%token ASSIGNLSHIFT "<<="
+%token ASSIGNRSHIFT ">>="
 %token ASSIGNTEST "\\="
 %token ADD "+"
 %token SUBTRACT "-"
@@ -239,7 +240,8 @@ int yydebug = 0;
 %token XOR "^"
 %token B_OR "|"
 %token B_AND "&"
-%token SHIFT "<<"
+%token LSHIFT "<<"
+%token RSHIFT ">>"
 %token TEST "\\"
 %token ADDRESSOF "#"
 %token ABS "abs"
@@ -285,7 +287,7 @@ int yydebug = 0;
 %left B_AND
 %left EQUAL INEQUAL
 %left LT LTEQ GT GTEQ
-%left SHIFT
+%left LSHIFT RSHIFT
 %left ADD SUBTRACT
 %left MULTIPLY DIVIDE MODULO
 %precedence NOT B_NOT ADDRESSOF
@@ -1023,7 +1025,8 @@ Assignment:
     | Address "^=" Expression { var_shorthand_assign(state, $1, $3, XOR); }
     | Address "|=" Expression { var_shorthand_assign(state, $1, $3, B_OR); }
     | Address "&=" Expression { var_shorthand_assign(state, $1, $3, B_AND); }
-    | Address "<<=" Expression { var_shorthand_assign(state, $1, $3, SHIFT); }
+    | Address "<<=" Expression { var_shorthand_assign(state, $1, $3, LSHIFT); }
+    | Address ">>=" Expression { thecl_param_t* param = param_new('S'); param->value.val.S = 0; var_shorthand_assign(state, $1, EXPR_2(SUBTRACT, expression_load_new(state, param), $3), LSHIFT); }
     | Address "\\=" Expression { var_shorthand_assign(state, $1, $3, TEST); }
     ;
 
@@ -1101,7 +1104,8 @@ ExpressionSubset:
     | Expression "^"   Expression { $$ = EXPR_2(XOR,      $1, $3); }
     | Expression "|"   Expression { $$ = EXPR_2(B_OR,     $1, $3); }
     | Expression "&"   Expression { $$ = EXPR_2(B_AND,    $1, $3); }
-    | Expression "<<"  Expression { $$ = EXPR_2(SHIFT,    $1, $3); }
+    | Expression "<<"  Expression { $$ = EXPR_2(LSHIFT,   $1, $3); }
+    | Expression ">>"  Expression { thecl_param_t* param = param_new('S'); param->value.val.S = 0; $$ = EXPR_2(LSHIFT,   EXPR_2(SUBTRACT, expression_load_new(state, param), $3), $3); }
     | Expression "\\"  Expression { $$ = EXPR_2(TEST,     $1, $3); }
     | "#" Expression              { $$ = EXPR_2(ADDRESSOF,expression_load_new(state, param_sp_new()), $2); }
     | "abs" "(" Expression ")"    { $$ = EXPR_2(ABS,    expression_load_new(state, param_sp_new()), $3); }
@@ -1912,7 +1916,7 @@ expression_optimize(
         case B_AND:
             param->value.val.S = val1 & val2;
         break;
-        case SHIFT:
+        case LSHIFT:
             param->value.val.S = val1 << val2;
         break;
         case TEST:

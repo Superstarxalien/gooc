@@ -98,7 +98,8 @@
 "^="       return ASSIGNXOR;
 "|="       return ASSIGNBOR;
 "&="       return ASSIGNBAND;
-"<<="      return ASSIGNSHIFT;
+"<<="      return ASSIGNLSHIFT;
+">>="      return ASSIGNRSHIFT;
 "\\="      return ASSIGNTEST;
 "+"        return ADD;
 "-"        return SUBTRACT;
@@ -118,7 +119,8 @@
 "^"        return XOR;
 "|"        return B_OR;
 "&"        return B_AND;
-"<<"       return SHIFT;
+"<<"       return LSHIFT;
+">>"       return RSHIFT;
 "\\"       return TEST;
 "#"        return ADDRESSOF;
 "abs"      return ABS;

@@ -73,7 +73,7 @@ c1_expressions[] = {
     { NOT,       18, NULL, 2, 0, 0, 1 }, /* !s0 */
     { NEARSEEK,  19, NULL, 3, 1, 0, 0 }, /* nearseek(s0, s1, s2) */
     { ADDRESSOF, 20, NULL, 2, 0, 0, 1 }, /* &s0 */
-    { SHIFT,     21, NULL, 2, 0, 1, 0 }, /* s1 << s0 */
+    { LSHIFT,    21, NULL, 2, 0, 1, 0 }, /* s1 << s0 */
     { B_NOT,     23, NULL, 2, 0, 0, 1 }, /* ~s0 */
     { ABS,       25, NULL, 2, 0, 0, 1 }, /* abs(s0) */
     { PAD,       26, NULL, 5, 0, 0, 0 }, /* pad(s0, s1, s2, s3, s4) */
