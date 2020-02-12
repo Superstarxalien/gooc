@@ -269,6 +269,20 @@ int yydebug = 0;
 %token GRAV "grav"
 %token SIN "sin"
 %token MISC "misc"
+%token GETVAL "getval"
+%token DISTANCETO "distanceto"
+%token ATAN2 "atan2"
+%token GETFIELD "getfield"
+%token SETFIELD "setfield"
+%token ATAN2M "atan2_mirrored"
+%token OBJGET "objectget"
+%token MOVETOZONE "movetozoneinposition"
+%token ENTITYSTATESET "entitysetstate"
+%token ENTITYSTATEGET "entitygetstate"
+%token GAMEFUNC "gamefunc"
+%token UNK1 "__unk1"
+%token ISCOLLIDING "iscolliding"
+%token UNK2 "__unk2"
 
 %type <list> Instruction_Parameters_List
 %type <list> Instruction_Parameters

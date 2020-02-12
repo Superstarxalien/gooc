@@ -139,20 +139,20 @@
 "dirbuffer"        return DBUFFER;
 "grav"             return GRAV;
 "sin"              return SIN;
-"getval"                return MISC;
-"distanceto"            return MISC;
-"atan2"                 return MISC;
-"getfield"              return MISC;
-"setfield"              return MISC;
-"atan2_mirrored"        return MISC;
-"objectget"             return MISC;
-"movetozoneinposition"  return MISC;
-"entitysetstate"        return MISC;
-"entitygetstate"        return MISC;
-"gamefunc"              return MISC;
-"__unk1"                return MISC;
-"iscolliding"           return MISC;
-"__unk2"                return MISC;
+"getval"                return GETVAL;
+"distanceto"            return DISTANCETO;
+"atan2"                 return ATAN2;
+"getfield"              return GETFIELD;
+"setfield"              return SETFIELD;
+"atan2_mirrored"        return ATAN2M;
+"objectget"             return OBJGET;
+"movetozoneinposition"  return MOVETOZONE;
+"entitysetstate"        return ENTITYSTATESET;
+"entitygetstate"        return ENTITYSTATEGET;
+"gamefunc"              return GAMEFUNC;
+"__unk1"                return UNK1;
+"iscolliding"           return ISCOLLIDING;
+"__unk2"                return UNK2;
 
 (-|\+)?[0-9]+(\.[0-9]+)?\s*deg {
     yylval.integer = (int)(strtod(yytext, NULL) / 180.0 * 0x800);
