@@ -258,6 +258,7 @@ int yydebug = 0;
 %token DPRESS "dirpress"
 %token DHOLD "dirhold"
 %token DBUFFER "dirbuffer"
+%token GRAV "grav"
 
 %type <list> Instruction_Parameters_List
 %type <list> Instruction_Parameters
@@ -1107,6 +1108,10 @@ ExpressionSubset:
     | Expression "<<"  Expression { $$ = EXPR_2(LSHIFT,   $1, $3); }
     | Expression ">>"  Expression { thecl_param_t* param = param_new('S'); param->value.val.S = 0; $$ = EXPR_2(LSHIFT, $1, EXPR_2(SUBTRACT, expression_load_new(state, param), $3)); }
     | Expression "\\"  Expression { $$ = EXPR_2(TEST,     $1, $3); }
+    | Expression "!="  Expression {
+        $$ = EXPR_2(INEQUAL,  $1, $3);
+        $$ = EXPR_2(NOT,      expression_load_new(state, param_sp_new()), $$);
+      }
     | "#" Expression              { $$ = EXPR_2(ADDRESSOF,expression_load_new(state, param_sp_new()), $2); }
     | "abs" "(" Expression ")"    { $$ = EXPR_2(ABS,    expression_load_new(state, param_sp_new()), $3); }
     | "seek" "(" Expression "," Expression "," Expression ")"     { $$ = EXPR_3(SEEK, $3, $5, $7); }
@@ -1193,10 +1198,7 @@ ExpressionSubset:
         p1->value.val.S = 0; p2->value.val.S = 0; p3->value.val.S = 3;
         $$ = EXPR_5(PAD, expression_load_new(state, p1), expression_load_new(state, p2), expression_load_new(state, p3), $3, $5);
       }
-    | Expression "!="  Expression {
-        $$ = EXPR_2(INEQUAL,  $1, $3);
-        $$ = EXPR_2(NOT,      expression_load_new(state, param_sp_new()), $$);
-      }
+    | "grav" "(" Expression "," Expression ")"                    { $$ = EXPR_2(GRAV, $3, $5); }
 
     /* Custom expressions. */
     /*
