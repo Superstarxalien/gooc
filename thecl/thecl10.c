@@ -345,11 +345,37 @@ c1_instr_serialize(
     int i = 0;
     char op;
     list_for_each(&instr->params, param) {
-        int p = param->value.val.S;
+        int p;
         if (param->type == 'o') {
             /* This calculates the relative offset from the current instruction. */
-            p = label_offset(sub, param->value.val.z) - (instr->offset + 1);
+            thecl_label_t* label = label_find(sub, param->value.val.z);
+            if (label) {
+                p = label->offset - (instr->offset + 1);
+            }
+            else {
+                const thecl_state_t* called_state;
+                int o = 0;
+                list_for_each(&ecl->states, called_state) {
+                    if (!strcmp(called_state->name, param->value.val.z))
+                        break;
+                    ++o;
+                    called_state = NULL;
+                }
+                if (!called_state) {
+                    const thecl_sub_t* called_sub = th10_find_sub(ecl, param->value.val.z);
+                    if (!called_sub) {
+                        fprintf(stderr, "%s: sub/state/label not found: %s\n", argv0, param->value.val.z);
+                    }
+                    else {
+                        p = called_sub->start_offset;
+                    }
+                }
+                else
+                    p = o;
+            }
         }
+        else
+            p = param->value.val.S;
     RECHECK_PARAM:;
         while ((op = format[i++]) == ' ');
         int bits = total_bits;

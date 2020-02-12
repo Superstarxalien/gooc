@@ -1225,6 +1225,8 @@ Address:
         thecl_spawn_t* spawn;
         const field_t* field;
         const field_t* event;
+        size_t anim_offset;
+        thecl_globalvar_t* globalvar;
         if (var_exists(state, state->current_sub, $1)) {
             $$ = param_new('S');
             $$->stack = 1;
@@ -1248,26 +1250,18 @@ Address:
         } else if (event = event_get(state->version, $1)) {
             $$ = param_new('S');
             $$->value.val.S = event->offset << 8;
+        } else if (globalvar = globalvar_get(state, $1)) {
+            $$ = param_new('S');
+            $$->stack = 1;
+            $$->value.val.S = globalvar->offset + 64;
+            $$->object_link = 0;
+        } else if ((anim_offset = anim_get_offset(state, $1)) != 0xFFFF) {
+            $$ = param_new('S');
+            $$->value.val.S = anim_offset;
         } else {
-            thecl_globalvar_t* globalvar = globalvar_get(state, $1);
-            size_t anim_offset;
-            if (globalvar) {
-                $$ = param_new('S');
-                $$->stack = 1;
-                $$->value.val.S = globalvar->offset + 64;
-                $$->object_link = 0;
-            } else if ((anim_offset = anim_get_offset(state, $1)) != 0xFFFF) {
-                $$ = param_new('S');
-                $$->value.val.S = anim_offset;
-            } else {
-                if ((state->current_sub == NULL || strncmp($1, state->current_sub->name, strlen(state->current_sub->name)) != 0)
-                ) {
-                    yyerror(state, "warning: %s not found as a variable, treating like a label or state instead.", $1);
-                }
-                $$ = param_new('o');
-                $$->value.type = 'z';
-                $$->value.val.z = strdup($1);
-            }
+            $$ = param_new('o');
+            $$->value.type = 'z';
+            $$->value.val.z = strdup($1);
         }
         free($1);
       }
@@ -1857,17 +1851,17 @@ expression_optimize(
     if (tmp_expr->stack_arity != 2 || !tmp_expr->allow_optim) return;
 
     if (   !tmp_expr->is_unary && (
-		   child_expr_1->type != EXPRESSION_VAL
+           child_expr_1->type != EXPRESSION_VAL
         || child_expr_2->type != EXPRESSION_VAL
         || child_expr_1->value->stack /* Variables are not acceptable, obviously. */
         || child_expr_2->value->stack
       ) || tmp_expr->is_unary && (
-	       child_expr_2->type != EXPRESSION_VAL
-	    || child_expr_2->value->stack
-	    || child_expr_1->value->value.val.S != 0x1F
-	    || child_expr_1->value->object_link != 0
-	    || !child_expr_1->value->stack
-	  )
+           child_expr_2->type != EXPRESSION_VAL
+        || child_expr_2->value->stack
+        || child_expr_1->value->value.val.S != 0x1F
+        || child_expr_1->value->object_link != 0
+        || !child_expr_1->value->stack
+      )
     ) return;
 
     thecl_param_t* param = param_new('S');
@@ -1930,15 +1924,15 @@ expression_optimize(
         case TEST:
             param->value.val.S = (val1 & val2) == val2;
         break;
-		case NOT:
-			param->value.val.S = !val2;
-		break;
-		case B_NOT:
-			param->value.val.S = ~val2;
-		break;
-		case ABS:
-			param->value.val.S = val2 < 0 ? -val2 : val2;
-		break;
+        case NOT:
+            param->value.val.S = !val2;
+        break;
+        case B_NOT:
+            param->value.val.S = ~val2;
+        break;
+        case ABS:
+            param->value.val.S = val2 < 0 ? -val2 : val2;
+        break;
         default:
             /* Since the cases above cover all existing 2-parameter expressions there is no possibility of this ever hapenning.
                Just putting this error message in case someone adds new expressions and forgets about handling them here... */

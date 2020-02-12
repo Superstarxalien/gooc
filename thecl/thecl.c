@@ -261,6 +261,19 @@ param_free(
     free(param);
 }
 
+thecl_label_t*
+label_find(
+    thecl_sub_t* sub,
+    const char* name)
+{
+    thecl_label_t* label;
+    list_for_each(&sub->labels, label) {
+        if (strcmp(label->name, name) == 0)
+            return label;
+    }
+    return NULL;
+}
+
 int32_t
 label_offset(
     thecl_sub_t* sub,

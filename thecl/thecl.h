@@ -166,6 +166,11 @@ typedef struct {
     char* lambda_name;
 } thecl_interrupt_t;
 
+thecl_label_t*
+label_find(
+    thecl_sub_t* sub,
+    const char* name);
+
 int32_t
 label_offset(
     thecl_sub_t* sub,

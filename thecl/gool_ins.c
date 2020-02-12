@@ -448,9 +448,30 @@ c1_gool_ins_eventstatusstate_params(
     }
 }
 
+static list_t*
+c1_gool_ins_onexit_params(
+    list_t* params,
+    int argc)
+{
+    thecl_param_t* param;
+    size_t c = list_count(params);
+    if (c == 1) {
+        param = param_new('S');
+        param->value.val.S = field_get("hpc")->offset;
+        list_append_new(params, param);
+
+        return params;
+    }
+    else {
+        fprintf(stderr, "%s: onexit: wrong number of arguments (expected 0, got %zu)\n", argv0, c);
+        return NULL;
+    }
+}
+
 static const gool_ins_t
 c1_gool_ins[] = {
      /* NAME                        ID  VA POP R   L   C              VALIDATE */
+     { "onstateexit",                24, 0, 0, 0, -1,  1, c1_gool_ins_onexit_params },
      { "setcolor",                   36, 0, 0, 0, -1,  3, c1_gool_ins_setcolor_params },
      { "anim",                       39, 0, 0, 0, -1,  2, c1_gool_ins_anim_params },
      { "nop",                      0x81, 0, 0, 0, -1,  0, c1_gool_ins_nop_params },
