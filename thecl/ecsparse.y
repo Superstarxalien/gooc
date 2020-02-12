@@ -68,6 +68,8 @@ static void expression_output(parser_state_t* state, expression_t* expr, int has
 static void expression_optimize(parser_state_t* state, expression_t* expr);
 #define EXPR_5(a, A, B, C, D, E) \
     expression_operation_new(state, a, (expression_t*[]){ A, B, C, D, E, NULL })
+#define EXPR_4(a, A, B, C, D) \
+    expression_operation_new(state, a, (expression_t*[]){ A, B, C, D, NULL })
 #define EXPR_3(a, A, B, C) \
     expression_operation_new(state, a, (expression_t*[]){ A, B, C, NULL })
 #define EXPR_2(a, A, B) \
@@ -132,8 +134,14 @@ static thecl_variable_t* spawn_get(parser_state_t* state, const char* name);
 
 /* Creates a new param equivalent to a GOOL stack push/pop operand */
 static thecl_param_t* param_sp_new(void);
+/* Creates a new param equivalent to a GOOL null operand */
+static thecl_param_t* param_null_new(void);
 /* Creates a new param equivalent to a GOOL double stack pop operand */
 static thecl_param_t* param_sp2_new(void);
+/* Creates a new self->variable param with the specified value */
+static thecl_param_t* param_var_new(int val);
+/* Creates a new integer param with the specified value */
+static thecl_param_t* param_val_new(int val);
 
 /* Update the current time label. */
 void set_time(parser_state_t* state, int new_time);
@@ -260,6 +268,7 @@ int yydebug = 0;
 %token DBUFFER "dirbuffer"
 %token GRAV "grav"
 %token SIN "sin"
+%token MISC "misc"
 
 %type <list> Instruction_Parameters_List
 %type <list> Instruction_Parameters
@@ -1114,7 +1123,7 @@ ExpressionSubset:
         $$ = EXPR_2(NOT,      expression_load_new(state, param_sp_new()), $$);
       }
     | "#" Expression              { $$ = EXPR_2(ADDRESSOF,expression_load_new(state, param_sp_new()), $2); }
-    | "abs" "(" Expression ")"    { $$ = EXPR_2(ABS,    expression_load_new(state, param_sp_new()), $3); }
+    | "abs" "(" Expression ")"    { $$ = EXPR_2(ABS,      expression_load_new(state, param_sp_new()), $3); }
     | "seek" "(" Expression "," Expression "," Expression ")"     { $$ = EXPR_3(SEEK, $3, $5, $7); }
     | "seek" "(" Expression "," Expression ")"                    { $$ = EXPR_2(SEEK, $3, $5); }
     | "degseek" "(" Expression "," Expression "," Expression ")"  { $$ = EXPR_3(DEGSEEK, $3, $5, $7); }
@@ -1199,8 +1208,28 @@ ExpressionSubset:
         p1->value.val.S = 0; p2->value.val.S = 0; p3->value.val.S = 3;
         $$ = EXPR_5(PAD, expression_load_new(state, p1), expression_load_new(state, p2), expression_load_new(state, p3), $3, $5);
       }
-    | "grav" "(" Expression "," Expression ")"                    { $$ = EXPR_2(GRAV, $3, $5); }
-    | "sin" "(" Expression "," Expression ")"                     { $$ = EXPR_2(SIN,  $3, $5); }
+    | "grav" "(" Expression "," Expression ")"                       { $$ = EXPR_2(GRAV, $3, $5); }
+    | "sin" "(" Expression "," Expression ")"                        { $$ = EXPR_2(SIN,  $3, $5); }
+    | "getval" "(" Expression "," Expression ")"                     { $$ = EXPR_4(MISC, $3, expression_load_new(state, param_val_new(0)), $5, expression_load_new(state, param_val_new(0))); }
+    | "distanceto" "(" Expression "," Expression ")"                 { $$ = EXPR_4(MISC, expression_load_new(state, param_null_new()), $3, $5, expression_load_new(state, param_val_new(1))); }
+    | "atan2" "(" Expression "," Expression ")"                      { $$ = EXPR_4(MISC, $5, $3, expression_load_new(state, param_val_new(0)), expression_load_new(state, param_val_new(2))); }
+    | "getfield" "(" Expression "," Expression ")"                   { $$ = EXPR_4(MISC, $5, $3, expression_load_new(state, param_val_new(0)), expression_load_new(state, param_val_new(3))); }
+    | "setfield" "(" Expression "," Expression "," Expression ")"    { $$ = EXPR_4(MISC, $5, $3, expression_load_new(state, param_val_new(0)), expression_load_new(state, param_val_new(4)));
+        expression_t* expr = expression_load_new(state, param_sp_new());
+        expression_output(state, expr, 1);
+        expression_free(expr);
+      }
+    | "atan2_mirrored" "(" Expression ")"                            { $$ = EXPR_4(MISC, expression_load_new(state, param_null_new()), $3, expression_load_new(state, param_val_new(0)), expression_load_new(state, param_val_new(5))); }
+    | "distanceto" "(" Expression "," Expression "," Expression ")"  { $$ = EXPR_4(MISC, $3, $5, $7, expression_load_new(state, param_val_new(6))); }
+    | "objectget" "(" Expression ")"                                 { $$ = EXPR_4(MISC, $3, expression_load_new(state, param_val_new(0)), expression_load_new(state, param_val_new(0)), expression_load_new(state, param_val_new(7))); }
+    | "entitysetspawn" "(" Expression ")"                            { $$ = EXPR_4(MISC, expression_load_new(state, param_var_new(field_get("id")->offset)), expression_load_new(state, field_get("player")->offset), $3, expression_load_new(state, param_val_new(8))); }
+    | "movetozoneinposition" "(" Expression "," Expression ")"       { $$ = EXPR_4(MISC, $5, $3, expression_load_new(state, param_val_new(0)), expression_load_new(state, param_val_new(9))); }
+    | "entitysetstate" "(" Expression "," Expression ")"             { $$ = EXPR_4(MISC, $3, expression_load_new(state, param_val_new(0)), $5, expression_load_new(state, param_val_new(10))); }
+    | "entitygetstate" "(" Expression "," Expression ")"             { $$ = EXPR_4(MISC, $3, expression_load_new(state, param_val_new(0)), $5, expression_load_new(state, param_val_new(11))); }
+    | "gamefunc" "(" Expression "," Expression ")"                   { $$ = EXPR_4(MISC, $3, expression_load_new(state, param_val_new(0)), $5, expression_load_new(state, param_val_new(12))); }
+    | "__unk1" "(" Expression "," Expression "," Expression ")"      { $$ = EXPR_4(MISC, $5, $3, $7, expression_load_new(state, param_val_new(13))); }
+    | "iscolliding" "(" Expression "," Expression ")"                { $$ = EXPR_4(MISC, $3, $5, expression_load_new(state, param_val_new(0)), expression_load_new(state, param_val_new(14))); }
+    | "__unk2" "(" Expression "," Expression ")"                     { $$ = EXPR_4(MISC, $3, expression_load_new(state, param_val_new(0)), $5, expression_load_new(state, param_val_new(15))); }
 
     /* Custom expressions. */
     /*
@@ -1763,7 +1792,7 @@ expression_output(
         list_for_each_node(&expr->children, child_node) {
             ++c;
             child_expr = child_node->data;
-            if (child_expr->type == EXPRESSION_VAL && expression->symbol != PAD) {
+            if (child_expr->type == EXPRESSION_VAL && !(expression->stack_arity > 2 && !expression->has_double_param)) {
                 if (c == 1) {
                     val_param1 = child_expr->value;
                     continue;
@@ -1776,14 +1805,12 @@ expression_output(
             }
             list_append_new(push_list, child_expr);
         }
-        if (expression->symbol == PAD) {
-            instr_add(state, state->current_sub, instr_new(state, expr->id, "ppppp",
-            ((expression_t*)push_list->head->data)->value,
-            ((expression_t*)push_list->head->next->data)->value,
-            ((expression_t*)push_list->head->next->next->data)->value,
-            ((expression_t*)push_list->head->next->next->next->data)->value,
-            ((expression_t*)push_list->head->next->next->next->next->data)->value
-            ));
+        if (expression->stack_arity > 2 && !expression->has_double_param) {
+            list_t* list_params = list_new();
+            list_for_each(push_list, child_expr) {
+                list_append_new(list_params, child_expr->value);
+            }
+            instr_add(state, state->current_sub, instr_new_list(state, expr->id, list_params));
             return;
         }
         list_for_each(push_list, child_expr) {
@@ -2483,12 +2510,42 @@ param_sp_new(void)
 }
 
 static thecl_param_t*
+param_null_new(void)
+{
+    thecl_param_t* param_sp = param_new('S');
+    param_sp->stack = 1;
+    param_sp->object_link = -2;
+    param_sp->value.val.S = 0;
+    return param_sp;
+}
+
+static thecl_param_t*
 param_sp2_new(void)
 {
     thecl_param_t* param_sp = param_new('S');
     param_sp->stack = 1;
     param_sp->object_link = -2;
     param_sp->value.val.S = 1;
+    return param_sp;
+}
+
+static thecl_param_t*
+param_var_new(
+    int val)
+{
+    thecl_param_t* param_sp = param_new('S');
+    param_sp->stack = 1;
+    param_sp->object_link = 0;
+    param_sp->value.val.S = val;
+    return param_sp;
+}
+
+static thecl_param_t*
+param_val_new(
+    int val)
+{
+    thecl_param_t* param_sp = param_new('S');
+    param_sp->value.val.S = val;
     return param_sp;
 }
 
