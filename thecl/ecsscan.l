@@ -138,6 +138,7 @@
 "dirhold"      return DHOLD;
 "dirbuffer"    return DBUFFER;
 "grav"     return GRAV;
+"sin"      return SIN;
 
 (-|\+)?[0-9]+(\.[0-9]+)?\s*deg {
     yylval.integer = (int)(strtod(yytext, NULL) / 180.0 * 0x800);

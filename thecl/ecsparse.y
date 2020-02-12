@@ -259,6 +259,7 @@ int yydebug = 0;
 %token DHOLD "dirhold"
 %token DBUFFER "dirbuffer"
 %token GRAV "grav"
+%token SIN "sin"
 
 %type <list> Instruction_Parameters_List
 %type <list> Instruction_Parameters
@@ -1199,6 +1200,7 @@ ExpressionSubset:
         $$ = EXPR_5(PAD, expression_load_new(state, p1), expression_load_new(state, p2), expression_load_new(state, p3), $3, $5);
       }
     | "grav" "(" Expression "," Expression ")"                    { $$ = EXPR_2(GRAV, $3, $5); }
+    | "sin" "(" Expression "," Expression ")"                     { $$ = EXPR_2(SIN,  $3, $5); }
 
     /* Custom expressions. */
     /*
