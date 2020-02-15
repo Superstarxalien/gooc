@@ -534,6 +534,8 @@ c1_gool_ins_entitysetspawn_params(
 
         param = param_new('S');
         param->value.val.S = field_get("id")->offset;
+        param->stack = 1;
+        param->object_link = 0;
         list_prepend_new(params, param);
 
         param = param_new('S');
