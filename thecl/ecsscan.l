@@ -140,7 +140,7 @@
 "grav"             return GRAV;
 "sin"              return SIN;
 "getval"                return GETVAL;
-"distanceto"            return DISTANCETO;
+"distance"              return DISTANCE;
 "atan2"                 return ATAN2;
 "getfield"              return GETFIELD;
 "setfield"              return SETFIELD;

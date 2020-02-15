@@ -270,7 +270,7 @@ int yydebug = 0;
 %token SIN "sin"
 %token MISC "misc"
 %token GETVAL "getval"
-%token DISTANCETO "distanceto"
+%token DISTANCE "distance"
 %token ATAN2 "atan2"
 %token GETFIELD "getfield"
 %token SETFIELD "setfield"
@@ -1225,7 +1225,7 @@ ExpressionSubset:
     | "grav" "(" Expression "," Expression ")"                       { $$ = EXPR_2(GRAV, $3, $5); }
     | "sin" "(" Expression "," Expression ")"                        { $$ = EXPR_2(SIN,  $3, $5); }
     | "getval" "(" Expression "," Expression ")"                     { $$ = EXPR_4(MISC, $3, expression_load_new(state, param_val_new(0)), $5, expression_load_new(state, param_val_new(0))); }
-    | "distanceto" "(" Expression "," Expression ")"                 { $$ = EXPR_4(MISC, expression_load_new(state, param_null_new()), $3, $5, expression_load_new(state, param_val_new(1))); }
+    | "distance" "(" Expression "," Expression ")"                   { $$ = EXPR_4(MISC, expression_load_new(state, param_null_new()), $3, $5, expression_load_new(state, param_val_new(1))); }
     | "atan2" "(" Expression "," Expression ")"                      { $$ = EXPR_4(MISC, $5, $3, expression_load_new(state, param_val_new(0)), expression_load_new(state, param_val_new(2))); }
     | "getfield" "(" Expression "," Expression ")"                   { $$ = EXPR_4(MISC, $5, $3, expression_load_new(state, param_val_new(0)), expression_load_new(state, param_val_new(3))); }
     | "setfield" "(" Expression "," Expression "," Expression ")"    { $$ = EXPR_4(MISC, $5, $3, expression_load_new(state, param_val_new(0)), expression_load_new(state, param_val_new(4)));
@@ -1234,7 +1234,7 @@ ExpressionSubset:
         expression_free(expr);
       }
     | "atan2_mirrored" "(" Expression ")"                            { $$ = EXPR_4(MISC, expression_load_new(state, param_null_new()), $3, expression_load_new(state, param_val_new(0)), expression_load_new(state, param_val_new(5))); }
-    | "distanceto" "(" Expression "," Expression "," Expression ")"  { $$ = EXPR_4(MISC, $3, $5, $7, expression_load_new(state, param_val_new(6))); }
+    | "distance" "(" Expression "," Expression "," Expression ")"    { $$ = EXPR_4(MISC, $3, $5, $7, expression_load_new(state, param_val_new(6))); }
     | "objectget" "(" Expression ")"                                 { $$ = EXPR_4(MISC, $3, expression_load_new(state, param_val_new(0)), expression_load_new(state, param_val_new(0)), expression_load_new(state, param_val_new(7))); }
     | "entitysetspawn" "(" Expression ")"                            { $$ = EXPR_4(MISC, expression_load_new(state, param_var_new(field_get("id")->offset)), expression_load_new(state, field_get("player")->offset), $3, expression_load_new(state, param_val_new(8))); }
     | "movetozoneinposition" "(" Expression "," Expression ")"       { $$ = EXPR_4(MISC, $5, $3, expression_load_new(state, param_val_new(0)), expression_load_new(state, param_val_new(9))); }
