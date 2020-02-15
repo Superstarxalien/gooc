@@ -463,15 +463,121 @@ c1_gool_ins_onexit_params(
         return params;
     }
     else {
-        fprintf(stderr, "%s: onexit: wrong number of arguments (expected 0, got %zu)\n", argv0, c);
+        fprintf(stderr, "%s: onstateexit: wrong number of arguments (expected 0, got %zu)\n", argv0, c);
         return NULL;
     }
+}
+
+static list_t*
+c1_gool_ins_setfield_params(
+    list_t* params,
+    int argc)
+{
+    thecl_param_t* param;
+    size_t c = list_count(params);
+    if (c == 2 && argc == 1) {
+        list_append_new(params, params->head->data);
+        list_del(params, params->head);
+
+        param = param_new('S');
+        param->value.val.S = 0;
+        list_append_new(params, param);
+
+        param = param_new('S');
+        param->value.val.S = 4;
+        list_append_new(params, param);
+    }
+    else {
+        fprintf(stderr, "%s: setfield: wrong number of arguments (expected 3, got %zu)\n", argv0, c + argc);
+        return NULL;
+    }
+    return params;
+}
+
+static list_t*
+c1_gool_ins_movetozoneinposition_params(
+    list_t* params,
+    int argc)
+{
+    thecl_param_t* param;
+    size_t c = list_count(params);
+    if (c == 2) {
+        list_append_new(params, params->head->data);
+        list_del(params, params->head);
+
+        param = param_new('S');
+        param->value.val.S = 0;
+        list_append_new(params, param);
+
+        param = param_new('S');
+        param->value.val.S = 9;
+        list_append_new(params, param);
+    }
+    else {
+        fprintf(stderr, "%s: movetozoneinposition: wrong number of arguments (expected 3, got %zu)\n", argv0, c);
+        return NULL;
+    }
+    return params;
+}
+
+static list_t*
+c1_gool_ins_entitysetspawn_params(
+    list_t* params,
+    int argc)
+{
+    thecl_param_t* param;
+    size_t c = list_count(params);
+    if (c == 1) {
+        param = param_new('S');
+        param->value.val.S = field_get("player")->offset;
+        list_prepend_new(params, param);
+
+        param = param_new('S');
+        param->value.val.S = field_get("id")->offset;
+        list_prepend_new(params, param);
+
+        param = param_new('S');
+        param->value.val.S = 8;
+        list_append_new(params, param);
+    }
+    else {
+        fprintf(stderr, "%s: entitysetspawn: wrong number of arguments (expected 1, got %zu)\n", argv0, c);
+        return NULL;
+    }
+    return params;
+}
+
+static list_t*
+c1_gool_ins_entitysetstate_params(
+    list_t* params,
+    int argc)
+{
+    thecl_param_t* param;
+    size_t c = list_count(params);
+    if (c == 2) {
+        param = param_new('S');
+        param->value.val.S = 0;
+        list_append_to(params, param, params->head);
+
+        param = param_new('S');
+        param->value.val.S = 10;
+        list_append_new(params, param);
+    }
+    else {
+        fprintf(stderr, "%s: entitysetstate: wrong number of arguments (expected 2, got %zu)\n", argv0, c);
+        return NULL;
+    }
+    return params;
 }
 
 static const gool_ins_t
 c1_gool_ins[] = {
      /* NAME                        ID  VA POP R   L   C              VALIDATE */
      { "onstateexit",                24, 0, 0, 0, -1,  1, c1_gool_ins_onexit_params },
+     { "setfield",                   28, 1, 0, 0, -1,  2, c1_gool_ins_setfield_params },
+     { "entitysetspawn",             28, 0, 0, 0, -1,  1, c1_gool_ins_entitysetspawn_params },
+     { "movetozoneinposition",       28, 0, 0, 0, -1,  2, c1_gool_ins_movetozoneinposition_params },
+     { "entitysetstate",             28, 0, 0, 0, -1,  2, c1_gool_ins_entitysetstate_params },
      { "setcolor",                   36, 0, 0, 0, -1,  3, c1_gool_ins_setcolor_params },
      { "anim",                       39, 0, 0, 0, -1,  2, c1_gool_ins_anim_params },
      { "nop",                      0x81, 0, 0, 0, -1,  0, c1_gool_ins_nop_params },

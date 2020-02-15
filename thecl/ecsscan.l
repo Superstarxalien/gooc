@@ -143,11 +143,8 @@
 "distance"              return DISTANCE;
 "atan2"                 return ATAN2;
 "getfield"              return GETFIELD;
-"setfield"              return SETFIELD;
 "atan2_mirrored"        return ATAN2M;
 "objectget"             return OBJGET;
-"movetozoneinposition"  return MOVETOZONE;
-"entitysetstate"        return ENTITYSTATESET;
 "entitygetstate"        return ENTITYSTATEGET;
 "gamefunc"              return GAMEFUNC;
 "__unk1"                return UNK1;
