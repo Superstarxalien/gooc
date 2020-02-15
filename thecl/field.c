@@ -97,6 +97,12 @@ gool_fields[] = {
     { "field_61",     61 },
     { "field_62",     62 },
     { "field_63",     63 },
+    { "trans",         8 },
+    { "rot",          11 },
+    { "vel",          14 },
+    { "scale",        17 },
+    { "trot",         20 },
+    { "vec",          23 },
     { NULL, 0 }
 };
 

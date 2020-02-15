@@ -572,6 +572,38 @@ c1_gool_ins_entitysetstate_params(
     return params;
 }
 
+static list_t*
+c1_gool_ins_getvert_params(
+    list_t* params,
+    int argc)
+{
+    thecl_param_t* param;
+    size_t c = list_count(params);
+    // frame out 5 6 link
+    // out link frame
+    if (c == 3) {
+        list_prepend_new(params, params->tail->data);
+        list_del(params, params->tail);
+
+        param = param_new('S');
+        param->value.val.S = 5;
+        list_prepend_to(params, param, params->tail);
+
+        param = param_new('S');
+        param->value.val.S = 6;
+        list_prepend_to(params, param, params->tail);
+
+        param = params->head->next->data;
+        param->value.val.S -= 8;
+        param->value.val.S /= 3;
+    }
+    else {
+        fprintf(stderr, "%s: getvert: wrong number of arguments (expected 3, got %zu)\n", argv0, c);
+        return NULL;
+    }
+    return params;
+}
+
 static const gool_ins_t
 c1_gool_ins[] = {
      /* NAME                        ID  VA POP R   L   C              VALIDATE */
@@ -587,6 +619,7 @@ c1_gool_ins[] = {
      { "playanim",                 0x83, 1, 1, 1, -1,  4, c1_gool_ins_playanim_params },
      { "playtext",                 0x83, 1, 1, 1, -1,  2, c1_gool_ins_playtext_params },
      { "playframe",                0x84, 1, 1, 1, -1,  3, c1_gool_ins_playframe_params },
+     { "getvert",                  0x85, 0, 0, 0, -1,  3, c1_gool_ins_getvert_params },
      { "sendevent",                0x87, 1, 0, 0,  2,  3, c1_gool_ins_sendevent_params },
      { "rejectevent",              0x88, 0, 0, 0, -1,  1, c1_gool_ins_eventstatus_params },
      { "acceptevent",              0x89, 0, 0, 0, -1,  1, c1_gool_ins_eventstatus_params },
