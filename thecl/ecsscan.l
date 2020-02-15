@@ -169,13 +169,15 @@
         yylval.integer = (int)(num * 0x100);
     return GOOL_INTEGER;
 }
-(-|\+)?[0-9]+[GgMm]? {
+(-|\+)?[0-9]+[GgMms]? {
     char* afternum;
     yylval.integer = strtol(yytext, &afternum, 10);
     if (strchr(afternum, 'M') || strchr(afternum, 'm'))
         yylval.integer *= 102400;
     else if (strchr(afternum, 'G') || strchr(afternum, 'g'))
         yylval.integer *= 0x100;
+    else if (strchr(afternum, 's'))
+        yylval.integer *= g_rate;
     else
         return INTEGER;
     return GOOL_INTEGER;
