@@ -301,11 +301,11 @@ int yydebug = 0;
 %type <param> Pointer_Type
 
 %left QUESTION
-%left OR
-%left AND
+%right OR
+%right AND
 %left B_OR
 %left XOR
-%right TEST
+%left TEST
 %left B_AND
 %left EQUAL INEQUAL
 %left LT LTEQ GT GTEQ
@@ -1127,7 +1127,7 @@ ExpressionSubset:
     | Expression "|"   Expression { $$ = EXPR_2(B_OR,     $1, $3); }
     | Expression "&"   Expression { $$ = EXPR_2(B_AND,    $1, $3); }
     | Expression "<<"  Expression { $$ = EXPR_2(LSHIFT,   $1, $3); }
-    | Expression ">>"  Expression { thecl_param_t* param = param_new('S'); param->value.val.S = 0; $$ = EXPR_2(LSHIFT, $1, EXPR_2(SUBTRACT, expression_load_new(state, param), $3)); }
+    | Expression ">>"  Expression { $$ = EXPR_2(LSHIFT,   $1, EXPR_2(SUBTRACT, expression_load_new(state, param_val_new(0)), $3)); }
     | Expression "\\"  Expression { $$ = EXPR_2(TEST,     $1, $3); }
     | Expression "!="  Expression {
         $$ = EXPR_2(INEQUAL,  $1, $3);
@@ -1236,7 +1236,7 @@ ExpressionSubset:
 //  | "gamefunc" "(" Expression "," Expression ")"                   { $$ = EXPR_4(MISC, $3, expression_load_new(state, param_val_new(0)), $5, expression_load_new(state, param_val_new(12))); }
     | "__unk1" "(" Expression "," Expression "," Expression ")"      { $$ = EXPR_4(MISC, $5, $3, $7, expression_load_new(state, param_val_new(13))); }
     | "iscolliding" "(" Expression "," Expression ")"                { $$ = EXPR_4(MISC, $3, $5, expression_load_new(state, param_val_new(0)), expression_load_new(state, param_val_new(14))); }
-//    | "__unk2" "(" Expression "," Expression ")"                     { $$ = EXPR_4(MISC, $3, expression_load_new(state, param_val_new(0)), $5, expression_load_new(state, param_val_new(15))); }
+//  | "__unk2" "(" Expression "," Expression ")"                     { $$ = EXPR_4(MISC, $3, expression_load_new(state, param_val_new(0)), $5, expression_load_new(state, param_val_new(15))); }
 
     /* Custom expressions. */
     /*
