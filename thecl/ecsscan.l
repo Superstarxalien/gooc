@@ -183,8 +183,20 @@
         return INTEGER;
     return GOOL_INTEGER;
 }
-(-|\+)?0x[0-9a-fA-F]+ {
-    yylval.integer = strtoul(yytext, NULL, 16);
+[-\+]?[Gg]?0x[0-9a-fA-F]+ {
+	char* txt = yytext;
+	char s = '+';
+	if (txt[0] == '-' || txt[0] == '+') {
+		s = txt[0];
+		++txt;
+	}
+	if (txt[0] == 'G' || txt[0] == 'g') {
+		yylval.integer = 0x100;
+		txt[0] = s;
+	}
+	else
+		yylval.integer = 1;
+    yylval.integer *= strtoul(txt, NULL, 16);
     return INTEGER;
 }
 (-|\+)?0b[0-1]+ {
