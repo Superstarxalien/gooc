@@ -216,7 +216,8 @@
 }
 \[[a-zA-Z0-9_!]{5}\] {
     yylval.string = malloc(6);
-    strncpy(yylval.string, yytext, 6);
+    strncpy(yylval.string, yytext + 1, 5);
+	yylval.string[5] = '\0';
     return ENTRY;
 }
 
