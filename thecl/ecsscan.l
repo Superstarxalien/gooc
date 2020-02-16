@@ -200,7 +200,7 @@
 }
 "true" {
     /* boolean "true" */
-    yylval.integer = 0x100;
+    yylval.integer = 1;
     return INTEGER;
 }
 "s" |

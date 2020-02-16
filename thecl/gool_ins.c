@@ -129,7 +129,7 @@ c1_gool_ins_playanim_params(
     }
     else if (c == 3) {
         param = param_new('S');
-        param->value.val.S = 1;
+        param->value.val.S = 3;
         list_append_new(params, param);
 
         return params;
@@ -269,7 +269,16 @@ c1_gool_ins_sendevent_params(
 {
     thecl_param_t* param;
     size_t c = list_count(params);
-    if (c == 3) {
+    if (c == 2) {
+        param = param_new('S');
+        param->value.val.S = 0;
+        list_prepend_to(params, param, params->tail);
+
+        param = param_new('S');
+        param->value.val.S = 0;
+        list_prepend_to(params, param, params->tail);
+    }
+    else if (c == 3) {
         thecl_param_t* receiver = params->head->next->data;
         list_del(params, params->head->next);
 
@@ -687,8 +696,8 @@ c1_gool_ins[] = {
      { "rejecteventandchangestate",0x88, 0, 0, 0, -1,  2, c1_gool_ins_eventstatusstate_params },
      { "accepteventandchangestate",0x89, 0, 0, 0, -1,  2, c1_gool_ins_eventstatusstate_params },
      { "spawn",                    0x8A, 1, 0, 0, -1,  3, c1_gool_ins_spawn_params },
-     { "playsound",                0x8C, 0, 0, 0, -1,  2, c1_gool_ins_playsound_params },
-     { "setupsound",               0x8D, 0, 0, 0, -1,  2, c1_gool_ins_setupsound_params },
+     { "soundplay",                0x8C, 0, 0, 0, -1,  2, c1_gool_ins_playsound_params },
+     { "soundsetup",               0x8D, 0, 0, 0, -1,  2, c1_gool_ins_setupsound_params },
      { "broadcastevent",           0x8F, 1, 0, 0,  2,  3, c1_gool_ins_sendevent_params },
      { "cascadeevent",             0x90, 1, 0, 0,  2,  3, c1_gool_ins_sendevent_params },
      { "tryspawn",                 0x91, 1, 0, 0, -1,  3, c1_gool_ins_spawn_params },

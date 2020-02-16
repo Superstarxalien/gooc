@@ -136,6 +136,11 @@ c1_gool_globals[] = {
 
     { "DEBUG",        68 },
     { "CHECKPOINTID", 69 },
+    { "PREVBOXCOUNT", 70 },
+    { "PREVLEVEL",    71 },
+
+    { "GEMCOUNT",     97 },
+    { "KEYCOUNT",     98 },
 
     { "SPAWNTRANSX", 102 },
     { "SPAWNTRANSY", 103 },
