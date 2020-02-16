@@ -635,6 +635,33 @@ c1_gool_ins_setupsound_params(
     return params;
 }
 
+static list_t*
+c1_gool_ins_loadlevel_params(
+    list_t* params,
+    int argc)
+{
+    thecl_param_t* param;
+    size_t c = list_count(params);
+    if (c == 1) {
+        param = param_new('S');
+        param->value.val.S = 0;
+        list_append_new(params, param);
+
+        param = param_new('S');
+        param->value.val.S = 9;
+        list_append_new(params, param);
+
+        param = param_new('S');
+        param->value.val.S = 12;
+        list_append_new(params, param);
+    }
+    else {
+        fprintf(stderr, "%s: loadlevel: wrong number of arguments (expected 1, got %zu)\n", argv0, c);
+        return NULL;
+    }
+    return params;
+}
+
 static const gool_ins_t
 c1_gool_ins[] = {
      /* NAME                        ID  VA POP R   L   C              VALIDATE */
@@ -643,6 +670,7 @@ c1_gool_ins[] = {
      { "entitysetspawn",             28, 0, 0, 0, -1,  1, c1_gool_ins_entitysetspawn_params },
      { "movetozoneinposition",       28, 0, 0, 0, -1,  2, c1_gool_ins_movetozoneinposition_params },
      { "entitysetstate",             28, 0, 0, 0, -1,  2, c1_gool_ins_entitysetstate_params },
+     { "loadlevel",                  28, 0, 0, 0, -1,  1, c1_gool_ins_loadlevel_params },
      { "setcolor",                   36, 0, 0, 0, -1,  3, c1_gool_ins_setcolor_params },
      { "anim",                       39, 0, 0, 0, -1,  2, c1_gool_ins_anim_params },
      { "nop",                      0x81, 0, 0, 0, -1,  0, c1_gool_ins_nop_params },
