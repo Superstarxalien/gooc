@@ -243,7 +243,13 @@ c1_gool_ins_spawn_params(
 {
     thecl_param_t* param;
     size_t c = list_count(params);
-    if (c == 3) {
+    if (c == 3 || c == 2) {
+        if (c == 2) {
+            param = param_new('S');
+            param->value.val.S = 1;
+            list_append_new(params, param);
+        }
+
         list_node_t *node, *next;
         list_for_each_node_safe(params, node, next) {
             list_prepend_new(params, node->data);
@@ -257,7 +263,7 @@ c1_gool_ins_spawn_params(
         return params;
     }
     else {
-        fprintf(stderr, "%s: spawn: wrong number of arguments (expected 1 or 2, got %zu)\n", argv0, c);
+        fprintf(stderr, "%s: spawn: wrong number of arguments (expected 2 or 3, got %zu)\n", argv0, c);
         return NULL;
     }
 }
