@@ -205,6 +205,18 @@
     if (yytext[0] == '-') yylval.integer = -yylval.integer;
     return INTEGER;
 }
+[Ll]'[0-9a-zA-Z_!]' {
+	int id = strchr_o(gool_ename_charmap, yytext[2]);
+	if (id == -(int)gool_ename_charmap) {
+		char buf[64];
+		snprintf(buf, 64, "invalid level id: %c", yytext[2]);
+		yyerror(NULL, buf);
+		BEGIN(INITIAL);
+		yyterminate();
+	}
+	yylval.integer = id << 8;
+	return INTEGER;
+}
 "false" {
     /* boolean "false" */
     yylval.integer = 0;
