@@ -637,8 +637,13 @@ c1_gool_ins_setupsound_params(
         param->value.val.S = 0;
         list_append_to(params, param, params->head);
     }
-    else if (c != 4) {
-        fprintf(stderr, "%s: setupsound: wrong number of arguments (expected 4, got %zu)\n", argv0, c);
+    else if (c == 4) {
+        param = param_new('S');
+        param->value.val.S = 0;
+        list_append_to(params, param, params->head);
+    }
+    else {
+        fprintf(stderr, "%s: soundsetup: wrong number of arguments (expected 3 or 4, got %zu)\n", argv0, c);
         return NULL;
     }
     return params;
@@ -671,6 +676,80 @@ c1_gool_ins_loadlevel_params(
     return params;
 }
 
+static list_t*
+c1_gool_ins_soundspec_params(
+    list_t* params,
+    int type,
+    const char* name)
+{
+    thecl_param_t* param;
+    size_t c = list_count(params);
+    if (c == 1) {
+        param = param_new('S');
+        param->value.val.S = 0;
+        list_append_new(params, param);
+
+        param = param_new('S');
+        param->value.val.S = 0;
+        list_append_new(params, param);
+
+        param = param_new('S');
+        param->value.val.S = type;
+        list_append_new(params, param);
+    }
+    else if (c == 2) {
+        param = param_new('S');
+        param->value.val.S = 0;
+        list_append_to(params, param, params->head);
+
+        param = param_new('S');
+        param->value.val.S = type;
+        list_append_new(params, param);
+    }
+    else if (c == 3) {
+        param = param_new('S');
+        param->value.val.S = type;
+        list_append_new(params, param);
+    }
+    else {
+        fprintf(stderr, "%s: %s: wrong number of arguments (expected 1, 2 or 3, got %zu)\n", argv0, name, c);
+        return NULL;
+    }
+    return params;
+}
+
+static list_t*
+c1_gool_ins_soundpitch_params(
+    list_t* params,
+    int argc)
+{
+    return c1_gool_ins_soundspec_params(params, 1, "soundpitch");
+}
+
+static list_t*
+c1_gool_ins_soundcount_params(
+    list_t* params,
+    int argc)
+{
+    return c1_gool_ins_soundspec_params(params, 4, "soundcount");
+}
+
+static list_t*
+c1_gool_ins_sounddelay_params(
+    list_t* params,
+    int argc)
+{
+    return c1_gool_ins_soundspec_params(params, 7, "sounddelay");
+}
+
+static list_t*
+c1_gool_ins_sounddecay_params(
+    list_t* params,
+    int argc)
+{
+    return c1_gool_ins_soundspec_params(params, 12, "sounddecay");
+}
+
 static const gool_ins_t
 c1_gool_ins[] = {
      /* NAME                        ID  VA POP R   L   C              VALIDATE */
@@ -698,6 +777,10 @@ c1_gool_ins[] = {
      { "spawn",                    0x8A, 1, 0, 0, -1,  3, c1_gool_ins_spawn_params },
      { "soundplay",                0x8C, 0, 0, 0, -1,  2, c1_gool_ins_playsound_params },
      { "soundsetup",               0x8D, 0, 0, 0, -1,  2, c1_gool_ins_setupsound_params },
+     { "soundpitch",               0x8D, 0, 0, 0, -1,  2, c1_gool_ins_soundpitch_params },
+     { "soundcount",               0x8D, 0, 0, 0, -1,  2, c1_gool_ins_soundcount_params },
+     { "sounddelay",               0x8D, 0, 0, 0, -1,  2, c1_gool_ins_sounddelay_params },
+     { "sounddecay",               0x8D, 0, 0, 0, -1,  2, c1_gool_ins_sounddecay_params },
      { "broadcastevent",           0x8F, 1, 0, 0,  2,  3, c1_gool_ins_sendevent_params },
      { "cascadeevent",             0x90, 1, 0, 0,  2,  3, c1_gool_ins_sendevent_params },
      { "tryspawn",                 0x91, 1, 0, 0, -1,  3, c1_gool_ins_spawn_params },
