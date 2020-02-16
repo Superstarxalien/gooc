@@ -579,8 +579,6 @@ c1_gool_ins_getvert_params(
 {
     thecl_param_t* param;
     size_t c = list_count(params);
-    // frame out 5 6 link
-    // out link frame
     if (c == 3) {
         list_prepend_new(params, params->tail->data);
         list_del(params, params->tail);
@@ -599,6 +597,39 @@ c1_gool_ins_getvert_params(
     }
     else {
         fprintf(stderr, "%s: getvert: wrong number of arguments (expected 3, got %zu)\n", argv0, c);
+        return NULL;
+    }
+    return params;
+}
+
+static list_t*
+c1_gool_ins_playsound_params(
+    list_t* params,
+    int argc)
+{
+    thecl_param_t* param;
+    size_t c = list_count(params);
+    if (c != 2) {
+        fprintf(stderr, "%s: playsound: wrong number of arguments (expected 2, got %zu)\n", argv0, c);
+        return NULL;
+    }
+    return params;
+}
+
+static list_t*
+c1_gool_ins_setupsound_params(
+    list_t* params,
+    int argc)
+{
+    thecl_param_t* param;
+    size_t c = list_count(params);
+    if (c == 3) {
+        param = param_new('S');
+        param->value.val.S = 0;
+        list_append_to(params, param, params->head);
+    }
+    else if (c != 4) {
+        fprintf(stderr, "%s: setupsound: wrong number of arguments (expected 4, got %zu)\n", argv0, c);
         return NULL;
     }
     return params;
@@ -628,6 +659,8 @@ c1_gool_ins[] = {
      { "rejecteventandchangestate",0x88, 0, 0, 0, -1,  2, c1_gool_ins_eventstatusstate_params },
      { "accepteventandchangestate",0x89, 0, 0, 0, -1,  2, c1_gool_ins_eventstatusstate_params },
      { "spawn",                    0x8A, 1, 0, 0, -1,  3, c1_gool_ins_spawn_params },
+     { "playsound",                0x8C, 0, 0, 0, -1,  2, c1_gool_ins_playsound_params },
+     { "setupsound",               0x8D, 0, 0, 0, -1,  2, c1_gool_ins_setupsound_params },
      { "broadcastevent",           0x8F, 1, 0, 0,  2,  3, c1_gool_ins_sendevent_params },
      { "cascadeevent",             0x90, 1, 0, 0,  2,  3, c1_gool_ins_sendevent_params },
      { "tryspawn",                 0x91, 1, 0, 0, -1,  3, c1_gool_ins_spawn_params },

@@ -298,7 +298,6 @@ int yydebug = 0;
 %type <param> Entry
 //%type <param> Text
 %type <param> Load_Type
-%type <param> Pointer_Type
 
 %left QUESTION
 %right OR
@@ -917,7 +916,7 @@ Instruction:
                 }
                 list_for_each(arg_list, param) {
                     if (!(param->stack && param->object_link == 0 && param->value.val.S == 0x1F)) { /* argument is already on the stack */
-                        if (param->object_link == -3) {
+                        if (param->object_link == -3) { /* TODO */
                             const expr_t* expr = expr_get_by_symbol(state->version, PLOAD);
                             instr_add(state, state->current_sub, instr_new(state, expr->id, "p", param));
                         }
@@ -1070,7 +1069,6 @@ Instruction_Parameters_List:
 
 Instruction_Parameter:
       Load_Type
-    | Pointer_Type
     | ExpressionSubsetInstParam {
           if ($1->type == EXPRESSION_VAL) {
               $$ = param_copy($1->value);
@@ -1102,7 +1100,6 @@ ExpressionSubsetInstruction:
 
 ExpressionLoadType:
       Load_Type                      { $$ = expression_load_new(state, $1); }
-    | Pointer_Type                   { $$ = expression_pointer_new(state, $1); }
     ;
 
 /* This is the lowest common denominator between expression-instructions and expression-parameters */
@@ -1230,8 +1227,6 @@ ExpressionSubset:
     | "distance" "(" Expression "," Expression "," Expression ")"    { $$ = EXPR_4(MISC, $3, $5, $7, expression_load_new(state, param_val_new(6))); }
     | "objectget" "(" Expression ")"                                 { $$ = EXPR_4(MISC, $3, expression_load_new(state, param_val_new(0)), expression_load_new(state, param_val_new(0)), expression_load_new(state, param_val_new(7))); }
 
-
-
     | "entitygetstate" "(" Expression "," Expression ")"             { $$ = EXPR_4(MISC, $3, expression_load_new(state, param_val_new(0)), $5, expression_load_new(state, param_val_new(11))); }
 //  | "gamefunc" "(" Expression "," Expression ")"                   { $$ = EXPR_4(MISC, $3, expression_load_new(state, param_val_new(0)), $5, expression_load_new(state, param_val_new(12))); }
     | "__unk1" "(" Expression "," Expression "," Expression ")"      { $$ = EXPR_4(MISC, $5, $3, $7, expression_load_new(state, param_val_new(13))); }
@@ -1350,7 +1345,7 @@ Entry:
       ENTRY {
         $$ = param_new('S');
         $$->value.val.S = gool_to_eid($1);
-        $$->object_link = -3;
+        //gool_pool_force_get_index(state->ecl, $$->value.val.S);
         free($1);
       }
     ;
@@ -1358,10 +1353,7 @@ Entry:
 Load_Type:
       Address
     | Integer
-    ;
-
-Pointer_Type:
-      Entry
+    | Entry
     ;
 
 %%
