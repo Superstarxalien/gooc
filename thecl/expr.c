@@ -77,7 +77,7 @@ c1_expressions[] = {
     { B_NOT,     23, NULL, 2, 0, 1, 1 }, /* ~s0 */
     { ABS,       25, NULL, 2, 0, 1, 1 }, /* abs(s0) */
     { PAD,       26, NULL, 5, 0, 0, 0 }, /* pad(s0, s1, s2, s3, s4) */
-    { GRAV,      27, NULL, 2, 0, 0, 0 }, /* grav(s0, s1) */
+    { SPD,       27, NULL, 2, 0, 0, 0 }, /* spd(s0, s1) */
     { MISC,      28, NULL, 4, 0, 0, 0 }, /* misc(s0, s1, s2, s3) */
     { SIN,       29, NULL, 2, 0, 0, 0 }, /* sin(s0, s1) */
     { TIME,      30, NULL, 2, 0, 0, 0 }, /* time(s0, s1) */

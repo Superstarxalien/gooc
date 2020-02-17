@@ -137,7 +137,7 @@
 "dirpress"         return DPRESS;
 "dirhold"          return DHOLD;
 "dirbuffer"        return DBUFFER;
-"grav"             return GRAV;
+"spd"              return SPD;
 "sin"              return SIN;
 "getval"                return GETVAL;
 "distance"              return DISTANCE;
@@ -298,10 +298,12 @@
         return DIRECTIVE_FONT;
     else if (!strcmp(txt, "char"))
         return DIRECTIVE_CHAR;
-    else if (!strcmp(txt, "tex"))
-        return DIRECTIVE_TEXTURE;
     else if (!strcmp(txt, "text"))
         return DIRECTIVE_TEXT;
+    else if (!strcmp(txt, "tex"))
+        return DIRECTIVE_TEXTURE;
+    else if (!strcmp(txt, "sprite"))
+        return DIRECTIVE_SPRITE;
     yylval.string = strdup(yytext + 1);
     return DIRECTIVE;
 }

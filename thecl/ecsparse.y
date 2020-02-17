@@ -186,6 +186,7 @@ int yydebug = 0;
 %token DIRECTIVE_CHAR "#char"
 %token DIRECTIVE_TEXT "#text"
 %token DIRECTIVE_TEXTURE "#tex"
+%token DIRECTIVE_SPRITE "#sprite"
 %token COMMA ","
 %token SEMICOLON ";"
 %token SUB "sub"
@@ -267,7 +268,7 @@ int yydebug = 0;
 %token DPRESS "dirpress"
 %token DHOLD "dirhold"
 %token DBUFFER "dirbuffer"
-%token GRAV "grav"
+%token SPD "spd"
 %token SIN "sin"
 %token MISC "misc"
 %token GETVAL "getval"
@@ -433,6 +434,26 @@ Statement:
         list_append_new(&state->ecl->anims, state->current_anim);
         state->current_anim = NULL;
       }
+    | DIRECTIVE_SPRITE IDENTIFIER ENTRY {
+        gool_anim_t* anim = malloc(sizeof(gool_anim_t));
+        anim->name = strdup($2);
+        anim->size = sizeof(c1_sprite_t);
+
+        c1_sprite_t* sprite = malloc(sizeof(c1_sprite_t));
+        sprite->type = 2;
+        sprite->count = 0;
+        sprite->eid = gool_to_eid($3);
+
+        anim->anim = sprite;
+        state->current_anim = anim;
+
+        free($2);
+        free($3);
+      }
+      Sprite_Frames {
+        list_append_new(&state->ecl->anims, state->current_anim);
+        state->current_anim = NULL;
+      }
     | DIRECTIVE_TEXT IDENTIFIER IDENTIFIER INTEGER {
         gool_anim_t* anim = malloc(sizeof(gool_anim_t));
         anim->name = strdup($2);
@@ -528,6 +549,31 @@ Font_Char:
         character->tex2 |= ($10 & 0x3FF) << 22;
         character->w = $11;
         character->h = $12;
+    }
+    ;
+
+Sprite_Frames:
+    %empty
+    | Sprite_Frames Sprite_Frame
+    ;
+
+Sprite_Frame:
+    DIRECTIVE_TEXTURE INTEGER INTEGER INTEGER INTEGER INTEGER INTEGER INTEGER INTEGER INTEGER { /* jesus christ */
+        c1_sprite_t* sprite = state->current_anim->anim;
+        sprite = realloc(sprite, sizeof(c1_sprite_t) + sizeof(c1_frame_t) * ++sprite->count);
+        state->current_anim->anim = sprite;
+        state->current_anim->size = sizeof(c1_sprite_t) + sizeof(c1_frame_t) * sprite->count;
+
+        c1_frame_t* frame = sprite->frames + sprite->count - 1;
+        frame->tex1 = $2 & 0xFFFFFF; /* rgb */
+        frame->tex1 |= ($5 & 0xF) << 24; /* clutx */
+        frame->tex1 |= ($4 & 0x3) << 29; /* blend */
+        frame->tex2 = $9 & 0x1F; /* yoff */
+        frame->tex2 |= ($6 & 0x7F) << 6; /* cluty */
+        frame->tex2 |= ($8 & 0x1F) << 13; /* xoff */
+        frame->tex2 |= ($7 & 0x3) << 18; /* segment */
+        frame->tex2 |= ($3 & 0x3) << 20; /* color */
+        frame->tex2 |= ($10 & 0x3FF) << 22; /* uv */
     }
     ;
 
@@ -1134,13 +1180,14 @@ ExpressionSubset:
     | "seek" "(" Expression "," Expression ")"                    { $$ = EXPR_2(SEEK, $3, $5); }
     | "degseek" "(" Expression "," Expression "," Expression ")"  { $$ = EXPR_3(DEGSEEK, $3, $5, $7); }
     | "degseek" "(" Expression "," Expression ")"                 { $$ = EXPR_2(DEGSEEK, $3, $5); }
+    | "rand" "(" Expression ")"                                   { $$ = EXPR_2(RAND, expression_load_new(state, param_val_new(0)), $3); }
     | "rand" "(" Expression "," Expression ")"                    { $$ = EXPR_2(RAND, $3, $5); }
     | "nearseek" "(" Expression "," Expression "," Expression ")" { $$ = EXPR_3(NEARSEEK, $3, $5, $7); }
     | "nearseek" "(" Expression "," Expression ")"                { $$ = EXPR_2(NEARSEEK, $3, $5); }
     | "time" "(" Expression "," Expression ")"                    { $$ = EXPR_2(TIME, $3, $5); }
-    | "time" "(" Expression ")" { thecl_param_t* param = param_new('S'); param->value.val.S = 0; $$ = EXPR_2(TIME, $3, expression_load_new(state, param)); }
-    | "getcolor" "(" Expression "," Expression ")" { $$ = EXPR_2(GETCOLOR, $3, $5); }
-    | "getcolor" "(" Expression ")" { thecl_param_t* param = param_new('S'); param->value.val.S = 0; $$ = EXPR_2(GETCOLOR, expression_load_new(state, param), $3); }
+    | "time" "(" Expression ")"                                   { $$ = EXPR_2(TIME, $3, expression_load_new(state, param_val_new(0))); }
+    | "getcolor" "(" Expression "," Expression ")"                { $$ = EXPR_2(GETCOLOR, $3, $5); }
+    | "getcolor" "(" Expression ")"                               { $$ = EXPR_2(GETCOLOR, expression_load_new(state, param_val_new(0)), $3); }
     | "pad" "(" Expression "," Expression "," Expression "," Expression "," Expression ")" { $$ = EXPR_5(PAD, $3, $5, $7, $9, $11); }
     | "buttonpress" "(" Expression ")" {
         thecl_param_t *p1, *p2, *p3, *p4;
@@ -1214,7 +1261,7 @@ ExpressionSubset:
         p1->value.val.S = 0; p2->value.val.S = 0; p3->value.val.S = 3;
         $$ = EXPR_5(PAD, expression_load_new(state, p1), expression_load_new(state, p2), expression_load_new(state, p3), $3, $5);
       }
-    | "grav" "(" Expression "," Expression ")"                       { $$ = EXPR_2(GRAV, $3, $5); }
+    | "spd" "(" Expression "," Expression ")"                        { $$ = EXPR_2(SPD, $3, $5); }
     | "sin" "(" Expression "," Expression ")"                        { $$ = EXPR_2(SIN,  $3, $5); }
     | "getval" "(" Expression "," Expression ")"                     { $$ = EXPR_4(MISC, $3, expression_load_new(state, param_val_new(0)), $5, expression_load_new(state, param_val_new(0))); }
     | "distance" "(" Expression "," Expression ")"                   { $$ = EXPR_4(MISC, expression_load_new(state, param_null_new()), $3, $5, expression_load_new(state, param_val_new(1))); }
@@ -1272,9 +1319,6 @@ Address:
             $$ = param_new('S');
             $$->stack = 2;
             $$->value.val.S = gvar->offset << 8;
-        } else if (spawn = spawn_get(state, $1)) {
-            $$ = param_new('S');
-            $$->value.val.S = spawn->offset;
         } else if (field = field_get($1)) {
             $$ = param_new('S');
             $$->stack = 1;
@@ -1288,6 +1332,9 @@ Address:
             $$->stack = 1;
             $$->value.val.S = globalvar->offset + 64;
             $$->object_link = 0;
+        } else if (spawn = spawn_get(state, $1)) {
+            $$ = param_new('S');
+            $$->value.val.S = spawn->offset;
         } else if ((anim_offset = anim_get_offset(state, $1)) != 0xFFFF) {
             $$ = param_new('S');
             $$->value.val.S = anim_offset;

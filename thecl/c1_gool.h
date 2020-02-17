@@ -41,6 +41,18 @@ typedef struct {
 typedef struct {
     uint32_t tex1;
     uint32_t tex2;
+} c1_frame_t;
+
+typedef struct {
+    uint16_t type; /* 2 */
+    uint16_t count;
+    uint32_t eid;
+    c1_frame_t frames[];
+} c1_sprite_t;
+
+typedef struct {
+    uint32_t tex1;
+    uint32_t tex2;
     uint16_t w;
     uint16_t h;
 } c1_char_t;
