@@ -60,6 +60,7 @@ static void instr_prepend(thecl_sub_t* sub, thecl_instr_t* instr);
 static bool instr_create_call(parser_state_t *state, uint8_t type, char *name, list_t *params, bool needs_ret);
 
 static expression_t* expression_load_new(const parser_state_t* state, thecl_param_t* value);
+static expression_t* expression_val_new(const parser_state_t* state, int value);
 static expression_t* expression_pointer_new(const parser_state_t* state, thecl_param_t* value);
 static expression_t* expression_operation_new(const parser_state_t* state, const int symbol, expression_t** operands);
 static expression_t* expression_ternary_new(/*const parser_state_t* state, */expression_t* condition, expression_t* val1, expression_t* val2);
@@ -1091,7 +1092,7 @@ Assignment:
     | Address "|=" Expression { var_shorthand_assign(state, $1, $3, B_OR); }
     | Address "&=" Expression { var_shorthand_assign(state, $1, $3, B_AND); }
     | Address "<<=" Expression { var_shorthand_assign(state, $1, $3, LSHIFT); }
-    | Address ">>=" Expression { thecl_param_t* param = param_new('S'); param->value.val.S = 0; var_shorthand_assign(state, $1, EXPR_2(SUBTRACT, expression_load_new(state, param), $3), LSHIFT); }
+    | Address ">>=" Expression { var_shorthand_assign(state, $1, EXPR_2(SUBTRACT, expression_val_new(state, 0), $3), LSHIFT); }
     | Address "\\=" Expression { var_shorthand_assign(state, $1, $3, TEST); }
     ;
 
@@ -1168,7 +1169,7 @@ ExpressionSubset:
     | Expression "|"   Expression { $$ = EXPR_2(B_OR,     $1, $3); }
     | Expression "&"   Expression { $$ = EXPR_2(B_AND,    $1, $3); }
     | Expression "<<"  Expression { $$ = EXPR_2(LSHIFT,   $1, $3); }
-    | Expression ">>"  Expression { $$ = EXPR_2(LSHIFT,   $1, EXPR_2(SUBTRACT, expression_load_new(state, param_val_new(0)), $3)); }
+    | Expression ">>"  Expression { $$ = EXPR_2(LSHIFT,   $1, EXPR_2(SUBTRACT, expression_val_new(state, 0), $3)); }
     | Expression "\\"  Expression { $$ = EXPR_2(TEST,     $1, $3); }
     | Expression "!="  Expression {
         $$ = EXPR_2(INEQUAL,  $1, $3);
@@ -1180,103 +1181,43 @@ ExpressionSubset:
     | "seek" "(" Expression "," Expression ")"                    { $$ = EXPR_2(SEEK, $3, $5); }
     | "degseek" "(" Expression "," Expression "," Expression ")"  { $$ = EXPR_3(DEGSEEK, $3, $5, $7); }
     | "degseek" "(" Expression "," Expression ")"                 { $$ = EXPR_2(DEGSEEK, $3, $5); }
-    | "rand" "(" Expression ")"                                   { $$ = EXPR_2(RAND, expression_load_new(state, param_val_new(0)), $3); }
+    | "rand" "(" Expression ")"                                   { $$ = EXPR_2(RAND, expression_val_new(state, 0), $3); }
     | "rand" "(" Expression "," Expression ")"                    { $$ = EXPR_2(RAND, $3, $5); }
     | "nearseek" "(" Expression "," Expression "," Expression ")" { $$ = EXPR_3(NEARSEEK, $3, $5, $7); }
     | "nearseek" "(" Expression "," Expression ")"                { $$ = EXPR_2(NEARSEEK, $3, $5); }
     | "time" "(" Expression "," Expression ")"                    { $$ = EXPR_2(TIME, $3, $5); }
-    | "time" "(" Expression ")"                                   { $$ = EXPR_2(TIME, $3, expression_load_new(state, param_val_new(0))); }
+    | "time" "(" Expression ")"                                   { $$ = EXPR_2(TIME, $3, expression_val_new(state, 0)); }
     | "getcolor" "(" Expression "," Expression ")"                { $$ = EXPR_2(GETCOLOR, $3, $5); }
-    | "getcolor" "(" Expression ")"                               { $$ = EXPR_2(GETCOLOR, expression_load_new(state, param_val_new(0)), $3); }
+    | "getcolor" "(" Expression ")"                               { $$ = EXPR_2(GETCOLOR, expression_val_new(state, 0), $3); }
     | "pad" "(" Expression "," Expression "," Expression "," Expression "," Expression ")" { $$ = EXPR_5(PAD, $3, $5, $7, $9, $11); }
-    | "buttonpress" "(" Expression ")" {
-        thecl_param_t *p1, *p2, *p3, *p4;
-        p1 = param_new('S'); p2 = param_new('S'); p3 = param_new('S'); p4 = param_new('S');
-        p1->value.val.S = 1; p2->value.val.S = 0; p3->value.val.S = 0; p4->value.val.S = 0;
-        $$ = EXPR_5(PAD, $3, expression_load_new(state, p1), expression_load_new(state, p2), expression_load_new(state, p3), expression_load_new(state, p4));
-      }
-    | "buttonhold" "(" Expression ")" {
-        thecl_param_t *p1, *p2, *p3, *p4;
-        p1 = param_new('S'); p2 = param_new('S'); p3 = param_new('S'); p4 = param_new('S');
-        p1->value.val.S = 2; p2->value.val.S = 0; p3->value.val.S = 0; p4->value.val.S = 0;
-        $$ = EXPR_5(PAD, $3, expression_load_new(state, p1), expression_load_new(state, p2), expression_load_new(state, p3), expression_load_new(state, p4));
-      }
-    | "buttonbuffer" "(" Expression ")" {
-        thecl_param_t *p1, *p2, *p3, *p4;
-        p1 = param_new('S'); p2 = param_new('S'); p3 = param_new('S'); p4 = param_new('S');
-        p1->value.val.S = 3; p2->value.val.S = 0; p3->value.val.S = 0; p4->value.val.S = 0;
-        $$ = EXPR_5(PAD, $3, expression_load_new(state, p1), expression_load_new(state, p2), expression_load_new(state, p3), expression_load_new(state, p4));
-      }
-    | "buttonpress" "(" Expression "," Expression ")" {
-        thecl_param_t *p1, *p2, *p3;
-        p1 = param_new('S'); p2 = param_new('S'); p3 = param_new('S');
-        p1->value.val.S = 1; p2->value.val.S = 0; p3->value.val.S = 0;
-        $$ = EXPR_5(PAD, $3, expression_load_new(state, p1), expression_load_new(state, p2), expression_load_new(state, p3), $5);
-      }
-    | "buttonhold" "(" Expression "," Expression ")" {
-        thecl_param_t *p1, *p2, *p3;
-        p1 = param_new('S'); p2 = param_new('S'); p3 = param_new('S');
-        p1->value.val.S = 2; p2->value.val.S = 0; p3->value.val.S = 0;
-        $$ = EXPR_5(PAD, $3, expression_load_new(state, p1), expression_load_new(state, p2), expression_load_new(state, p3), $5);
-      }
-    | "buttonbuffer" "(" Expression "," Expression ")" {
-        thecl_param_t *p1, *p2, *p3;
-        p1 = param_new('S'); p2 = param_new('S'); p3 = param_new('S');
-        p1->value.val.S = 3; p2->value.val.S = 0; p3->value.val.S = 0;
-        $$ = EXPR_5(PAD, $3, expression_load_new(state, p1), expression_load_new(state, p2), expression_load_new(state, p3), $5);
-      }
-    | "dirpress" "(" Expression ")" {
-        thecl_param_t *p1, *p2, *p3, *p4;
-        p1 = param_new('S'); p2 = param_new('S'); p3 = param_new('S'); p4 = param_new('S');
-        p1->value.val.S = 0; p2->value.val.S = 0; p3->value.val.S = 1; p4->value.val.S = 0;
-        $$ = EXPR_5(PAD, expression_load_new(state, p1), expression_load_new(state, p2), expression_load_new(state, p3), $3, expression_load_new(state, p4));
-      }
-    | "dirhold" "(" Expression ")" {
-        thecl_param_t *p1, *p2, *p3, *p4;
-        p1 = param_new('S'); p2 = param_new('S'); p3 = param_new('S'); p4 = param_new('S');
-        p1->value.val.S = 0; p2->value.val.S = 0; p3->value.val.S = 2; p4->value.val.S = 0;
-        $$ = EXPR_5(PAD, expression_load_new(state, p1), expression_load_new(state, p2), expression_load_new(state, p3), $3, expression_load_new(state, p4));
-      }
-    | "dirbuffer" "(" Expression ")" {
-        thecl_param_t *p1, *p2, *p3, *p4;
-        p1 = param_new('S'); p2 = param_new('S'); p3 = param_new('S'); p4 = param_new('S');
-        p1->value.val.S = 0; p2->value.val.S = 0; p3->value.val.S = 3; p4->value.val.S = 0;
-        $$ = EXPR_5(PAD, expression_load_new(state, p1), expression_load_new(state, p2), expression_load_new(state, p3), $3, expression_load_new(state, p4));
-      }
-    | "dirpress" "(" Expression "," Expression ")" {
-        thecl_param_t *p1, *p2, *p3;
-        p1 = param_new('S'); p2 = param_new('S'); p3 = param_new('S');
-        p1->value.val.S = 0; p2->value.val.S = 0; p3->value.val.S = 1;
-        $$ = EXPR_5(PAD, expression_load_new(state, p1), expression_load_new(state, p2), expression_load_new(state, p3), $3, $5);
-      }
-    | "dirhold" "(" Expression "," Expression ")" {
-        thecl_param_t *p1, *p2, *p3;
-        p1 = param_new('S'); p2 = param_new('S'); p3 = param_new('S');
-        p1->value.val.S = 0; p2->value.val.S = 0; p3->value.val.S = 2;
-        $$ = EXPR_5(PAD, expression_load_new(state, p1), expression_load_new(state, p2), expression_load_new(state, p3), $3, $5);
-      }
-    | "dirbuffer" "(" Expression "," Expression ")" {
-        thecl_param_t *p1, *p2, *p3;
-        p1 = param_new('S'); p2 = param_new('S'); p3 = param_new('S');
-        p1->value.val.S = 0; p2->value.val.S = 0; p3->value.val.S = 3;
-        $$ = EXPR_5(PAD, expression_load_new(state, p1), expression_load_new(state, p2), expression_load_new(state, p3), $3, $5);
-      }
-    | "spd" "(" Expression "," Expression ")"                        { $$ = EXPR_2(SPD, $3, $5); }
-    | "sin" "(" Expression "," Expression ")"                        { $$ = EXPR_2(SIN,  $3, $5); }
-    | "getval" "(" Expression "," Expression ")"                     { $$ = EXPR_4(MISC, $3, expression_load_new(state, param_val_new(0)), $5, expression_load_new(state, param_val_new(0))); }
-    | "distance" "(" Expression "," Expression ")"                   { $$ = EXPR_4(MISC, expression_load_new(state, param_null_new()), $3, $5, expression_load_new(state, param_val_new(1))); }
-    | "atan2" "(" Expression "," Expression ")"                      { $$ = EXPR_4(MISC, $5, $3, expression_load_new(state, param_val_new(0)), expression_load_new(state, param_val_new(2))); }
-    | "getfield" "(" Expression "," Expression ")"                   { $$ = EXPR_4(MISC, $5, $3, expression_load_new(state, param_val_new(0)), expression_load_new(state, param_val_new(3))); }
+    | "buttonpress" "(" Expression ")"                            { $$ = EXPR_5(PAD, $3, expression_val_new(state, 1), expression_val_new(state, 0), expression_val_new(state, 8), expression_val_new(state, 0)); }
+    | "buttonhold" "(" Expression ")"                             { $$ = EXPR_5(PAD, $3, expression_val_new(state, 2), expression_val_new(state, 0), expression_val_new(state, 8), expression_val_new(state, 0)); }
+    | "buttonbuffer" "(" Expression ")"                           { $$ = EXPR_5(PAD, $3, expression_val_new(state, 3), expression_val_new(state, 0), expression_val_new(state, 8), expression_val_new(state, 0)); }
+    | "buttonpress" "(" Expression "," Expression ")"             { $$ = EXPR_5(PAD, $3, expression_val_new(state, 1), expression_val_new(state, 0), expression_val_new(state, 8), $5); }
+    | "buttonhold" "(" Expression "," Expression ")"              { $$ = EXPR_5(PAD, $3, expression_val_new(state, 2), expression_val_new(state, 0), expression_val_new(state, 8), $5); }
+    | "buttonbuffer" "(" Expression "," Expression ")"            { $$ = EXPR_5(PAD, $3, expression_val_new(state, 3), expression_val_new(state, 0), expression_val_new(state, 8), $5); }
+    | "dirpress" "(" Expression ")"                               { $$ = EXPR_5(PAD, expression_val_new(state, 0), expression_val_new(state, 0), expression_val_new(state, 1), $3, expression_val_new(state, 0)); }
+    | "dirhold" "(" Expression ")"                                { $$ = EXPR_5(PAD, expression_val_new(state, 0), expression_val_new(state, 0), expression_val_new(state, 2), $3, expression_val_new(state, 0)); }
+    | "dirbuffer" "(" Expression ")"                              { $$ = EXPR_5(PAD, expression_val_new(state, 0), expression_val_new(state, 0), expression_val_new(state, 3), $3, expression_val_new(state, 0)); }
+    | "dirpress" "(" Expression "," Expression ")"                { $$ = EXPR_5(PAD, expression_val_new(state, 0), expression_val_new(state, 0), expression_val_new(state, 1), $3, $5); }
+    | "dirhold" "(" Expression "," Expression ")"                 { $$ = EXPR_5(PAD, expression_val_new(state, 0), expression_val_new(state, 0), expression_val_new(state, 2), $3, $5); }
+    | "dirbuffer" "(" Expression "," Expression ")"               { $$ = EXPR_5(PAD, expression_val_new(state, 0), expression_val_new(state, 0), expression_val_new(state, 3), $3, $5); }
+    | "spd" "(" Expression "," Expression ")"                     { $$ = EXPR_2(SPD, $3, $5); }
+    | "sin" "(" Expression "," Expression ")"                     { $$ = EXPR_2(SIN,  $3, $5); }
+    | "getval" "(" Expression "," Expression ")"                  { $$ = EXPR_4(MISC, $3, expression_val_new(state, 0), $5, expression_val_new(state, 0)); }
+    | "distance" "(" Expression "," Expression ")"                { $$ = EXPR_4(MISC, expression_load_new(state, param_null_new()), $3, $5, expression_val_new(state, 1)); }
+    | "atan2" "(" Expression "," Expression ")"                   { $$ = EXPR_4(MISC, $5, $3, expression_val_new(state, 0), expression_val_new(state, 2)); }
+    | "getfield" "(" Expression "," Expression ")"                { $$ = EXPR_4(MISC, $5, $3, expression_val_new(state, 0), expression_val_new(state, 3)); }
 
-    | "atan2_mirrored" "(" Expression ")"                            { $$ = EXPR_4(MISC, expression_load_new(state, param_null_new()), $3, expression_load_new(state, param_val_new(0)), expression_load_new(state, param_val_new(5))); }
-    | "distance" "(" Expression "," Expression "," Expression ")"    { $$ = EXPR_4(MISC, $3, $5, $7, expression_load_new(state, param_val_new(6))); }
-    | "objectget" "(" Expression ")"                                 { $$ = EXPR_4(MISC, $3, expression_load_new(state, param_val_new(0)), expression_load_new(state, param_val_new(0)), expression_load_new(state, param_val_new(7))); }
+    | "atan2_mirrored" "(" Expression ")"                         { $$ = EXPR_4(MISC, expression_load_new(state, param_null_new()), $3, expression_val_new(state, 0), expression_val_new(state, 5)); }
+    | "distance" "(" Expression "," Expression "," Expression ")" { $$ = EXPR_4(MISC, $3, $5, $7, expression_val_new(state, 6)); }
+    | "objectget" "(" Expression ")"                              { $$ = EXPR_4(MISC, $3, expression_val_new(state, 0), expression_val_new(state, 0), expression_val_new(state, 7)); }
 
-    | "entitygetstate" "(" Expression "," Expression ")"             { $$ = EXPR_4(MISC, $3, expression_load_new(state, param_val_new(0)), $5, expression_load_new(state, param_val_new(11))); }
-//  | "gamefunc" "(" Expression "," Expression ")"                   { $$ = EXPR_4(MISC, $3, expression_load_new(state, param_val_new(0)), $5, expression_load_new(state, param_val_new(12))); }
-    | "__unk1" "(" Expression "," Expression "," Expression ")"      { $$ = EXPR_4(MISC, $5, $3, $7, expression_load_new(state, param_val_new(13))); }
-    | "iscolliding" "(" Expression "," Expression ")"                { $$ = EXPR_4(MISC, $3, $5, expression_load_new(state, param_val_new(0)), expression_load_new(state, param_val_new(14))); }
-//  | "__unk2" "(" Expression "," Expression ")"                     { $$ = EXPR_4(MISC, $3, expression_load_new(state, param_val_new(0)), $5, expression_load_new(state, param_val_new(15))); }
+    | "entitygetstate" "(" Expression "," Expression ")"          { $$ = EXPR_4(MISC, $3, expression_val_new(state, 0), $5, expression_val_new(state, 11)); }
+//  | "gamefunc" "(" Expression "," Expression ")"                { $$ = EXPR_4(MISC, $3, expression_val_new(state, 0), $5, expression_val_new(state, 12)); }
+    | "__unk1" "(" Expression "," Expression "," Expression ")"   { $$ = EXPR_4(MISC, $5, $3, $7, expression_val_new(state, 13)); }
+    | "iscolliding" "(" Expression "," Expression ")"             { $$ = EXPR_4(MISC, $3, $5, expression_val_new(state, 0), expression_val_new(state, 14)); }
+//  | "__unk2" "(" Expression "," Expression ")"                  { $$ = EXPR_4(MISC, $3, expression_val_new(state, 0), $5, expression_val_new(state, 15)); }
 
     /* Custom expressions. */
     /*
@@ -1723,6 +1664,14 @@ expression_load_new(
     ret->id = expr->id;
     ret->value = value;
     return ret;
+}
+
+static expression_t*
+expression_val_new(
+    const parser_state_t* state,
+    int value)
+{
+    return expression_load_new(state, param_val_new(value));
 }
 
 static expression_t*
