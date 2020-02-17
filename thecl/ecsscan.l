@@ -158,8 +158,8 @@
 (-|\+)?[0-9]+\.[0-9]+([Mms]|[Hh]z)? {
     char* afternum;
     double num = strtod(yytext, &afternum);
-	if (strstr(afternum, "hz") || strstr(afternum, "Hz"))
-		yylval.integer = (int)(num / 11025.0 * 0x400);
+    if (strstr(afternum, "hz") || strstr(afternum, "Hz"))
+        yylval.integer = (int)(num / 11025.0 * 0x400);
     else if (strchr(afternum, 'M') || strchr(afternum, 'm'))
         yylval.integer = (int)(num * 102400);
     else if (strchr(afternum, 's'))
@@ -171,8 +171,8 @@
 (-|\+)?[0-9]+([GgMms]|[Hh]z)? {
     char* afternum;
     yylval.integer = strtol(yytext, &afternum, 10);
-	if (strstr(afternum, "hz") || strstr(afternum, "Hz"))
-		yylval.integer = (int)(yylval.integer / 11025.0 * 0x400);
+    if (strstr(afternum, "hz") || strstr(afternum, "Hz"))
+        yylval.integer = (int)(yylval.integer / 11025.0 * 0x400);
     else if (strchr(afternum, 'M') || strchr(afternum, 'm'))
         yylval.integer *= 102400;
     else if (strchr(afternum, 'G') || strchr(afternum, 'g'))
@@ -184,18 +184,18 @@
     return GOOL_INTEGER;
 }
 [-\+]?[Gg]?0x[0-9a-fA-F]+ {
-	char* txt = yytext;
-	char s = '+';
-	if (txt[0] == '-' || txt[0] == '+') {
-		s = txt[0];
-		++txt;
-	}
-	if (txt[0] == 'G' || txt[0] == 'g') {
-		yylval.integer = 0x100;
-		txt[0] = s;
-	}
-	else
-		yylval.integer = 1;
+    char* txt = yytext;
+    char s = '+';
+    if (txt[0] == '-' || txt[0] == '+') {
+        s = txt[0];
+        ++txt;
+    }
+    if (txt[0] == 'G' || txt[0] == 'g') {
+        yylval.integer = 0x100;
+        txt[0] = s;
+    }
+    else
+        yylval.integer = 1;
     yylval.integer *= strtoul(txt, NULL, 16);
     return INTEGER;
 }
@@ -206,16 +206,16 @@
     return INTEGER;
 }
 [Ll]'[0-9a-zA-Z_!]' {
-	int id = strchr_o(gool_ename_charmap, yytext[2]);
-	if (id == -(int)gool_ename_charmap) {
-		char buf[64];
-		snprintf(buf, 64, "invalid level id: %c", yytext[2]);
-		yyerror(NULL, buf);
-		BEGIN(INITIAL);
-		yyterminate();
-	}
-	yylval.integer = id << 8;
-	return INTEGER;
+    int id = strchr_o(gool_ename_charmap, yytext[2]);
+    if (id == -(int)gool_ename_charmap) {
+        char buf[64];
+        snprintf(buf, 64, "invalid level id: %c", yytext[2]);
+        yyerror(NULL, buf);
+        BEGIN(INITIAL);
+        yyterminate();
+    }
+    yylval.integer = id << 8;
+    return INTEGER;
 }
 "false" {
     /* boolean "false" */
@@ -245,7 +245,7 @@
 \[[a-zA-Z0-9_!]{5}\] {
     yylval.string = malloc(6);
     strncpy(yylval.string, yytext + 1, 5);
-	yylval.string[5] = '\0';
+    yylval.string[5] = '\0';
     return ENTRY;
 }
 

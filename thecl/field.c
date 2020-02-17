@@ -133,11 +133,13 @@ c1_gool_globals[] = {
     { "BONUSROUND",   60 },
 
     { "BOXCOUNT",     62 },
+    { "GAMEITEMPOOL1",63 },
 
     { "DEBUG",        68 },
     { "CHECKPOINTID", 69 },
     { "PREVBOXCOUNT", 70 },
     { "PREVLEVEL",    71 },
+    { "GAMEITEMPOOL2",72 },
 
     { "GEMCOUNT",     97 },
     { "KEYCOUNT",     98 },
