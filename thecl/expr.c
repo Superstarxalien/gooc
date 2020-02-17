@@ -84,7 +84,7 @@ c1_expressions[] = {
     { SEEK,      34, NULL, 3, 1, 0, 0 }, /* seek(s0, s1, s2) */
     { GETCOLOR,  35, NULL, 2, 0, 0, 0 }, /* getcolor(s0, s1) */
     { DEGSEEK,   37, NULL, 3, 1, 0, 0 }, /* degseek(s0, s1, s2) */
-    { 0,          0, NULL, 0, 0, NULL }
+    { 0,          0, NULL, 0, 0, 0, 0 }
 };
 
 static const expr_t*

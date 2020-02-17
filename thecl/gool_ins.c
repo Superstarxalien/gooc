@@ -56,8 +56,6 @@ c1_gool_ins_playframe_params(
         param = param_new('S');
         param->value.val.S = 3;
         list_append_new(params, param);
-
-        return params;
     }
     else if (c == 1) {
         param = param_new('S');
@@ -67,16 +65,13 @@ c1_gool_ins_playframe_params(
         param = param_new('S');
         param->value.val.S = 3;
         list_append_new(params, param);
-
-        return params;
     }
-    else if (c == 3) {
-        return params;
+    else if (c == 2) {
+        param = param_new('S');
+        param->value.val.S = 3;
+        list_append_new(params, param);
     }
-    else {
-        fprintf(stderr, "%s: playframe: wrong number of arguments (expected 0, 1 or 3+, got %zu)\n", argv0, c);
-        return NULL;
-    }
+    return params;
 }
 
 static list_t*
@@ -259,13 +254,13 @@ c1_gool_ins_spawn_params(
         param = param_new('S');
         param->value.val.S = argc;
         list_append_new(params, param);
-
-        return params;
     }
     else {
         fprintf(stderr, "%s: spawn: wrong number of arguments (expected 2 or 3, got %zu)\n", argv0, c);
         return NULL;
     }
+
+    return params;
 }
 
 static list_t*
@@ -293,13 +288,13 @@ c1_gool_ins_sendevent_params(
         list_append_new(params, param);
 
         list_append_new(params, receiver);
-
-        return params;
     }
     else {
         fprintf(stderr, "%s: sendevent: wrong number of arguments (expected at least 3, got %zu)\n", argv0, c);
         return NULL;
     }
+
+    return params;
 }
 
 static list_t*
@@ -331,8 +326,6 @@ c1_gool_ins_eventstatus_params(
         param = param_new('S');
         param->value.val.S = 0;
         list_append_new(params, param);
-
-        return params;
     }
     else if (c == 1) {
         param = param_new('S');
@@ -350,13 +343,13 @@ c1_gool_ins_eventstatus_params(
         param = param_new('S');
         param->value.val.S = 0;
         list_append_new(params, param);
-
-        return params;
     }
     else {
         fprintf(stderr, "%s: accept/rejectevent: wrong number of arguments (expected 0 or 1, got %zu)\n", argv0, c);
         return NULL;
     }
+
+    return params;
 }
 
 static list_t*
@@ -529,7 +522,7 @@ c1_gool_ins_movetozoneinposition_params(
         list_append_new(params, param);
     }
     else {
-        fprintf(stderr, "%s: movetozoneinposition: wrong number of arguments (expected 3, got %zu)\n", argv0, c);
+        fprintf(stderr, "%s: movetozoneinposition: wrong number of arguments (expected 2, got %zu)\n", argv0, c);
         return NULL;
     }
     return params;

@@ -293,13 +293,16 @@
 <COMMENT_SINGLE>"\n"  BEGIN(INITIAL);
 
 #([a-zA-Z]+) {
-    yylval.string = strdup(yytext + 1);
-    if (!strcmp(yylval.string, "font"))
+	char* txt = yytext + 1;
+    if (!strcmp(txt, "font"))
         return DIRECTIVE_FONT;
-    else if (!strcmp(yylval.string, "char"))
+    else if (!strcmp(txt, "char"))
         return DIRECTIVE_CHAR;
-    else if (!strcmp(yylval.string, "text"))
+    else if (!strcmp(txt, "tex"))
+        return DIRECTIVE_TEXTURE;
+    else if (!strcmp(txt, "text"))
         return DIRECTIVE_TEXT;
+    yylval.string = strdup(yytext + 1);
     return DIRECTIVE;
 }
 

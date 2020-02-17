@@ -147,6 +147,7 @@ thecl_free(
     thecl_interrupt_t* interrupt;
     list_for_each(&ecl->interrupts, interrupt) {
         free(interrupt->lambda_name);
+        free(interrupt->event);
 
         free(interrupt);
     }

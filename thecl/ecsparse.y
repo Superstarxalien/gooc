@@ -130,7 +130,7 @@ static void var_shorthand_assign(parser_state_t* state, thecl_param_t* param, ex
 /* Stores a new label in the current subroutine pointing to the current offset. */
 static void label_create(parser_state_t* state, char* label);
 /* Returns the spawn of the given name, or NULL if it doesn't exist */
-static thecl_variable_t* spawn_get(parser_state_t* state, const char* name);
+static thecl_spawn_t* spawn_get(parser_state_t* state, const char* name);
 
 /* Creates a new param equivalent to a GOOL stack push/pop operand */
 static thecl_param_t* param_sp_new(void);
@@ -181,10 +181,11 @@ int yydebug = 0;
 %token <integer> INTEGER "integer"
 %token <integer> GOOL_INTEGER "gool integer"
 %token <string> DIRECTIVE "directive"
-%token <string> DIRECTIVE_FONT "#font"
-%token <string> DIRECTIVE_CHAR "#char"
-%token <string> DIRECTIVE_TEXT "#text"
 %token <string> ENTRY "entry"
+%token DIRECTIVE_FONT "#font"
+%token DIRECTIVE_CHAR "#char"
+%token DIRECTIVE_TEXT "#text"
+%token DIRECTIVE_TEXTURE "#tex"
 %token COMMA ","
 %token SEMICOLON ";"
 %token SUB "sub"
@@ -347,7 +348,8 @@ Statement:
         }
 
         state->current_interrupt = malloc(sizeof(thecl_interrupt_t));
-        state->current_interrupt->event = event;
+        state->current_interrupt->event = malloc(sizeof(field_t));
+		memcpy(state->current_interrupt->event, event, sizeof(field_t));
 
         free($2);
       }
@@ -385,8 +387,8 @@ Statement:
         free($2);
         free($3);
       }
-    | DIRECTIVE IDENTIFIER IDENTIFIER INTEGER {
-        if (!strcmp($1, "anim")){
+    | DIRECTIVE IDENTIFIER ENTRY INTEGER {
+        if (!strcmp($1, "anim")) {
             anim_create_anim_c1(state, $2, $4, gool_to_eid($3));
         }
         free($1);
@@ -411,7 +413,7 @@ Statement:
         free($1);
         free($2);
       }
-    | DIRECTIVE_FONT IDENTIFIER IDENTIFIER {
+    | DIRECTIVE_FONT IDENTIFIER ENTRY {
         gool_anim_t* anim = malloc(sizeof(gool_anim_t));
         anim->name = strdup($2);
         anim->size = sizeof(c1_font_t);
@@ -424,7 +426,6 @@ Statement:
         anim->anim = font;
         state->current_anim = anim;
 
-        free($1);
         free($2);
         free($3);
       }
@@ -446,7 +447,6 @@ Statement:
         anim->anim = text;
         state->current_anim = anim;
 
-        free($1);
         free($2);
         free($3);
       }
@@ -511,8 +511,6 @@ Font_Chars:
 
 Font_Char:
     DIRECTIVE_CHAR INTEGER INTEGER INTEGER INTEGER INTEGER INTEGER INTEGER INTEGER INTEGER INTEGER INTEGER { /* jesus christ */
-        free($1);
-
         c1_font_t* font = state->current_anim->anim;
         font = realloc(font, sizeof(c1_font_t) + sizeof(c1_char_t) * ++font->char_count);
         state->current_anim->anim = font;
@@ -591,7 +589,7 @@ State_Instructions:
         else if (!strcmp($2, "statusc"))
             state->current_state->statusc = $3;
         else {
-            yyerror("syntax error, unpexpected %s in state body", $2);
+            yyerror(state, "syntax error, unpexpected %s in state body", $2);
         }
         free($2);
       }
@@ -2390,7 +2388,7 @@ label_create(
     strcpy(label->name, name);
 }
 
-static thecl_variable_t*
+static thecl_spawn_t*
 spawn_get(
     parser_state_t* state,
     const char* name)
