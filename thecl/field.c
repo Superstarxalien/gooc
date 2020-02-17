@@ -71,10 +71,10 @@ gool_fields[] = {
     { "epc",          35 },
     { "hpc",          36 },
     { "misc",         37 },
-    { "field_38",     38 },
+    { "v0",           38 },
     { "frametime",    39 },
     { "statetime",    40 },
-    { "animlag",      41 },
+    { "health",       41 },
     { "animseq",      42 },
     { "animframe",    43 },
     { "entity",       44 },
@@ -218,6 +218,8 @@ c1_gool_events[] = {
     { "EventTriggered",        8 },
 
     { "EventHitInvincible",   10 },
+
+    { "EventBossWin",         22 },
 
     { "EventDespawn",         26 },
 
