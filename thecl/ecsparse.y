@@ -369,9 +369,7 @@ Statement:
             state->ecl->is_defined = 1;
 
             /* automatically create an expression macro that translates the ename to the GOOL ID */
-            thecl_param_t* param = param_new('S');
-            param->value.val.S = $3;
-            macro_create(state, $2, expression_load_new(state, param));
+            macro_create(state, $2, expression_load_new(state, param_val_new($3)));
         }
         free($1);
         free($2);
