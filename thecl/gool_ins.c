@@ -119,23 +119,17 @@ c1_gool_ins_playanim_params(
         param = param_new('S');
         param->value.val.S = 3;
         list_append_new(params, param);
-
-        return params;
     }
     else if (c == 3) {
         param = param_new('S');
         param->value.val.S = 3;
         list_append_new(params, param);
-
-        return params;
     }
-    else if (c == 4) {
-        return params;
-    }
-    else {
-        fprintf(stderr, "%s: playtext: wrong number of arguments (expected 2, 3 or 4, got %zu)\n", argv0, c);
+    else if (c != 4) {
+        fprintf(stderr, "%s: playanim: wrong number of arguments (expected 2, 3 or 4, got %zu)\n", argv0, c);
         return NULL;
     }
+    return params;
 }
 
 static list_t*
