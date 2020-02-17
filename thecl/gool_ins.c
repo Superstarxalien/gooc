@@ -743,6 +743,42 @@ c1_gool_ins_sounddecay_params(
     return c1_gool_ins_soundspec_params(params, 12, "sounddecay");
 }
 
+static list_t*
+c1_gool_ins_ntry_params(
+    list_t* params,
+    int type,
+    const char* name)
+{
+    thecl_param_t* param;
+    size_t c = list_count(params);
+    if (c == 1) {
+        param = param_new('S');
+        param->value.val.S = type;
+        list_append_new(params, param);
+    }
+    else {
+        fprintf(stderr, "%s: %s: wrong number of arguments (expected 1, got %zu)\n", argv0, name, c);
+        return NULL;
+    }
+    return params;
+}
+
+static list_t*
+c1_gool_ins_loadfile_params(
+    list_t* params,
+    int argc)
+{
+    return c1_gool_ins_ntry_params(params, 1, "loadfile");
+}
+
+static list_t*
+c1_gool_ins_deloadfile_params(
+    list_t* params,
+    int argc)
+{
+    return c1_gool_ins_ntry_params(params, 2, "deloadfile");
+}
+
 static const gool_ins_t
 c1_gool_ins[] = {
      /* NAME                        ID  VA POP R   L   C              VALIDATE */
@@ -768,6 +804,8 @@ c1_gool_ins[] = {
      { "rejecteventandchangestate",0x88, 0, 0, 0, -1,  2, c1_gool_ins_eventstatusstate_params },
      { "accepteventandchangestate",0x89, 0, 0, 0, -1,  2, c1_gool_ins_eventstatusstate_params },
      { "spawn",                    0x8A, 1, 0, 0, -1,  3, c1_gool_ins_spawn_params },
+     { "loadfile",                 0x8B, 0, 0, 0, -1,  2, c1_gool_ins_loadfile_params },
+     { "deloadfile",               0x8B, 0, 0, 0, -1,  2, c1_gool_ins_deloadfile_params },
      { "soundplay",                0x8C, 0, 0, 0, -1,  2, c1_gool_ins_playsound_params },
      { "soundsetup",               0x8D, 0, 0, 0, -1,  2, c1_gool_ins_setupsound_params },
      { "soundpitch",               0x8D, 0, 0, 0, -1,  2, c1_gool_ins_soundpitch_params },

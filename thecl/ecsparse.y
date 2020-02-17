@@ -1759,6 +1759,8 @@ expression_operation_new(
             break;
         list_append_new(&ret->children, operands[o]);
     }
+	
+	expression_optimize(state, ret);
 
     return ret;
 }
