@@ -1550,7 +1550,7 @@ instr_add(
                         if (!!param->value.val.S == branch_type) { /* will never branch */
                             thecl_instr_free(instr);
                             param_free(param);
-                            goto OPTIM;
+                            return;
                         } else { /* will always branch */
                             param_free(param);
                             branch_type_param->value.val.S = 0;
@@ -1562,7 +1562,6 @@ instr_add(
     }
     NO_OPTIM:;
     list_append_new(&sub->instrs, instr);
-    OPTIM:;
     instr->offset = sub->offset;
     ++sub->offset;
 }
@@ -1573,8 +1572,9 @@ instr_del(
     thecl_sub_t* sub,
     thecl_instr_t* instr)
 {
-    list_node_t* node;
-    list_for_each_node(&sub->instrs, node) {
+	int found = 0;
+    list_node_t* node, *next;
+    list_for_each_node_safe(&sub->instrs, node, next) {
         if (node->data == instr) {
             list_del(&sub->instrs, node);
             thecl_label_t* label;
@@ -1584,8 +1584,13 @@ instr_del(
                 }
             }
             --sub->offset;
-            break;
+			found = 1;
         }
+		else if (found) {
+			thecl_instr_t* this_inst = node->data;
+			if (this_inst->offset > instr->offset)
+				--this_inst->offset;
+		}
     }
 }
 
@@ -2313,20 +2318,19 @@ scope_finish(
 ) {
     --state->scope_cnt;
 
-    if (pop_vars) {
-        /* pop GOOL stack variables */
-        int pop = 0;
-        thecl_variable_t* var;
-        for (int v=0; v < state->current_sub->var_count; ++v)
-            if (state->current_sub->vars[v]->scope == state->scope_stack[state->scope_cnt]) {
-                //memmove(state->current_sub->vars + v, state->current_sub->vars + (v + 1), (--state->current_sub->var_count - v) * sizeof(int));
-                //--v;
-                ++pop;
-            }
-        if (pop > 0) {
-            const expr_t* expr = expr_get_by_symbol(state->version, GOTO);
-            instr_add(state, state->current_sub, instr_new(state, expr->id, "SSSSS", 0, pop, 0x25, 0, 0));
+    /* pop GOOL stack variables */
+    int pop = 0;
+    thecl_variable_t* var;
+    for (int v=0; v < state->current_sub->var_count; ++v)
+        if (state->current_sub->vars[v]->scope == state->scope_stack[state->scope_cnt]) {
+            //memmove(state->current_sub->vars + v, state->current_sub->vars + (v + 1), (--state->current_sub->var_count - v) * sizeof(int));
+            //--v;
+            state->current_sub->vars[v]->is_unused = true;
+            ++pop;
         }
+    if (pop > 0 && pop_vars) {
+        const expr_t* expr = expr_get_by_symbol(state->version, GOTO);
+        instr_add(state, state->current_sub, instr_new(state, expr->id, "SSSSS", 0, pop, 0x25, 0, 0));
     }
 
     state->scope_stack = realloc(state->scope_stack, sizeof(int)*state->scope_cnt);
