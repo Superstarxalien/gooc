@@ -55,9 +55,10 @@ static void string_list_free(list_t* list);
 static thecl_instr_t* instr_new(parser_state_t* state, uint8_t id, const char* format, ...);
 static thecl_instr_t* instr_new_list(parser_state_t* state, uint8_t id, list_t* list);
 static void instr_add(parser_state_t* state, thecl_sub_t* sub, thecl_instr_t* instr);
+static void instr_del(parser_state_t* state, thecl_sub_t* sub, thecl_instr_t* instr);
 static void instr_prepend(thecl_sub_t* sub, thecl_instr_t* instr);
 /* Returns true if the created call was inline. */
-static bool instr_create_call(parser_state_t *state, uint8_t type, char *name, list_t *params, bool needs_ret);
+static bool instr_create_call(parser_state_t *state, uint8_t type, char *name, list_t *params);
 
 static expression_t* expression_load_new(const parser_state_t* state, thecl_param_t* value);
 static expression_t* expression_val_new(const parser_state_t* state, int value);
@@ -144,6 +145,9 @@ static thecl_param_t* param_var_new(int val);
 /* Creates a new integer param with the specified value */
 static thecl_param_t* param_val_new(int val);
 
+/* Returns the result of a math operation */
+static int math_preprocess(parser_state_t* state, int symbol, int val1, int val2);
+
 /* Update the current time label. */
 void set_time(parser_state_t* state, int new_time);
 
@@ -198,6 +202,7 @@ int yydebug = 0;
 %token TRANS "trans"
 %token EVENT "event"
 %token HANDLES "handles"
+%token INLINE "inline"
 %token BRACE_OPEN "{"
 %token BRACE_CLOSE "}"
 %token PARENTHESIS_OPEN "("
@@ -334,6 +339,14 @@ Statement:
       "(" ArgumentDeclaration ")" Subroutine_Body {
         sub_finish(state);
       }
+    | "inline" "sub" IDENTIFIER {
+        sub_begin(state, $3);
+        state->current_sub->is_inline = true;
+        free($3);
+      }
+      "(" ArgumentDeclaration ")" Subroutine_Body {
+        sub_finish(state);
+      }
     | "state" IDENTIFIER {
         state_begin(state, $2);
         free($2);
@@ -351,7 +364,7 @@ Statement:
 
         state->current_interrupt = malloc(sizeof(thecl_interrupt_t));
         state->current_interrupt->event = malloc(sizeof(field_t));
-		memcpy(state->current_interrupt->event, event, sizeof(field_t));
+        memcpy(state->current_interrupt->event, event, sizeof(field_t));
 
         free($2);
       }
@@ -1075,6 +1088,13 @@ Assignment:
             expr = expr_get_by_symbol(state->version, ASSIGN);
 
             instr_add(state, state->current_sub, instr_new(state, expr->id, "pp", $1, src_param));
+
+            if ($1->object_link == -1 && $1->stack >= 3) {
+                state->current_sub->vars[$1->stack - 3]->is_written = true;
+            }
+            else if ($1->object_link == -1 && $1->stack < 0) {
+                state->current_sub->args[-$1->stack - 1]->is_written = true;
+            }
         } else { /* WGL */
             expr = expr_get_by_symbol(state->version, GASSIGN);
 
@@ -1541,6 +1561,28 @@ instr_add(
 }
 
 static void
+instr_del(
+    parser_state_t* state,
+    thecl_sub_t* sub,
+    thecl_instr_t* instr)
+{
+    list_node_t* node;
+    list_for_each_node(&sub->instrs, node) {
+        if (node->data == instr) {
+            list_del(&sub->instrs, node);
+            thecl_label_t* label;
+            list_for_each(&sub->labels, label) {
+                if (label->offset > instr->offset) {
+                    --label->offset;
+                }
+            }
+            --sub->offset;
+            break;
+        }
+    }
+}
+
+static void
 instr_prepend(
     thecl_sub_t* sub,
     thecl_instr_t* instr)
@@ -1573,23 +1615,227 @@ instr_copy(thecl_instr_t* instr) {
     }
     return new_instr;
 }
+
+static void instr_create_inline_call(
+    parser_state_t* state,
+    thecl_sub_t* sub,
+    list_t* params_org
+) {
+    /*   INLINE SUBS: how do they work?
+     * Generally the main concept is that the sub that's inline gets parsed normally
+     * (with some exceptions, like the return statement jumping to the end of the sub instead)
+     * and then, when called, all insructions from the inline sub get copied into the caller,
+     * with some instr parameters being replaced by the values provided as inline sub parameters,
+     * stack variables being recreated, labels being adjusted etc.
+     * 
+     * So, how do parameters actually get passed? This part is a bit tricky, since it depends from
+     * what the parameter actually is, and what the inline sub does with the parameter inside:
+     * - For example, if we pass the RAND variable as a parameter, it needs to be copied into
+     * a new variable, in order to keep the same value when being read multiple times.
+     * - On the other hand, when passing a static value, creating a variable to store it in
+     * would be a waste of time, and as such all occurences of the parameter are replaced
+     * by the static value directly instead.
+     * - When the parameter is an expression, it needs to be stored in a variable too,
+     * since 1. evaluating the expression every time would be stupid, 2. expression does
+     * not neccesairly have to result in the same value every time (thanks to variables like RAND).
+     * - But, there still is another thing to keep in mind - the parameter could be written to
+     * inside of the inline sub! In this case, creating a variable to store the parameter in
+     * is absolutely necessary. */
+
+    /* An inline sub can't call itself for obvious reasons. */
+    if (strcmp(sub->name, state->current_sub->name) == 0) {
+        yyerror(state, "an inline sub is not allowed to call itself");
+        return;
+    }
+    char buf[256];
+
+    /* A new variable is created in order to know whether the list was passed or created here later. */
+    list_t* params = params_org == NULL ? list_new() : params_org;
+
+    /* Verify parameter count before doing anything else. */
+    size_t i = list_count(params);
+    thecl_param_t* param;
+    if (i > sub->arg_count) {
+        yyerror(state, "too many paramters for inline sub \"%s\"", sub->name);
+        list_for_each(params, param)
+            param_free(param);
+        return;
+    }
+    if (i < sub->arg_count) {
+        yyerror(state, "not enough parameters for inline sub \"%s\"", sub->name);
+        list_for_each(params, param)
+            param_free(param);
+        return;
+    }
+
+    /* After making sure that everything is correct, we can now create the inline sub scope. */
+    scope_begin(state);
+
+    /* This string will be prepended to label names/var names etc. */
+    char name[256];
+    snprintf(name, 256, "%s_%d_%d_%s_", state->current_sub->name, yylloc.first_line, yylloc.first_column, sub->name);
+
+    /* It's time to setup the param replacements.
+     * As mentioned earlier, it is necessary to create vars if the param ever
+     * gets written to, or the passed parameter is an expression.
+     * We will use a param_replace array to replace all argument variable references from the code of copied inline sub. */
+    thecl_param_t** param_replace = calloc(sub->arg_count, sizeof(thecl_param_t*));
+    thecl_variable_t* var;
+    i = 0;
+
+    list_for_each(params, param) { /* It has alredy been verified that param amount is correct. */
+        var = sub->args[i];
+
+        if (var->is_written || param->is_expression_param || param->stack) {
+
+            if (param->is_expression_param && !var->is_written && param->stack != 2) {
+                /* Check if the passed expression can be simplified to a literal value. */
+                list_node_t* node = state->expressions.tail;
+                expression_t* expr = (expression_t*)node->data;
+                expression_optimize(state, expr);
+                if (expr->type == EXPRESSION_VAL) {
+                    /* Static value, otherwise it wouldn't be an uncasted expression param. */
+                    param_replace[i] = param_copy(expr->value);
+                    expression_free(expr);
+                    list_del(&state->expressions, node);
+                    ++i;
+                    continue;
+                }
+            }
+
+            /* Non-static param value or the param is written to, need to create var. */
+            strcpy(buf, name);
+            strcat(buf, var->name);
+            thecl_variable_t* var = var_create(state, state->current_sub, buf, true);
+            thecl_param_t* new_param = param_new(param->type);
+            new_param->stack = 1;
+            new_param->value.val.S = var->stack;
+
+            if (param->is_expression_param) {
+                /* The value is already on the stack, just pop it. */
+                list_node_t* node = state->expressions.tail;
+                expression_t* expr = (expression_t*)node->data;
+                expression_output(state, expr, 1);
+                expression_free(expr);
+                list_del(&state->expressions, node);
+
+                const expr_t* tmp = expr_get_by_symbol(state->version, ASSIGN);
+                instr_add(state, state->current_sub, instr_new(state, tmp->id, "pp", param_copy(new_param), param_sp_new()));
+            } else {
+                const expr_t* tmp = expr_get_by_symbol(state->version, ASSIGN);
+                instr_add(state, state->current_sub, instr_new(state, tmp->id, "pp", param_copy(new_param), param));
+            }
+            param_replace[i] = new_param;
+        } else {
+            param_replace[i] = param_copy(param);
+        }
+        ++i;
+    }
+
+    /* Create non-param variables that the inline sub uses.. */
+    thecl_variable_t** stack_replace = malloc(sizeof(thecl_variable_t*) * sub->var_count);
+    for (i = 0; i < sub->var_count; ++i) {
+        thecl_variable_t* var = sub->vars[i];
+        snprintf(buf, 256, "%s%s", name, var->name);
+        thecl_variable_t* var_new = var_create(state, state->current_sub, buf, true);
+        stack_replace[i] = var_new;
+    }
+
+    /* Create labels that the inline sub uses (with changed offsets) */
+    thecl_label_t* label;
+    list_for_each(&sub->labels, label) {
+        snprintf(buf, 256, "%s%s", name, label->name);
+        thecl_label_t* new_label = malloc(sizeof(thecl_label_t) + strlen(buf) + 1);
+        new_label->offset = label->offset + state->current_sub->offset;
+        strcpy(new_label->name, buf);
+        list_append_new(&state->current_sub->labels, new_label);
+    }
+
+    /* And finally, copy the instructions. */
+
+    thecl_instr_t* instr;
+    list_for_each(&sub->instrs, instr) {
+        thecl_instr_t* new_instr = instr_copy(instr);
+
+        list_node_t* param_node;
+        list_for_each_node(&new_instr->params, param_node) {
+            /* Still reusing the same param variable as earlier. */
+            param = (thecl_param_t*)param_node->data;
+            if (param->stack && param->object_link == -1) {
+                if (param->value.type == 'S') {
+                    if (param->value.val.S < 0) {
+                        /* Parameter. */
+                        param_node->data = param_copy(param_replace[sub->arg_count + param->value.val.S]);
+                        param_free(param);
+                    } else if (param->value.val.S >= 3) {
+                        /* Regular stack variable, needs adjusting the offset. */
+                        param->value.val.S = stack_replace[param->value.val.S - 3]->stack;
+                    }
+                }
+            } else if (param->stack && param->object_link == 0 && param->value.val.S == 0x1F) {
+                thecl_instr_t* last_ins = list_tail(&state->current_sub->instrs);
+                const expr_t* last_expr = expr_get_by_id(state->version, last_ins->id);
+                if (last_expr && last_expr->allow_optim) {
+                    thecl_param_t* p1 = last_ins->params.head->data;
+                    thecl_param_t* p2 = last_ins->params.head->next->data;
+                    if (p1->stack || p2->stack) continue;
+                    int val1 = p1->value.val.S;
+                    int val2 = p2->value.val.S;
+                    param->value.val.S = math_preprocess(state, last_expr->symbol, val1, val2);
+                    param->stack = 0;
+                    param->object_link = -1;
+                    instr_del(state, state->current_sub, last_ins);
+                    thecl_instr_free(last_ins);
+                }
+            } else if (param->type == 'o') {
+                /* We also have to make sure that all jumps are correct. */
+                snprintf(buf, 256, "%s%s", name, param->value.val.z);
+                free(param->value.val.z);
+                param->value.val.z = strdup(buf);
+            }
+        }
+        instr_add(state, state->current_sub, new_instr);
+    }
+
+    scope_finish(state);
+
+    /* We have to mark variables that were marked as unused in the inline sub
+     * as unused in the current sub as well. */
+    for (size_t v=0; v<sub->var_count; ++v) {
+        stack_replace[v]->is_unused = sub->vars[v]->is_unused;
+    }
+
+    /* Free stuff. */
+    /* Still the same variables used here */
+    i = 0;
+    list_for_each(params, param) {
+        param_free(param);
+        param_free(param_replace[i++]);
+    }
+    /* Only free this list if it was created here.
+     * It's empty, so no need to free nodes. */
+    if (params_org == NULL)
+        free(params);
+    free(param_replace);
+    free(stack_replace);
+}
+
 static bool
 instr_create_call(
     parser_state_t *state,
     uint8_t type,
     char *name,
-    list_t *params,
-    bool needs_ret)
+    list_t *params)
 {
     /* First, check if the called sub is inline. */
-    /* thecl_sub_t* sub;
+    thecl_sub_t* sub;
     list_for_each(&state->ecl->subs, sub) {
         if (sub->is_inline && !strcmp(sub->name, name)) {
-            instr_create_inline_call(state, sub, params, needs_ret);
+            instr_create_inline_call(state, sub, params);
             free(name);
             return true;
         }
-    } */
+    }
 
     /* Instr name */
     thecl_param_t *name_param = param_new('z');
@@ -1706,8 +1952,8 @@ expression_operation_new(
             break;
         list_append_new(&ret->children, operands[o]);
     }
-	
-	expression_optimize(state, ret);
+
+    expression_optimize(state, ret);
 
     return ret;
 }
@@ -1893,75 +2139,7 @@ expression_optimize(
     int val1 = child_expr_1->value->value.val.S;
     int val2 = child_expr_2->value->value.val.S;
 
-    switch(tmp_expr->symbol) {
-        case ADD:
-            param->value.val.S = val1 + val2;
-        break;
-        case SUBTRACT:
-            param->value.val.S = val1 - val2;
-        break;
-        case MULTIPLY:
-            param->value.val.S = val1 * val2;
-        break;
-        case DIVIDE:
-            param->value.val.S = val1 / val2;
-        break;
-        case MODULO:
-            param->value.val.S = val1 % val2;
-        break;
-        case EQUAL:
-            param->value.val.S = val1 == val2;
-        break;
-        case INEQUAL:
-            param->value.val.S = val1 != val2;
-        break;
-        case LT:
-            param->value.val.S = val1 < val2;
-        break;
-        case LTEQ:
-            param->value.val.S = val1 <= val2;
-        break;
-        case GT:
-            param->value.val.S = val1 > val2;
-        break;
-        case GTEQ:
-            param->value.val.S = val1 >= val2;
-        break;
-        case OR:
-            param->value.val.S = val1 || val2;
-        break;
-        case AND:
-            param->value.val.S = val1 && val2;
-        break;
-        case XOR:
-            param->value.val.S = val1 ^ val2;
-        break;
-        case B_OR:
-            param->value.val.S = val1 | val2;
-        break;
-        case B_AND:
-            param->value.val.S = val1 & val2;
-        break;
-        case LSHIFT:
-            param->value.val.S = val1 << val2;
-        break;
-        case TEST:
-            param->value.val.S = (val1 & val2) == val2;
-        break;
-        case NOT:
-            param->value.val.S = !val2;
-        break;
-        case B_NOT:
-            param->value.val.S = ~val2;
-        break;
-        case ABS:
-            param->value.val.S = val2 < 0 ? -val2 : val2;
-        break;
-        default:
-            /* Since the cases above cover all existing 2-parameter expressions there is no possibility of this ever hapenning.
-               Just putting this error message in case someone adds new expressions and forgets about handling them here... */
-            yyerror(state, "Math preprocessing error!");
-    }
+    param->value.val.S = math_preprocess(state, tmp_expr->symbol, val1, val2);
 
     expression->value = param;
     expression->type = EXPRESSION_VAL;
@@ -1973,6 +2151,42 @@ expression_optimize(
     expression_free(child_expr_1);
     expression_free(child_expr_2);
     list_free_nodes(&expression->children);
+}
+
+static int
+math_preprocess(
+    parser_state_t* state,
+    int symbol,
+    int val1,
+    int val2)
+{
+    switch(symbol) {
+        case ADD:      return val1 + val2;
+        case SUBTRACT: return val1 - val2;
+        case MULTIPLY: return val1 * val2;
+        case DIVIDE:   return val1 / val2;
+        case MODULO:   return val1 % val2;
+        case EQUAL:    return val1 == val2;
+        case INEQUAL:  return val1 != val2;
+        case LT:       return val1 < val2;
+        case LTEQ:     return val1 <= val2;
+        case GT:       return val1 > val2;
+        case GTEQ:     return val1 >= val2;
+        case OR:       return val1 || val2;
+        case AND:      return val1 && val2;
+        case XOR:      return val1 ^ val2;
+        case B_OR:     return val1 | val2;
+        case B_AND:    return val1 & val2;
+        case LSHIFT:   return val1 << val2;
+        case TEST:     return (val1 & val2) == val2;
+        case NOT:      return !val2;
+        case B_NOT:    return ~val2;
+        case ABS:      return val2 < 0 ? -val2 : val2;
+        default:
+            /* Since the cases above cover all existing 2-parameter expressions there is no possibility of this ever hapenning.
+               Just putting this error message in case someone adds new expressions and forgets about handling them here... */
+            yyerror(state, "Math preprocessing error!");
+    }
 }
 
 static void
@@ -2071,9 +2285,8 @@ sub_finish(
         if (last_ins == NULL || last_ins->id != state->ins_ret) {
             instr_add(state, state->current_sub, instr_new(state, state->ins_ret, "SSSSS", 0, 0, 0x25, 0, 2));
         }
+        state->ins_offset += state->current_sub->offset;
     }
-
-    state->ins_offset += state->current_sub->offset;
 
     state->current_sub = NULL;
 }
@@ -2162,6 +2375,8 @@ arg_create(
 
     thecl_variable_t* arg = malloc(sizeof(thecl_variable_t));
     arg->name = strdup(name);
+    arg->is_unused = false;
+    arg->is_written = false;
 
     ++sub->arg_count;
     sub->args = realloc(sub->args, sub->arg_count * sizeof(thecl_variable_t*));
@@ -2208,13 +2423,14 @@ var_create(
     var->name = strdup(name);
     var->stack = var_get_new_stack(state, sub);
     var->is_unused = false;
+    var->is_written = false;
     var->scope = state->scope_stack[state->scope_cnt - 1];
 
     ++sub->var_count;
     sub->vars = realloc(sub->vars, sub->var_count * sizeof(thecl_variable_t*));
     sub->vars[sub->var_count - 1] = var;
 
-    if (var->stack == sub->stack) /* Only increment the stack if the variable uses aa new offset. */
+    if (var->stack == sub->stack) /* Only increment the stack if the variable uses a new offset. */
         ++sub->stack;
 
     if (push) {
@@ -2233,6 +2449,7 @@ var_create_assign(
     expression_t* expr)
 {
     thecl_variable_t* var = var_create(state, sub, name, false);
+    var->is_written = true;
 
     thecl_param_t* param;
     expression_optimize(state, expr);
@@ -2362,6 +2579,13 @@ var_shorthand_assign(
         const expr_t* expr = expr_get_by_symbol(state->version, ASSIGN);
 
         instr_add(state, state->current_sub, instr_new(state, expr->id, "pp", param, param_sp_new()));
+
+        if (param->object_link == -1 && param->stack >= 3) {
+            state->current_sub->vars[param->stack - 3]->is_written = true;
+        }
+        else if (param->object_link == -1 && param->stack < 0) {
+            state->current_sub->args[-param->stack - 1]->is_written = true;
+        }
     } else { /* WGL */
         const expr_t* expr = expr_get_by_symbol(state->version, GASSIGN);
 

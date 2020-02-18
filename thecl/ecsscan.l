@@ -80,6 +80,7 @@
 "state"    return STATE;
 "return"   return RETURN;
 "expr"     return EXPRESSION;
+"inline"   return INLINE;
 
 "goto"     return GOTO;
 "unless"   return UNLESS;
