@@ -643,7 +643,7 @@ c1_gool_ins_getvert_params(
 }
 
 static list_t*
-c1_gool_ins_getvert_params(
+c1_gool_ins_calcpath_params(
     list_t* params,
     int argc)
 {
@@ -889,7 +889,7 @@ c1_gool_ins[] = {
      { "playanim",                 0x83, 1, 1, 1, -1,  4, c1_gool_ins_playanim_params },
      { "playtext",                 0x83, 1, 1, 1, -1,  2, c1_gool_ins_playtext_params },
      { "playframe",                0x84, 1, 1, 1, -1,  3, c1_gool_ins_playframe_params },
-     { "calcpath",                 0x85, 0, 0, 0, -1,  3, c1_gool_ins_getvert_params },
+     { "calcpath",                 0x85, 0, 0, 0, -1,  3, c1_gool_ins_calcpath_params },
      { "getvert",                  0x85, 0, 0, 0, -1,  3, c1_gool_ins_getvert_params },
      { "sendevent",                0x87, 1, 0, 0,  2,  3, c1_gool_ins_sendevent_params },
      { "rejectevent",              0x88, 0, 0, 0, -1,  1, c1_gool_ins_eventstatus_params },
