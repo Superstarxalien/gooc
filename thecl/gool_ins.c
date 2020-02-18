@@ -157,17 +157,18 @@ c1_gool_ins_playtext_params(
 }
 
 static list_t*
-c1_gool_ins_state_params(
+c1_gool_ins_changestate_params(
     list_t* params,
-    int argc)
+    int argc,
+    int type)
 {
     thecl_param_t* param;
     size_t c = list_count(params);
-    if (c >= 1) {
+    if (c == 1) {
         list_node_t* node = params->head;
 
         param = param_new('S');
-        param->value.val.S = c - 1;
+        param->value.val.S = argc;
         list_append_to(params, param, node);
         node = node->next;
 
@@ -177,20 +178,57 @@ c1_gool_ins_state_params(
         node = node->next;
 
         param = param_new('S');
-        param->value.val.S = 0;
+        param->value.val.S = type;
         list_append_to(params, param, node);
         node = node->next;
 
         param = param_new('S');
         param->value.val.S = 1;
         list_append_to(params, param, node);
+    }
+    else if (c == 2) {
+        param = param_new('S');
+        param->value.val.S = argc;
+        list_append_to(params, param, params->head);
 
-        return params;
+        param = param_new('S');
+        param->value.val.S = type;
+        list_append_new(params, param);
+
+        param = param_new('S');
+        param->value.val.S = 1;
+        list_append_new(params, param);
     }
     else {
-        fprintf(stderr, "%s: changestate: wrong number of arguments (expected at least 1, got %zu)\n", argv0, c);
+        fprintf(stderr, "%s: changestate: wrong number of arguments (expected 1 or 2, got %zu)\n", argv0, c);
         return NULL;
     }
+
+    return params;
+}
+
+static list_t*
+c1_gool_ins_state_params(
+    list_t* params,
+    int argc)
+{
+    return c1_gool_ins_changestate_params(params, argc, 0);
+}
+
+static list_t*
+c1_gool_ins_stateif_params(
+    list_t* params,
+    int argc)
+{
+    return c1_gool_ins_changestate_params(params, argc, 1);
+}
+
+static list_t*
+c1_gool_ins_stateifn_params(
+    list_t* params,
+    int argc)
+{
+    return c1_gool_ins_changestate_params(params, argc, 2);
 }
 
 static list_t*
@@ -605,6 +643,60 @@ c1_gool_ins_getvert_params(
 }
 
 static list_t*
+c1_gool_ins_getvert_params(
+    list_t* params,
+    int argc)
+{
+    thecl_param_t* param;
+    size_t c = list_count(params);
+    if (c == 0) {
+        param = param_new('S');
+        param->value.val.S = field_get("pathprog")->offset;
+        param->object_link = 0;
+        param->stack = 1;
+        list_append_new(params, param);
+
+        param = param_new('S');
+        param->value.val.S = 0;
+        list_append_new(params, param);
+
+        param = param_new('S');
+        param->value.val.S = 5;
+        list_append_new(params, param);
+
+        param = param_new('S');
+        param->value.val.S = 0;
+        list_append_new(params, param);
+
+        param = param_new('S');
+        param->value.val.S = 0;
+        list_append_new(params, param);
+    }
+    else if (c == 1) {
+        param = param_new('S');
+        param->value.val.S = 0;
+        list_append_new(params, param);
+
+        param = param_new('S');
+        param->value.val.S = 5;
+        list_append_new(params, param);
+
+        param = param_new('S');
+        param->value.val.S = 0;
+        list_append_new(params, param);
+
+        param = param_new('S');
+        param->value.val.S = 0;
+        list_append_new(params, param);
+    }
+    else {
+        fprintf(stderr, "%s: getvert: wrong number of arguments (expected 0 or 1, got %zu)\n", argv0, c);
+        return NULL;
+    }
+    return params;
+}
+
+static list_t*
 c1_gool_ins_playsound_params(
     list_t* params,
     int argc)
@@ -792,9 +884,12 @@ c1_gool_ins[] = {
      { "anim",                       39, 0, 0, 0, -1,  2, c1_gool_ins_anim_params },
      { "nop",                      0x81, 0, 0, 0, -1,  0, c1_gool_ins_nop_params },
      { "changestate",              0x82, 0, 0, 0, -1,  1, c1_gool_ins_state_params },
+     { "changestateif",            0x82, 0, 0, 0, -1,  2, c1_gool_ins_stateif_params },
+     { "changestateifn",           0x82, 0, 0, 0, -1,  2, c1_gool_ins_stateifn_params },
      { "playanim",                 0x83, 1, 1, 1, -1,  4, c1_gool_ins_playanim_params },
      { "playtext",                 0x83, 1, 1, 1, -1,  2, c1_gool_ins_playtext_params },
      { "playframe",                0x84, 1, 1, 1, -1,  3, c1_gool_ins_playframe_params },
+     { "calcpath",                 0x85, 0, 0, 0, -1,  3, c1_gool_ins_getvert_params },
      { "getvert",                  0x85, 0, 0, 0, -1,  3, c1_gool_ins_getvert_params },
      { "sendevent",                0x87, 1, 0, 0,  2,  3, c1_gool_ins_sendevent_params },
      { "rejectevent",              0x88, 0, 0, 0, -1,  1, c1_gool_ins_eventstatus_params },
