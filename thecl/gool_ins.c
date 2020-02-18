@@ -648,6 +648,8 @@ c1_gool_ins_calcpath_params(
     int argc)
 {
     thecl_param_t* param;
+    if (!params)
+        params = list_new();
     size_t c = list_count(params);
     if (c == 0) {
         param = param_new('S');
