@@ -268,6 +268,7 @@ typedef struct {
     list_t expr_macros;
 
     int ignore_block;
+    int block_bound;
 } parser_state_t;
 
 extern parser_state_t* g_parser_state;

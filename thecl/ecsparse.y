@@ -102,7 +102,7 @@ static void state_finish(parser_state_t* state);
 /* Begins a new scope. */
 static void scope_begin(parser_state_t* state);
 /* Ends the most recently started scope. */
-static void scope_finish(parser_state_t* state);
+static void scope_finish(parser_state_t* state, bool pop_vars);
 
 static expr_macro_t* macro_create(parser_state_t* state, const char* name, expression_t* expr);
 /* Creates a new argument in the specified subroutine. */
@@ -711,7 +711,7 @@ CodeBlock:
       "{" {
           scope_begin(state);
       } Instructions "}" {
-          scope_finish(state);
+          scope_finish(state, true);
       }
     | Instruction ";"
     ;
@@ -1457,6 +1457,10 @@ instr_add(
         thecl_instr_free(instr);
         return;
     }
+    if (state->block_bound) {
+        state->block_bound = 0;
+        goto NO_OPTIM;
+    }
     const expr_t* expr = expr_get_by_symbol(state->version, PLOAD);
     /* push optimization */
     if (instr->id == 22) {
@@ -1474,6 +1478,7 @@ instr_add(
                 list_del(&instr->params, instr->params.head);
                 if (--instr->param_count == 0) {
                     thecl_instr_free(instr);
+                    instr->offset = sub->offset;
                     return;
                 }
             }
@@ -1495,6 +1500,7 @@ instr_add(
                 list_del(&instr->params, instr->params.head);
                 if (--instr->param_count == 0) {
                     thecl_instr_free(instr);
+                    instr->offset = sub->offset;
                     return;
                 }
             }
@@ -1544,7 +1550,7 @@ instr_add(
                         if (!!param->value.val.S == branch_type) { /* will never branch */
                             thecl_instr_free(instr);
                             param_free(param);
-                            return;
+                            goto OPTIM;
                         } else { /* will always branch */
                             param_free(param);
                             branch_type_param->value.val.S = 0;
@@ -1556,6 +1562,7 @@ instr_add(
     }
     NO_OPTIM:;
     list_append_new(&sub->instrs, instr);
+    OPTIM:;
     instr->offset = sub->offset;
     ++sub->offset;
 }
@@ -1706,24 +1713,21 @@ static void instr_create_inline_call(
             /* Non-static param value or the param is written to, need to create var. */
             strcpy(buf, name);
             strcat(buf, var->name);
-            thecl_variable_t* var = var_create(state, state->current_sub, buf, true);
             thecl_param_t* new_param = param_new(param->type);
             new_param->stack = 1;
-            new_param->value.val.S = var->stack;
 
             if (param->is_expression_param) {
                 /* The value is already on the stack, just pop it. */
                 list_node_t* node = state->expressions.tail;
                 expression_t* expr = (expression_t*)node->data;
                 expression_output(state, expr, 1);
-                expression_free(expr);
                 list_del(&state->expressions, node);
 
-                const expr_t* tmp = expr_get_by_symbol(state->version, ASSIGN);
-                instr_add(state, state->current_sub, instr_new(state, tmp->id, "pp", param_copy(new_param), param_sp_new()));
+                thecl_variable_t* var = var_create_assign(state, state->current_sub, buf, expr);
+                new_param->value.val.S = var->stack;
             } else {
-                const expr_t* tmp = expr_get_by_symbol(state->version, ASSIGN);
-                instr_add(state, state->current_sub, instr_new(state, tmp->id, "pp", param_copy(new_param), param));
+                thecl_variable_t* var = var_create_assign(state, state->current_sub, buf, expression_load_new(state, param_copy(param)));
+                new_param->value.val.S = var->stack;
             }
             param_replace[i] = new_param;
         } else {
@@ -1737,7 +1741,7 @@ static void instr_create_inline_call(
     for (i = 0; i < sub->var_count; ++i) {
         thecl_variable_t* var = sub->vars[i];
         snprintf(buf, 256, "%s%s", name, var->name);
-        thecl_variable_t* var_new = var_create(state, state->current_sub, buf, true);
+        thecl_variable_t* var_new = var_create(state, state->current_sub, buf, false);
         stack_replace[i] = var_new;
     }
 
@@ -1797,7 +1801,7 @@ static void instr_create_inline_call(
         instr_add(state, state->current_sub, new_instr);
     }
 
-    scope_finish(state);
+    scope_finish(state, true);
 
     /* We have to mark variables that were marked as unused in the inline sub
      * as unused in the current sub as well. */
@@ -2264,12 +2268,11 @@ static void
 sub_finish(
     parser_state_t* state)
 {
-    scope_finish(state);
 
     if (state->current_sub->is_inline) {
         thecl_instr_t* last_ins = list_tail(&state->current_sub->instrs);
         const expr_t* tmp = expr_get_by_symbol(state->version, GOTO);
-        if (last_ins != NULL && last_ins->id == tmp->id) {
+        if (last_ins != NULL && last_ins->id == tmp->id && ((state->version == 1 && ((thecl_param_t*)last_ins->params.tail->data)->value.val.S == 2) || state->version != 1)) {
             thecl_param_t* label_param = list_head(&last_ins->params);
             if (strcmp(label_param->value.val.z, "inline_end") == 0) {
                 /* Remove useless goto. */
@@ -2279,8 +2282,10 @@ sub_finish(
             }
         }
         label_create(state, "inline_end");
+        scope_finish(state, false);
     }
     else {
+        scope_finish(state, true);
         thecl_instr_t* last_ins = state->version == 1 ? NULL : list_tail(&state->current_sub->instrs);
         if (last_ins == NULL || last_ins->id != state->ins_ret) {
             instr_add(state, state->current_sub, instr_new(state, state->ins_ret, "SSSSS", 0, 0, 0x25, 0, 2));
@@ -2298,29 +2303,34 @@ scope_begin(
     ++state->scope_cnt;
     state->scope_stack = realloc(state->scope_stack, sizeof(int)*state->scope_cnt);
     state->scope_stack[state->scope_cnt - 1] = state->scope_id++;
+    state->block_bound = 1;
 }
 
 static void
 scope_finish(
-    parser_state_t* state
+    parser_state_t* state,
+    bool pop_vars
 ) {
     --state->scope_cnt;
 
-    /* pop GOOL stack variables */
-    int pop = 0;
-    thecl_variable_t* var;
-    for (int v=0; v < state->current_sub->var_count; ++v)
-        if (state->current_sub->vars[v]->scope == state->scope_stack[state->scope_cnt]) {
-            memmove(state->current_sub->vars + v, state->current_sub->vars + (v + 1), (--state->current_sub->var_count - v) * sizeof(int));
-            --v;
-            ++pop;
+    if (pop_vars) {
+        /* pop GOOL stack variables */
+        int pop = 0;
+        thecl_variable_t* var;
+        for (int v=0; v < state->current_sub->var_count; ++v)
+            if (state->current_sub->vars[v]->scope == state->scope_stack[state->scope_cnt]) {
+                //memmove(state->current_sub->vars + v, state->current_sub->vars + (v + 1), (--state->current_sub->var_count - v) * sizeof(int));
+                //--v;
+                ++pop;
+            }
+        if (pop > 0) {
+            const expr_t* expr = expr_get_by_symbol(state->version, GOTO);
+            instr_add(state, state->current_sub, instr_new(state, expr->id, "SSSSS", 0, pop, 0x25, 0, 0));
         }
-    if (pop > 0) {
-        const expr_t* expr = expr_get_by_symbol(state->version, GOTO);
-        instr_add(state, state->current_sub, instr_new(state, expr->id, "SSSSS", 0, pop, 0x25, 0, 0));
     }
 
     state->scope_stack = realloc(state->scope_stack, sizeof(int)*state->scope_cnt);
+    state->block_bound = 1;
 }
 
 static bool
