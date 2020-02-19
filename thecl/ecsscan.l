@@ -73,7 +73,7 @@
 "=>"       return LAMBDA;
 "sub"      return SUB;
 "var"      return VAR;
-"trans"    return TRANS;
+"trans"    { if (g_parser_state->current_sub) { yylval.string = strdup(yytext); return IDENTIFIER; } else return TRANS; }
 "code"     return CODE;
 "handles"  return HANDLES;
 "event"    return EVENT;
