@@ -294,7 +294,6 @@ int yydebug = 0;
 
 %type <expression> Expression
 %type <expression> ExpressionSubsetInstParam
-%type <expression> ExpressionSubsetInstruction
 %type <expression> ExpressionLoadType
 %type <expression> ExpressionSubset
 //%type <expression> Expression_Safe
@@ -322,7 +321,7 @@ int yydebug = 0;
 %precedence NOT B_NOT ADDRESSOF
 %precedence ABS
 
-%expect 1
+%expect 0
 %%
 
 Statements:
@@ -696,6 +695,27 @@ Instructions:
     | Instructions Block
     ;
 
+BlockVarDeclaration:
+      "var" IDENTIFIER {
+          scope_begin(state);
+          var_create(state, state->current_sub, $2, true);
+          free($2);
+      }
+    | "var" IDENTIFIER "=" Expression {
+          scope_begin(state);
+          var_create_assign(state, state->current_sub, $2, $4);
+          free($2);
+      }
+    | BlockVarDeclaration "," IDENTIFIER {
+          var_create(state, state->current_sub, $3, true);
+          free($3);
+      }
+    | BlockVarDeclaration "," IDENTIFIER "=" Expression {
+          var_create_assign(state, state->current_sub, $3, $5);
+          free($3);
+      }
+    ;
+
 ParenExpression:
       "(" Expression ")"
         { $$ = $2; }
@@ -708,11 +728,8 @@ Block:
     ;
 
 CodeBlock:
-      "{" {
-          scope_begin(state);
-      } Instructions "}" {
-          scope_finish(state, true);
-      }
+    "{" { scope_begin(state); }
+      Instructions "}" { scope_finish(state, true); }
     | Instruction ";"
     ;
 
@@ -788,7 +805,7 @@ ElseBlock:
           free(head->data);
           list_del(&state->block_stack, head);
           list_prepend_new(&state->block_stack, strdup(labelstr));
-      } IfBlock
+    } IfBlock
       ;
 
 WhileBlock:
@@ -864,7 +881,7 @@ WhileBlock:
           free(head->data);
           list_del(&state->block_stack, head);
       }
-    | "do"  {
+    | "do" {
           char labelstr[256];
           snprintf(labelstr, 256, "do_%i_%i", yylloc.first_line, yylloc.first_column);
           char labelstr_st[256];
@@ -875,6 +892,17 @@ WhileBlock:
           list_prepend_new(&state->block_stack, strdup(labelstr));
           label_create(state, labelstr_st);
     } DoBlock
+    | "do" "(" BlockVarDeclaration ")" {
+          char labelstr[256];
+          snprintf(labelstr, 256, "do_%i_%i", yylloc.first_line, yylloc.first_column);
+          char labelstr_st[256];
+          char labelstr_end[256];
+          snprintf(labelstr_st, 256, "%s_st", (char*)labelstr);
+          snprintf(labelstr_end, 256, "%s_end", (char*)labelstr);
+
+          list_prepend_new(&state->block_stack, strdup(labelstr));
+          label_create(state, labelstr_st);
+    } DoBlock { scope_finish(state, true); }
     ;
 DoBlock:
       CodeBlock "while" ParenExpression[cond]  {
@@ -1058,10 +1086,6 @@ Instruction:
         expression_create_goto(state, GOTO, $2);
     }
     | Assignment
-    | ExpressionSubsetInstruction {
-        expression_output(state, $1, 1);
-        expression_free($1);
-      }
     | VarDeclaration
     | BreakStatement
     | "return" {
@@ -1154,11 +1178,6 @@ Expression:
 
 ExpressionSubsetInstParam:
       ExpressionSubset
-    ;
-
-ExpressionSubsetInstruction:
-      ExpressionLoadType
-    | ExpressionSubset
     ;
 
 ExpressionLoadType:
@@ -1572,7 +1591,7 @@ instr_del(
     thecl_sub_t* sub,
     thecl_instr_t* instr)
 {
-	int found = 0;
+    int found = 0;
     list_node_t* node, *next;
     list_for_each_node_safe(&sub->instrs, node, next) {
         if (node->data == instr) {
@@ -1584,13 +1603,13 @@ instr_del(
                 }
             }
             --sub->offset;
-			found = 1;
+            found = 1;
         }
-		else if (found) {
-			thecl_instr_t* this_inst = node->data;
-			if (this_inst->offset > instr->offset)
-				--this_inst->offset;
-		}
+        else if (found) {
+            thecl_instr_t* this_inst = node->data;
+            if (this_inst->offset > instr->offset)
+                --this_inst->offset;
+        }
     }
 }
 
