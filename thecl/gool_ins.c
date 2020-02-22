@@ -691,8 +691,22 @@ c1_gool_ins_calcpath_params(
         param->value.val.S = 0;
         list_append_new(params, param);
     }
+    else if (c == 2) {
+
+        param = param_new('S');
+        param->value.val.S = 5;
+        list_append_new(params, param);
+
+        param = param_new('S');
+        param->value.val.S = 0;
+        list_append_new(params, param);
+
+        param = param_new('S');
+        param->value.val.S = 0;
+        list_append_new(params, param);
+    }
     else {
-        fprintf(stderr, "%s: getvert: wrong number of arguments (expected 0 or 1, got %zu)\n", argv0, c);
+        fprintf(stderr, "%s: getvert: wrong number of arguments (expected 0, 1 or 2, got %zu)\n", argv0, c);
         return NULL;
     }
     return params;
