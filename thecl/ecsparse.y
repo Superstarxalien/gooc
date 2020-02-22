@@ -200,6 +200,7 @@ int yydebug = 0;
 %token STATE "state"
 %token CODE "code"
 %token TRANS "trans"
+%token ONCE "once"
 %token EVENT "event"
 %token HANDLES "handles"
 %token INLINE "inline"
@@ -658,6 +659,7 @@ State_Instructions:
         snprintf(buf, 256, "%s_TRANS_%i_%i", state->current_state->name, yylloc.first_line, yylloc.first_column);
         sub_begin(state, buf);
         state->current_sub->is_inline = false;
+        state->current_sub->is_trans = true;
         state->current_state->trans = state->current_sub;
       }
       Subroutine_Body {
@@ -731,6 +733,27 @@ Block:
       IfBlock
     | WhileBlock
     | CodeBlock
+    | OnceBlock
+    ;
+
+OnceBlock:
+    "once" {
+        state->current_sub->has_once = true;
+    } CodeBlock {
+        const expr_t* expr = expr_get_by_symbol(state->version, ASSIGN);
+        
+        thecl_param_t* p1 = param_new('S');
+        p1->value.val.S = field_get("tpc")->offset;
+        p1->object_link = 0;
+        p1->stack = 1;
+        
+        thecl_param_t* p2 = param_new('S');
+        p2->value.val.S = field_get("pc")->offset;
+        p2->object_link = 0;
+        p2->stack = 1;
+        
+        instr_add(state, state->current_sub, instr_new(state, expr->id, "pp", p1, p2));
+    }
     ;
 
 CodeBlock:
@@ -2392,6 +2415,8 @@ sub_begin(
     sub->start_offset = state->ins_offset;
     sub->offset = 0;
     sub->instr_data = NULL;
+    sub->is_trans = false;
+    sub->has_once = false;
     list_init(&sub->labels);
 
     list_append_new(&state->ecl->subs, sub);

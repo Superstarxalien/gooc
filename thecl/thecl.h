@@ -127,6 +127,9 @@ typedef struct {
     uint16_t offset;
     uint16_t start_offset;
 
+    bool is_trans;
+    bool has_once;
+
     gool_sub_t* instr_data;
 } thecl_sub_t;
 

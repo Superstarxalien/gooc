@@ -74,6 +74,7 @@
 "sub"      return SUB;
 "var"      return VAR;
 "trans"    { if (g_parser_state->current_sub) { yylval.string = strdup(yytext); return IDENTIFIER; } else return TRANS; }
+"once"     { if (g_parser_state->current_sub && g_parser_state->current_sub->is_trans && !g_parser_state->current_sub->has_once) return ONCE; else { yylval.string = strdup(yytext); return IDENTIFIER; } }
 "code"     return CODE;
 "handles"  return HANDLES;
 "event"    return EVENT;
@@ -294,7 +295,7 @@
 <COMMENT_SINGLE>"\n"  BEGIN(INITIAL);
 
 #([a-zA-Z]+) {
-	char* txt = yytext + 1;
+    char* txt = yytext + 1;
     if (!strcmp(txt, "font"))
         return DIRECTIVE_FONT;
     else if (!strcmp(txt, "char"))
