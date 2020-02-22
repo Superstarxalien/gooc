@@ -128,6 +128,7 @@
 "abs"              return ABS;
 "seek"             return SEEK;
 "degseek"          return DEGSEEK;
+"degdist"          return DEGDIST;
 "time"             return TIME;
 "rand"             return RAND;
 "nearseek"         return NEARSEEK;
