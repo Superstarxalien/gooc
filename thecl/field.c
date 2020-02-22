@@ -103,6 +103,12 @@ gool_fields[] = {
     { "scale",        17 },
     { "trot",         20 },
     { "vec",          23 },
+    { "vtrans",        0 },
+    { "vrot",          1 },
+    { "vvel",          2 },
+    { "vscale",        3 },
+    { "vtrot",         4 },
+    { "vvec",          5 },
     { NULL, 0 }
 };
 
@@ -222,6 +228,8 @@ c1_gool_events[] = {
     { "EventBossWin",         22 },
 
     { "EventDespawn",         26 },
+
+    { "EventFling",           29 },
 
     { "EventPlayerDamage",    43 },
 
