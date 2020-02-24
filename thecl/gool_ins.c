@@ -598,7 +598,7 @@ c1_gool_ins_entitysetstate_params(
     size_t c = list_count(params);
     if (c == 2) {
         param = param_new('S');
-        param->value.val.S = 0;
+        param->value.val.S = 5;
         list_append_to(params, param, params->head);
 
         param = param_new('S');
