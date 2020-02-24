@@ -1377,7 +1377,7 @@ ExpressionSubset:
     | "dirbuffer" "(" Expression "," Expression ")"               { $$ = EXPR_5(PAD, expression_val_new(state, 0), expression_val_new(state, 0), expression_val_new(state, 3), $3, $5); }
     | "spd" "(" Expression "," Expression ")"                     { $$ = EXPR_2(SPD, $3, $5); }
     | "sin" "(" Expression "," Expression ")"                     { $$ = EXPR_2(SIN,  $3, $5); }
-    | "getval" "(" Expression "," Expression ")"                  { $$ = EXPR_4(MISC, $3, expression_val_new(state, 0), $5, expression_val_new(state, 0)); }
+    | "getval" "(" Expression "," Expression ")"                  { $$ = EXPR_4(MISC, $3, expression_val_new(state, 5), $5, expression_val_new(state, 0)); }
     | "distance" "(" Expression "," Expression ")"                { $$ = EXPR_4(MISC, expression_load_new(state, param_null_new()), $3, $5, expression_val_new(state, 1)); }
     | "atan2" "(" Expression "," Expression ")"                   { $$ = EXPR_4(MISC, $5, $3, expression_val_new(state, 0), expression_val_new(state, 2)); }
     | "getfield" "(" Expression "," Expression ")"                { $$ = EXPR_4(MISC, $5, $3, expression_val_new(state, 0), expression_val_new(state, 3)); }
