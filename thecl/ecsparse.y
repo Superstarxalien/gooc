@@ -1083,12 +1083,14 @@ Instruction:
 
                 thecl_param_t* param;
                 expression_t* late_expr = NULL;
+                thecl_param_t* late_param = NULL;
                 if (gool_ins->late_param >= 0) {
                     int i = 0;
                     list_node_t* e = state->expressions.tail;
                     list_for_each(param_list, param) {
                         if (i++ == gool_ins->late_param && param->is_expression_param) {
                             late_expr = e->data;
+                            late_param = param;
                             list_del(&state->expressions, e);
                             break;
                         }
@@ -1105,9 +1107,8 @@ Instruction:
                     expr_node = state->expressions.tail;
 
                 if (!gool_ins->reverse_args) {
-                    int i = 0;
                     list_for_each(param_list, param) {
-                        if (param->is_expression_param && i != gool_ins->late_param) {
+                        if (param->is_expression_param && param != late_param) {
                             expression_t* expression = expr_node->data;
                             expression_output(state, expression, 1);
                             expression_free(expression);
@@ -1118,7 +1119,6 @@ Instruction:
                                 expr_node = expr_node->prev;
                             }
                         }
-                        ++i;
                     }
                 }
                 list_for_each(arg_list, param) {
@@ -1162,8 +1162,13 @@ Instruction:
                 list_free_nodes(&state->expressions);
 
                 if (late_expr) {
-                    expression_output(state, late_expr, 1);
-                    expression_free(late_expr);
+                    if (late_expr->type != EXPRESSION_VAL || late_param->stack != 1 || late_param->object_link != 0 || late_param->value.val.S < 0 || late_param->value.val.S > 0x3F) {
+                        expression_output(state, late_expr, 1);
+                        expression_free(late_expr);
+                        late_param->stack = 1;
+                        late_param->object_link = 0;
+                        late_param->value.val.S = 0x1F;
+                    }
                 }
 
                 instr_add(state, state->current_sub, instr_new_list(state, gool_ins->id, gool_ins->param_list_validate(param_list, list_count(arg_list))));
