@@ -281,6 +281,8 @@ c1_instr_serialize(
         return ret;
     }
 
+    bool was_error = false;
+
     if (instr->id == GOOL_JAL_OP) {
         /* Validate sub call parameters. */
         list_node_t* node = instr->params.head;
@@ -291,14 +293,18 @@ c1_instr_serialize(
         if (!called_sub) {
             fprintf(stderr, "%s:c1_instr_serialize: in sub %s: unknown sub call \"%s\"\n",
                     argv0, sub->name, sub_name);
+            was_error = true;
         } else {
             if (sub_argc_param->value.val.S > called_sub->arg_count) {
                 fprintf(stderr, "%s:c1_instr_serialize: in sub %s: too many parameters when calling sub \"%s\" (expected %d)\n",
                     argv0, sub->name, sub_name, called_sub->arg_count);
+                was_error = true;
             }
-            else if (sub_argc_param->value.val.S < called_sub->arg_count)
+            else if (sub_argc_param->value.val.S < called_sub->arg_count) {
                 fprintf(stderr, "%s:c1_instr_serialize: in sub %s: not enough parameters when calling sub %s (expected %d)\n",
-                        argv0, sub->name, sub_name, called_sub->arg_count);
+                    argv0, sub->name, sub_name, called_sub->arg_count);
+                was_error = true;
+            }
             free(sub_name_param->value.val.z);
             sub_name_param->type = 'S';
             sub_name_param->value.type = 'S';
@@ -322,6 +328,7 @@ c1_instr_serialize(
         if (!called_state) {
             fprintf(stderr, "%s:c1_instr_serialize: in sub %s: unknown state \"%s\"\n",
                 argv0, sub->name, state_name);
+            was_error = true;
         }
         else {
             if (called_state->code) {
@@ -329,10 +336,13 @@ c1_instr_serialize(
                 if (state_argc_param->value.val.S > called_sub->arg_count) {
                     fprintf(stderr, "%s:c1_instr_serialize: in sub %s: too many parameters when changing to state \"%s\" (expected %d)\n",
                         argv0, sub->name, state_name, called_sub->arg_count);
+                    was_error = true;
                 }
-                else if (state_argc_param->value.val.S < called_sub->arg_count)
+                else if (state_argc_param->value.val.S < called_sub->arg_count) {
                     fprintf(stderr, "%s:c1_instr_serialize: in sub %s: not enough parameters when changing to state %s (expected %d)\n",
                         argv0, sub->name, state_name, called_sub->arg_count);
+                    was_error = true;
+                }
             }
             free(state_name_param->value.val.z);
             state_name_param->type = 'S';
@@ -364,7 +374,9 @@ c1_instr_serialize(
                 if (!called_state) {
                     const thecl_sub_t* called_sub = th10_find_sub(ecl, param->value.val.z);
                     if (!called_sub) {
-                        fprintf(stderr, "%s: sub/state/label not found: %s\n", argv0, param->value.val.z);
+                        if (!was_error) {
+                            fprintf(stderr, "%s:c1_instr_serialize: in sub %s: sub/state/label not found: %s\n", argv0, sub->name, param->value.val.z);
+                        }
                     }
                     else {
                         p = called_sub->start_offset;
@@ -608,9 +620,9 @@ c1_compile(
         }
         if (!file_write(out, &interrupt_val, sizeof(uint16_t)))
             return 0;
+        if (!file_seek(out, pos + header.interrupt_count * 2))
+            return 0;
     }
-    if (!file_seek(out, pos + header.interrupt_count * 2))
-        return 0;
 
     thecl_spawn_t* spawn;
     list_for_each(&ecl->spawns, spawn) {

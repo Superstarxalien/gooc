@@ -225,7 +225,7 @@ c1_gool_events[] = {
 
     { "EventHitInvincible",   10 },
 
-    { "EventBossWin",         22 },
+    { "EventWin",             22 },
 
     { "EventDespawn",         26 },
 
