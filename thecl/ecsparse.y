@@ -869,7 +869,6 @@ ElseBlock:
 
 WhileBlock:
       "while" ParenExpression[cond] {
-          expression_optimize(state, $cond);
           if ($cond->type == EXPRESSION_VAL && !$cond->value->stack && !$cond->value->value.val.S) {
               ++state->ignore_block;
               expression_free($cond);
@@ -905,7 +904,6 @@ WhileBlock:
           list_del(&state->block_stack, head);
       }
     | "while" ParenExpression2[cond] {
-          expression_optimize(state, $cond);
           if ($cond->type == EXPRESSION_VAL && !$cond->value->stack && !$cond->value->value.val.S) {
               ++state->ignore_block;
               expression_free($cond);
@@ -943,7 +941,6 @@ WhileBlock:
           scope_finish(state, true);
       }
     | "until" ParenExpression[cond] {
-          expression_optimize(state, $cond);
           if ($cond->type == EXPRESSION_VAL && !$cond->value->stack && $cond->value->value.val.S) {
               ++state->ignore_block;
               expression_free($cond);
@@ -979,7 +976,6 @@ WhileBlock:
           list_del(&state->block_stack, head);
       }
     | "until" ParenExpression2[cond] {
-          expression_optimize(state, $cond);
           if ($cond->type == EXPRESSION_VAL && !$cond->value->stack && $cond->value->value.val.S) {
               ++state->ignore_block;
               expression_free($cond);
@@ -1233,7 +1229,6 @@ Instruction:
 
 Assignment:
       Address "=" Expression {
-        expression_optimize(state, $3);
         thecl_param_t* src_param;
         const expr_t* expr = expr_get_by_id(state->version, $3->id);
         if ($3->type == EXPRESSION_VAL && ($1->stack != 2 || ($1->stack == 2 && !expr->is_unary))) {
@@ -1347,6 +1342,8 @@ ExpressionSubset:
         $$ = EXPR_2(INEQUAL,  $1, $3);
         $$ = EXPR_2(NOT,      expression_load_new(state, param_sp_new()), $$);
       }
+    | "+" Expression              { $$ = $2; }
+    | "-" Expression              { $$ = EXPR_2(SUBTRACT, expression_val_new(state, 0), $2); }
     | "#" Expression              { $$ = EXPR_2(ADDRESSOF,expression_load_new(state, param_sp_new()), $2); }
     | "abs" "(" Expression ")"    { $$ = EXPR_2(ABS,      expression_load_new(state, param_sp_new()), $3); }
     | "seek" "(" Expression "," Expression "," Expression ")"     { $$ = EXPR_3(SEEK, $3, $5, $7); }
@@ -1859,7 +1856,6 @@ static void instr_create_inline_call(
                 /* Check if the passed expression can be simplified to a literal value. */
                 list_node_t* node = state->expressions.tail;
                 expression_t* expr = (expression_t*)node->data;
-                expression_optimize(state, expr);
                 if (expr->type == EXPRESSION_VAL) {
                     /* Static value, otherwise it wouldn't be an uncasted expression param. */
                     param_replace[i] = param_copy(expr->value);
@@ -2018,8 +2014,6 @@ instr_create_call(
                 list_node_t* last_node = node_expr;
                 node_expr = node_expr->prev;
 
-                if (current_expr->type == EXPRESSION_OP)
-                    expression_optimize(state, current_expr);
                 if (current_expr->type == EXPRESSION_VAL) {
                     const expr_t* expr = expr_get_by_id(state->version, current_expr->id);
                     if (expr->symbol == LOAD) {
@@ -2528,7 +2522,6 @@ macro_create(
 {
     expr_macro_t* macro = malloc(sizeof(expr_macro_t));
     macro->name = strdup(name);
-    expression_optimize(state, expr);
     macro->expr = expr;
     list_append_new(&state->expr_macros, macro);
     return macro;
@@ -2623,7 +2616,6 @@ var_create_assign(
     var->is_written = true;
 
     thecl_param_t* param;
-    expression_optimize(state, expr);
     if (expr->type == EXPRESSION_VAL) {
         param = expr->value;
     } else {

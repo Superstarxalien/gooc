@@ -154,11 +154,11 @@
 "iscolliding"           return ISCOLLIDING;
 "__unk2"                return UNK2;
 
-(-|\+)?[0-9]+(\.[0-9]+)?\s*deg {
+[0-9]+(\.[0-9]+)?\s*deg {
     yylval.integer = (int)(strtod(yytext, NULL) / 180.0 * 0x800);
     return GOOL_INTEGER;
 }
-(-|\+)?[0-9]+\.[0-9]+([Mms]|[Hh]z)? {
+[0-9]+\.[0-9]+([Mms]|[Hh]z)? {
     char* afternum;
     double num = strtod(yytext, &afternum);
     if (strstr(afternum, "hz") || strstr(afternum, "Hz"))
@@ -171,7 +171,7 @@
         yylval.integer = (int)(num * 0x100);
     return GOOL_INTEGER;
 }
-(-|\+)?[0-9]+([GgMms]|[Hh]z)? {
+[0-9]+([GgMms]|[Hh]z)? {
     char* afternum;
     yylval.integer = strtol(yytext, &afternum, 10);
     if (strstr(afternum, "hz") || strstr(afternum, "Hz"))
@@ -186,23 +186,18 @@
         return INTEGER;
     return GOOL_INTEGER;
 }
-[-\+]?[Gg]?0x[0-9a-fA-F]+ {
+[Gg]?0x[0-9a-fA-F]+ {
     char* txt = yytext;
-    char s = '+';
-    if (txt[0] == '-' || txt[0] == '+') {
-        s = txt[0];
-        ++txt;
-    }
     if (txt[0] == 'G' || txt[0] == 'g') {
         yylval.integer = 0x100;
-        txt[0] = s;
+        ++txt;
     }
     else
         yylval.integer = 1;
     yylval.integer *= strtoul(txt, NULL, 16);
     return INTEGER;
 }
-(-|\+)?0b[0-1]+ {
+0b[0-1]+ {
     bool hasSign = yytext[0] == '-' || yytext[0] == '+';
     yylval.integer = strtoul(yytext + (hasSign ? 3 : 2), NULL, 2);
     if (yytext[0] == '-') yylval.integer = -yylval.integer;
