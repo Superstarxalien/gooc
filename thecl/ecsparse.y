@@ -80,7 +80,7 @@ static void expression_optimize(parser_state_t* state, expression_t* expr);
     expression_operation_new(state, a, (expression_t*[]){ A, NULL })
 
 static expression_t *expression_copy(expression_t *expr);
-static void expression_create_goto(parser_state_t *state, int type, char *labelstr);
+static void expression_create_goto(parser_state_t *state, int type, char *labelstr, expression_t* cond);
 
 /* Bison things. */
 void yyerror(const parser_state_t*, const char*, ...);
@@ -382,6 +382,8 @@ Statement:
             state->ecl->type = $4;
 
             state->ecl->is_defined = 1;
+            
+            gool_pool_force_get_index(state->ecl, state->ecl->eid);
 
             /* automatically create an expression macro that translates the ename to the GOOL ID */
             macro_create(state, $2, expression_load_new(state, param_val_new($3)));
@@ -773,7 +775,7 @@ BreakStatement:
               ) {
                   char labelstr[256];
                   snprintf(labelstr, 256, "%s_end", (char*)head->data);
-                  expression_create_goto(state, GOTO, labelstr);
+                  expression_create_goto(state, GOTO, labelstr, NULL);
                   break;
               }
           }
@@ -789,9 +791,8 @@ IfBlock:
           char labelstr[256];
           snprintf(labelstr, 256, "unless_%i_%i", yylloc.first_line, yylloc.first_column);
           list_prepend_new(&state->block_stack, strdup(labelstr));
-          expression_output(state, $cond, 1);
+          expression_create_goto(state, IF, labelstr, $cond);
           expression_free($cond);
-          expression_create_goto(state, IF, labelstr);
       } CodeBlock ElseBlock {
           list_node_t *head = state->block_stack.head;
           label_create(state, head->data);
@@ -803,9 +804,8 @@ IfBlock:
           char labelstr[256];
           snprintf(labelstr, 256, "unless_%i_%i", yylloc.first_line, yylloc.first_column);
           list_prepend_new(&state->block_stack, strdup(labelstr));
-          expression_output(state, $cond, 1);
+          expression_create_goto(state, IF, labelstr, $cond);
           expression_free($cond);
-          expression_create_goto(state, IF, labelstr);
       } CodeBlock ElseBlock {
           list_node_t *head = state->block_stack.head;
           label_create(state, head->data);
@@ -818,9 +818,8 @@ IfBlock:
           char labelstr[256];
           snprintf(labelstr, 256, "if_%i_%i", yylloc.first_line, yylloc.first_column);
           list_prepend_new(&state->block_stack, strdup(labelstr));
-          expression_output(state, $cond, 1);
+          expression_create_goto(state, UNLESS, labelstr, $cond);
           expression_free($cond);
-          expression_create_goto(state, UNLESS, labelstr);
       } CodeBlock ElseBlock {
           list_node_t *head = state->block_stack.head;
           label_create(state, head->data);
@@ -831,9 +830,8 @@ IfBlock:
           char labelstr[256];
           snprintf(labelstr, 256, "if_%i_%i", yylloc.first_line, yylloc.first_column);
           list_prepend_new(&state->block_stack, strdup(labelstr));
-          expression_output(state, $cond, 1);
+          expression_create_goto(state, UNLESS, labelstr, $cond);
           expression_free($cond);
-          expression_create_goto(state, UNLESS, labelstr);
       } CodeBlock ElseBlock {
           list_node_t *head = state->block_stack.head;
           label_create(state, head->data);
@@ -848,7 +846,7 @@ ElseBlock:
     | "else"  {
           char labelstr[256];
           snprintf(labelstr, 256, "if_%i_%i", yylloc.first_line, yylloc.first_column);
-          expression_create_goto(state, GOTO, labelstr);
+          expression_create_goto(state, GOTO, labelstr, NULL);
           list_node_t *head = state->block_stack.head;
           label_create(state, head->data);
           free(head->data);
@@ -858,7 +856,7 @@ ElseBlock:
     | "else" {
           char labelstr[256];
           snprintf(labelstr, 256, "if_%i_%i", yylloc.first_line, yylloc.first_column);
-          expression_create_goto(state, GOTO, labelstr);
+          expression_create_goto(state, GOTO, labelstr, NULL);
           list_node_t *head = state->block_stack.head;
           label_create(state, head->data);
           free(head->data);
@@ -883,9 +881,8 @@ WhileBlock:
 
           list_prepend_new(&state->block_stack, strdup(labelstr));
           label_create(state, labelstr_st);
-          expression_output(state, $cond, 0);
+          expression_create_goto(state, UNLESS, labelstr_end, $cond);
           expression_free($cond);
-          expression_create_goto(state, UNLESS, labelstr_end);
       } CodeBlock {
           if (state->ignore_block) {
               --state->ignore_block;
@@ -897,7 +894,7 @@ WhileBlock:
           snprintf(labelstr_st, 256, "%s_st", (char*)head->data);
           snprintf(labelstr_end, 256, "%s_end", (char*)head->data);
 
-          expression_create_goto(state, GOTO, labelstr_st);
+          expression_create_goto(state, GOTO, labelstr_st, NULL);
           label_create(state, labelstr_end);
 
           free(head->data);
@@ -918,9 +915,8 @@ WhileBlock:
 
           list_prepend_new(&state->block_stack, strdup(labelstr));
           label_create(state, labelstr_st);
-          expression_output(state, $cond, 0);
+          expression_create_goto(state, UNLESS, labelstr_end, $cond);
           expression_free($cond);
-          expression_create_goto(state, UNLESS, labelstr_end);
       } CodeBlock {
           if (state->ignore_block) {
               --state->ignore_block;
@@ -933,7 +929,7 @@ WhileBlock:
           snprintf(labelstr_st, 256, "%s_st", (char*)head->data);
           snprintf(labelstr_end, 256, "%s_end", (char*)head->data);
 
-          expression_create_goto(state, GOTO, labelstr_st);
+          expression_create_goto(state, GOTO, labelstr_st, NULL);
           label_create(state, labelstr_end);
 
           free(head->data);
@@ -955,9 +951,8 @@ WhileBlock:
 
           list_prepend_new(&state->block_stack, strdup(labelstr));
           label_create(state, labelstr_st);
-          expression_output(state, $cond, 0);
+          expression_create_goto(state, IF, labelstr_end, $cond);
           expression_free($cond);
-          expression_create_goto(state, IF, labelstr_end);
       } CodeBlock {
           if (state->ignore_block) {
               --state->ignore_block;
@@ -969,7 +964,7 @@ WhileBlock:
           snprintf(labelstr_st, 256, "%s_st", (char*)head->data);
           snprintf(labelstr_end, 256, "%s_end", (char*)head->data);
 
-          expression_create_goto(state, GOTO, labelstr_st);
+          expression_create_goto(state, GOTO, labelstr_st, NULL);
           label_create(state, labelstr_end);
 
           free(head->data);
@@ -991,9 +986,8 @@ WhileBlock:
 
           list_prepend_new(&state->block_stack, strdup(labelstr));
           label_create(state, labelstr_st);
-          expression_output(state, $cond, 0);
+          expression_create_goto(state, IF, labelstr_end, $cond);
           expression_free($cond);
-          expression_create_goto(state, IF, labelstr_end);
           scope_finish(state, true);
       } CodeBlock {
           if (state->ignore_block) {
@@ -1006,7 +1000,7 @@ WhileBlock:
           snprintf(labelstr_st, 256, "%s_st", (char*)head->data);
           snprintf(labelstr_end, 256, "%s_end", (char*)head->data);
 
-          expression_create_goto(state, GOTO, labelstr_st);
+          expression_create_goto(state, GOTO, labelstr_st, NULL);
           label_create(state, labelstr_end);
 
           free(head->data);
@@ -1043,9 +1037,8 @@ DoBlock:
           snprintf(labelstr_st, 256, "%s_st", (char*)head->data);
           snprintf(labelstr_end, 256, "%s_end", (char*)head->data);
 
-          expression_output(state, $cond, 1);
+          expression_create_goto(state, IF, labelstr_st, $cond);
           expression_free($cond);
-          expression_create_goto(state, IF, labelstr_st);
           label_create(state, labelstr_end);
 
           free(head->data);
@@ -1058,9 +1051,8 @@ DoBlock:
           snprintf(labelstr_st, 256, "%s_st", (char*)head->data);
           snprintf(labelstr_end, 256, "%s_end", (char*)head->data);
 
-          expression_output(state, $cond, 1);
+          expression_create_goto(state, UNLESS, labelstr_st, $cond);
           expression_free($cond);
-          expression_create_goto(state, UNLESS, labelstr_st);
           label_create(state, labelstr_end);
 
           free(head->data);
@@ -1214,14 +1206,14 @@ Instruction:
         }
       }
     | "goto" IDENTIFIER {
-        expression_create_goto(state, GOTO, $2);
+        expression_create_goto(state, GOTO, $2, NULL);
     }
     | Assignment
     | VarDeclaration
     | BreakStatement
     | "return" {
         if (state->current_sub->is_inline)
-            expression_create_goto(state, GOTO, "inline_end");
+            expression_create_goto(state, GOTO, "inline_end", NULL);
         else 
             instr_add(state, state->current_sub, instr_new(state, state->ins_ret, "SSSSS", 0, 0, 0x25, 0, 2));
     }
@@ -1501,7 +1493,7 @@ Entry:
       ENTRY {
         $$ = param_new('S');
         $$->value.val.S = gool_to_eid($1);
-        //gool_pool_force_get_index(state->ecl, $$->value.val.S);
+        gool_pool_force_get_index(state->ecl, $$->value.val.S);
         free($1);
       }
     ;
@@ -2155,13 +2147,30 @@ static void
 expression_create_goto(
     parser_state_t *state,
     int type,
-    char *labelstr)
+    char *labelstr,
+    expression_t* cond)
 {
     const expr_t* expr = expr_get_by_symbol(state->version, type);
     thecl_param_t *p1 = param_new('o');
     p1->value.type = 'z';
     p1->value.val.z = strdup(labelstr);
-    instr_add(state, state->current_sub, instr_new(state, expr->id, "pSSSS", p1, 0, 0x1F, state->version == 1 ? (type == GOTO ? 0 : (type == IF ? 1 : (type == UNLESS ? 2 : 3))) : 0, 0));
+    thecl_param_t *pcond;
+    if (type == GOTO || cond == NULL) {
+        pcond = param_new('S');
+        pcond->stack = 1;
+        pcond->object_link = 0;
+        pcond->value.val.S = field_get("misc")->offset;
+    }
+    else {
+        if (cond->type != EXPRESSION_VAL || cond->value->stack != 1 || cond->value->object_link != 0 || cond->value->value.val.S < 0 || cond->value->value.val.S > 0x3F) {
+            expression_output(state, cond, 1);
+            pcond = param_sp_new();
+        }
+        else {
+            pcond = cond->value;
+        }
+    }
+    instr_add(state, state->current_sub, instr_new(state, expr->id, "pSpSS", p1, 0, pcond, state->version == 1 ? (type == GOTO ? 0 : (type == IF ? 1 : (type == UNLESS ? 2 : 3))) : 0, 0));
 }
 
 static void
@@ -2235,11 +2244,10 @@ expression_output(
         int i = 0;
         expression_t* child_expr;
         list_for_each(&expr->children, child_expr) {
-            expression_output(state, child_expr, 1);
             if (i == 0) {
-                expression_create_goto(state, UNLESS, labelstr_unless);
+                expression_create_goto(state, UNLESS, labelstr_unless, child_expr);
             } else if (i == 1) {
-                expression_create_goto(state, GOTO, labelstr_end);
+                expression_create_goto(state, GOTO, labelstr_end, child_expr);
                 label_create(state, labelstr_unless);
             } else {
                 label_create(state, labelstr_end);

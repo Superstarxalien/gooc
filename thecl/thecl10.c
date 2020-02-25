@@ -502,6 +502,11 @@ c1_compile(
     thecl_state_t* state;
     gool_anim_t* anim;
 
+    /* write GOOL EIDs to const pool before anything else */
+    list_for_each(&ecl->states, state) {
+        gool_pool_force_get_index(ecl, state->exe_eid);
+    }
+
     list_for_each(&ecl->subs, sub) {
         if (sub->forward_declaration || sub->is_inline)
             continue;
@@ -543,11 +548,6 @@ c1_compile(
             break;
         different_subs:;
         }
-    }
-
-    /* write GOOL EIDs to const pool before anything else */
-    list_for_each(&ecl->states, state) {
-        gool_pool_force_get_index(ecl, state->exe_eid);
     }
 
     if (!file_seekable(out)) {
