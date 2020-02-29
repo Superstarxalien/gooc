@@ -147,7 +147,7 @@ c1_gool_globals[] = {
     { "CHECKPOINTID",     69 },
     { "PREVBOXCOUNT",     70 },
     { "PREVLEVEL",        71 },
-    { "GAMEITEMPOOL2",72 },
+    { "GAMEITEMPOOL2",    72 },
 
     { "GEMCOUNT",         97 },
     { "KEYCOUNT",         98 },
