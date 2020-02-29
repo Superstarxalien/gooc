@@ -825,7 +825,7 @@ c1_gool_ins_soundspec_params(
 }
 
 static list_t*
-c1_gool_ins_soundpitch_params(
+c1_gool_ins_soundfadevol_params(
     list_t* params,
     int argc)
 {
@@ -849,7 +849,7 @@ c1_gool_ins_soundcount_params(
 }
 
 static list_t*
-c1_gool_ins_sounddelay_params(
+c1_gool_ins_soundfadetime_params(
     list_t* params,
     int argc)
 {
