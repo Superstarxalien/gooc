@@ -829,6 +829,14 @@ c1_gool_ins_soundpitch_params(
     list_t* params,
     int argc)
 {
+    return c1_gool_ins_soundspec_params(params, 0, "soundfadev");
+}
+
+static list_t*
+c1_gool_ins_soundpitch_params(
+    list_t* params,
+    int argc)
+{
     return c1_gool_ins_soundspec_params(params, 1, "soundpitch");
 }
 
@@ -838,6 +846,14 @@ c1_gool_ins_soundcount_params(
     int argc)
 {
     return c1_gool_ins_soundspec_params(params, 4, "soundcount");
+}
+
+static list_t*
+c1_gool_ins_sounddelay_params(
+    list_t* params,
+    int argc)
+{
+    return c1_gool_ins_soundspec_params(params, 6, "soundfadet");
 }
 
 static list_t*
@@ -1027,8 +1043,10 @@ c1_gool_ins[] = {
      { "deloadfile",               0x8B, 0, 0, 0, -1,  1, c1_gool_ins_deloadfile_params },
      { "soundplay",                0x8C, 0, 0, 0, -1,  2, c1_gool_ins_playsound_params },
      { "soundsetup",               0x8D, 0, 0, 0, -1,  2, c1_gool_ins_setupsound_params },
+     { "soundfadev",               0x8D, 0, 0, 0, -1,  2, c1_gool_ins_soundfadevol_params },
      { "soundpitch",               0x8D, 0, 0, 0, -1,  2, c1_gool_ins_soundpitch_params },
      { "soundcount",               0x8D, 0, 0, 0, -1,  2, c1_gool_ins_soundcount_params },
+     { "soundfadet",               0x8D, 0, 0, 0, -1,  2, c1_gool_ins_soundfadetime_params },
      { "sounddelay",               0x8D, 0, 0, 0, -1,  2, c1_gool_ins_sounddelay_params },
      { "sounddecay",               0x8D, 0, 0, 0, -1,  2, c1_gool_ins_sounddecay_params },
      { "calclight",                0x8E, 0, 0, 0, -1,  0, c1_gool_ins_calclight_params },
