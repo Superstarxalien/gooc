@@ -154,6 +154,8 @@ c1_gool_globals[] = {
     { "SPAWNTRANSY", 103 },
     { "SPAWNTRANSZ", 104 },
 
+    { "DEATHCOUNT",  108 },
+
     { NULL, 0 }
 };
 
