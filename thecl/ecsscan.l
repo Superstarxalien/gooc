@@ -155,6 +155,10 @@
 "iscolliding"           return ISCOLLIDING;
 "__unk2"                return UNK2;
 
+vol\([0-9]+\.[0-9]+\) {
+    yylval.integer = (int)(strtod(yytext+4, NULL) * 0x3FFF);
+    return INTEGER;
+}
 [0-9]+(\.[0-9]+)?\s*deg {
     yylval.integer = (int)(strtod(yytext, NULL) / 180.0 * 0x800);
     return GOOL_INTEGER;
