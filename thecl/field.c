@@ -117,46 +117,46 @@ static field_t gvar_buf = { gvar_name_buf, 0 };
 
 static const field_t
 c1_gool_globals[] = {
-    { "LEVEL",         0 },
+    { "LEVEL",             0 },
 
-    { "FRUITCOUNTER",  6 },
-    { "LIFECOUNTER",   7 },
+    { "FRUITCOUNTER",      6 },
+    { "LIFECOUNTER",       7 },
 
-    { "PAUSEMENU",    12 },
+    { "PAUSEMENU",        12 },
 
-    { "DOCTOR",       16 },
+    { "DOCTOR",           16 },
 
-    { "GAMEPROGRESS", 20 },
+    { "GAMEPROGRESS",     20 },
 
-    { "ZONEFLAG",     30 },
+    { "ZONEFLAG",         30 },
 
-    { "CAMTRANSX",    37 },
-    { "CAMTRANSY",    38 },
-    { "CAMTRANSZ",    39 },
-    { "CAMROTX",      40 },
-    { "CAMROTY",      41 },
-    { "CAMROTZ",      42 },
-    { "FRAMETIME",    43 },
+    { "CAMTRANSX",        37 },
+    { "CAMTRANSY",        38 },
+    { "CAMTRANSZ",        39 },
+    { "CAMROTX",          40 },
+    { "CAMROTY",          41 },
+    { "CAMROTZ",          42 },
+    { "FRAMETIME",        43 },
 
-    { "BONUSROUND",   60 },
+    { "BONUSROUND",       60 },
 
-    { "BOXCOUNT",     62 },
+    { "BOXCOUNT",         62 },
     { "GAMEITEMPOOL1",63 },
 
-    { "DEBUG",        68 },
-    { "CHECKPOINTID", 69 },
-    { "PREVBOXCOUNT", 70 },
-    { "PREVLEVEL",    71 },
+    { "DEBUG",            68 },
+    { "CHECKPOINTID",     69 },
+    { "PREVBOXCOUNT",     70 },
+    { "PREVLEVEL",        71 },
     { "GAMEITEMPOOL2",72 },
 
-    { "GEMCOUNT",     97 },
-    { "KEYCOUNT",     98 },
+    { "GEMCOUNT",         97 },
+    { "KEYCOUNT",         98 },
 
-    { "SPAWNTRANSX", 102 },
-    { "SPAWNTRANSY", 103 },
-    { "SPAWNTRANSZ", 104 },
+    { "SPAWNTRANSX",     102 },
+    { "SPAWNTRANSY",     103 },
+    { "SPAWNTRANSZ",     104 },
 
-    { "DEATHCOUNT",  108 },
+    { "DEATHCOUNT",      108 },
 
     { NULL, 0 }
 };
