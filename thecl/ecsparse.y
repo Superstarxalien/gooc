@@ -64,7 +64,7 @@ static expression_t* expression_load_new(const parser_state_t* state, thecl_para
 static expression_t* expression_val_new(const parser_state_t* state, int value);
 static expression_t* expression_pointer_new(const parser_state_t* state, thecl_param_t* value);
 static expression_t* expression_operation_new(const parser_state_t* state, const int symbol, expression_t** operands);
-static expression_t* expression_ternary_new(/*const parser_state_t* state, */expression_t* condition, expression_t* val1, expression_t* val2);
+static expression_t* expression_ternary_new(const parser_state_t* state, expression_t* condition, expression_t* val1, expression_t* val2);
 
 static void expression_output(parser_state_t* state, expression_t* expr, int has_no_parents);
 static void expression_optimize(parser_state_t* state, expression_t* expr);
@@ -193,7 +193,9 @@ int yydebug = 0;
 %token DIRECTIVE_TEXTURE "#tex"
 %token DIRECTIVE_SPRITE "#sprite"
 %token COMMA ","
+%token QUESTION "?"
 %token SEMICOLON ";"
+%token COLON ":"
 %token SUB "sub"
 %token VAR "var"
 %token RETURN "return"
@@ -298,7 +300,7 @@ int yydebug = 0;
 %type <expression> ExpressionSubsetInstParam
 %type <expression> ExpressionLoadType
 %type <expression> ExpressionSubset
-//%type <expression> Expression_Safe
+%type <expression> Expression_Safe
 %type <expression> ParenExpression
 %type <expression> ParenExpression2
 
@@ -324,7 +326,7 @@ int yydebug = 0;
 %precedence NOT B_NOT ADDRESSOF
 %precedence ABS
 
-%expect 0
+//%expect 0
 %%
 
 Statements:
@@ -1387,10 +1389,10 @@ ExpressionSubset:
 //  | "__unk2" "(" Expression "," Expression ")"                  { $$ = EXPR_4(MISC, $3, expression_val_new(state, 0), $5, expression_val_new(state, 15)); }
 
     /* Custom expressions. */
-    /*
-    | Expression "?" Expression_Safe ":" Expression_Safe  %prec QUESTION
-                                  { $$ = expression_ternary_new(/*state, $1, $3, $5); }
-    ;*/
+
+    | Expression "?" Expression ":" Expression  %prec QUESTION
+                                  { $$ = expression_ternary_new(state, $1, $3, $5); }
+    ;
 
 /* 
    The purpose of this is to be used in places that contain certain tokens
@@ -1400,11 +1402,11 @@ ExpressionSubset:
    the rank switch expression.
    Of course, this still allows any expression to be put in - it just requires it to
    be in brackets (unless it's a literal), which prevents any bad things from happening.
-*//*
+*/
 Expression_Safe:
       Load_Type                      { $$ = expression_load_new(state, $1); }
     |             "(" Expression ")" { $$ = $2; }
-    ;*/
+    ;
 
 Address:
       IDENTIFIER {
@@ -2115,7 +2117,7 @@ expression_operation_new(
 
 static expression_t*
 expression_ternary_new(
-    //const parser_state_t* state,
+    const parser_state_t* state,
     expression_t* cond,
     expression_t* val1,
     expression_t* val2

@@ -64,7 +64,9 @@
 %x COMMENT COMMENT_SINGLE CSTRING STRING ESCAPE_CHAR
 %%
 ","        return COMMA;
+"?"        return QUESTION;
 ";"        return SEMICOLON;
+":"        return COLON;
 "{"        return BRACE_OPEN;
 "}"        return BRACE_CLOSE;
 "("        return PARENTHESIS_OPEN;
