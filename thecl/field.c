@@ -128,6 +128,8 @@ c1_gool_globals[] = {
 
     { "GAMEPROGRESS", 20 },
 
+    { "ZONEFLAG",     30 },
+
     { "CAMTRANSX",    37 },
     { "CAMTRANSY",    38 },
     { "CAMTRANSZ",    39 },
