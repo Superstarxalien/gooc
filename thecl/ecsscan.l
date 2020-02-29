@@ -174,7 +174,7 @@
 }
 [0-9]+([GgMms]|[Hh]z)? {
     char* afternum;
-    yylval.integer = strtol(yytext, &afternum, 10);
+    yylval.integer = strtoul(yytext, &afternum, 10);
     if (strstr(afternum, "hz") || strstr(afternum, "Hz"))
         yylval.integer = (int)(yylval.integer / 11025.0 * 0x400);
     else if (strchr(afternum, 'M') || strchr(afternum, 'm'))
