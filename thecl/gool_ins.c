@@ -892,6 +892,45 @@ c1_gool_ins_deloadfile_params(
     return c1_gool_ins_ntry_params(params, 2, "deloadfile");
 }
 
+static list_t*
+c1_gool_ins_calclight_params(
+    list_t* params,
+    int argc)
+{
+    thecl_param_t* param;
+    if (!params)
+        params = list_new();
+    size_t c = list_count(params);
+    if (c == 0) {
+        param = param_new('S');
+        param->value.val.S = field_get("v0")->offset;
+        param->stack = 0;
+        param->object_link = 0;
+        list_append_new(params, param);
+
+        param = param_new('S');
+        param->value.val.S = 5;
+        list_append_new(params, param);
+
+        param = param_new('S');
+        param->value.val.S = 4;
+        list_append_new(params, param);
+
+        param = param_new('S');
+        param->value.val.S = 6;
+        list_append_new(params, param);
+
+        param = param_new('S');
+        param->value.val.S = 0;
+        list_append_new(params, param);
+    }
+    else {
+        fprintf(stderr, "%s: calclight: wrong number of arguments (expected 0, got %zu)\n", argv0, c);
+        return NULL;
+    }
+    return params;
+}
+
 static const gool_ins_t
 c1_gool_ins[] = {
      /* NAME                        ID  VA POP R   L   C              VALIDATE */
@@ -928,6 +967,7 @@ c1_gool_ins[] = {
      { "soundcount",               0x8D, 0, 0, 0, -1,  2, c1_gool_ins_soundcount_params },
      { "sounddelay",               0x8D, 0, 0, 0, -1,  2, c1_gool_ins_sounddelay_params },
      { "sounddecay",               0x8D, 0, 0, 0, -1,  2, c1_gool_ins_sounddecay_params },
+     { "calclight",                0x8E, 0, 0, 0, -1,  0, c1_gool_ins_calclight_params },
      { "broadcastevent",           0x8F, 1, 0, 0,  2,  3, c1_gool_ins_sendevent_params },
      { "cascadeevent",             0x90, 1, 0, 0,  2,  3, c1_gool_ins_sendevent_params },
      { "tryspawn",                 0x91, 1, 0, 0, -1,  3, c1_gool_ins_spawn_params },
