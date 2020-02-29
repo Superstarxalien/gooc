@@ -233,6 +233,8 @@ c1_gool_events[] = {
 
     { "EventFling",           29 },
 
+    { "EventLevelEnd",        41 },
+
     { "EventPlayerDamage",    43 },
 
     { NULL, 0 }
