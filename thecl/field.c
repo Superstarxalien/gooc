@@ -119,6 +119,7 @@ static const field_t
 c1_gool_globals[] = {
     { "LEVEL",             0 },
 
+    { "RESPAWNCOUNT",      5 },
     { "FRUITCOUNTER",      6 },
     { "LIFECOUNTER",       7 },
 
@@ -127,8 +128,13 @@ c1_gool_globals[] = {
     { "DOCTOR",           16 },
 
     { "GAMEPROGRESS",     20 },
+    { "LIFECOUNT",        21 },
 
     { "ZONEFLAG",         30 },
+    { "STARTLIVES",       31 },
+
+    { "SFXVOL",           34 },
+    { "MUSVOL",           35 },
 
     { "CAMTRANSX",        37 },
     { "CAMTRANSY",        38 },
@@ -138,10 +144,14 @@ c1_gool_globals[] = {
     { "CAMROTZ",          42 },
     { "FRAMETIME",        43 },
 
+    { "LEVELCOUNT",       46 },
+
+    { "PERCENTCOMPLETE",  58 },
+
     { "BONUSROUND",       60 },
 
     { "BOXCOUNT",         62 },
-    { "GAMEITEMPOOL1",63 },
+    { "GAMEITEMPOOL1",    63 },
 
     { "DEBUG",            68 },
     { "CHECKPOINTID",     69 },
