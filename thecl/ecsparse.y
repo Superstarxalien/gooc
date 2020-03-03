@@ -204,7 +204,6 @@ int yydebug = 0;
 %token TRANS "trans"
 %token ONCE "once"
 %token EVENT "event"
-%token HANDLES "handles"
 %token INLINE "inline"
 %token BRACE_OPEN "{"
 %token BRACE_CLOSE "}"
@@ -300,7 +299,6 @@ int yydebug = 0;
 %type <expression> ExpressionSubsetInstParam
 %type <expression> ExpressionLoadType
 %type <expression> ExpressionSubset
-%type <expression> Expression_Safe
 %type <expression> ParenExpression
 %type <expression> ParenExpression2
 
@@ -326,7 +324,7 @@ int yydebug = 0;
 %precedence NOT B_NOT ADDRESSOF
 %precedence ABS
 
-//%expect 0
+%expect 0
 %%
 
 Statements:
@@ -1392,20 +1390,6 @@ ExpressionSubset:
 
     | Expression "?" Expression ":" Expression  %prec QUESTION
                                   { $$ = expression_ternary_new(state, $1, $3, $5); }
-    ;
-
-/* 
-   The purpose of this is to be used in places that contain certain tokens
-   that could be a part of an expression too, to prevent such tokens from
-   mistakenly being parsed as expressions.
-   An example of such situation is the ':' from "case 1:" being parsed as a part of
-   the rank switch expression.
-   Of course, this still allows any expression to be put in - it just requires it to
-   be in brackets (unless it's a literal), which prevents any bad things from happening.
-*/
-Expression_Safe:
-      Load_Type                      { $$ = expression_load_new(state, $1); }
-    |             "(" Expression ")" { $$ = $2; }
     ;
 
 Address:
