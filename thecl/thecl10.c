@@ -689,11 +689,33 @@ c1_compile(
     return 1;
 }
 
+static int
+c1_create_header(
+    const thecl_t* gool,
+    FILE* out)
+{
+    thecl_sub_t* sub;
+    thecl_state_t* state;
+    thecl_spawn_t* spawn;
+    char gool_name[6];
+
+    for (int i = 0; i < 5; ++i) {
+        gool_name[4-i] = gool_ename_charmap[(gool->eid >> (1 + 6 * i)) & 0x3F];
+    }
+    gool_name[5] = '\0';
+
+    fprintf(out, "expr %s = %u\n\n", gool_name, gool->id);
+
+    list_for_each(&gool->spawns, spawn) {
+        fprintf(out, "expr %s_%s = %u\n", gool_name, spawn->name, (int)spawn->offset);
+    }
+}
+
 const thecl_module_t c1_gool = {
     .open = NULL,
     .trans = NULL,
     .dump = NULL,
     .parse = c1_parse,
     .compile = c1_compile,
-    .create_header = NULL
+    .create_header = c1_create_header
 };

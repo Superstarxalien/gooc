@@ -341,6 +341,7 @@ main(int argc, char* argv[])
 {
     FILE* in = stdin;
     FILE* out = stdout;
+    FILE* h_out = NULL;
     unsigned int version = 0;
     int mode = -1;
     const thecl_module_t* module = NULL;
@@ -354,7 +355,7 @@ main(int argc, char* argv[])
     int opt;
     int ind=0;
     while(argv[util_optind]) {
-        switch(opt = util_getopt(argc, argv, ":c:Vm:")) {
+        switch(opt = util_getopt(argc, argv, ":c:Vm:h:")) {
         case 'c':
             if(mode != -1) {
                 fprintf(stderr,"%s: More than one mode specified\n", argv0);
@@ -375,6 +376,13 @@ main(int argc, char* argv[])
                 fprintf(stderr,"%s: Invalid display mode specified\n", argv0);
                 print_usage();
                 exit(1);
+            }
+            break;
+        case 'h':
+            h_out = fopen(util_optarg, "w");
+            if (!h_out) {
+                fprintf(stderr, "%s: couldn't open %s for reading: %s\n",
+                    argv0, util_optarg, strerror(errno));
             }
             break;
         default:
@@ -430,11 +438,16 @@ main(int argc, char* argv[])
                 if (gool->is_defined) {
                     module->compile(gool, out);
                 }
+                if (h_out) {
+                    module->create_header(gool, h_out);
+                }
                 thecl_free(gool);
             }
         }
         fclose(in);
         fclose(out);
+        if (h_out)
+            fclose(h_out);
 
         if(g_was_error) {
           printf("%s: %s: there were errors.\n", argv0, argv[0]);
