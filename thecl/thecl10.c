@@ -311,45 +311,6 @@ c1_instr_serialize(
             sub_name_param->value.val.S = called_sub->start_offset;
         }
     }
-    else if (c1_is_statechange(instr)) {
-        /* Validate state change parameters. */
-        list_node_t* node = instr->params.head;
-        thecl_param_t* state_name_param = node->data;
-        char* state_name = state_name_param->value.val.z;
-        thecl_param_t* state_argc_param = node->next->data;
-        const thecl_state_t* called_state;
-        int o = 0;
-        list_for_each(&ecl->states, called_state) {
-            if (!strcmp(called_state->name, state_name))
-                break;
-            ++o;
-            called_state = NULL;
-        }
-        if (!called_state) {
-            fprintf(stderr, "%s:c1_instr_serialize: in sub %s: unknown state \"%s\"\n",
-                argv0, sub->name, state_name);
-            was_error = true;
-        }
-        else {
-            if (called_state->code) {
-                const thecl_sub_t* called_sub = called_state->code;
-                if (state_argc_param->value.val.S > called_sub->arg_count) {
-                    fprintf(stderr, "%s:c1_instr_serialize: in sub %s: too many parameters when changing to state \"%s\" (expected %d)\n",
-                        argv0, sub->name, state_name, called_sub->arg_count);
-                    was_error = true;
-                }
-                else if (state_argc_param->value.val.S < called_sub->arg_count) {
-                    fprintf(stderr, "%s:c1_instr_serialize: in sub %s: not enough parameters when changing to state %s (expected %d)\n",
-                        argv0, sub->name, state_name, called_sub->arg_count);
-                    was_error = true;
-                }
-            }
-            free(state_name_param->value.val.z);
-            state_name_param->type = 'S';
-            state_name_param->value.type = 'S';
-            state_name_param->value.val.S = o;
-        }
-    }
 
     int total_bits = 0;
     int i = 0;
