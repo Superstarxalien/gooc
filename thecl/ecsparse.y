@@ -1833,7 +1833,7 @@ static void instr_create_inline_call(
     list_for_each(params, param) { /* It has alredy been verified that param amount is correct. */
         var = sub->args[i];
 
-        if (var->is_written || param->is_expression_param || param->stack) {
+        if (var->is_written || param->is_expression_param || (param->stack && param->object_link == -1)) {
 
             if (param->is_expression_param && !var->is_written && param->stack != 2) {
                 /* Check if the passed expression can be simplified to a literal value. */
