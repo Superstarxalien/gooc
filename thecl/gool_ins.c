@@ -920,7 +920,7 @@ c1_gool_ins_calclight_params(
     if (c == 0) {
         param = param_new('S');
         param->value.val.S = field_get("v0")->offset;
-        param->stack = 0;
+        param->stack = 1;
         param->object_link = 0;
         list_append_new(params, param);
 
