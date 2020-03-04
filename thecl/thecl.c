@@ -42,6 +42,9 @@ const char* gool_null_ename = "NONE!";
 
 parser_state_t* g_parser_state = NULL;
 int g_rate = 30; /* ntsc default */
+char* g_region = NULL;
+int g_reg_block_depth = 0;
+int* g_reg_blocks = NULL;
 
 extern const thecl_module_t c1_gool;
 
@@ -323,15 +326,15 @@ free_globals(void)
 static void
 print_usage(void)
 {
-    printf("Usage: %s [-V] [[-c] VERSION] [-m MODE]... [INPUT [OUTPUT]]\n"
+    printf("Usage: %s [-V] [[-c] VERSION] [-r REGION]... [INPUT [OUTPUT]]\n"
            "Options:\n"
            "  -c  create ECL file\n"
            "  -V  display version information and exit\n"
-           "  -m  set the display mode, used for specific time and frame calculations\n"
+           "  -r  set the region, used for specific time and frame calculations, and #ifreg parse blocks\n"
            "VERSION can be:\n"
            "  1\n"
-           "MODE can be:\n"
-           "  ntsc, pal\n"
+           "REGION can be:\n"
+           "  ntsc-u, ntsc-j, pal\n"
            /* NEWHU: */
            "Report bugs to <" PACKAGE_BUGREPORT ">.\n", argv0);
 }
@@ -355,7 +358,7 @@ main(int argc, char* argv[])
     int opt;
     int ind=0;
     while(argv[util_optind]) {
-        switch(opt = util_getopt(argc, argv, ":c:Vm:h:")) {
+        switch(opt = util_getopt(argc, argv, ":c:Vr:h:")) {
         case 'c':
             if(mode != -1) {
                 fprintf(stderr,"%s: More than one mode specified\n", argv0);
@@ -365,8 +368,8 @@ main(int argc, char* argv[])
             mode = opt;
             version = parse_version(util_optarg);
             break;
-        case 'm':
-            if (!strcmp(util_optarg, "ntsc")) {
+        case 'r':
+            if (!strncmp(util_optarg, "ntsc", 4)) {
                 g_rate = 30;
             }
             else if (!strcmp(util_optarg, "pal")) {
@@ -377,6 +380,9 @@ main(int argc, char* argv[])
                 print_usage();
                 exit(1);
             }
+            if (g_region)
+                free(g_region);
+            g_region = strdup(util_optarg);
             break;
         case 'h':
             h_out = fopen(util_optarg, "w");
@@ -391,6 +397,11 @@ main(int argc, char* argv[])
     }
     argc = ind;
     argv[argc] = NULL;
+
+    if (!g_region) {
+        g_region = strdup("ntsc-u");
+    }
+    g_reg_blocks = malloc(0);
 
     switch (version) {
     case 1:
@@ -448,6 +459,10 @@ main(int argc, char* argv[])
         fclose(out);
         if (h_out)
             fclose(h_out);
+
+        if (g_region)
+            free(g_region);
+        free(g_reg_blocks);
 
         if(g_was_error) {
           printf("%s: %s: there were errors.\n", argv0, argv[0]);

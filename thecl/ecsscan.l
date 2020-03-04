@@ -61,7 +61,7 @@
             result = 1; \
         } \
     }
-%x COMMENT COMMENT_SINGLE CSTRING STRING ESCAPE_CHAR
+%x COMMENT COMMENT_SINGLE CSTRING STRING ESCAPE_CHAR P_BLOCK
 %%
 ","        return COMMA;
 "?"        return QUESTION;
@@ -306,9 +306,45 @@ vol\([0-9]+\.[0-9]+\) {
         return DIRECTIVE_TEXTURE;
     else if (!strcmp(txt, "sprite"))
         return DIRECTIVE_SPRITE;
+    else if (!strcmp(txt, "endif"))
+        goto CHECK_ENDIF;
     yylval.string = strdup(yytext + 1);
     return DIRECTIVE;
 }
+
+#ifn?reg[\t\n\r ]+\"[a-zA-Z\-]+\"[\t\n\r ]+ {
+    char* o_reg_text = strchr(yytext, '"') + 1;
+    int len = strchr_o(o_reg_text, '"');
+    char* reg_text = malloc(len + 1);
+    strncpy(reg_text, o_reg_text, len);
+    reg_text[len] = '\0';
+
+    int cmp = (yytext[3] == 'n') == strcmp(reg_text, g_region);
+    g_reg_blocks = realloc(g_reg_blocks, sizeof(int) * ++g_reg_block_depth);
+    if (!cmp) {
+        BEGIN(P_BLOCK);
+    }
+    g_reg_blocks[g_reg_block_depth - 1] = !cmp;
+    free(reg_text);
+}
+<P_BLOCK>#endif {
+CHECK_ENDIF:
+    if (g_reg_block_depth == 0) {
+        yyerror(NULL, "invalid #endif");
+        yyterminate();
+    }
+    g_reg_blocks = realloc(g_reg_blocks, sizeof(int) * --g_reg_block_depth);
+    if (g_reg_block_depth == 0) {
+        BEGIN(INITIAL);
+    }
+    else if (g_reg_blocks[g_reg_block_depth - 1]) {
+        BEGIN(P_BLOCK);
+    }
+    else {
+        BEGIN(INITIAL);
+    }
+}
+<P_BLOCK>([\n\r]|.) ;
 
 [\t\n\r ]+ ;
 . {
