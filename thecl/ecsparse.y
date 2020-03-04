@@ -2235,6 +2235,7 @@ expression_output(
         int i = 0;
         expression_t* child_expr;
         list_for_each(&expr->children, child_expr) {
+            expression_output(state, child_expr, 1);
             if (i == 0) {
                 expression_create_goto(state, UNLESS, labelstr_unless, child_expr);
             } else if (i == 1) {
