@@ -64,7 +64,7 @@ static expression_t* expression_load_new(const parser_state_t* state, thecl_para
 static expression_t* expression_val_new(const parser_state_t* state, int value);
 static expression_t* expression_pointer_new(const parser_state_t* state, thecl_param_t* value);
 static expression_t* expression_operation_new(const parser_state_t* state, const int symbol, expression_t** operands);
-static expression_t* expression_ternary_new(const parser_state_t* state, expression_t* condition, expression_t* val1, expression_t* val2);
+static expression_t* expression_ternary_new(const parser_state_t* state, expression_t* cond, expression_t* val1, expression_t* val2);
 
 static void expression_output(parser_state_t* state, expression_t* expr, int has_no_parents);
 static void expression_optimize(parser_state_t* state, expression_t* expr);
@@ -2235,13 +2235,14 @@ expression_output(
         int i = 0;
         expression_t* child_expr;
         list_for_each(&expr->children, child_expr) {
-            expression_output(state, child_expr, 1);
             if (i == 0) {
                 expression_create_goto(state, UNLESS, labelstr_unless, child_expr);
             } else if (i == 1) {
-                expression_create_goto(state, GOTO, labelstr_end, child_expr);
+                expression_output(state, child_expr, 1);
+                expression_create_goto(state, GOTO, labelstr_end, NULL);
                 label_create(state, labelstr_unless);
             } else {
+                expression_output(state, child_expr, 1);
                 label_create(state, labelstr_end);
             }
             ++i;
