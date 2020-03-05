@@ -1240,11 +1240,11 @@ Assignment:
 
             instr_add(state, state->current_sub, instr_new(state, expr->id, "pp", $1, src_param));
 
-            if ($1->object_link == -1 && $1->stack >= 3) {
-                state->current_sub->vars[$1->stack - 3]->is_written = true;
+            if ($1->object_link == -1 && $1->value.val.S >= 3) {
+                state->current_sub->vars[$1->value.val.S - 3]->is_written = true;
             }
-            else if ($1->object_link == -1 && $1->stack < 0) {
-                state->current_sub->args[-$1->stack - 1]->is_written = true;
+            else if ($1->object_link == -1 && $1->value.val.S < 0) {
+                state->current_sub->args[-$1->value.val.S - 1]->is_written = true;
             }
         } else { /* WGL */
             expr = expr_get_by_symbol(state->version, GASSIGN);
@@ -1833,7 +1833,7 @@ static void instr_create_inline_call(
     list_for_each(params, param) { /* It has alredy been verified that param amount is correct. */
         var = sub->args[i];
 
-        if (param->stack >= 0 && (var->is_written || param->is_expression_param || (param->stack && param->object_link == -1))) {
+        if (param->value.val.S >= 0 && (var->is_written || param->is_expression_param || (param->stack && param->object_link == -1))) {
 
             if (param->is_expression_param && !var->is_written && param->stack != 2) {
                 /* Check if the passed expression can be simplified to a literal value. */
@@ -2744,11 +2744,11 @@ var_shorthand_assign(
 
         instr_add(state, state->current_sub, instr_new(state, expr->id, "pp", param, param_sp_new()));
 
-        if (param->object_link == -1 && param->stack >= 3) {
-            state->current_sub->vars[param->stack - 3]->is_written = true;
+        if (param->object_link == -1 && param->value.val.S >= 3) {
+            state->current_sub->vars[param->value.val.S - 3]->is_written = true;
         }
-        else if (param->object_link == -1 && param->stack < 0) {
-            state->current_sub->args[-param->stack - 1]->is_written = true;
+        else if (param->object_link == -1 && param->value.val.S < 0) {
+            state->current_sub->args[-param->value.val.S - 1]->is_written = true;
         }
     } else { /* WGL */
         const expr_t* expr = expr_get_by_symbol(state->version, GASSIGN);
