@@ -503,7 +503,27 @@ c1_gool_ins_onexit_params(
         return params;
     }
     else {
-        fprintf(stderr, "%s: onstateexit: wrong number of arguments (expected 0, got %zu)\n", argv0, c);
+        fprintf(stderr, "%s: onstateexit: wrong number of arguments (expected 1, got %zu)\n", argv0, c);
+        return NULL;
+    }
+}
+
+static list_t*
+c1_gool_ins_settrans_params(
+    list_t* params,
+    int argc)
+{
+    thecl_param_t* param;
+    size_t c = list_count(params);
+    if (c == 1) {
+        param = param_new('S');
+        param->value.val.S = field_get("tpc")->offset;
+        list_append_new(params, param);
+
+        return params;
+    }
+    else {
+        fprintf(stderr, "%s: settrans: wrong number of arguments (expected 1, got %zu)\n", argv0, c);
         return NULL;
     }
 }
@@ -1013,6 +1033,7 @@ static const gool_ins_t
 c1_gool_ins[] = {
      /* NAME                        ID  VA POP R   L   C              VALIDATE */
      { "onstateexit",                24, 0, 0, 0, -1,  1, c1_gool_ins_onexit_params },
+     { "settrans",                   24, 0, 0, 0, -1,  1, c1_gool_ins_settrans_params },
      { "setfield",                   28, 1, 0, 0, -1,  2, c1_gool_ins_setfield_params },
      { "entitysetspawn",             28, 0, 0, 0, -1,  1, c1_gool_ins_entitysetspawn_params },
      { "movetozoneinposition",       28, 0, 0, 0, -1,  2, c1_gool_ins_movetozoneinposition_params },
