@@ -55,10 +55,10 @@ typedef struct value_t {
         int32_t S;
         char* z;
         //char C[4];
-        /*struct {
+        struct {
             size_t length;
             unsigned char* data;
-        } m;*/
+        } m;
     } val;
 } value_t;
 
