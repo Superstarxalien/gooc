@@ -554,15 +554,33 @@ Font_Char:
         state->current_anim->size = sizeof(c1_font_t) + sizeof(c1_char_t) * font->char_count;
 
         c1_char_t* character = font->chars + font->char_count - 1;
-        character->tex1 = $2 & 0xFFFFFF;
-        character->tex1 |= ($5 & 0xF) << 24;
-        character->tex1 |= ($4 & 0x3) << 29;
-        character->tex2 = $9 & 0x1F;
-        character->tex2 |= ($6 & 0x7F) << 6;
-        character->tex2 |= ($8 & 0x1F) << 13;
-        character->tex2 |= ($7 & 0x3) << 18;
-        character->tex2 |= ($3 & 0x3) << 20;
-        character->tex2 |= ($10 & 0x3FF) << 22;
+		if ($7 >= 128) {
+			yyerror(state, "syntax error, texture x offset is out of bounds");
+		}
+		int uv = 0;
+		if (($9 != 4 && $9 != 8 && $9 != 16 && $9 != 32 && $9 != 64) ||
+			($10 != 4 && $10 != 8 && $10 != 16 && $10 != 32 && $10 != 64)) {
+			yyerror(state, "syntax error, invalid texture width/height");
+		}
+		if ($9 == 4) uv = 0;
+		if ($9 == 8) uv = 1;
+		if ($9 == 16) uv = 2;
+		if ($9 == 32) uv = 3;
+		if ($9 == 64) uv = 4;
+		if ($10 == 4) uv += 0;
+		if ($10 == 8) uv += 5;
+		if ($10 == 16) uv += 10;
+		if ($10 == 32) uv += 15;
+		if ($10 == 64) uv += 20;
+        character->tex1 = $2 & 0xFFFFFF; /* rgb */
+        character->tex1 |= ($5 & 0xF) << 24; /* clutx */
+        character->tex1 |= ($4 & 0x3) << 29; /* blend */
+        character->tex2 = $8 & 0x1F; /* yoff */
+        character->tex2 |= ($6 & 0x7F) << 6; /* cluty */
+        character->tex2 |= ($7 & 0x1F) << 13; /* xoff */
+        character->tex2 |= (($7 / 0x20) & 0x3) << 18; /* segment */
+        character->tex2 |= ($3 & 0x3) << 20; /* color */
+        character->tex2 |= (uv & 0x3FF) << 22; /* uv */
         character->w = $11;
         character->h = $12;
     }
@@ -574,22 +592,40 @@ Sprite_Frames:
     ;
 
 Sprite_Frame:
-    DIRECTIVE_TEXTURE INTEGER INTEGER INTEGER INTEGER INTEGER INTEGER INTEGER INTEGER INTEGER { /* jesus christ */
+    DIRECTIVE_TEXTURE INTEGER INTEGER INTEGER INTEGER INTEGER INTEGER INTEGER INTEGER INTEGER { /* rgb color blend cx cy x y w h */
         c1_sprite_t* sprite = state->current_anim->anim;
         sprite = realloc(sprite, sizeof(c1_sprite_t) + sizeof(c1_frame_t) * ++sprite->count);
         state->current_anim->anim = sprite;
         state->current_anim->size = sizeof(c1_sprite_t) + sizeof(c1_frame_t) * sprite->count;
 
         c1_frame_t* frame = sprite->frames + sprite->count - 1;
+		if ($7 >= 128) {
+			yyerror(state, "syntax error, texture x offset is out of bounds");
+		}
+		int uv = 0;
+		if (($9 != 4 && $9 != 8 && $9 != 16 && $9 != 32 && $9 != 64) ||
+			($10 != 4 && $10 != 8 && $10 != 16 && $10 != 32 && $10 != 64)) {
+			yyerror(state, "syntax error, invalid texture width/height");
+		}
+		if ($9 == 4) uv = 0;
+		if ($9 == 8) uv = 1;
+		if ($9 == 16) uv = 2;
+		if ($9 == 32) uv = 3;
+		if ($9 == 64) uv = 4;
+		if ($10 == 4) uv += 0;
+		if ($10 == 8) uv += 5;
+		if ($10 == 16) uv += 10;
+		if ($10 == 32) uv += 15;
+		if ($10 == 64) uv += 20;
         frame->tex1 = $2 & 0xFFFFFF; /* rgb */
         frame->tex1 |= ($5 & 0xF) << 24; /* clutx */
         frame->tex1 |= ($4 & 0x3) << 29; /* blend */
-        frame->tex2 = $9 & 0x1F; /* yoff */
+        frame->tex2 = $8 & 0x1F; /* yoff */
         frame->tex2 |= ($6 & 0x7F) << 6; /* cluty */
-        frame->tex2 |= ($8 & 0x1F) << 13; /* xoff */
-        frame->tex2 |= ($7 & 0x3) << 18; /* segment */
+        frame->tex2 |= ($7 & 0x1F) << 13; /* xoff */
+        frame->tex2 |= (($7 / 0x20) & 0x3) << 18; /* segment */
         frame->tex2 |= ($3 & 0x3) << 20; /* color */
-        frame->tex2 |= ($10 & 0x3FF) << 22; /* uv */
+        frame->tex2 |= (uv & 0x3FF) << 22; /* uv */
     }
     ;
 
