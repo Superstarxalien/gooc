@@ -409,7 +409,12 @@ c1_instr_serialize(
 
             val = p;
 
-            val &= 0xFFFFFFFFU >> (32 - b);
+            int s = 32 - b;
+            int sm = s-1;
+            val &= 0xFFFFFFFFU >> s;
+            if (p != ((val << s) >> s) && p != ((val << sm) >> sm)) {
+                fprintf(stderr, "%s:c1_instr_serialize: in sub %s: parameter out of bounds for instruction %d (%u bits)\n", argv0, sub->name, instr->id, b);
+            }
             total_bits += b;
         }
         else if (op == 'N') {
