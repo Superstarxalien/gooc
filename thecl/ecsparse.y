@@ -554,24 +554,24 @@ Font_Char:
         state->current_anim->size = sizeof(c1_font_t) + sizeof(c1_char_t) * font->char_count;
 
         c1_char_t* character = font->chars + font->char_count - 1;
-		if ($7 >= 128) {
-			yyerror(state, "syntax error, texture x offset is out of bounds");
-		}
-		int uv = 0;
-		if (($9 != 4 && $9 != 8 && $9 != 16 && $9 != 32 && $9 != 64) ||
-			($10 != 4 && $10 != 8 && $10 != 16 && $10 != 32 && $10 != 64)) {
-			yyerror(state, "syntax error, invalid texture width/height");
-		}
-		if ($9 == 4) uv = 0;
-		if ($9 == 8) uv = 1;
-		if ($9 == 16) uv = 2;
-		if ($9 == 32) uv = 3;
-		if ($9 == 64) uv = 4;
-		if ($10 == 4) uv += 0;
-		if ($10 == 8) uv += 5;
-		if ($10 == 16) uv += 10;
-		if ($10 == 32) uv += 15;
-		if ($10 == 64) uv += 20;
+        if ($7 >= 128) {
+            yyerror(state, "syntax error, texture x offset is out of bounds");
+        }
+        int uv = 0;
+        if (($9 != 4 && $9 != 8 && $9 != 16 && $9 != 32 && $9 != 64) ||
+            ($10 != 4 && $10 != 8 && $10 != 16 && $10 != 32 && $10 != 64)) {
+            yyerror(state, "syntax error, invalid texture width/height");
+        }
+        if ($9 == 4) uv = 0;
+        if ($9 == 8) uv = 1;
+        if ($9 == 16) uv = 2;
+        if ($9 == 32) uv = 3;
+        if ($9 == 64) uv = 4;
+        if ($10 == 4) uv += 0;
+        if ($10 == 8) uv += 5;
+        if ($10 == 16) uv += 10;
+        if ($10 == 32) uv += 15;
+        if ($10 == 64) uv += 20;
         character->tex1 = $2 & 0xFFFFFF; /* rgb */
         character->tex1 |= ($5 & 0xF) << 24; /* clutx */
         character->tex1 |= ($4 & 0x3) << 29; /* blend */
@@ -599,24 +599,24 @@ Sprite_Frame:
         state->current_anim->size = sizeof(c1_sprite_t) + sizeof(c1_frame_t) * sprite->count;
 
         c1_frame_t* frame = sprite->frames + sprite->count - 1;
-		if ($7 >= 128) {
-			yyerror(state, "syntax error, texture x offset is out of bounds");
-		}
-		int uv = 0;
-		if (($9 != 4 && $9 != 8 && $9 != 16 && $9 != 32 && $9 != 64) ||
-			($10 != 4 && $10 != 8 && $10 != 16 && $10 != 32 && $10 != 64)) {
-			yyerror(state, "syntax error, invalid texture width/height");
-		}
-		if ($9 == 4) uv = 0;
-		if ($9 == 8) uv = 1;
-		if ($9 == 16) uv = 2;
-		if ($9 == 32) uv = 3;
-		if ($9 == 64) uv = 4;
-		if ($10 == 4) uv += 0;
-		if ($10 == 8) uv += 5;
-		if ($10 == 16) uv += 10;
-		if ($10 == 32) uv += 15;
-		if ($10 == 64) uv += 20;
+        if ($7 >= 128) {
+            yyerror(state, "syntax error, texture x offset is out of bounds");
+        }
+        int uv = 0;
+        if (($9 != 4 && $9 != 8 && $9 != 16 && $9 != 32 && $9 != 64) ||
+            ($10 != 4 && $10 != 8 && $10 != 16 && $10 != 32 && $10 != 64)) {
+            yyerror(state, "syntax error, invalid texture width/height");
+        }
+        if ($9 == 4) uv = 0;
+        if ($9 == 8) uv = 1;
+        if ($9 == 16) uv = 2;
+        if ($9 == 32) uv = 3;
+        if ($9 == 64) uv = 4;
+        if ($10 == 4) uv += 0;
+        if ($10 == 8) uv += 5;
+        if ($10 == 16) uv += 10;
+        if ($10 == 32) uv += 15;
+        if ($10 == 64) uv += 20;
         frame->tex1 = $2 & 0xFFFFFF; /* rgb */
         frame->tex1 |= ($5 & 0xF) << 24; /* clutx */
         frame->tex1 |= ($4 & 0x3) << 29; /* blend */
@@ -2377,6 +2377,7 @@ math_preprocess(
         case NOT:      return !val2;
         case B_NOT:    return ~val2;
         case ABS:      return val2 < 0 ? -val2 : val2;
+        case SIN:      return (sin_psx((val1 * 0x800) / val2 - 0x400) + 0x1000) * val2 / 0x2000;
         default:
             /* Since the cases above cover all existing 2-parameter expressions there is no possibility of this ever hapenning.
                Just putting this error message in case someone adds new expressions and forgets about handling them here... */

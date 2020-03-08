@@ -31,6 +31,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <math.h>
 #include "program.h"
 #include "thecl.h"
 #include "util.h"
@@ -45,6 +46,37 @@ int g_rate = 30; /* ntsc default */
 char* g_region = NULL;
 int g_reg_block_depth = 0;
 int* g_reg_blocks = NULL;
+
+#define PI 3.1415926535897932384626433832795028841971693993751058209749445923078164062
+int sine_table[1025];
+static void
+make_sin_table(
+    void)
+{
+    for (int i = 0; i <= 1024; ++i) {
+        sine_table[i] = (int)round(sin(i / 1024.0 * (PI / 2.0)) * 0x1000);
+    }
+}
+
+int
+sin_psx(
+    int r)
+{
+    r &= 0xfff;
+    if (r < 0x400) {
+        return sine_table[r];
+    }
+    else if (r < 0x800) {
+        return sine_table[0x800 - r];
+    }
+    else if (r < 0xC00) {
+        return -sine_table[r - 0x800];
+    }
+    else {
+        return -sine_table[0x1000 - r];
+    }
+}
+#undef PI
 
 extern const thecl_module_t c1_gool;
 
@@ -321,6 +353,9 @@ macro_get(
 static void
 free_globals(void)
 {
+    if (g_region)
+        free(g_region);
+    free(g_reg_blocks);
 }
 
 static void
@@ -352,6 +387,7 @@ main(int argc, char* argv[])
     current_input = "(stdin)";
     current_output = "(stdout)";
 
+    make_sin_table();
     atexit(free_globals);
 
     argv0 = util_shortname(argv[0]);
@@ -459,10 +495,6 @@ main(int argc, char* argv[])
         fclose(out);
         if (h_out)
             fclose(h_out);
-
-        if (g_region)
-            free(g_region);
-        free(g_reg_blocks);
 
         if(g_was_error) {
           printf("%s: %s: there were errors.\n", argv0, argv[0]);
