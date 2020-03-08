@@ -2372,7 +2372,7 @@ math_preprocess(
         case XOR:      return val1 ^ val2;
         case B_OR:     return val1 | val2;
         case B_AND:    return val1 & val2;
-        case LSHIFT:   return val1 << val2;
+        case LSHIFT:   return val2 >= 0 ? val1 << val2 : val1 >> -val2;
         case TEST:     return (val1 & val2) == val2;
         case NOT:      return !val2;
         case B_NOT:    return ~val2;
