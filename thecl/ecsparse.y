@@ -188,6 +188,7 @@ int yydebug = 0;
 %token <integer> GOOL_INTEGER "gool integer"
 %token <string> DIRECTIVE "directive"
 %token <string> ENTRY "entry"
+%token NIL "nil"
 %token DIRECTIVE_FONT "#font"
 %token DIRECTIVE_CHAR "#char"
 %token DIRECTIVE_TEXT "#text"
@@ -1504,6 +1505,12 @@ Address:
         free($1);
         free($3);
       }
+	| NIL {
+		$$ = param_new('S');
+		$$->stack = 1;
+		$$->value.val.S = 0;
+		$$->object_link = -2;
+	}
     ;
 
 Integer:

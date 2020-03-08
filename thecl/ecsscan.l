@@ -250,6 +250,10 @@ vol\([0-9]+\.[0-9]+\) {
     yylval.string[5] = '\0';
     return ENTRY;
 }
+"null" |
+"nil" {
+	return NIL;
+}
 
 \" {
     BEGIN(STRING);
