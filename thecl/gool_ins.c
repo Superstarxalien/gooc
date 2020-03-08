@@ -660,8 +660,10 @@ c1_gool_ins_getvert_params(
         list_prepend_to(params, param, params->tail);
 
         param = params->head->next->data;
-        param->value.val.S -= 8;
-        param->value.val.S /= 3;
+        if (param->value.val.S >= 8) {
+            param->value.val.S -= 8;
+            param->value.val.S /= 3;
+        }
     }
     else {
         fprintf(stderr, "%s: getvert: wrong number of arguments (expected 3, got %zu)\n", argv0, c);
@@ -734,7 +736,7 @@ c1_gool_ins_calcpath_params(
         list_append_new(params, param);
     }
     else {
-        fprintf(stderr, "%s: getvert: wrong number of arguments (expected 0, 1 or 2, got %zu)\n", argv0, c);
+        fprintf(stderr, "%s: calcpath: wrong number of arguments (expected 0, 1 or 2, got %zu)\n", argv0, c);
         return NULL;
     }
     return params;
@@ -1029,6 +1031,124 @@ c1_gool_ins_savecheckpoint_params(
     return params;
 }
 
+static list_t*
+c1_gool_ins_gamefunc4_params(
+    list_t* params,
+    int argc)
+{
+    thecl_param_t* param;
+    size_t c = list_count(params);
+    if (c == 1) {
+        param = param_new('S');
+        param->value.val.S = 5;
+        list_append_new(params, param);
+
+        param = param_new('S');
+        param->value.val.S = 4;
+        list_append_new(params, param);
+
+        param = param_new('S');
+        param->value.val.S = 12;
+        list_append_new(params, param);
+    }
+    else {
+        fprintf(stderr, "%s: gamefunc4: wrong number of arguments (expected 1, got %zu)\n", argv0, c);
+        return NULL;
+    }
+    return params;
+}
+
+static list_t*
+c1_gool_ins_moveto2d_params(
+    list_t* params,
+    int argc)
+{
+    thecl_param_t* param;
+    if (!params)
+        params = list_new();
+    size_t c = list_count(params);
+    if (c == 0) {
+        param = param_new('S');
+        param->value.val.S = field_get("scalex")->offset;
+        param->object_link = 0;
+        param->stack = 1;
+        list_append_new(params, param);
+
+        param = param_new('S');
+        param->value.val.S = 0;
+        list_append_new(params, param);
+
+        param = param_new('S');
+        param->value.val.S = 0;
+        list_append_new(params, param);
+
+        param = param_new('S');
+        param->value.val.S = 1;
+        list_append_new(params, param);
+
+        param = param_new('S');
+        param->value.val.S = 0;
+        list_append_new(params, param);
+    }
+    else if (c == 2) {
+        param = params->head->data;
+        if (param->value.val.S >= 8) {
+            param->value.val.S -= 8;
+            param->value.val.S /= 3;
+        }
+        param = params->head->next->data;
+        if (param->value.val.S >= 8) {
+            param->value.val.S -= 8;
+            param->value.val.S /= 3;
+        }
+
+        param = param_new('S');
+        param->value.val.S = field_get("scalex")->offset;
+        param->object_link = 0;
+        param->stack = 1;
+        list_prepend_new(params, param);
+
+        param = param_new('S');
+        param->value.val.S = 1;
+        list_append_new(params, param);
+
+        param = param_new('S');
+        param->value.val.S = 0;
+        list_append_new(params, param);
+    }
+    else if (c == 3) {
+        param = params->head->next->data;
+        if (param->value.val.S >= 8) {
+            param->value.val.S -= 8;
+            param->value.val.S /= 3;
+        }
+        param = params->head->next->next->data;
+        if (param->value.val.S >= 8) {
+            param->value.val.S -= 8;
+            param->value.val.S /= 3;
+        }
+
+        param = param_new('S');
+        param->value.val.S = field_get("scalex")->offset;
+        param->object_link = 0;
+        param->stack = 1;
+        list_prepend_new(params, param);
+
+        param = param_new('S');
+        param->value.val.S = 1;
+        list_append_new(params, param);
+
+        param = param_new('S');
+        param->value.val.S = 0;
+        list_append_new(params, param);
+    }
+    else {
+        fprintf(stderr, "%s: moveto2d: wrong number of arguments (expected 0, 2 or 3, got %zu)\n", argv0, c);
+        return NULL;
+    }
+    return params;
+}
+
 static const gool_ins_t
 c1_gool_ins[] = {
      /* NAME                        ID  VA POP R   L   C              VALIDATE */
@@ -1041,6 +1161,7 @@ c1_gool_ins[] = {
      { "loadlevel",                  28, 0, 0, 0, -1,  1, c1_gool_ins_loadlevel_params },
      { "movetolist",                 28, 0, 0, 0, -1,  1, c1_gool_ins_movetolist_params },
      { "savecheckpoint",             28, 0, 0, 0, -1,  0, c1_gool_ins_savecheckpoint_params },
+     { "gamefunc4",                  28, 0, 0, 0, -1,  1, c1_gool_ins_gamefunc4_params },
      { "setcolor",                   36, 0, 0, 0, -1,  3, c1_gool_ins_setcolor_params },
      { "anim",                       39, 0, 0, 0, -1,  2, c1_gool_ins_anim_params },
      { "nop",                      0x81, 0, 0, 0, -1,  0, c1_gool_ins_nop_params },
@@ -1052,6 +1173,7 @@ c1_gool_ins[] = {
      { "playframe",                0x84, 1, 1, 1, -1,  3, c1_gool_ins_playframe_params },
      { "calcpath",                 0x85, 0, 0, 0, -1,  3, c1_gool_ins_calcpath_params },
      { "getvert",                  0x85, 0, 0, 0, -1,  3, c1_gool_ins_getvert_params },
+     { "moveto2d",                 0x85, 0, 0, 0, -1,  2, c1_gool_ins_moveto2d_params },
      { "sendevent",                0x87, 1, 0, 0,  2,  3, c1_gool_ins_sendevent_params },
      { "rejectevent",              0x88, 0, 0, 0, -1,  1, c1_gool_ins_eventstatus_params },
      { "acceptevent",              0x89, 0, 0, 0, -1,  1, c1_gool_ins_eventstatus_params },
