@@ -1953,7 +1953,7 @@ static void instr_create_inline_call(
                 }
             } else if (param->stack && param->object_link == 0 && param->value.val.S == 0x1F) {
                 thecl_instr_t* last_ins = list_tail(&state->current_sub->instrs);
-                const expr_t* last_expr = expr_get_by_id(state->version, last_ins->id);
+                const expr_t* last_expr = last_ins ? expr_get_by_id(state->version, last_ins->id) : NULL;
                 if (last_expr && last_expr->allow_optim) {
                     thecl_param_t* p1 = last_ins->params.head->data;
                     thecl_param_t* p2 = last_ins->params.head->next->data;
