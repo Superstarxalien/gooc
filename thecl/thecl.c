@@ -54,7 +54,7 @@ make_sin_table(
     void)
 {
     for (int i = 0; i <= 1024; ++i) {
-        sine_table[i] = (int)round(sin(i / 1024.0 * (PI / 2.0)) * 0x1000);
+        sine_table[i] = lround(sin(i / 1024.0 * (PI / 2.0)) * 0x1000);
     }
 }
 
