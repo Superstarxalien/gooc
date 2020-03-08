@@ -1966,7 +1966,7 @@ static void instr_create_inline_call(
                     instr_del(state, state->current_sub, last_ins);
                     thecl_instr_free(last_ins);
                 }
-            } else if (param->type == 'o') {
+            } else if (param->type == 'o' && label_find(sub, param->value.val.z)) {
                 /* We also have to make sure that all jumps are correct. */
                 snprintf(buf, 256, "%s%s", name, param->value.val.z);
                 free(param->value.val.z);
