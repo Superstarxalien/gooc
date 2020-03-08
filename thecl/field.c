@@ -71,6 +71,7 @@ gool_fields[] = {
     { "epc",          35 },
     { "hpc",          36 },
     { "misc",         37 },
+    { "eventaccepted",37 },
     { "v0",           38 },
     { "frametime",    39 },
     { "statetime",    40 },
@@ -109,6 +110,9 @@ gool_fields[] = {
     { "vscale",        3 },
     { "vtrot",         4 },
     { "vvec",          5 },
+    { "vecx",         23 },
+    { "vecy",         24 },
+    { "vecz",         25 },
     { NULL, 0 }
 };
 
@@ -128,7 +132,8 @@ c1_gool_globals[] = {
     { "DOCTOR",           16 },
 
     { "GAMEPROGRESS",     20 },
-    { "LIFECOUNT",        21 },
+
+    { "LIFECOUNT",        24 },
 
     { "ZONEFLAG",         30 },
     { "STARTLIVES",       31 },
