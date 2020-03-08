@@ -34,6 +34,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <math.h>
 #include "expr.h"
 #include "field.h"
 #include "path.h"
@@ -2348,6 +2349,7 @@ expression_optimize(
     list_free_nodes(&expression->children);
 }
 
+#define PI 3.1415926535897932384626433832795028841971693993751058209749445923078164062
 static int
 math_preprocess(
     parser_state_t* state,
@@ -2377,13 +2379,14 @@ math_preprocess(
         case NOT:      return !val2;
         case B_NOT:    return ~val2;
         case ABS:      return val2 < 0 ? -val2 : val2;
-        case SIN:      return (sin_psx((val1 * 0x800) / val2 - 0x400) + 0x1000) * val2 / 0x2000;
+        case SIN:      return (sin((val1 * PI) / val2 - PI / 2) + 1.0) * val2 / 2.0; /* casts to int on return */
         default:
             /* Since the cases above cover all existing 2-parameter expressions there is no possibility of this ever hapenning.
                Just putting this error message in case someone adds new expressions and forgets about handling them here... */
             yyerror(state, "Math preprocessing error!");
     }
 }
+#undef PI
 
 static void
 state_begin(
