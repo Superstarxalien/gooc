@@ -2665,8 +2665,8 @@ var_create_assign(
     expression_free(expr);
 
     if (param != NULL) { /* if param is NULL, then an expression was pushed to stack, which is enough */
-        const expr_t* expr_assign = expr_get_by_symbol(state->version, ASSIGN);
-        instr_add(state, state->current_sub, instr_new(state, expr_assign->id, "pp", param_sp_new(), param));
+        const expr_t* expr_load = expr_get_by_symbol(state->version, LOAD);
+        instr_add(state, state->current_sub, instr_new(state, expr_load->id, "p", param));
     }
 
     return var;
