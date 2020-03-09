@@ -361,7 +361,7 @@ free_globals(void)
 static void
 print_usage(void)
 {
-    printf("Usage: %s [-V] [[-c] VERSION] [-r REGION]... [INPUT [OUTPUT]]\n"
+    printf("Usage: %s [-V] [-c VERSION] [-r REGION] [-h HEADER_OUTPUT]... [INPUT [OUTPUT]]\n"
            "Options:\n"
            "  -c  create ECL file\n"
            "  -V  display version information and exit\n"
