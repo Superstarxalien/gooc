@@ -1280,7 +1280,7 @@ c1_gool_ins[] = {
      { "calclight",                0x8E, 0, 0, 0, -1,  0, c1_gool_ins_calclight_params },
      { "broadcastevent",           0x8F, 1, 0, 0,  2,  3, c1_gool_ins_sendevent_params },
      { "cascadeevent",             0x90, 1, 0, 0,  2,  3, c1_gool_ins_sendevent_params },
-     { "tryspawn",                 0x91, 1, 0, 0, -1,  3, c1_gool_ins_spawn_params },
+     { "spawn2",                   0x91, 1, 0, 0, -1,  3, c1_gool_ins_spawn_params },
      { NULL, 0, 0, NULL }
 };
 
