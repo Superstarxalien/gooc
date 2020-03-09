@@ -259,6 +259,7 @@ typedef struct {
     thecl_state_t* current_state;
     thecl_interrupt_t* current_interrupt;
     gool_anim_t* current_anim;
+    uintptr_t fragsprite_off;
     thecl_t* ecl;
     int path_cnt;
     char** path_stack;

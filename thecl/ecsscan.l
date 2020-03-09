@@ -252,7 +252,7 @@ vol\([0-9]+\.[0-9]+\) {
 }
 "null" |
 "nil" {
-	return NIL;
+    return NIL;
 }
 
 \" {
@@ -312,6 +312,12 @@ vol\([0-9]+\.[0-9]+\) {
         return DIRECTIVE_SPRITE;
     else if (!strcmp(txt, "endif"))
         goto CHECK_ENDIF;
+    else if (!strcmp(txt, "fraganim"))
+        return DIRECTIVE_FANIM;
+    else if (!strcmp(txt, "fragsprite"))
+        return DIRECTIVE_FSPRITE;
+    else if (!strcmp(txt, "frag"))
+        return DIRECTIVE_FRAG;
     yylval.string = strdup(yytext + 1);
     return DIRECTIVE;
 }
