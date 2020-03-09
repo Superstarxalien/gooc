@@ -195,7 +195,6 @@ int yydebug = 0;
 %token DIRECTIVE_TEXTURE "#tex"
 %token DIRECTIVE_SPRITE "#sprite"
 %token DIRECTIVE_FANIM "#fraganim"
-%token DIRECTIVE_FSPRITE "#fragsprite"
 %token DIRECTIVE_FRAG "#frag"
 %token COMMA ","
 %token QUESTION "?"
@@ -477,7 +476,7 @@ Statement:
         list_append_new(&state->ecl->anims, state->current_anim);
         state->current_anim = NULL;
       }
-    | DIRECTIVE_TEXT IDENTIFIER IDENTIFIER INTEGER {
+    | DIRECTIVE_TEXT IDENTIFIER IDENTIFIER ENTRY {
         gool_anim_t* anim = malloc(sizeof(gool_anim_t));
         anim->name = strdup($2);
         anim->size = sizeof(c1_text_t);
@@ -485,7 +484,7 @@ Statement:
         c1_text_t* text = malloc(sizeof(c1_text_t));
         text->type = 4;
         text->string_count = 0;
-        text->unknown = $4;
+        text->unknown = gool_to_eid($4);
         text->font = anim_get_offset(state, $3);
 
         anim->anim = text;
@@ -493,12 +492,13 @@ Statement:
 
         free($2);
         free($3);
+        free($4);
       }
       String_List {
         list_append_new(&state->ecl->anims, state->current_anim);
         state->current_anim = NULL;
       }
-    | DIRECTIVE_FANIM IDENTIFIER ENTRY {
+    | DIRECTIVE_FANIM IDENTIFIER ENTRY INTEGER {
         gool_anim_t* anim = malloc(sizeof(gool_anim_t));
         anim->name = strdup($2);
         anim->size = sizeof(c1_fraganim_t);
@@ -506,16 +506,19 @@ Statement:
         c1_fraganim_t* fraganim = malloc(sizeof(c1_fraganim_t));
         fraganim->type = 5;
         fraganim->sprite_count = 0;
+        fraganim->frag_count = $4;
         fraganim->eid = gool_to_eid($3);
 
         anim->anim = fraganim;
         state->current_anim = anim;
-        state->fragsprite_off = 0;
 
         free($2);
         free($3);
       }
-      Frag_Frames {
+      Frags {
+        c1_fraganim_t* fraganim = state->current_anim->anim;
+        ++fraganim->sprite_count;
+        fraganim->sprite_count /= fraganim->frag_count;
         list_append_new(&state->ecl->anims, state->current_anim);
         state->current_anim = NULL;
       }
@@ -603,13 +606,14 @@ Font_Char:
         character->tex1 = $2 & 0xFFFFFF; /* rgb */
         character->tex1 |= ($5 & 0xF) << 24; /* clutx */
         character->tex1 |= ($4 & 0x3) << 29; /* blend */
-		character->tex1 |= 0x80000000;
         character->tex2 = $8 & 0x1F; /* yoff */
         character->tex2 |= ($6 & 0x7F) << 6; /* cluty */
         character->tex2 |= ($7 & 0x1F) << 13; /* xoff */
         character->tex2 |= (($7 / 0x20) & 0x3) << 18; /* segment */
         character->tex2 |= ($3 & 0x3) << 20; /* color */
         character->tex2 |= (uv & 0x3FF) << 22; /* uv */
+        if (character->tex1 || character->tex2)
+            character->tex1 |= 0x80000000;
         character->w = $11;
         character->h = $12;
     }
@@ -649,13 +653,14 @@ Sprite_Frame:
         frame->tex1 = $2 & 0xFFFFFF; /* rgb */
         frame->tex1 |= ($5 & 0xF) << 24; /* clutx */
         frame->tex1 |= ($4 & 0x3) << 29; /* blend */
-		frame->tex1 |= 0x80000000;
         frame->tex2 = $8 & 0x1F; /* yoff */
         frame->tex2 |= ($6 & 0x7F) << 6; /* cluty */
         frame->tex2 |= ($7 & 0x1F) << 13; /* xoff */
         frame->tex2 |= (($7 / 0x20) & 0x3) << 18; /* segment */
         frame->tex2 |= ($3 & 0x3) << 20; /* color */
         frame->tex2 |= (uv & 0x3FF) << 22; /* uv */
+        if (frame->tex1 || frame->tex2)
+            frame->tex1 |= 0x80000000;
     }
     ;
 
@@ -667,6 +672,7 @@ String_List:
         state->current_anim->anim = realloc(state->current_anim->anim, state->current_anim->size + stringlen);
 
         c1_text_t* text = state->current_anim->anim;
+		++text->string_count;
 
         char *string = (char*)state->current_anim->anim + state->current_anim->size;
         strcpy(string, $2);
@@ -677,24 +683,6 @@ String_List:
     }
     ;
 
-Frag_Frames:
-    %empty
-    | Frag_Frames Frag_Frame
-    ;
-
-Frag_Frame:
-    DIRECTIVE_FSPRITE {
-        state->current_anim->anim = realloc(state->current_anim->anim, state->current_anim->size + sizeof(c1_fragsprite_t));
-        state->fragsprite_off = state->current_anim->size;
-        state->current_anim->size += sizeof(c1_fragsprite_t);
-        c1_fragsprite_t* fragsprite = (char*)state->current_anim->anim + state->fragsprite_off;
-        fragsprite->count = 0;
-        c1_fraganim_t* fraganim = state->current_anim->anim;
-        ++fraganim->sprite_count;
-      }
-      Frags
-    ;
-
 Frags:
     %empty
     | Frags Frag
@@ -703,9 +691,10 @@ Frags:
 Frag:
     DIRECTIVE_FRAG INTEGER INTEGER INTEGER INTEGER INTEGER INTEGER INTEGER INTEGER INTEGER Literal_Int Literal_Int Literal_Int Literal_Int {
         state->current_anim->anim = realloc(state->current_anim->anim, state->current_anim->size + sizeof(c1_frag_t));
-        c1_frag_t* frag = (char*)state->current_anim->anim + state->current_anim->size;
-        c1_fragsprite_t* fragsprite = (char*)state->current_anim->anim + state->fragsprite_off;
+        c1_fraganim_t* fraganim = state->current_anim->anim;
+        c1_frag_t* frag = (char*)fraganim + state->current_anim->size;
         state->current_anim->size += sizeof(c1_frag_t);
+        ++fraganim->sprite_count;
 
         if ($7 >= 128) {
             yyerror(state, "syntax error, texture x offset is out of bounds");
@@ -728,18 +717,18 @@ Frag:
         frag->tex1 = $2 & 0xFFFFFF; /* rgb */
         frag->tex1 |= ($5 & 0xF) << 24; /* clutx */
         frag->tex1 |= ($4 & 0x3) << 29; /* blend */
-		frag->tex1 |= 0x80000000;
         frag->tex2 = $8 & 0x1F; /* yoff */
         frag->tex2 |= ($6 & 0x7F) << 6; /* cluty */
         frag->tex2 |= ($7 & 0x1F) << 13; /* xoff */
         frag->tex2 |= (($7 / 0x20) & 0x3) << 18; /* segment */
         frag->tex2 |= ($3 & 0x3) << 20; /* color */
         frag->tex2 |= (uv & 0x3FF) << 22; /* uv */
+        if (frag->tex1 || frag->tex2)
+            frag->tex1 |= 0x80000000;
         frag->x = $11;
         frag->y = $12;
         frag->w = $13;
         frag->h = $14;
-        ++fragsprite->count;
     }
     ;
 

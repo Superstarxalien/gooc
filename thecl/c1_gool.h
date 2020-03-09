@@ -82,15 +82,11 @@ typedef struct {
 } c1_frag_t;
 
 typedef struct {
-    uint32_t count;
-    c1_frag_t frags[];
-} c1_fragsprite_t;
-
-typedef struct {
     uint16_t type; /* 5 */
     uint16_t sprite_count;
     uint32_t eid;
-    /* c1_fragsprite_t sprites[]; */
+    uint32_t frag_count;
+    c1_frag_t frags[];
 } c1_fraganim_t;
 
 #endif
