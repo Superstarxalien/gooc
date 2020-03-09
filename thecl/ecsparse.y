@@ -672,7 +672,7 @@ String_List:
         state->current_anim->anim = realloc(state->current_anim->anim, state->current_anim->size + stringlen);
 
         c1_text_t* text = state->current_anim->anim;
-		++text->string_count;
+        ++text->string_count;
 
         char *string = (char*)state->current_anim->anim + state->current_anim->size;
         strcpy(string, $2);
