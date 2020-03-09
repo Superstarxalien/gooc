@@ -1505,12 +1505,12 @@ Address:
         free($1);
         free($3);
       }
-	| NIL {
-		$$ = param_new('S');
-		$$->stack = 1;
-		$$->value.val.S = 0;
-		$$->object_link = -2;
-	}
+    | NIL {
+        $$ = param_new('S');
+        $$->stack = 1;
+        $$->value.val.S = 0;
+        $$->object_link = -2;
+    }
     ;
 
 Integer:
@@ -1926,6 +1926,7 @@ static void instr_create_inline_call(
         snprintf(buf, 256, "%s%s", name, var->name);
         thecl_variable_t* var_new = var_create(state, state->current_sub, buf, false);
         stack_replace[i] = var_new;
+        state->current_sub->vars = realloc(state->current_sub->vars, --state->current_sub->var_count * sizeof(thecl_variable_t*));
     }
 
     /* Create labels that the inline sub uses (with changed offsets) */
