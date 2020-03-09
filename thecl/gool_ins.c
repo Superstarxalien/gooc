@@ -931,6 +931,14 @@ c1_gool_ins_deloadfile_params(
 }
 
 static list_t*
+c1_gool_ins_loadtpage_params(
+    list_t* params,
+    int argc)
+{
+    return c1_gool_ins_ntry_params(params, 6, "loadtpage");
+}
+
+static list_t*
 c1_gool_ins_calclight_params(
     list_t* params,
     int argc)
@@ -1260,6 +1268,7 @@ c1_gool_ins[] = {
      { "spawn",                    0x8A, 1, 0, 0, -1,  3, c1_gool_ins_spawn_params },
      { "loadfile",                 0x8B, 0, 0, 0, -1,  1, c1_gool_ins_loadfile_params },
      { "deloadfile",               0x8B, 0, 0, 0, -1,  1, c1_gool_ins_deloadfile_params },
+     { "loadtpage",                0x8B, 0, 0, 0, -1,  1, c1_gool_ins_loadtpage_params },
      { "soundplay",                0x8C, 0, 0, 0, -1,  2, c1_gool_ins_playsound_params },
      { "soundsetup",               0x8D, 0, 0, 0, -1,  2, c1_gool_ins_setupsound_params },
      { "soundfadev",               0x8D, 0, 0, 0, -1,  2, c1_gool_ins_soundfadevol_params },
