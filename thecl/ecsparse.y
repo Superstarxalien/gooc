@@ -1241,7 +1241,7 @@ Instruction:
                 expression_free(expression);
             }
             list_free_nodes(&state->expressions);
-            instr_create_call(state, state->ins_jal, $1, $3, false);
+            instr_create_call(state, state->ins_jal, $1, $3);
         }
         if ($3 != NULL) {
             list_free_nodes($3);
@@ -2062,14 +2062,6 @@ instr_create_call(
             ++argc;
         }
     }
-
-    /* Output expressions from parameters. */
-    expression_t* expr;
-    list_for_each(&state->expressions, expr) {
-        expression_output(state, expr, 0);
-        expression_free(expr);
-    }
-    list_free_nodes(&state->expressions);
 
     instr_add(state, state->current_sub, instr_new(state, type, "pS", name_param, argc));
     return false;
