@@ -1821,6 +1821,8 @@ instr_add(
                         } else { /* will always branch */
                             param_free(param);
                             branch_type_param->value.val.S = 0;
+                            branch_type_param = (thecl_param_t*)instr->params.tail->prev->prev->data;
+                            branch_type_param->value.val.S = 0x25;
                         }
                     }
                 }
@@ -2152,7 +2154,7 @@ instr_create_call(
         }
     }
 
-    instr_add(state, state->current_sub, instr_new(state, type, "pS", name_param, argc));
+    instr_add(state, state->current_sub, instr_new(state, type, "pSS", name_param, 38, argc));
     return false;
 }
 

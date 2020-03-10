@@ -122,7 +122,7 @@ static const id_format_pair_t th10_fmts[] = {
     { 0x83, "I7I9I6I2" },
     { 0x84, "RN4I6I2" },
     { 0x85, "RI3I3I3I3" },
-    { 0x86, "I14N6I4" },
+    { 0x86, "I14I6I4" },
     { 0x87, "RI6I3I3" },
     { 0x88, "I10I4I6I2I2" },
     { 0x89, "I10I4I6I2I2" },
@@ -288,7 +288,7 @@ c1_instr_serialize(
         list_node_t* node = instr->params.head;
         thecl_param_t* sub_name_param = node->data;
         char* sub_name = sub_name_param->value.val.z;
-        thecl_param_t* sub_argc_param = node->next->data;
+        thecl_param_t* sub_argc_param = node->next->next->data;
         const thecl_sub_t* called_sub = th10_find_sub(ecl, sub_name);
         if (!called_sub) {
             fprintf(stderr, "%s:c1_instr_serialize: in sub %s: unknown sub call \"%s\"\n",
