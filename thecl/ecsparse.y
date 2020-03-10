@@ -2311,7 +2311,7 @@ expression_output(
         
         list_for_each(&expr->children, child_expr) {
             ++c;
-            if (child_expr->type == EXPRESSION_VAL && (!expression->has_double_param || (expression->has_double_param && lc <= 2) || (expression->has_double_param && lc <= 2 && c == 1))) {
+            if (child_expr->type == EXPRESSION_VAL && (!expression->has_double_param || (expression->has_double_param && lc <= 2) || (expression->has_double_param && lc > 2 && c == 1))) {
                 list_append_new(param_list, child_expr->value);
             }
             else {
