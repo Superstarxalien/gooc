@@ -78,15 +78,14 @@ c1_gool_ins_anim_params(
         param->object_link = 0;
         param->value.val.S = field_get("animseq")->offset;
         list_prepend_new(params, param);
-        return params;
     }
     else if (c == 2) {
-        return params;
     }
     else {
         fprintf(stderr, "%s: anim: wrong number of arguments (expected 1 or 2, got %zu)\n", argv0, c);
         return NULL;
     }
+    return params;
 }
 
 static list_t*
@@ -120,13 +119,12 @@ c1_gool_ins_playtext_params(
     if (c == 2) {
         list_append_new(params, param_val_new(1));
         list_append_new(params, param_val_new(3));
-
-        return params;
     }
     else {
         fprintf(stderr, "%s: playtext: wrong number of arguments (expected 2, got %zu)\n", argv0, c);
         return NULL;
     }
+    return params;
 }
 
 static list_t*
@@ -170,7 +168,6 @@ c1_gool_ins_changestate_params(
         fprintf(stderr, "%s: changestate: wrong number of arguments (expected 1 or 2, got %zu)\n", argv0, c);
         return NULL;
     }
-
     return params;
 }
 
@@ -254,7 +251,6 @@ c1_gool_ins_spawn_params(
         fprintf(stderr, "%s: spawn: wrong number of arguments (expected 2 or 3, got %zu)\n", argv0, c);
         return NULL;
     }
-
     return params;
 }
 
@@ -285,7 +281,6 @@ c1_gool_ins_sendevent_params(
         fprintf(stderr, "%s: sendevent: wrong number of arguments (expected at least 3, got %zu)\n", argv0, c);
         return NULL;
     }
-
     return params;
 }
 
@@ -318,7 +313,6 @@ c1_gool_ins_eventstatus_params(
         fprintf(stderr, "%s: accept/rejectevent: wrong number of arguments (expected 0 or 1, got %zu)\n", argv0, c);
         return NULL;
     }
-
     return params;
 }
 
@@ -335,8 +329,6 @@ c1_gool_ins_eventstatusreturn_params(
         list_append_new(params, param_val_new(0x25));
         list_append_new(params, param_val_new(0));
         list_append_new(params, param_val_new(2));
-
-        return params;
     }
     else if (c == 1) {
         param = param_new('S');
@@ -348,13 +340,12 @@ c1_gool_ins_eventstatusreturn_params(
         list_prepend_new(params, param);
         list_append_new(params, param_val_new(1));
         list_append_new(params, param_val_new(2));
-
-        return params;
     }
     else {
         fprintf(stderr, "%s: accept/rejectevent: wrong number of arguments (expected 0 or 1, got %zu)\n", argv0, c);
         return NULL;
     }
+    return params;
 }
 
 static list_t*
@@ -369,8 +360,6 @@ c1_gool_ins_eventstatusstate_params(
         list_append_new(params, param_val_new(0x25));
         list_append_new(params, param_val_new(0));
         list_append_new(params, param_val_new(1));
-
-        return params;
     }
     else if (c == 2) {
         param = param_new('S');
@@ -378,13 +367,12 @@ c1_gool_ins_eventstatusstate_params(
         list_append_to(params, param, params->head);
         list_append_new(params, param_val_new(1));
         list_append_new(params, param_val_new(1));
-
-        return params;
     }
     else {
         fprintf(stderr, "%s: accept/rejectevent: wrong number of arguments (expected 1 or 2, got %zu)\n", argv0, c);
         return NULL;
     }
+    return params;
 }
 
 static list_t*
@@ -398,13 +386,12 @@ c1_gool_ins_onexit_params(
         param = param_new('S');
         param->value.val.S = field_get("hpc")->offset;
         list_append_new(params, param);
-
-        return params;
     }
     else {
         fprintf(stderr, "%s: onstateexit: wrong number of arguments (expected 1, got %zu)\n", argv0, c);
         return NULL;
     }
+    return params;
 }
 
 static list_t*
@@ -418,13 +405,12 @@ c1_gool_ins_settrans_params(
         param = param_new('S');
         param->value.val.S = field_get("tpc")->offset;
         list_append_new(params, param);
-
-        return params;
     }
     else {
         fprintf(stderr, "%s: settrans: wrong number of arguments (expected 1, got %zu)\n", argv0, c);
         return NULL;
     }
+    return params;
 }
 
 static list_t*
