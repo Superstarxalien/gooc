@@ -47,27 +47,17 @@ c1_gool_ins_playframe_params(
         param->value.val.S = field_get("animframe")->offset;
         list_append_new(params, param);
 
-        param = param_new('S');
-        param->value.val.S = 1;
-        list_append_new(params, param);
+        list_append_new(params, param_val_new(1));
 
-        param = param_new('S');
-        param->value.val.S = 3;
-        list_append_new(params, param);
+        list_append_new(params, param_val_new(3));
     }
     else if (c == 1) {
-        param = param_new('S');
-        param->value.val.S = 1;
-        list_append_new(params, param);
+        list_append_new(params, param_val_new(1));
 
-        param = param_new('S');
-        param->value.val.S = 3;
-        list_append_new(params, param);
+        list_append_new(params, param_val_new(3));
     }
     else if (c == 2) {
-        param = param_new('S');
-        param->value.val.S = 3;
-        list_append_new(params, param);
+        list_append_new(params, param_val_new(3));
     }
     return params;
 }
@@ -110,18 +100,12 @@ c1_gool_ins_playanim_params(
     thecl_param_t* param;
     size_t c = list_count(params);
     if (c == 2) {
-        param = param_new('S');
-        param->value.val.S = 1;
-        list_append_new(params, param);
+        list_append_new(params, param_val_new(1));
 
-        param = param_new('S');
-        param->value.val.S = 3;
-        list_append_new(params, param);
+        list_append_new(params, param_val_new(3));
     }
     else if (c == 3) {
-        param = param_new('S');
-        param->value.val.S = 3;
-        list_append_new(params, param);
+        list_append_new(params, param_val_new(3));
     }
     else if (c != 4) {
         fprintf(stderr, "%s: playanim: wrong number of arguments (expected 2, 3 or 4, got %zu)\n", argv0, c);
@@ -138,13 +122,9 @@ c1_gool_ins_playtext_params(
     thecl_param_t* param;
     size_t c = list_count(params);
     if (c == 2) {
-        param = param_new('S');
-        param->value.val.S = 1;
-        list_append_new(params, param);
+        list_append_new(params, param_val_new(1));
 
-        param = param_new('S');
-        param->value.val.S = 3;
-        list_append_new(params, param);
+        list_append_new(params, param_val_new(3));
 
         return params;
     }
@@ -189,13 +169,9 @@ c1_gool_ins_changestate_params(
         param->value.val.S = argc;
         list_append_to(params, param, params->head);
 
-        param = param_new('S');
-        param->value.val.S = type;
-        list_append_new(params, param);
+        list_append_new(params, param_val_new(type));
 
-        param = param_new('S');
-        param->value.val.S = 1;
-        list_append_new(params, param);
+        list_append_new(params, param_val_new(1));
     }
     else {
         fprintf(stderr, "%s: changestate: wrong number of arguments (expected 1 or 2, got %zu)\n", argv0, c);
@@ -270,9 +246,7 @@ c1_gool_ins_spawn_params(
     size_t c = list_count(params);
     if (c == 3 || c == 2) {
         if (c == 2) {
-            param = param_new('S');
-            param->value.val.S = 1;
-            list_append_new(params, param);
+            list_append_new(params, param_val_new(1));
         }
 
         list_node_t *node, *next;
@@ -281,9 +255,7 @@ c1_gool_ins_spawn_params(
             list_del(params, node);
         }
 
-        param = param_new('S');
-        param->value.val.S = argc;
-        list_append_new(params, param);
+        list_append_new(params, param_val_new(argc));
     }
     else {
         fprintf(stderr, "%s: spawn: wrong number of arguments (expected 2 or 3, got %zu)\n", argv0, c);
@@ -313,9 +285,7 @@ c1_gool_ins_sendevent_params(
         thecl_param_t* receiver = params->head->next->data;
         list_del(params, params->head->next);
 
-        param = param_new('S');
-        param->value.val.S = argc;
-        list_append_new(params, param);
+        list_append_new(params, param_val_new(argc));
 
         list_append_new(params, receiver);
     }
@@ -335,25 +305,15 @@ c1_gool_ins_eventstatus_params(
     thecl_param_t* param;
     size_t c = list_count(params);
     if (c == 0) {
-        param = param_new('S');
-        param->value.val.S = 0;
-        list_append_new(params, param);
+        list_append_new(params, param_val_new(0));
 
-        param = param_new('S');
-        param->value.val.S = 0;
-        list_append_new(params, param);
+        list_append_new(params, param_val_new(0));
 
-        param = param_new('S');
-        param->value.val.S = 0x25;
-        list_append_new(params, param);
+        list_append_new(params, param_val_new(0x25));
 
-        param = param_new('S');
-        param->value.val.S = 0;
-        list_append_new(params, param);
+        list_append_new(params, param_val_new(0));
 
-        param = param_new('S');
-        param->value.val.S = 0;
-        list_append_new(params, param);
+        list_append_new(params, param_val_new(0));
     }
     else if (c == 1) {
         param = param_new('S');
@@ -364,13 +324,9 @@ c1_gool_ins_eventstatus_params(
         param->value.val.S = 0;
         list_prepend_new(params, param);
 
-        param = param_new('S');
-        param->value.val.S = 1;
-        list_append_new(params, param);
+        list_append_new(params, param_val_new(1));
 
-        param = param_new('S');
-        param->value.val.S = 0;
-        list_append_new(params, param);
+        list_append_new(params, param_val_new(0));
     }
     else {
         fprintf(stderr, "%s: accept/rejectevent: wrong number of arguments (expected 0 or 1, got %zu)\n", argv0, c);
@@ -388,25 +344,15 @@ c1_gool_ins_eventstatusreturn_params(
     thecl_param_t* param;
     size_t c = list_count(params);
     if (c == 0) {
-        param = param_new('S');
-        param->value.val.S = 0;
-        list_append_new(params, param);
+        list_append_new(params, param_val_new(0));
 
-        param = param_new('S');
-        param->value.val.S = 0;
-        list_append_new(params, param);
+        list_append_new(params, param_val_new(0));
 
-        param = param_new('S');
-        param->value.val.S = 0x25;
-        list_append_new(params, param);
+        list_append_new(params, param_val_new(0x25));
 
-        param = param_new('S');
-        param->value.val.S = 0;
-        list_append_new(params, param);
+        list_append_new(params, param_val_new(0));
 
-        param = param_new('S');
-        param->value.val.S = 2;
-        list_append_new(params, param);
+        list_append_new(params, param_val_new(2));
 
         return params;
     }
@@ -419,13 +365,9 @@ c1_gool_ins_eventstatusreturn_params(
         param->value.val.S = 0;
         list_prepend_new(params, param);
 
-        param = param_new('S');
-        param->value.val.S = 1;
-        list_append_new(params, param);
+        list_append_new(params, param_val_new(1));
 
-        param = param_new('S');
-        param->value.val.S = 2;
-        list_append_new(params, param);
+        list_append_new(params, param_val_new(2));
 
         return params;
     }
@@ -443,21 +385,13 @@ c1_gool_ins_eventstatusstate_params(
     thecl_param_t* param;
     size_t c = list_count(params);
     if (c == 1) {
-        param = param_new('S');
-        param->value.val.S = 0;
-        list_append_new(params, param);
+        list_append_new(params, param_val_new(0));
 
-        param = param_new('S');
-        param->value.val.S = 0x25;
-        list_append_new(params, param);
+        list_append_new(params, param_val_new(0x25));
 
-        param = param_new('S');
-        param->value.val.S = 0;
-        list_append_new(params, param);
+        list_append_new(params, param_val_new(0));
 
-        param = param_new('S');
-        param->value.val.S = 1;
-        list_append_new(params, param);
+        list_append_new(params, param_val_new(1));
 
         return params;
     }
@@ -466,13 +400,9 @@ c1_gool_ins_eventstatusstate_params(
         param->value.val.S = 0;
         list_append_to(params, param, params->head);
 
-        param = param_new('S');
-        param->value.val.S = 1;
-        list_append_new(params, param);
+        list_append_new(params, param_val_new(1));
 
-        param = param_new('S');
-        param->value.val.S = 1;
-        list_append_new(params, param);
+        list_append_new(params, param_val_new(1));
 
         return params;
     }
@@ -533,13 +463,9 @@ c1_gool_ins_setfield_params(
         list_append_new(params, params->head->data);
         list_del(params, params->head);
 
-        param = param_new('S');
-        param->value.val.S = 0;
-        list_append_new(params, param);
+        list_append_new(params, param_val_new(0));
 
-        param = param_new('S');
-        param->value.val.S = 4;
-        list_append_new(params, param);
+        list_append_new(params, param_val_new(4));
     }
     else {
         fprintf(stderr, "%s: setfield: wrong number of arguments (expected 3, got %zu)\n", argv0, c + argc);
@@ -559,13 +485,9 @@ c1_gool_ins_movetozoneinposition_params(
         list_append_new(params, params->head->data);
         list_del(params, params->head);
 
-        param = param_new('S');
-        param->value.val.S = 0;
-        list_append_new(params, param);
+        list_append_new(params, param_val_new(0));
 
-        param = param_new('S');
-        param->value.val.S = 9;
-        list_append_new(params, param);
+        list_append_new(params, param_val_new(9));
     }
     else {
         fprintf(stderr, "%s: movetozoneinposition: wrong number of arguments (expected 2, got %zu)\n", argv0, c);
@@ -592,9 +514,7 @@ c1_gool_ins_entitysetspawn_params(
         param->object_link = 0;
         list_prepend_new(params, param);
 
-        param = param_new('S');
-        param->value.val.S = 8;
-        list_append_new(params, param);
+        list_append_new(params, param_val_new(8));
     }
     else {
         fprintf(stderr, "%s: entitysetspawn: wrong number of arguments (expected 1, got %zu)\n", argv0, c);
@@ -623,9 +543,7 @@ c1_gool_ins_entitysetstate_params(
         param->value.val.S = 5;
         list_append_to(params, param, params->head);
 
-        param = param_new('S');
-        param->value.val.S = 10;
-        list_append_new(params, param);
+        list_append_new(params, param_val_new(10));
     }
     else {
         fprintf(stderr, "%s: entitysetstate: wrong number of arguments (expected 2, got %zu)\n", argv0, c);
@@ -680,52 +598,30 @@ c1_gool_ins_calcpath_params(
         param->stack = 1;
         list_append_new(params, param);
 
-        param = param_new('S');
-        param->value.val.S = 0;
-        list_append_new(params, param);
+        list_append_new(params, param_val_new(0));
 
-        param = param_new('S');
-        param->value.val.S = 5;
-        list_append_new(params, param);
+        list_append_new(params, param_val_new(5));
 
-        param = param_new('S');
-        param->value.val.S = 0;
-        list_append_new(params, param);
+        list_append_new(params, param_val_new(0));
 
-        param = param_new('S');
-        param->value.val.S = 0;
-        list_append_new(params, param);
+        list_append_new(params, param_val_new(0));
     }
     else if (c == 1) {
-        param = param_new('S');
-        param->value.val.S = 0;
-        list_append_new(params, param);
+        list_append_new(params, param_val_new(0));
 
-        param = param_new('S');
-        param->value.val.S = 5;
-        list_append_new(params, param);
+        list_append_new(params, param_val_new(5));
 
-        param = param_new('S');
-        param->value.val.S = 0;
-        list_append_new(params, param);
+        list_append_new(params, param_val_new(0));
 
-        param = param_new('S');
-        param->value.val.S = 0;
-        list_append_new(params, param);
+        list_append_new(params, param_val_new(0));
     }
     else if (c == 2) {
 
-        param = param_new('S');
-        param->value.val.S = 5;
-        list_append_new(params, param);
+        list_append_new(params, param_val_new(5));
 
-        param = param_new('S');
-        param->value.val.S = 0;
-        list_append_new(params, param);
+        list_append_new(params, param_val_new(0));
 
-        param = param_new('S');
-        param->value.val.S = 0;
-        list_append_new(params, param);
+        list_append_new(params, param_val_new(0));
     }
     else {
         fprintf(stderr, "%s: calcpath: wrong number of arguments (expected 0, 1 or 2, got %zu)\n", argv0, c);
@@ -777,17 +673,11 @@ c1_gool_ins_loadlevel_params(
     thecl_param_t* param;
     size_t c = list_count(params);
     if (c == 1) {
-        param = param_new('S');
-        param->value.val.S = 5;
-        list_append_new(params, param);
+        list_append_new(params, param_val_new(5));
 
-        param = param_new('S');
-        param->value.val.S = 9;
-        list_append_new(params, param);
+        list_append_new(params, param_val_new(9));
 
-        param = param_new('S');
-        param->value.val.S = 12;
-        list_append_new(params, param);
+        list_append_new(params, param_val_new(12));
     }
     else {
         fprintf(stderr, "%s: loadlevel: wrong number of arguments (expected 1, got %zu)\n", argv0, c);
@@ -805,31 +695,21 @@ c1_gool_ins_soundspec_params(
     thecl_param_t* param;
     size_t c = list_count(params);
     if (c == 1) {
-        param = param_new('S');
-        param->value.val.S = 0;
-        list_append_new(params, param);
+        list_append_new(params, param_val_new(0));
 
-        param = param_new('S');
-        param->value.val.S = 0;
-        list_append_new(params, param);
+        list_append_new(params, param_val_new(0));
 
-        param = param_new('S');
-        param->value.val.S = type;
-        list_append_new(params, param);
+        list_append_new(params, param_val_new(type));
     }
     else if (c == 2) {
         param = param_new('S');
         param->value.val.S = 0;
         list_append_to(params, param, params->head);
 
-        param = param_new('S');
-        param->value.val.S = type;
-        list_append_new(params, param);
+        list_append_new(params, param_val_new(type));
     }
     else if (c == 3) {
-        param = param_new('S');
-        param->value.val.S = type;
-        list_append_new(params, param);
+        list_append_new(params, param_val_new(type));
     }
     else {
         fprintf(stderr, "%s: %s: wrong number of arguments (expected 1, 2 or 3, got %zu)\n", argv0, name, c);
@@ -895,9 +775,7 @@ c1_gool_ins_ntry_params(
     thecl_param_t* param;
     size_t c = list_count(params);
     if (c == 1) {
-        param = param_new('S');
-        param->value.val.S = type;
-        list_append_new(params, param);
+        list_append_new(params, param_val_new(type));
     }
     else {
         fprintf(stderr, "%s: %s: wrong number of arguments (expected 1, got %zu)\n", argv0, name, c);
@@ -944,21 +822,13 @@ c1_gool_ins_calclight_params(
         param->object_link = 0;
         list_append_new(params, param);
 
-        param = param_new('S');
-        param->value.val.S = 5;
-        list_append_new(params, param);
+        list_append_new(params, param_val_new(5));
 
-        param = param_new('S');
-        param->value.val.S = 4;
-        list_append_new(params, param);
+        list_append_new(params, param_val_new(4));
 
-        param = param_new('S');
-        param->value.val.S = 6;
-        list_append_new(params, param);
+        list_append_new(params, param_val_new(6));
 
-        param = param_new('S');
-        param->value.val.S = 0;
-        list_append_new(params, param);
+        list_append_new(params, param_val_new(0));
     }
     else {
         fprintf(stderr, "%s: calclight: wrong number of arguments (expected 0, got %zu)\n", argv0, c);
@@ -975,17 +845,11 @@ c1_gool_ins_movetolist_params(
     thecl_param_t* param;
     size_t c = list_count(params);
     if (c == 1) {
-        param = param_new('S');
-        param->value.val.S = 5;
-        list_append_new(params, param);
+        list_append_new(params, param_val_new(5));
 
-        param = param_new('S');
-        param->value.val.S = 2;
-        list_append_new(params, param);
+        list_append_new(params, param_val_new(2));
 
-        param = param_new('S');
-        param->value.val.S = 12;
-        list_append_new(params, param);
+        list_append_new(params, param_val_new(12));
     }
     else {
         fprintf(stderr, "%s: movetolist: wrong number of arguments (expected 1, got %zu)\n", argv0, c);
@@ -1008,17 +872,11 @@ c1_gool_ins_savecheckpoint_params(
         param->object_link = -2;
         list_append_new(params, param);
 
-        param = param_new('S');
-        param->value.val.S = 5;
-        list_append_new(params, param);
+        list_append_new(params, param_val_new(5));
 
-        param = param_new('S');
-        param->value.val.S = 0;
-        list_append_new(params, param);
+        list_append_new(params, param_val_new(0));
 
-        param = param_new('S');
-        param->value.val.S = 12;
-        list_append_new(params, param);
+        list_append_new(params, param_val_new(12));
     }
     else {
         fprintf(stderr, "%s: savecheckpoint: wrong number of arguments (expected 0, got %zu)\n", argv0, c);
@@ -1035,17 +893,11 @@ c1_gool_ins_gamefunc4_params(
     thecl_param_t* param;
     size_t c = list_count(params);
     if (c == 1) {
-        param = param_new('S');
-        param->value.val.S = 5;
-        list_append_new(params, param);
+        list_append_new(params, param_val_new(5));
 
-        param = param_new('S');
-        param->value.val.S = 4;
-        list_append_new(params, param);
+        list_append_new(params, param_val_new(4));
 
-        param = param_new('S');
-        param->value.val.S = 12;
-        list_append_new(params, param);
+        list_append_new(params, param_val_new(12));
     }
     else {
         fprintf(stderr, "%s: gamefunc4: wrong number of arguments (expected 1, got %zu)\n", argv0, c);
@@ -1068,21 +920,13 @@ c1_gool_ins_moveto2d_params(
         param->stack = 1;
         list_append_new(params, param);
 
-        param = param_new('S');
-        param->value.val.S = 0;
-        list_append_new(params, param);
+        list_append_new(params, param_val_new(0));
 
-        param = param_new('S');
-        param->value.val.S = 0;
-        list_append_new(params, param);
+        list_append_new(params, param_val_new(0));
 
-        param = param_new('S');
-        param->value.val.S = 1;
-        list_append_new(params, param);
+        list_append_new(params, param_val_new(1));
 
-        param = param_new('S');
-        param->value.val.S = 0;
-        list_append_new(params, param);
+        list_append_new(params, param_val_new(0));
     }
     else if (c == 2) {
         param = params->head->data;
@@ -1102,13 +946,9 @@ c1_gool_ins_moveto2d_params(
         param->stack = 1;
         list_prepend_new(params, param);
 
-        param = param_new('S');
-        param->value.val.S = 1;
-        list_append_new(params, param);
+        list_append_new(params, param_val_new(1));
 
-        param = param_new('S');
-        param->value.val.S = 0;
-        list_append_new(params, param);
+        list_append_new(params, param_val_new(0));
     }
     else if (c == 3) {
         param = params->head->next->data;
@@ -1128,13 +968,9 @@ c1_gool_ins_moveto2d_params(
         param->stack = 1;
         list_prepend_new(params, param);
 
-        param = param_new('S');
-        param->value.val.S = 1;
-        list_append_new(params, param);
+        list_append_new(params, param_val_new(1));
 
-        param = param_new('S');
-        param->value.val.S = 0;
-        list_append_new(params, param);
+        list_append_new(params, param_val_new(0));
     }
     else {
         fprintf(stderr, "%s: moveto2d: wrong number of arguments (expected 0, 2 or 3, got %zu)\n", argv0, c);
@@ -1157,38 +993,22 @@ c1_gool_ins_setvel_params(
         param->stack = 1;
         list_append_new(params, param);
 
-        param = param_new('S');
-        param->value.val.S = 3;
-        list_append_new(params, param);
+        list_append_new(params, param_val_new(3));
 
-        param = param_new('S');
-        param->value.val.S = 5;
-        list_append_new(params, param);
+        list_append_new(params, param_val_new(5));
 
-        param = param_new('S');
-        param->value.val.S = 2;
-        list_append_new(params, param);
+        list_append_new(params, param_val_new(2));
 
-        param = param_new('S');
-        param->value.val.S = 0;
-        list_append_new(params, param);
+        list_append_new(params, param_val_new(0));
     }
     else if (c == 1) {
-        param = param_new('S');
-        param->value.val.S = 3;
-        list_append_new(params, param);
+        list_append_new(params, param_val_new(3));
 
-        param = param_new('S');
-        param->value.val.S = 5;
-        list_append_new(params, param);
+        list_append_new(params, param_val_new(5));
 
-        param = param_new('S');
-        param->value.val.S = 2;
-        list_append_new(params, param);
+        list_append_new(params, param_val_new(2));
 
-        param = param_new('S');
-        param->value.val.S = 0;
-        list_append_new(params, param);
+        list_append_new(params, param_val_new(0));
     }
     else if (c == 2) {
         param = params->head->next->data;
@@ -1197,17 +1017,11 @@ c1_gool_ins_setvel_params(
             param->value.val.S /= 3;
         }
 
-        param = param_new('S');
-        param->value.val.S = 5;
-        list_append_new(params, param);
+        list_append_new(params, param_val_new(5));
 
-        param = param_new('S');
-        param->value.val.S = 2;
-        list_append_new(params, param);
+        list_append_new(params, param_val_new(2));
 
-        param = param_new('S');
-        param->value.val.S = 0;
-        list_append_new(params, param);
+        list_append_new(params, param_val_new(0));
     }
     else {
         fprintf(stderr, "%s: setvel: wrong number of arguments (expected 0, 1 or 2, got %zu)\n", argv0, c);
@@ -1230,17 +1044,11 @@ c1_gool_ins_soundstop_params(
         param->object_link = -2;
         list_append_new(params, param);
 
-        param = param_new('S');
-        param->value.val.S = 5;
-        list_append_new(params, param);
+        list_append_new(params, param_val_new(5));
 
-        param = param_new('S');
-        param->value.val.S = 5;
-        list_append_new(params, param);
+        list_append_new(params, param_val_new(5));
 
-        param = param_new('S');
-        param->value.val.S = 12;
-        list_append_new(params, param);
+        list_append_new(params, param_val_new(12));
     }
     else {
         fprintf(stderr, "%s: soundstop: wrong number of arguments (expected 0, got %zu)\n", argv0, c);
@@ -1257,17 +1065,11 @@ c1_gool_ins_seqplay_params(
     thecl_param_t* param;
     size_t c = list_count(params);
     if (c == 1) {
-        param = param_new('S');
-        param->value.val.S = 5;
-        list_append_new(params, param);
+        list_append_new(params, param_val_new(5));
 
-        param = param_new('S');
-        param->value.val.S = 6;
-        list_append_new(params, param);
+        list_append_new(params, param_val_new(6));
 
-        param = param_new('S');
-        param->value.val.S = 12;
-        list_append_new(params, param);
+        list_append_new(params, param_val_new(12));
     }
     else {
         fprintf(stderr, "%s: seqplay: wrong number of arguments (expected 1, got %zu)\n", argv0, c);

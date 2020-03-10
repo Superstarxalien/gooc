@@ -64,6 +64,8 @@ thecl_param_t* param_copy(
     thecl_param_t* param);
 void param_free(
     thecl_param_t* param);
+thecl_param_t* param_val_new(
+    int val);
 
 typedef struct thecl_instr_t {
     thecl_instr_type type;

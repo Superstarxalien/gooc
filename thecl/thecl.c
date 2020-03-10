@@ -297,6 +297,15 @@ param_free(
     free(param);
 }
 
+thecl_param_t*
+param_val_new(
+    int val)
+{
+    thecl_param_t* param_sp = param_new('S');
+    param_sp->value.val.S = val;
+    return param_sp;
+}
+
 thecl_label_t*
 label_find(
     thecl_sub_t* sub,

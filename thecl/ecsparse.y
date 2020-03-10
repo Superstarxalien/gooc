@@ -143,8 +143,6 @@ static thecl_param_t* param_null_new(void);
 static thecl_param_t* param_sp2_new(void);
 /* Creates a new self->variable param with the specified value */
 static thecl_param_t* param_var_new(int val);
-/* Creates a new integer param with the specified value */
-static thecl_param_t* param_val_new(int val);
 
 /* Returns the result of a math operation */
 static int math_preprocess(parser_state_t* state, int symbol, int val1, int val2);
@@ -3029,15 +3027,6 @@ param_var_new(
     thecl_param_t* param_sp = param_new('S');
     param_sp->stack = 1;
     param_sp->object_link = 0;
-    param_sp->value.val.S = val;
-    return param_sp;
-}
-
-static thecl_param_t*
-param_val_new(
-    int val)
-{
-    thecl_param_t* param_sp = param_new('S');
     param_sp->value.val.S = val;
     return param_sp;
 }
