@@ -2306,50 +2306,29 @@ expression_output(
     } else if (expr->type == EXPRESSION_OP) {
         const expr_t* expression = expr_get_by_id(state->version, expr->id);
         expression_t* child_expr;
-        thecl_param_t* val_param1 = NULL;
-        thecl_param_t* val_param2 = NULL;
-        list_t* push_list = list_new();
-        int c = 0;
-        list_node_t* child_node;
-        list_for_each_node(&expr->children, child_node) {
+        list_t* param_list = list_new();
+        int c = 0, lc = list_count(&expr->children);
+        
+        list_for_each(&expr->children, child_expr) {
             ++c;
-            child_expr = child_node->data;
-            if (child_expr->type == EXPRESSION_VAL && !(expression->stack_arity > 2 && !expression->has_double_param)) {
-                if (c == 1) {
-                    val_param1 = child_expr->value;
-                    continue;
-                } else if (c == 2) {
-                    if ((expression->has_double_param && !child_node->next) || !expression->has_double_param) {
-                        val_param2 = child_expr->value;
-                        continue;
-                    }
-                }
+            if (child_expr->type == EXPRESSION_VAL && (!expression->has_double_param || (expression->has_double_param && lc <= 2) || (expression->has_double_param && lc <= 2 && c == 1))) {
+                list_append_new(param_list, child_expr->value);
             }
-            list_append_new(push_list, child_expr);
-        }
-        if (expression->stack_arity > 2 && !expression->has_double_param) {
-            list_t* list_params = list_new();
-            list_for_each(push_list, child_expr) {
-                list_append_new(list_params, child_expr->value);
+            else {
+                expression_output(state, child_expr, 1);
+                list_append_new(param_list, param_sp_new());
             }
-            instr_add(state, state->current_sub, instr_new_list(state, expr->id, list_params));
-            return;
         }
-        list_for_each(push_list, child_expr) {
-            expression_output(state, child_expr, 0);
+        
+        if (expression->has_double_param && lc == 3) {
+            param_free(param_list->tail->data);
+            param_free(param_list->tail->prev->data);
+            list_del(param_list, param_list->tail);
+            list_del(param_list, param_list->tail);
+            list_append_new(param_list, param_sp2_new());
         }
-        list_free_nodes(push_list);
-        free(push_list);
-        if (val_param1 == NULL) {
-            val_param1 = param_sp_new();
-        }
-        if (c == 3 && expression->has_double_param) {
-            val_param2 = param_sp2_new();
-        } else if (val_param2 == NULL) {
-            val_param2 = param_sp_new();
-        }
-
-        instr_add(state, state->current_sub, instr_new(state, expr->id, "pp", val_param1, val_param2));
+        
+        instr_add(state, state->current_sub, instr_new_list(state, expr->id, param_list));
     } else if (expr->type == EXPRESSION_TERNARY) {
         char labelstr_unless[256];
         char labelstr_end[256];
