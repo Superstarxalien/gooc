@@ -46,14 +46,11 @@ c1_gool_ins_playframe_params(
         param->object_link = 0;
         param->value.val.S = field_get("animframe")->offset;
         list_append_new(params, param);
-
         list_append_new(params, param_val_new(1));
-
         list_append_new(params, param_val_new(3));
     }
     else if (c == 1) {
         list_append_new(params, param_val_new(1));
-
         list_append_new(params, param_val_new(3));
     }
     else if (c == 2) {
@@ -101,7 +98,6 @@ c1_gool_ins_playanim_params(
     size_t c = list_count(params);
     if (c == 2) {
         list_append_new(params, param_val_new(1));
-
         list_append_new(params, param_val_new(3));
     }
     else if (c == 3) {
@@ -123,7 +119,6 @@ c1_gool_ins_playtext_params(
     size_t c = list_count(params);
     if (c == 2) {
         list_append_new(params, param_val_new(1));
-
         list_append_new(params, param_val_new(3));
 
         return params;
@@ -168,9 +163,7 @@ c1_gool_ins_changestate_params(
         param = param_new('S');
         param->value.val.S = argc;
         list_append_to(params, param, params->head);
-
         list_append_new(params, param_val_new(type));
-
         list_append_new(params, param_val_new(1));
     }
     else {
@@ -284,7 +277,6 @@ c1_gool_ins_sendevent_params(
     else if (c == 3) {
         thecl_param_t* receiver = params->head->next->data;
         list_del(params, params->head->next);
-
         list_append_new(params, param_val_new(argc));
 
         list_append_new(params, receiver);
@@ -306,13 +298,9 @@ c1_gool_ins_eventstatus_params(
     size_t c = list_count(params);
     if (c == 0) {
         list_append_new(params, param_val_new(0));
-
         list_append_new(params, param_val_new(0));
-
         list_append_new(params, param_val_new(0x25));
-
         list_append_new(params, param_val_new(0));
-
         list_append_new(params, param_val_new(0));
     }
     else if (c == 1) {
@@ -323,9 +311,7 @@ c1_gool_ins_eventstatus_params(
         param = param_new('S');
         param->value.val.S = 0;
         list_prepend_new(params, param);
-
         list_append_new(params, param_val_new(1));
-
         list_append_new(params, param_val_new(0));
     }
     else {
@@ -345,13 +331,9 @@ c1_gool_ins_eventstatusreturn_params(
     size_t c = list_count(params);
     if (c == 0) {
         list_append_new(params, param_val_new(0));
-
         list_append_new(params, param_val_new(0));
-
         list_append_new(params, param_val_new(0x25));
-
         list_append_new(params, param_val_new(0));
-
         list_append_new(params, param_val_new(2));
 
         return params;
@@ -364,9 +346,7 @@ c1_gool_ins_eventstatusreturn_params(
         param = param_new('S');
         param->value.val.S = 0;
         list_prepend_new(params, param);
-
         list_append_new(params, param_val_new(1));
-
         list_append_new(params, param_val_new(2));
 
         return params;
@@ -386,11 +366,8 @@ c1_gool_ins_eventstatusstate_params(
     size_t c = list_count(params);
     if (c == 1) {
         list_append_new(params, param_val_new(0));
-
         list_append_new(params, param_val_new(0x25));
-
         list_append_new(params, param_val_new(0));
-
         list_append_new(params, param_val_new(1));
 
         return params;
@@ -399,9 +376,7 @@ c1_gool_ins_eventstatusstate_params(
         param = param_new('S');
         param->value.val.S = 0;
         list_append_to(params, param, params->head);
-
         list_append_new(params, param_val_new(1));
-
         list_append_new(params, param_val_new(1));
 
         return params;
@@ -462,9 +437,7 @@ c1_gool_ins_setfield_params(
     if (c == 2 && argc == 1) {
         list_append_new(params, params->head->data);
         list_del(params, params->head);
-
         list_append_new(params, param_val_new(0));
-
         list_append_new(params, param_val_new(4));
     }
     else {
@@ -484,9 +457,7 @@ c1_gool_ins_movetozoneinposition_params(
     if (c == 2) {
         list_append_new(params, params->head->data);
         list_del(params, params->head);
-
         list_append_new(params, param_val_new(0));
-
         list_append_new(params, param_val_new(9));
     }
     else {
@@ -513,7 +484,6 @@ c1_gool_ins_entitysetspawn_params(
         param->stack = 1;
         param->object_link = 0;
         list_prepend_new(params, param);
-
         list_append_new(params, param_val_new(8));
     }
     else {
@@ -542,7 +512,6 @@ c1_gool_ins_entitysetstate_params(
         param = param_new('S');
         param->value.val.S = 5;
         list_append_to(params, param, params->head);
-
         list_append_new(params, param_val_new(10));
     }
     else {
@@ -597,30 +566,21 @@ c1_gool_ins_calcpath_params(
         param->object_link = 0;
         param->stack = 1;
         list_append_new(params, param);
-
         list_append_new(params, param_val_new(0));
-
         list_append_new(params, param_val_new(5));
-
         list_append_new(params, param_val_new(0));
-
         list_append_new(params, param_val_new(0));
     }
     else if (c == 1) {
         list_append_new(params, param_val_new(0));
-
         list_append_new(params, param_val_new(5));
-
         list_append_new(params, param_val_new(0));
-
         list_append_new(params, param_val_new(0));
     }
     else if (c == 2) {
 
         list_append_new(params, param_val_new(5));
-
         list_append_new(params, param_val_new(0));
-
         list_append_new(params, param_val_new(0));
     }
     else {
@@ -674,9 +634,7 @@ c1_gool_ins_loadlevel_params(
     size_t c = list_count(params);
     if (c == 1) {
         list_append_new(params, param_val_new(5));
-
         list_append_new(params, param_val_new(9));
-
         list_append_new(params, param_val_new(12));
     }
     else {
@@ -696,16 +654,13 @@ c1_gool_ins_soundspec_params(
     size_t c = list_count(params);
     if (c == 1) {
         list_append_new(params, param_val_new(0));
-
         list_append_new(params, param_val_new(0));
-
         list_append_new(params, param_val_new(type));
     }
     else if (c == 2) {
         param = param_new('S');
         param->value.val.S = 0;
         list_append_to(params, param, params->head);
-
         list_append_new(params, param_val_new(type));
     }
     else if (c == 3) {
@@ -821,13 +776,9 @@ c1_gool_ins_calclight_params(
         param->stack = 1;
         param->object_link = 0;
         list_append_new(params, param);
-
         list_append_new(params, param_val_new(5));
-
         list_append_new(params, param_val_new(4));
-
         list_append_new(params, param_val_new(6));
-
         list_append_new(params, param_val_new(0));
     }
     else {
@@ -846,9 +797,7 @@ c1_gool_ins_movetolist_params(
     size_t c = list_count(params);
     if (c == 1) {
         list_append_new(params, param_val_new(5));
-
         list_append_new(params, param_val_new(2));
-
         list_append_new(params, param_val_new(12));
     }
     else {
@@ -871,11 +820,8 @@ c1_gool_ins_savecheckpoint_params(
         param->stack = 1;
         param->object_link = -2;
         list_append_new(params, param);
-
         list_append_new(params, param_val_new(5));
-
         list_append_new(params, param_val_new(0));
-
         list_append_new(params, param_val_new(12));
     }
     else {
@@ -894,9 +840,7 @@ c1_gool_ins_gamefunc4_params(
     size_t c = list_count(params);
     if (c == 1) {
         list_append_new(params, param_val_new(5));
-
         list_append_new(params, param_val_new(4));
-
         list_append_new(params, param_val_new(12));
     }
     else {
@@ -919,13 +863,9 @@ c1_gool_ins_moveto2d_params(
         param->object_link = 0;
         param->stack = 1;
         list_append_new(params, param);
-
         list_append_new(params, param_val_new(0));
-
         list_append_new(params, param_val_new(0));
-
         list_append_new(params, param_val_new(1));
-
         list_append_new(params, param_val_new(0));
     }
     else if (c == 2) {
@@ -945,9 +885,7 @@ c1_gool_ins_moveto2d_params(
         param->object_link = 0;
         param->stack = 1;
         list_prepend_new(params, param);
-
         list_append_new(params, param_val_new(1));
-
         list_append_new(params, param_val_new(0));
     }
     else if (c == 3) {
@@ -967,9 +905,7 @@ c1_gool_ins_moveto2d_params(
         param->object_link = 0;
         param->stack = 1;
         list_prepend_new(params, param);
-
         list_append_new(params, param_val_new(1));
-
         list_append_new(params, param_val_new(0));
     }
     else {
@@ -992,22 +928,15 @@ c1_gool_ins_setvel_params(
         param->object_link = 0;
         param->stack = 1;
         list_append_new(params, param);
-
         list_append_new(params, param_val_new(3));
-
         list_append_new(params, param_val_new(5));
-
         list_append_new(params, param_val_new(2));
-
         list_append_new(params, param_val_new(0));
     }
     else if (c == 1) {
         list_append_new(params, param_val_new(3));
-
         list_append_new(params, param_val_new(5));
-
         list_append_new(params, param_val_new(2));
-
         list_append_new(params, param_val_new(0));
     }
     else if (c == 2) {
@@ -1018,9 +947,7 @@ c1_gool_ins_setvel_params(
         }
 
         list_append_new(params, param_val_new(5));
-
         list_append_new(params, param_val_new(2));
-
         list_append_new(params, param_val_new(0));
     }
     else {
@@ -1043,11 +970,8 @@ c1_gool_ins_soundstop_params(
         param->stack = 1;
         param->object_link = -2;
         list_append_new(params, param);
-
         list_append_new(params, param_val_new(5));
-
         list_append_new(params, param_val_new(5));
-
         list_append_new(params, param_val_new(12));
     }
     else {
@@ -1066,9 +990,7 @@ c1_gool_ins_seqplay_params(
     size_t c = list_count(params);
     if (c == 1) {
         list_append_new(params, param_val_new(5));
-
         list_append_new(params, param_val_new(6));
-
         list_append_new(params, param_val_new(12));
     }
     else {
