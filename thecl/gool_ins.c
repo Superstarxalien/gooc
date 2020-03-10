@@ -151,7 +151,7 @@ c1_gool_ins_playtext_params(
         return params;
     }
     else {
-        fprintf(stderr, "%s: playtext: wrong number of arguments (expected 1 or 2, got %zu)\n", argv0, c);
+        fprintf(stderr, "%s: playtext: wrong number of arguments (expected 2, got %zu)\n", argv0, c);
         return NULL;
     }
 }
@@ -1232,6 +1232,68 @@ c1_gool_ins_setvel_params(
     return params;
 }
 
+static list_t*
+c1_gool_ins_soundstop_params(
+    list_t* params,
+    int argc)
+{
+    thecl_param_t* param;
+    if (!params)
+        params = list_new();
+    size_t c = list_count(params);
+    if (c == 0) {
+        param = param_new('S');
+        param->value.val.S = 0;
+        param->stack = 1;
+        param->object_link = -2;
+        list_append_new(params, param);
+
+        param = param_new('S');
+        param->value.val.S = 5;
+        list_append_new(params, param);
+
+        param = param_new('S');
+        param->value.val.S = 5;
+        list_append_new(params, param);
+
+        param = param_new('S');
+        param->value.val.S = 12;
+        list_append_new(params, param);
+    }
+    else {
+        fprintf(stderr, "%s: soundstop: wrong number of arguments (expected 0, got %zu)\n", argv0, c);
+        return NULL;
+    }
+    return params;
+}
+
+static list_t*
+c1_gool_ins_seqplay_params(
+    list_t* params,
+    int argc)
+{
+    thecl_param_t* param;
+    size_t c = list_count(params);
+    if (c == 1) {
+        param = param_new('S');
+        param->value.val.S = 5;
+        list_append_new(params, param);
+
+        param = param_new('S');
+        param->value.val.S = 6;
+        list_append_new(params, param);
+
+        param = param_new('S');
+        param->value.val.S = 12;
+        list_append_new(params, param);
+    }
+    else {
+        fprintf(stderr, "%s: seqplay: wrong number of arguments (expected 1, got %zu)\n", argv0, c);
+        return NULL;
+    }
+    return params;
+}
+
 static const gool_ins_t
 c1_gool_ins[] = {
      /* NAME                        ID  VA POP R   L   C              VALIDATE */
@@ -1245,6 +1307,8 @@ c1_gool_ins[] = {
      { "movetolist",                 28, 0, 0, 0, -1,  1, c1_gool_ins_movetolist_params },
      { "savecheckpoint",             28, 0, 0, 0, -1,  0, c1_gool_ins_savecheckpoint_params },
      { "gamefunc4",                  28, 0, 0, 0, -1,  1, c1_gool_ins_gamefunc4_params },
+     { "soundstop",                  28, 0, 0, 0, -1,  0, c1_gool_ins_soundstop_params },
+     { "seqplay",                    28, 0, 0, 0, -1,  1, c1_gool_ins_seqplay_params },
      { "setcolor",                   36, 0, 0, 0, -1,  3, c1_gool_ins_setcolor_params },
      { "anim",                       39, 0, 0, 0, -1,  2, c1_gool_ins_anim_params },
      { "nop",                      0x81, 0, 0, 0, -1,  0, c1_gool_ins_nop_params },

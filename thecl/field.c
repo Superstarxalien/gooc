@@ -165,6 +165,8 @@ c1_gool_globals[] = {
     { "PREVLEVEL",        71 },
     { "GAMEITEMPOOL2",    72 },
 
+    { "DEMOTEXTOBJ",      76 },
+
     { "GEMCOUNT",         97 },
     { "KEYCOUNT",         98 },
 
