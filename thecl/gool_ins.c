@@ -986,6 +986,25 @@ c1_gool_ins_seqplay_params(
     return params;
 }
 
+static list_t*
+c1_gool_ins_gamefunc10_params(
+    list_t* params,
+    int argc)
+{
+    thecl_param_t* param;
+    size_t c = list_count(params);
+    if (c == 1) {
+        list_append_new(params, param_val_new(5));
+        list_append_new(params, param_val_new(10));
+        list_append_new(params, param_val_new(12));
+    }
+    else {
+        fprintf(stderr, "%s: gamefunc10: wrong number of arguments (expected 1, got %zu)\n", argv0, c);
+        return NULL;
+    }
+    return params;
+}
+
 static const gool_ins_t
 c1_gool_ins[] = {
      /* NAME                        ID  VA POP R   L   C              VALIDATE */
@@ -1001,6 +1020,7 @@ c1_gool_ins[] = {
      { "gamefunc4",                  28, 0, 0, 0, -1,  1, c1_gool_ins_gamefunc4_params },
      { "soundstop",                  28, 0, 0, 0, -1,  0, c1_gool_ins_soundstop_params },
      { "seqplay",                    28, 0, 0, 0, -1,  1, c1_gool_ins_seqplay_params },
+     { "gamefunc10",                 28, 0, 0, 0, -1,  1, c1_gool_ins_gamefunc10_params },
      { "setcolor",                   36, 0, 0, 0, -1,  3, c1_gool_ins_setcolor_params },
      { "anim",                       39, 0, 0, 0, -1,  2, c1_gool_ins_anim_params },
      { "nop",                      0x81, 0, 0, 0, -1,  0, c1_gool_ins_nop_params },
