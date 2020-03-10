@@ -1314,6 +1314,9 @@ Instruction:
                     expression_free(expression);
                 }
                 list_free_nodes(&state->expressions);
+                if (!$3) {
+                    $3 = list_new();
+                }
                 instr_add(state, state->current_sub, instr_new_list(state, gool_ins->id, gool_ins->param_list_validate($3, 0)));
             }
         }

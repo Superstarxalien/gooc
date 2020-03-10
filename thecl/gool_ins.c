@@ -39,8 +39,6 @@ c1_gool_ins_playframe_params(
     int argc)
 {
     thecl_param_t* param;
-    if (!params)
-        params = list_new();
     size_t c = list_count(params);
     if (c == 0) {
         param = param_new('S');
@@ -335,8 +333,6 @@ c1_gool_ins_eventstatus_params(
     int argc)
 {
     thecl_param_t* param;
-    if (!params)
-        params = list_new();
     size_t c = list_count(params);
     if (c == 0) {
         param = param_new('S');
@@ -390,8 +386,6 @@ c1_gool_ins_eventstatusreturn_params(
     int argc)
 {
     thecl_param_t* param;
-    if (!params)
-        params = list_new();
     size_t c = list_count(params);
     if (c == 0) {
         param = param_new('S');
@@ -678,8 +672,6 @@ c1_gool_ins_calcpath_params(
     int argc)
 {
     thecl_param_t* param;
-    if (!params)
-        params = list_new();
     size_t c = list_count(params);
     if (c == 0) {
         param = param_new('S');
@@ -786,7 +778,7 @@ c1_gool_ins_loadlevel_params(
     size_t c = list_count(params);
     if (c == 1) {
         param = param_new('S');
-        param->value.val.S = 0;
+        param->value.val.S = 5;
         list_append_new(params, param);
 
         param = param_new('S');
@@ -944,8 +936,6 @@ c1_gool_ins_calclight_params(
     int argc)
 {
     thecl_param_t* param;
-    if (!params)
-        params = list_new();
     size_t c = list_count(params);
     if (c == 0) {
         param = param_new('S');
@@ -1010,8 +1000,6 @@ c1_gool_ins_savecheckpoint_params(
     int argc)
 {
     thecl_param_t* param;
-    if (!params)
-        params = list_new();
     size_t c = list_count(params);
     if (c == 0) {
         param = param_new('S');
@@ -1072,8 +1060,6 @@ c1_gool_ins_moveto2d_params(
     int argc)
 {
     thecl_param_t* param;
-    if (!params)
-        params = list_new();
     size_t c = list_count(params);
     if (c == 0) {
         param = param_new('S');
@@ -1163,8 +1149,6 @@ c1_gool_ins_setvel_params(
     int argc)
 {
     thecl_param_t* param;
-    if (!params)
-        params = list_new();
     size_t c = list_count(params);
     if (c == 0) {
         param = param_new('S');
@@ -1238,8 +1222,6 @@ c1_gool_ins_soundstop_params(
     int argc)
 {
     thecl_param_t* param;
-    if (!params)
-        params = list_new();
     size_t c = list_count(params);
     if (c == 0) {
         param = param_new('S');
