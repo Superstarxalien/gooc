@@ -818,6 +818,30 @@ c1_gool_ins_savecheckpoint_params(
 }
 
 static list_t*
+c1_gool_ins_loadcheckpoint_params(
+    list_t* params,
+    int argc)
+{
+    thecl_param_t* param;
+    size_t c = list_count(params);
+    if (c == 0) {
+        param = param_new('S');
+        param->value.val.S = 0;
+        param->stack = 1;
+        param->object_link = -2;
+        list_append_new(params, param);
+        list_append_new(params, param_val_new(5));
+        list_append_new(params, param_val_new(1));
+        list_append_new(params, param_val_new(12));
+    }
+    else {
+        fprintf(stderr, "%s: loadcheckpoint: wrong number of arguments (expected 0, got %zu)\n", argv0, c);
+        return NULL;
+    }
+    return params;
+}
+
+static list_t*
 c1_gool_ins_gamefunc4_params(
     list_t* params,
     int argc)
@@ -1017,6 +1041,7 @@ c1_gool_ins[] = {
      { "loadlevel",                  28, 0, 0, 0, -1,  1, c1_gool_ins_loadlevel_params },
      { "movetolist",                 28, 0, 0, 0, -1,  1, c1_gool_ins_movetolist_params },
      { "savecheckpoint",             28, 0, 0, 0, -1,  0, c1_gool_ins_savecheckpoint_params },
+     { "loadcheckpoint",             28, 0, 0, 0, -1,  0, c1_gool_ins_loadcheckpoint_params },
      { "gamefunc4",                  28, 0, 0, 0, -1,  1, c1_gool_ins_gamefunc4_params },
      { "soundstop",                  28, 0, 0, 0, -1,  0, c1_gool_ins_soundstop_params },
      { "seqplay",                    28, 0, 0, 0, -1,  1, c1_gool_ins_seqplay_params },
