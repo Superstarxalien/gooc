@@ -2391,12 +2391,16 @@ expression_optimize(
         || child_expr_2->type != EXPRESSION_VAL
         || child_expr_1->value->stack /* Variables are not acceptable, obviously. */
         || child_expr_2->value->stack
+		|| child_expr_1->value->type != 'S'
+		|| child_expr_2->value->type != 'S'
       ) || tmp_expr->is_unary && (
            child_expr_2->type != EXPRESSION_VAL
         || child_expr_2->value->stack
         || child_expr_1->value->value.val.S != 0x1F
         || child_expr_1->value->object_link != 0
         || !child_expr_1->value->stack
+		|| child_expr_1->value->type != 'S'
+		|| child_expr_2->value->type != 'S'
       )
     ) return;
 
