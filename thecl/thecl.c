@@ -46,6 +46,7 @@ int g_rate = 30; /* ntsc default */
 char* g_region = NULL;
 int g_reg_block_depth = 0;
 int* g_reg_blocks = NULL;
+char* g_module_fmt = NULL;
 
 #define PI 3.1415926535897932384626433832795028841971693993751058209749445923078164062
 int sine_table[1025];
@@ -101,6 +102,7 @@ thecl_new(
     ecl->id = 0;
     ecl->type = 0;
     ecl->is_defined = 0;
+    ecl->ins_offset = 0;
     return ecl;
 }
 
@@ -191,6 +193,18 @@ thecl_free(
     free(ecl);
 }
 
+char* gool_to_ename(
+    char* ename,
+    int eid)
+{
+    for (int i = 0; i < 5; ++i) {
+        ename[4 - i] = gool_ename_charmap[(eid >> (1 + 6 * i)) & 0x3F];
+    }
+    ename[5] = '\0';
+
+    return ename;
+}
+
 int gool_to_eid(
     char* ename)
 {
@@ -209,6 +223,17 @@ int gool_to_eid(
         eid |= c << (1 + 6*(4-i));
     }
     return eid;
+}
+
+int gool_pool_get_index(
+    thecl_t* ecl,
+    uint32_t val)
+{
+    for (int i = 0; i < ecl->const_count; ++i) {
+        if (ecl->consts[i] == val)
+            return i;
+    }
+    return -1;
 }
 
 int gool_pool_force_get_index(
@@ -364,17 +389,21 @@ free_globals(void)
 {
     if (g_region)
         free(g_region);
+    if (g_module_fmt)
+        free(g_module_fmt);
     free(g_reg_blocks);
 }
 
 static void
 print_usage(void)
 {
-    printf("Usage: %s [-V] [-c VERSION] [-r REGION] [-h HEADER_OUTPUT]... [INPUT [OUTPUT]]\n"
+    printf("Usage: %s [-V] [-c VERSION] [-r REGION] [-h OUTPUT] [-e OUTPUT]... [INPUT [OUTPUT]]\n"
            "Options:\n"
-           "  -c  create ECL file\n"
+           "  -c  create GOOL file\n"
            "  -V  display version information and exit\n"
            "  -r  set the region, used for specific time and frame calculations, and #ifreg parse blocks\n"
+           "  -h  set the output path for a \"header\" file which contains definitions for spawns and the GOOL ID"
+           "  -e  set the output path format for external GOOL modules, where the first parameter is the entry-name"
            "VERSION can be:\n"
            "  1\n"
            "REGION can be:\n"
@@ -403,7 +432,7 @@ main(int argc, char* argv[])
     int opt;
     int ind=0;
     while(argv[util_optind]) {
-        switch(opt = util_getopt(argc, argv, ":c:Vr:h:")) {
+        switch(opt = util_getopt(argc, argv, ":c:Vr:h:e:")) {
         case 'c':
             if(mode != -1) {
                 fprintf(stderr,"%s: More than one mode specified\n", argv0);
@@ -435,6 +464,9 @@ main(int argc, char* argv[])
                 fprintf(stderr, "%s: couldn't open %s for reading: %s\n",
                     argv0, util_optarg, strerror(errno));
             }
+            break;
+        case 'e':
+            g_module_fmt = strdup(util_optarg);
             break;
         default:
             util_getopt_default(&ind,argv,opt,print_usage);
@@ -489,15 +521,20 @@ main(int argc, char* argv[])
 #ifdef WIN32
             (void)_setmode(fileno(stdout), _O_BINARY);
 #endif
-            thecl_t* gool = module->parse(in, argv[0], version);
-            if (gool) {
-                if (gool->is_defined) {
-                    module->compile(gool, out);
+            parser_state_t* parser = module->parse(in, argv[0], version);
+            if (parser) {
+                if (parser->main_ecl->is_defined) {
+                    module->compile(parser, out);
                 }
                 if (h_out) {
-                    module->create_header(gool, h_out);
+                    module->create_header(parser->main_ecl, h_out);
                 }
-                thecl_free(gool);
+                thecl_free(parser->main_ecl);
+                for (int i = 0; i < parser->ecl_cnt; ++i) {
+                    thecl_free(parser->ecl_stack[i]);
+                }
+                free(parser->ecl_stack);
+                free(parser);
             }
         }
         fclose(in);

@@ -75,6 +75,7 @@
 "=>"       return LAMBDA;
 "sub"      return SUB;
 "var"      return VAR;
+"default"  { if (g_parser_state->current_sub) { yylval.string = strdup(yytext); return IDENTIFIER; } else return DEFAULT; }
 "trans"    { if (g_parser_state->current_sub) { yylval.string = strdup(yytext); return IDENTIFIER; } else return TRANS; }
 "once"     { if (g_parser_state->current_sub && g_parser_state->current_sub->is_trans && !g_parser_state->current_sub->has_once) return ONCE; else { yylval.string = strdup(yytext); return IDENTIFIER; } }
 "code"     return CODE;

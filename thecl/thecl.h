@@ -217,6 +217,8 @@ typedef struct {
     list_t subs;
 
     bool no_warn;
+
+    int ins_offset;
 } thecl_t;
 
 typedef struct {
@@ -228,25 +230,19 @@ typedef struct {
 thecl_t* thecl_new(
     void);
 
+char* gool_to_ename(
+    char* ename, int eid);
+
 int gool_to_eid(
     const char* ename);
+
+int gool_pool_get_index(
+    thecl_t* ecl,
+    uint32_t val);
 
 int gool_pool_force_get_index(
     thecl_t* ecl,
     uint32_t val);
-
-typedef struct {
-    thecl_t* (*open)(FILE* stream, unsigned int ver);
-    /* Translates the data to a more general format. */
-    /* TODO: Return it instead. */
-    void (*trans)(thecl_t* ecl);
-    void (*dump)(const thecl_t* ecl, FILE* stream);
-
-    thecl_t* (*parse)(FILE* stream, char* filename, unsigned int ver);
-    int (*compile)(const thecl_t* ecl, FILE* stream);
-
-    void (*create_header)(const thecl_t* ecl, FILE* stream);
-} thecl_module_t;
 
 typedef struct {
     int instr_flags; /* Special flags that are copied to instr->flags, used by ecsparse.y */
@@ -261,12 +257,14 @@ typedef struct {
     thecl_state_t* current_state;
     thecl_interrupt_t* current_interrupt;
     gool_anim_t* current_anim;
+    thecl_t* main_ecl;
     thecl_t* ecl;
+    thecl_t** ecl_stack;
+    int ecl_cnt;
     int path_cnt;
     char** path_stack;
     const char* (*instr_format)(unsigned int version, unsigned int id);
 
-    int ins_offset;
     uint16_t state_count;
     size_t spawn_count;
 
@@ -285,6 +283,20 @@ extern int g_rate;
 extern char* g_region;
 extern int g_reg_block_depth;
 extern int* g_reg_blocks;
+extern char* g_module_fmt;
+
+typedef struct {
+    thecl_t* (*open)(FILE* stream, unsigned int ver);
+    /* Translates the data to a more general format. */
+    /* TODO: Return it instead. */
+    void (*trans)(thecl_t* ecl);
+    void (*dump)(const thecl_t* ecl, FILE* stream);
+
+    parser_state_t* (*parse)(FILE* stream, char* filename, unsigned int ver);
+    int (*compile)(const parser_state_t* ecl, FILE* stream);
+
+    void (*create_header)(const thecl_t* ecl, FILE* stream);
+} thecl_module_t;
 
 enum expression_type {
     EXPRESSION_OP,

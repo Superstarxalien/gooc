@@ -207,6 +207,7 @@ int yydebug = 0;
 %token ONCE "once"
 %token EVENT "event"
 %token INLINE "inline"
+%token DEFAULT "default"
 %token BRACE_OPEN "{"
 %token BRACE_CLOSE "}"
 %token PARENTHESIS_OPEN "("
@@ -379,19 +380,19 @@ Statement:
         free($2);
       }
       Interrupt_Body {
-        list_append_new(&state->ecl->interrupts, state->current_interrupt);
+        list_append_new(&state->main_ecl->interrupts, state->current_interrupt);
 
         state->current_interrupt = NULL;
       }
     | DIRECTIVE IDENTIFIER INTEGER INTEGER {
         if (!strcmp($1, "gool")){
-            state->ecl->eid = gool_to_eid($2);
-            state->ecl->id = $3;
-            state->ecl->type = $4;
+            state->main_ecl->eid = gool_to_eid($2);
+            state->main_ecl->id = $3;
+            state->main_ecl->type = $4;
 
-            state->ecl->is_defined = 1;
+            state->main_ecl->is_defined = 1;
 
-            gool_pool_force_get_index(state->ecl, state->ecl->eid);
+            gool_pool_force_get_index(state->main_ecl, state->main_ecl->eid);
 
             /* automatically create an expression macro that translates the ename to the GOOL ID */
             macro_create(state, $2, expression_load_new(state, param_val_new($3)));
@@ -405,7 +406,7 @@ Statement:
             spawn->name = strdup($2);
             spawn->state_name = strdup($3);
             spawn->offset = state->spawn_count;
-            list_append_new(&state->ecl->spawns, spawn);
+            list_append_new(&state->main_ecl->spawns, spawn);
             ++state->spawn_count;
         }
         free($1);
@@ -438,6 +439,31 @@ Statement:
         free($1);
         free($2);
       }
+    | DIRECTIVE ENTRY {
+        if (!strcmp($1, "module")) {
+            int eid = gool_to_eid($2);
+            for (int i = 0; i < state->ecl_cnt; ++i) {
+                if (state->ecl_stack[i]->eid == eid) {
+                    state->ecl = state->ecl_stack[i];
+                    goto outer_break_447;
+                }
+            }
+            thecl_t* ecl = thecl_new();
+            ecl->eid = eid;
+            state->ecl = ecl;
+            state->ecl_stack = realloc(state->ecl_stack, sizeof(thecl_t*) * ++state->ecl_cnt);
+            state->ecl_stack[state->ecl_cnt - 1] = ecl;
+        }
+      outer_break_447:
+        free($1);
+        free($2);
+      }
+    | DIRECTIVE "default" {
+        if (!strcmp($1, "module")) {
+            state->ecl = state->main_ecl;
+        }
+        free($1);
+      }
     | DIRECTIVE_FONT IDENTIFIER ENTRY {
         gool_anim_t* anim = malloc(sizeof(gool_anim_t));
         anim->name = strdup($2);
@@ -455,7 +481,7 @@ Statement:
         free($3);
       }
       Font_Chars {
-        list_append_new(&state->ecl->anims, state->current_anim);
+        list_append_new(&state->main_ecl->anims, state->current_anim);
         state->current_anim = NULL;
       }
     | DIRECTIVE_SPRITE IDENTIFIER ENTRY {
@@ -475,7 +501,7 @@ Statement:
         free($3);
       }
       Sprite_Frames {
-        list_append_new(&state->ecl->anims, state->current_anim);
+        list_append_new(&state->main_ecl->anims, state->current_anim);
         state->current_anim = NULL;
       }
     | DIRECTIVE_TEXT IDENTIFIER IDENTIFIER ENTRY {
@@ -497,7 +523,7 @@ Statement:
         free($4);
       }
       String_List {
-        list_append_new(&state->ecl->anims, state->current_anim);
+        list_append_new(&state->main_ecl->anims, state->current_anim);
         state->current_anim = NULL;
       }
     | DIRECTIVE_FANIM IDENTIFIER ENTRY INTEGER {
@@ -521,7 +547,7 @@ Statement:
         c1_fraganim_t* fraganim = state->current_anim->anim;
         ++fraganim->sprite_count;
         fraganim->sprite_count /= fraganim->frag_count;
-        list_append_new(&state->ecl->anims, state->current_anim);
+        list_append_new(&state->main_ecl->anims, state->current_anim);
         state->current_anim = NULL;
       }
     | GlobalVarDeclaration
@@ -1352,6 +1378,10 @@ Instruction:
 
 Assignment:
       Address "=" Expression {
+        if ($1->type == 'o') {
+            yyerror(state, "invalid address: %s", $1->value.val.z);
+            return 0;
+        }
         thecl_param_t* src_param;
         const expr_t* expr = expr_get_by_id(state->version, $3->id);
         if ($3->type == EXPRESSION_VAL && ($1->stack != 2 || ($1->stack == 2 && !expr->is_unary))) {
@@ -2112,7 +2142,7 @@ instr_create_call(
 {
     /* First, check if the called sub is inline. */
     thecl_sub_t* sub;
-    list_for_each(&state->ecl->subs, sub) {
+    list_for_each(&state->main_ecl->subs, sub) {
         if (sub->is_inline && !strcmp(sub->name, name)) {
             instr_create_inline_call(state, sub, params);
             free(name);
@@ -2395,16 +2425,16 @@ expression_optimize(
         || child_expr_2->type != EXPRESSION_VAL
         || child_expr_1->value->stack /* Variables are not acceptable, obviously. */
         || child_expr_2->value->stack
-		|| child_expr_1->value->type != 'S'
-		|| child_expr_2->value->type != 'S'
+        || child_expr_1->value->type != 'S'
+        || child_expr_2->value->type != 'S'
       ) || tmp_expr->is_unary && (
            child_expr_2->type != EXPRESSION_VAL
         || child_expr_2->value->stack
         || child_expr_1->value->value.val.S != 0x1F
         || child_expr_1->value->object_link != 0
         || !child_expr_1->value->stack
-		|| child_expr_1->value->type != 'S'
-		|| child_expr_2->value->type != 'S'
+        || child_expr_1->value->type != 'S'
+        || child_expr_2->value->type != 'S'
       )
     ) return;
 
@@ -2472,7 +2502,7 @@ state_begin(
     char* name)
 {
     thecl_state_t* iter_state;
-    list_for_each(&state->ecl->states, iter_state) {
+    list_for_each(&state->main_ecl->states, iter_state) {
         if(!strcmp(name, iter_state->name)) {
             yyerror(state, "duplicate state: %s", name);
             g_was_error = true;
@@ -2490,7 +2520,7 @@ state_begin(
     gstate->stateflag = 1;
     gstate->statusc = 2;
     gstate->index = state->state_count++;
-    list_append_new(&state->ecl->states, gstate);
+    list_append_new(&state->main_ecl->states, gstate);
 
     state->current_state = gstate;
 }
@@ -2527,7 +2557,7 @@ sub_begin(
     sub->arg_count = 0;
     sub->vars = NULL;
     sub->args = NULL;
-    sub->start_offset = state->ins_offset;
+    sub->start_offset = state->ecl->ins_offset;
     sub->offset = 0;
     sub->instr_data = NULL;
     sub->is_trans = false;
@@ -2565,7 +2595,7 @@ sub_finish(
         if (last_ins == NULL || last_ins->id != state->ins_ret) {
             instr_add(state, state->current_sub, instr_new(state, state->ins_ret, "SSSSS", 0, 0, 0x25, 0, 2));
         }
-        state->ins_offset += state->current_sub->offset;
+        state->ecl->ins_offset += state->current_sub->offset;
     }
 
     state->current_sub = NULL;
@@ -2683,10 +2713,10 @@ globalvar_create(
 
     thecl_globalvar_t* var = malloc(sizeof(thecl_globalvar_t));
     var->name = strdup(name);
-    var->offset = state->ecl->var_count++;
+    var->offset = state->main_ecl->var_count++;
 
-    state->ecl->vars = realloc(state->ecl->vars, state->ecl->var_count * sizeof(thecl_globalvar_t*));
-    state->ecl->vars[state->ecl->var_count - 1] = var;
+    state->main_ecl->vars = realloc(state->main_ecl->vars, state->main_ecl->var_count * sizeof(thecl_globalvar_t*));
+    state->main_ecl->vars[state->main_ecl->var_count - 1] = var;
 
     return var;
 }
@@ -2783,9 +2813,9 @@ globalvar_get(
     parser_state_t* state,
     const char* name
 ) {
-    for (size_t i = 0; i < state->ecl->var_count; ++i) {
-        if (!strcmp(name, state->ecl->vars[i]->name))
-            return state->ecl->vars[i];
+    for (size_t i = 0; i < state->main_ecl->var_count; ++i) {
+        if (!strcmp(name, state->main_ecl->vars[i]->name))
+            return state->main_ecl->vars[i];
     }
     return NULL;
 }
@@ -2896,7 +2926,7 @@ spawn_get(
     const char* name)
 {
     thecl_spawn_t* spawn;
-    list_for_each(&state->ecl->spawns, spawn) {
+    list_for_each(&state->main_ecl->spawns, spawn) {
         if (!strcmp(name, spawn->name))
             return spawn;
     }
@@ -2953,7 +2983,7 @@ anim_get(
     char* name)
 {
     gool_anim_t* anim;
-    list_for_each(&state->ecl->anims, anim) {
+    list_for_each(&state->main_ecl->anims, anim) {
         if (!strcmp(name, anim->name))
             return anim;
     }
@@ -2968,7 +2998,7 @@ anim_get_offset(
     size_t offset = 0;
 
     gool_anim_t* anim;
-    list_for_each(&state->ecl->anims, anim) {
+    list_for_each(&state->main_ecl->anims, anim) {
         if (!strcmp(name, anim->name))
             return offset / 4;
         offset += anim->size;
@@ -2995,7 +3025,7 @@ anim_create_anim_c1(
     anim_header->name = strdup(name);
     anim_header->size = anim_size;
     anim_header->anim = anim;
-    list_append_new(&state->ecl->anims, anim_header);
+    list_append_new(&state->main_ecl->anims, anim_header);
 }
 
 static thecl_param_t*
