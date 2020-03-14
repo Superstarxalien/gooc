@@ -348,6 +348,10 @@ Statement:
     | "inline" "sub" IDENTIFIER {
         sub_begin(state, $3);
         state->current_sub->is_inline = true;
+        if (state->ecl != state->main_ecl) {
+            list_del(&state->ecl->subs, state->ecl->subs.tail);
+            list_append_new(&state->main_ecl->subs, state->current_sub);
+        }
         free($3);
       }
       "(" ArgumentDeclaration ")" Subroutine_Body {
