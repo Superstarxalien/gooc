@@ -1764,8 +1764,9 @@ instr_add(
         goto NO_OPTIM;
     }
     const expr_t* expr = expr_get_by_symbol(state->version, PLOAD);
+    const expr_t* load_expr = expr_get_by_symbol(state->version, LOAD);
     /* push optimization */
-    if (instr->id == 22) {
+    if (instr->id == load_expr->id) {
         thecl_instr_t* last_ins = list_tail(&sub->instrs);
         if (last_ins != NULL) {
             thecl_label_t* tmp_label;
@@ -1774,7 +1775,7 @@ instr_add(
                     goto NO_OPTIM;
             }
 
-            while (last_ins->id == 22 && last_ins->param_count < 2 && instr->param_count > 0) {
+            while (last_ins->id == load_expr->id && last_ins->param_count < 2 && instr->param_count > 0) {
                 ++last_ins->param_count;
                 list_append_new(&last_ins->params, list_head(&instr->params));
                 list_del(&instr->params, instr->params.head);
@@ -2183,7 +2184,7 @@ instr_create_call(
                 }
             }
 
-            instr_add(state, state->current_sub, instr_new(state, 22, "p", param));
+            instr_add(state, state->current_sub, instr_new(state, expr_get_by_symbol(state->version, LOAD)->id, "p", param));
 
             ++argc;
         }
