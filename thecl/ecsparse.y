@@ -2004,40 +2004,14 @@ static void instr_create_inline_call(
         var = sub->args[i];
 
         if (param->value.val.S >= 0 && (var->is_written || param->is_expression_param || (param->stack && param->object_link == -1))) {
-
-            if (param->is_expression_param && !var->is_written && param->stack != 2) {
-                /* Check if the passed expression can be simplified to a literal value. */
-                list_node_t* node = state->expressions.tail;
-                expression_t* expr = (expression_t*)node->data;
-                if (expr->type == EXPRESSION_VAL) {
-                    /* Static value, otherwise it wouldn't be an uncasted expression param. */
-                    param_replace[i] = param_copy(expr->value);
-                    expression_free(expr);
-                    list_del(&state->expressions, node);
-                    ++i;
-                    continue;
-                }
-            }
-
             /* Non-static param value or the param is written to, need to create var. */
             strcpy(buf, name);
             strcat(buf, var->name);
             thecl_param_t* new_param = param_new(param->type);
             new_param->stack = 1;
 
-            if (param->is_expression_param) {
-                /* The value is already on the stack, just pop it. */
-                list_node_t* node = state->expressions.tail;
-                expression_t* expr = (expression_t*)node->data;
-                expression_output(state, expr, 1);
-                list_del(&state->expressions, node);
-
-                thecl_variable_t* var = var_create_assign(state, state->current_sub, buf, expr);
-                new_param->value.val.S = var->stack;
-            } else {
-                thecl_variable_t* var = var_create_assign(state, state->current_sub, buf, expression_load_new(state, param_copy(param)));
-                new_param->value.val.S = var->stack;
-            }
+            thecl_variable_t* var = var_create_assign(state, state->current_sub, buf, expression_load_new(state, param_copy(param)));
+            new_param->value.val.S = var->stack;
             param_replace[i] = new_param;
         } else {
             param_replace[i] = param_copy(param);
