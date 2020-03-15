@@ -228,8 +228,7 @@ c1_parse(
     g_parser_state = state;
     yyin = in;
 
-    if (yyparse(state) != 0) {
-    }
+    g_was_error = yyparse(state) != 0;
 
     free(state->scope_stack);
     g_parser_state = NULL;
@@ -285,6 +284,7 @@ c1_instr_serialize(
     }
 
     bool was_error = false;
+    bool ext_sub = false;
 
     if (instr->id == GOOL_JAL_OP) {
         /* Validate sub call parameters. */
@@ -293,12 +293,21 @@ c1_instr_serialize(
         char* sub_name = sub_name_param->value.val.z;
         thecl_param_t* sub_argc_param = node->next->next->data;
         const thecl_sub_t* called_sub = th10_find_sub(ecl, sub_name);
+        if (!called_sub && ecl_ext) {
+            called_sub = th10_find_sub(ecl_ext, sub_name);
+            ext_sub = true;
+        }
         if (!called_sub) {
             fprintf(stderr, "%s:c1_instr_serialize: in sub %s: unknown sub call \"%s\"\n",
                     argv0, sub->name, sub_name);
             was_error = true;
         } else {
-            if (sub_argc_param->value.val.S > called_sub->arg_count) {
+            if (ext_sub) {
+                fprintf(stderr, "%s:c1_instr_serialize: in sub %s: cannot call subs in external gool module: \"%s\"\n",
+                    argv0, sub->name, sub_name);
+                was_error = true;
+            }
+            else if (sub_argc_param->value.val.S > called_sub->arg_count) {
                 fprintf(stderr, "%s:c1_instr_serialize: in sub %s: too many parameters when calling sub \"%s\" (expected %d)\n",
                     argv0, sub->name, sub_name, called_sub->arg_count);
                 was_error = true;
