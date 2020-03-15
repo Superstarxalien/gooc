@@ -226,7 +226,7 @@ int yydebug = 0;
 %token WHILE "while"
 %token UNTIL "until"
 %token BREAK "break"
-%token KILL
+%token CALL
 %token LOAD
 %token GLOAD
 %token PLOAD
@@ -1355,7 +1355,8 @@ Instruction:
                 expression_free(expression);
             }
             list_free_nodes(&state->expressions);
-            instr_create_call(state, state->ins_jal, $1, $3);
+            const expr_t* expr = expr_get_by_symbol(state->version, CALL);
+            instr_create_call(state, expr->id, $1, $3);
         }
         if ($3 != NULL) {
             list_free_nodes($3);
@@ -1369,10 +1370,11 @@ Instruction:
     | VarDeclaration
     | BreakStatement
     | "return" {
+        const expr_t* expr = expr_get_by_symbol(state->version, RETURN);
         if (state->current_sub->is_inline)
             expression_create_goto(state, GOTO, "inline_end", NULL);
         else 
-            instr_add(state, state->current_sub, instr_new(state, state->ins_ret, "SSSSS", 0, 0, 0x25, 0, 2));
+            instr_add(state, state->current_sub, instr_new(state, expr->id, "SSSSS", 0, 0, 0x25, 0, 2));
     }
     ;
 
@@ -1772,6 +1774,9 @@ instr_add(
         goto NO_OPTIM;
     }
     const expr_t* expr = expr_get_by_symbol(state->version, PLOAD);
+    const expr_t* bra_expr = expr_get_by_symbol(state->version, GOTO);
+    const expr_t* beqz_expr = expr_get_by_symbol(state->version, UNLESS);
+    const expr_t* bnez_expr = expr_get_by_symbol(state->version, IF);
     /* push optimization */
     if (instr->id == load_expr->id) {
         if (instr->param_count == 1) {
@@ -1824,7 +1829,7 @@ instr_add(
         }
     }
     /* branch optimization */
-    else if (instr->id == state->ins_bra && instr->param_count == 5 &&
+    else if ((instr->id == bra_expr->id || instr->id == beqz_expr->id || instr->id == bnez_expr->id) && instr->param_count == 5 &&
         ((state->version != 1) ||
         ((state->version == 1) &&
         ((thecl_param_t*)instr->params.tail->data)->value.val.S == 0 &&
@@ -2581,8 +2586,9 @@ sub_finish(
     else {
         scope_finish(state, true);
         thecl_instr_t* last_ins = state->version == 1 ? NULL : list_tail(&state->current_sub->instrs);
-        if (last_ins == NULL || last_ins->id != state->ins_ret) {
-            instr_add(state, state->current_sub, instr_new(state, state->ins_ret, "SSSSS", 0, 0, 0x25, 0, 2));
+        const expr_t* expr = expr_get_by_symbol(state->version, RETURN);
+        if (last_ins == NULL || last_ins->id != expr->id) {
+            instr_add(state, state->current_sub, instr_new(state, expr->id, "SSSSS", 0, 0, 0x25, 0, 2));
         }
         state->ecl->ins_offset += state->current_sub->offset;
     }

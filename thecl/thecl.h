@@ -268,10 +268,6 @@ typedef struct {
     uint16_t state_count;
     size_t spawn_count;
 
-    uint8_t ins_ret;
-    uint8_t ins_jal;
-    uint8_t ins_bra;
-
     list_t expr_macros;
 
     int ignore_block;

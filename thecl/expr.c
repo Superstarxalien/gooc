@@ -40,6 +40,7 @@ c1_expressions[] = {
     /* s0 is the previous instruction, s1 the one previous to s0 ... */
 
     /*SYM        ID     P  A SP2 O  U */
+    { CALL,    0x86, NULL, 0, 0, 0, 0 }, /* return */
     { RETURN,  0x82, NULL, 0, 0, 0, 0 }, /* return */
 
     { GOTO,    0x82,  "o", 0, 0, 0, 0 }, /* goto p0 */

@@ -40,8 +40,6 @@
 #include "value.h"
 
 #define GOOL_JAL_OP           (0x86)
-#define GOOL_RET_OP           (0x82)
-#define GOOL_BRA_OP           (0x82)
 
 static const id_format_pair_t th10_fmts[] = {
     { 0, "RR" },
@@ -187,9 +185,6 @@ c1_parse(
     state->has_mips = false;
     state->state_count = 0;
     state->spawn_count = 0;
-    state->ins_ret = GOOL_RET_OP;
-    state->ins_jal = GOOL_JAL_OP;
-    state->ins_bra = GOOL_BRA_OP;
 
     state->ignore_block = 0;
 
