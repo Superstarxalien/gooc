@@ -43,38 +43,6 @@
 #define GOOL_RET_OP           (0x82)
 #define GOOL_BRA_OP           (0x82)
 
-typedef struct {
-PACK_BEGIN
-    uint32_t magic;
-    uint32_t id;
-    uint32_t type;
-    uint32_t count;
-    uint32_t offsets[];
-PACK_END
-} PACK_ATTRIBUTE c1_entry_header_t;
-
-typedef struct {
-PACK_BEGIN
-    uint32_t id;
-    uint32_t type;
-    uint32_t exe_type;
-    uint32_t stack_start;
-    uint32_t interrupt_count;
-    uint32_t stack_depth;
-PACK_END
-} PACK_ATTRIBUTE c1_gool_header_t;
-
-typedef struct {
-PACK_BEGIN
-    uint32_t stateflag;
-    uint32_t statusc;
-    int16_t exe_off;
-    uint16_t epc;
-    uint16_t tpc;
-    uint16_t cpc;
-PACK_END
-} PACK_ATTRIBUTE c1_state_t;
-
 static const id_format_pair_t th10_fmts[] = {
     { 0, "RR" },
     { 1, "RR" },
@@ -249,19 +217,8 @@ c1_set_opcode(
     int* ins,
     uint8_t opcode)
 {
-    *ins = *ins & 0x00FFFFFF;
+    *ins &= 0x00FFFFFF;
     *ins |= opcode << 24;
-}
-
-static int
-c1_is_statechange(
-    thecl_instr_t* instr)
-{
-    if (instr->param_count == 5 && instr->id == GOOL_BRA_OP) {
-        if (((thecl_param_t*)instr->params.tail->data)->value.val.S == 1)
-            return 1;
-    }
-    return 0;
 }
 
 static int
@@ -488,8 +445,8 @@ c1_compile(
 
     thecl_t* ecl = parser->main_ecl;
 
-    c1_entry_header_t entry_header = { 0x100FFFFU, ecl->eid, 11U, 6U, { 0, 0, 0, 0, 0, 0, 0 } };
-    c1_gool_header_t header = { ecl->id, ecl->type << 8, 1, ecl->var_count + 0x40, 0, 8 };
+    entry_header_t entry_header = { 0x100FFFFU, ecl->eid, 11U, 6U, { 0, 0, 0, 0, 0, 0, 0 } };
+    gool_header_t header = { ecl->id, ecl->type << 8, 1, ecl->var_count + 0x40, 0, 8 };
     thecl_sub_t* sub;
     thecl_state_t* state;
     gool_anim_t* anim;
@@ -542,12 +499,12 @@ c1_compile(
         }
     }
 
-    if (!file_write(out, &entry_header, sizeof(c1_entry_header_t) + 7 * sizeof(uint32_t)))
+    if (!file_write(out, &entry_header, sizeof(entry_header_t) + 7 * sizeof(uint32_t)))
         return 0;
 
     entry_header.offsets[0] = file_tell(out);
 
-    if (!file_write(out, &header, sizeof(c1_gool_header_t)))
+    if (!file_write(out, &header, sizeof(gool_header_t)))
         return 0;
 
     entry_header.offsets[1] = file_tell(out);
@@ -639,7 +596,7 @@ c1_compile(
                 fprintf(stderr, "%s: warning: state %s event block does not have 2 arguments\n", argv0, state->name);
             }
         }
-        c1_state_t gstate = { state->stateflag, state->statusc, gool_pool_force_get_index(ecl, state->exe_eid),
+        state_t gstate = { state->stateflag, state->statusc, gool_pool_force_get_index(ecl, state->exe_eid),
             state->event == NULL ? 0x3FFFU : state->event->start_offset,
             state->trans == NULL ? 0x3FFFU : state->trans->start_offset,
             state->code == NULL ? 0x3FFFU : state->code->start_offset };
@@ -665,12 +622,12 @@ c1_compile(
 
     if (!file_seek(out, entry_header.offsets[0]))
         return 0;
-    if (!file_write(out, &header, sizeof(c1_gool_header_t)))
+    if (!file_write(out, &header, sizeof(gool_header_t)))
         return 0;
 
     if (!file_seek(out, 0))
         return 0;
-    if (!file_write(out, &entry_header, sizeof(c1_entry_header_t) + 7 * sizeof(uint32_t)))
+    if (!file_write(out, &entry_header, sizeof(entry_header_t) + 7 * sizeof(uint32_t)))
         return 0;
 
     if (parser->ecl_cnt && !g_module_fmt) {
@@ -736,12 +693,12 @@ c1_compile(
                 }
             }
 
-            if (!file_write(out, &entry_header, sizeof(c1_entry_header_t) + 4 * sizeof(uint32_t)))
+            if (!file_write(out, &entry_header, sizeof(entry_header_t) + 4 * sizeof(uint32_t)))
                 return 0;
 
             entry_header.offsets[0] = file_tell(out);
 
-            if (!file_write(out, &header, sizeof(c1_gool_header_t)))
+            if (!file_write(out, &header, sizeof(gool_header_t)))
                 return 0;
 
             entry_header.offsets[1] = file_tell(out);
@@ -767,7 +724,7 @@ c1_compile(
 
             if (!file_seek(out, 0))
                 return 0;
-            if (!file_write(out, &entry_header, sizeof(c1_entry_header_t) + 4 * sizeof(uint32_t)))
+            if (!file_write(out, &entry_header, sizeof(entry_header_t) + 4 * sizeof(uint32_t)))
                 return 0;
             
             fclose(out);

@@ -332,4 +332,36 @@ extern int yyparse(parser_state_t*);
 
 extern bool g_was_error;
 
+typedef struct {
+    PACK_BEGIN
+        uint32_t magic;
+    uint32_t id;
+    uint32_t type;
+    uint32_t count;
+    uint32_t offsets[];
+    PACK_END
+} PACK_ATTRIBUTE entry_header_t;
+
+typedef struct {
+    PACK_BEGIN
+        uint32_t id;
+    uint32_t type;
+    uint32_t exe_type;
+    uint32_t stack_start;
+    uint32_t interrupt_count;
+    uint32_t stack_depth;
+    PACK_END
+} PACK_ATTRIBUTE gool_header_t;
+
+typedef struct {
+    PACK_BEGIN
+        uint32_t stateflag;
+    uint32_t statusc;
+    int16_t exe_off;
+    uint16_t epc;
+    uint16_t tpc;
+    uint16_t cpc;
+    PACK_END
+} PACK_ATTRIBUTE state_t;
+
 #endif
