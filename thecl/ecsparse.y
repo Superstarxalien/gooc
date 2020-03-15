@@ -1759,14 +1759,28 @@ instr_add(
         thecl_instr_free(instr);
         return;
     }
+    const expr_t* load_expr = expr_get_by_symbol(state->version, LOAD);
     if (state->block_bound) {
+        if (instr->id == load_expr->id && instr->param_count == 1) {
+            thecl_param_t* load_param = list_head(&instr->params);
+            if (load_param->value.val.S == 0x1f && load_param->object_link == 0 && load_param->stack) {
+                thecl_instr_free(instr);
+                return;
+            }
+        }
         state->block_bound = 0;
         goto NO_OPTIM;
     }
     const expr_t* expr = expr_get_by_symbol(state->version, PLOAD);
-    const expr_t* load_expr = expr_get_by_symbol(state->version, LOAD);
     /* push optimization */
     if (instr->id == load_expr->id) {
+        if (instr->param_count == 1) {
+            thecl_param_t* load_param = list_head(&instr->params);
+            if (load_param->value.val.S == 0x1f && load_param->object_link == 0 && load_param->stack) {
+                thecl_instr_free(instr);
+                return;
+            }
+        }
         thecl_instr_t* last_ins = list_tail(&sub->instrs);
         if (last_ins != NULL) {
             thecl_label_t* tmp_label;
