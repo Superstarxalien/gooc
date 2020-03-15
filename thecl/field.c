@@ -31,6 +31,12 @@
 #include <stdio.h>
 #include "field.h"
 
+static char global_name_buf[10];
+static field_t global_buf = { global_name_buf, 0 };
+
+static char event_name_buf[8];
+static field_t event_buf = { event_name_buf, 0 };
+
 static const field_t
 gool_fields[] = {
     { "self",          0 },
@@ -116,11 +122,8 @@ gool_fields[] = {
     { NULL, 0 }
 };
 
-static char gvar_name_buf[10];
-static field_t gvar_buf = { gvar_name_buf, 0 };
-
 static const field_t
-c1_gool_globals[] = {
+c1_globals[] = {
     { "LEVEL",             0 },
 
     { "RESPAWNCOUNT",      5 },
@@ -179,65 +182,8 @@ c1_gool_globals[] = {
     { NULL, 0 }
 };
 
-const field_t*
-field_get(
-    char* name)
-{
-    const field_t* table = gool_fields;
-
-    while (table->name != NULL) {
-        if (!strcmp(table->name, name))
-            return table;
-        ++table;
-    }
-
-    return NULL;
-}
-
-static const field_t*
-gvar_get_from_table(
-    const field_t* table,
-    char* name)
-{
-    while (table->name) {
-        if (!strcmp(table->name, name))
-            return table;
-        ++table;
-    }
-
-    return NULL;
-}
-
-const field_t*
-gvar_get(
-    unsigned int version,
-    char* name)
-{
-    const field_t* ret = NULL;
-
-    switch (version) {
-    case 1:
-        ret = gvar_get_from_table(c1_gool_globals, name);
-        break;
-    }
-
-    if (!ret) {
-        int gvar_id;
-        if (sscanf(name, "GVAR_%d", &gvar_id)) {
-            snprintf(gvar_name_buf, 10, "GVAR_%d", gvar_id);
-            gvar_buf.offset = gvar_id;
-            return &gvar_buf;
-        }
-    }
-
-    return ret;
-}
-
-static char event_name_buf[8];
-static field_t event_buf = { event_name_buf, 0 };
-
 static const field_t
-c1_gool_events[] = {
+c1_events[] = {
     { "EventJumpedOn",         0 },
 
     { "EventHit",              3 },
@@ -262,6 +208,60 @@ c1_gool_events[] = {
     { NULL, 0 }
 };
 
+const field_t*
+field_get(
+    char* name)
+{
+    const field_t* table = gool_fields;
+
+    while (table->name != NULL) {
+        if (!strcmp(table->name, name))
+            return table;
+        ++table;
+    }
+
+    return NULL;
+}
+
+static const field_t*
+global_get_from_table(
+    const field_t* table,
+    char* name)
+{
+    while (table->name) {
+        if (!strcmp(table->name, name))
+            return table;
+        ++table;
+    }
+
+    return NULL;
+}
+
+const field_t*
+global_get(
+    unsigned int version,
+    char* name)
+{
+    const field_t* ret = NULL;
+
+    switch (version) {
+    case 1:
+        ret = global_get_from_table(c1_globals, name);
+        break;
+    }
+
+    if (!ret) {
+        int global_id;
+        if (sscanf(name, "GLOBAL_%d", &global_id)) {
+            snprintf(global_name_buf, 10, "GLOBAL_%d", global_id);
+            global_buf.offset = global_id;
+            return &global_buf;
+        }
+    }
+
+    return ret;
+}
+
 static const field_t*
 event_get_from_table(
     const field_t* table,
@@ -285,7 +285,7 @@ event_get(
 
     switch (version) {
     case 1:
-        ret = event_get_from_table(c1_gool_events, name);
+        ret = event_get_from_table(c1_events, name);
         break;
     }
 

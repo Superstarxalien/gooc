@@ -108,8 +108,8 @@ static void scope_finish(parser_state_t* state, bool pop_vars);
 static expr_macro_t* macro_create(parser_state_t* state, const char* name, expression_t* expr);
 /* Creates a new argument in the specified subroutine. */
 static thecl_variable_t* arg_create(parser_state_t* state, thecl_sub_t* sub, const char* name);
-/* Creates a new global variable. */
-static thecl_globalvar_t* globalvar_create(parser_state_t* state, const char* name);
+/* Creates a new object field. */
+static field_t* objfield_create(parser_state_t* state, const char* name);
 /* Creates a new variable in the specified subroutine. */
 static thecl_variable_t* var_create(parser_state_t* state, thecl_sub_t* sub, const char* name, bool push);
 /* Creates a new variable in the specified subroutine, and assigns a value to it. */
@@ -118,8 +118,8 @@ static thecl_variable_t* var_create_assign(parser_state_t* state, thecl_sub_t* s
 static bool var_accessible(parser_state_t* state, thecl_variable_t* var);
 /* Returns argument of the given name in the specified sub, or NULL if the argument doesn't exist */
 static thecl_variable_t* arg_get(parser_state_t* state, thecl_sub_t* sub, const char* name);
-/* Returns global variable of the given name, or NULL if the variable doesn't exist */
-static thecl_globalvar_t* globalvar_get(parser_state_t* state, const char* name);
+/* Returns object field of the given name, or NULL if the field doesn't exist */
+static field_t* objfield_get(parser_state_t* state, const char* name);
 /* Returns variable of the given name in the specified sub, or NULL if the variable doesn't exist/is out of scope */
 static thecl_variable_t* var_get(parser_state_t* state, thecl_sub_t* sub, const char* name);
 /* Returns the stack offset of a specified variable in the specified sub. */
@@ -591,11 +591,11 @@ Interrupt_Body:
 
 GlobalVarDeclaration:
       "var" IDENTIFIER {
-        globalvar_create(state, $2);
+        objfield_create(state, $2);
         free($2);
       }
     | GlobalVarDeclaration "," IDENTIFIER {
-        globalvar_create(state, $3);
+        objfield_create(state, $3);
         free($3);
       }
     ;
@@ -1553,12 +1553,12 @@ ExpressionSubset:
 Address:
       IDENTIFIER {
         thecl_variable_t* arg;
-        const field_t* gvar;
+        const field_t* global;
         thecl_spawn_t* spawn;
         const field_t* field;
         const field_t* event;
         size_t anim_offset;
-        thecl_globalvar_t* globalvar;
+        field_t* objfield;
         if (var_exists(state, state->current_sub, $1)) {
             $$ = param_new('S');
             $$->stack = 1;
@@ -1567,10 +1567,10 @@ Address:
             $$ = param_new('S');
             $$->stack = 1;
             $$->value.val.S = arg->stack;
-        } else if (gvar = gvar_get(state->version, $1)) {
+        } else if (global = global_get(state->version, $1)) {
             $$ = param_new('S');
             $$->stack = 2;
-            $$->value.val.S = gvar->offset << 8;
+            $$->value.val.S = global->offset << 8;
         } else if (field = field_get($1)) {
             $$ = param_new('S');
             $$->stack = 1;
@@ -1579,10 +1579,10 @@ Address:
         } else if (event = event_get(state->version, $1)) {
             $$ = param_new('S');
             $$->value.val.S = event->offset << 8;
-        } else if (globalvar = globalvar_get(state, $1)) {
+        } else if (objfield = objfield_get(state, $1)) {
             $$ = param_new('S');
             $$->stack = 1;
-            $$->value.val.S = globalvar->offset + 64;
+            $$->value.val.S = objfield->offset + 64;
             $$->object_link = 0;
         } else if (spawn = spawn_get(state, $1)) {
             $$ = param_new('S');
@@ -2196,7 +2196,7 @@ expression_load_new(
     const expr_t* expr;
     if (value->stack == 2) {
         expr = expr_get_by_symbol(state->version, GLOAD);
-        ret->type = EXPRESSION_GVAR;
+        ret->type = EXPRESSION_GLOBAL;
     }
     else {
         expr = expr_get_by_symbol(state->version, LOAD);
@@ -2332,7 +2332,7 @@ expression_output(
 
     if (expr->type == EXPRESSION_VAL) {
         instr_add(state, state->current_sub, instr_new(state, expr->id, "p", expr->value));
-    } else if (expr->type == EXPRESSION_GVAR) {
+    } else if (expr->type == EXPRESSION_GLOBAL) {
         instr_add(state, state->current_sub, instr_new(state, expr->id, "S", expr->value->value.val.S));
     } else if (expr->type == EXPRESSION_OP) {
         const expr_t* expression = expr_get_by_id(state->version, expr->id);
@@ -2697,20 +2697,20 @@ arg_create(
     return arg;
 }
 
-static thecl_globalvar_t*
-globalvar_create(
+static field_t*
+objfield_create(
     parser_state_t* state,
     const char* name)
 {
-    if (globalvar_get(state, name) != NULL) {
+    if (objfield_get(state, name) != NULL) {
         yyerror(state, "redeclaration of global variable: %s", name);
     }
 
-    thecl_globalvar_t* var = malloc(sizeof(thecl_globalvar_t));
+    field_t* var = malloc(sizeof(field_t));
     var->name = strdup(name);
     var->offset = state->main_ecl->var_count++;
 
-    state->main_ecl->vars = realloc(state->main_ecl->vars, state->main_ecl->var_count * sizeof(thecl_globalvar_t*));
+    state->main_ecl->vars = realloc(state->main_ecl->vars, state->main_ecl->var_count * sizeof(field_t*));
     state->main_ecl->vars[state->main_ecl->var_count - 1] = var;
 
     return var;
@@ -2803,8 +2803,8 @@ arg_get(
     return NULL;
 }
 
-static thecl_globalvar_t*
-globalvar_get(
+static field_t*
+objfield_get(
     parser_state_t* state,
     const char* name
 ) {

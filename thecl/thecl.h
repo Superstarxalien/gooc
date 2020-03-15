@@ -141,11 +141,6 @@ typedef struct {
 
 typedef struct {
     char* name;
-    size_t offset;
-} thecl_globalvar_t;
-
-typedef struct {
-    char* name;
 
     thecl_sub_t* code;
     thecl_sub_t* trans;
@@ -208,7 +203,7 @@ typedef struct {
     uint32_t* consts;
 
     size_t var_count;
-    thecl_globalvar_t** vars;
+    field_t** vars;
 
     list_t interrupts;
     list_t spawns;
@@ -297,7 +292,7 @@ typedef struct {
 enum expression_type {
     EXPRESSION_OP,
     EXPRESSION_VAL,
-    EXPRESSION_GVAR,
+    EXPRESSION_GLOBAL,
     EXPRESSION_TERNARY
 };
 
