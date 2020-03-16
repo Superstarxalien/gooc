@@ -69,6 +69,8 @@
 ":"        return COLON;
 "{"        return BRACE_OPEN;
 "}"        return BRACE_CLOSE;
+"["        return SQUARE_OPEN;
+"]"        return SQUARE_CLOSE;
 "("        return PARENTHESIS_OPEN;
 ")"        return PARENTHESIS_CLOSE;
 "->"       return DEREFERENCE;
