@@ -209,6 +209,88 @@ c1_events[] = {
     { NULL, 0 }
 };
 
+static const field_t
+c2_globals[] = {
+    { "LEVEL",             0 },
+
+    { "RESPAWNCOUNT",      5 },
+    { "FRUITCOUNTER",      6 },
+    { "LIFECOUNTER",       7 },
+
+    { "PAUSEMENU",        12 },
+    { "LIFEICONTRANSX",   13 },
+
+    { "DOCTOR",           16 },
+
+    { "GAMEPROGRESS",     20 },
+
+    { "LIFECOUNT",        24 },
+    { "HEALTH",           25 },
+
+    { "BOXCOUNTER",       29 },
+    { "ZONEFLAG",         30 },
+    { "STARTLIVES",       31 },
+
+    { "SFXVOL",           34 },
+    { "MUSVOL",           35 },
+
+    { "CAMTRANSX",        37 },
+    { "CAMTRANSY",        38 },
+    { "CAMTRANSZ",        39 },
+    { "CAMROTX",          40 },
+    { "CAMROTY",          41 },
+    { "CAMROTZ",          42 },
+    { "FRAMETIME",        43 },
+
+    { "BOXCOUNT",         62 },
+    { "GAMEITEMPOOL1",    63 },
+
+    { "DEBUG",            68 },
+    { "CHECKPOINTID",     69 },
+    { "PREVBOXCOUNT",     70 },
+    { "PREVLEVEL",        71 },
+    { "GAMEITEMPOOL2",    72 },
+
+    { "DEMOTEXTOBJ",      76 },
+
+    { "GEMCOUNT",         97 },
+    { "KEYCOUNT",         98 },
+
+    { "SPAWNTRANSX",     102 },
+    { "SPAWNTRANSY",     103 },
+    { "SPAWNTRANSZ",     104 },
+
+    { "DEATHCOUNT",      108 },
+
+    { NULL, 0 }
+};
+
+static const field_t
+c2_events[] = {
+    { "EventJumpedOn",         0 },
+
+    { "EventHit",              3 },
+    { "EventAttacked",         4 },
+
+    { "EventTriggered",        8 },
+
+    { "EventHitInvincible",   10 },
+
+    { "EventRespawn",         19 },
+
+    { "EventWin",             22 },
+
+    { "EventDespawn",         26 },
+
+    { "EventFling",           29 },
+
+    { "EventLevelEnd",        41 },
+
+    { "EventPlayerDamage",    43 },
+
+    { NULL, 0 }
+};
+
 const field_t*
 field_get(
     char* name)
@@ -225,7 +307,7 @@ field_get(
 }
 
 static const field_t*
-global_get_from_table(
+field_get_from_table(
     const field_t* table,
     char* name)
 {
@@ -246,9 +328,8 @@ global_get(
     const field_t* ret = NULL;
 
     switch (version) {
-    case 1:
-        ret = global_get_from_table(c1_globals, name);
-        break;
+    case 2: ret = field_get_from_table(c2_globals, name); break;
+    case 1: ret = field_get_from_table(c1_globals, name); break;
     }
 
     if (!ret) {
@@ -263,20 +344,6 @@ global_get(
     return ret;
 }
 
-static const field_t*
-event_get_from_table(
-    const field_t* table,
-    char* name)
-{
-    while (table->name) {
-        if (!strcmp(table->name, name))
-            return table;
-        ++table;
-    }
-
-    return NULL;
-}
-
 const field_t*
 event_get(
     unsigned int version,
@@ -285,9 +352,8 @@ event_get(
     const field_t* ret = NULL;
 
     switch (version) {
-    case 1:
-        ret = event_get_from_table(c1_events, name);
-        break;
+    case 2: ret = field_get_from_table(c2_events, name); break;
+    case 1: ret = field_get_from_table(c1_events, name); break;
     }
 
     if (!ret) {
