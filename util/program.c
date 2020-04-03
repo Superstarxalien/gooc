@@ -125,17 +125,17 @@ unsigned int parse_version(char *str) {
         {15, "lolk"},
         {155, "aocf"},
         {16, "hsifs"},
-        {-1}
+        {0}
     }, *vp = vers;
 
-    if(!str) return -1;
+    if(!str) return 0;
     unsigned int version = strtoul(str, NULL, 10);
     if(version) return version;
 
     char *str2 = str;
     for(;*str2;str2++) *str2 = tolower(*str2);
 
-    while(vp->version != -1) {
+    while(vp->version) {
         if(!strcmp(str,vp->name)) break;
         vp++;
     }

@@ -408,7 +408,6 @@ print_usage(void)
            "  1\n"
            "REGION can be:\n"
            "  ntsc-u, ntsc-j, pal\n"
-           /* NEWHU: */
            "Report bugs to <" PACKAGE_BUGREPORT ">.\n", argv0);
 }
 
@@ -486,7 +485,7 @@ main(int argc, char* argv[])
         break;
     default:
         if (mode == 'c') {
-            if (version == -1)
+            if (!version)
                 fprintf(stderr, "%s: version must be specified\n", argv0);
             else
                 fprintf(stderr, "%s: version %u is unsupported\n", argv0, version);
