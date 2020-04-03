@@ -81,6 +81,7 @@ gool_fields[] = {
     { "v0",           38 },
     { "frametime",    39 },
     { "statetime",    40 },
+    { "stalltime",    41 },
     { "health",       41 },
     { "animseq",      42 },
     { "animframe",    43 },
