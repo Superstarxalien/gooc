@@ -1032,57 +1032,98 @@ c1_gool_ins_gamefunc10_params(
 static const gool_ins_t
 c1_gool_ins[] = {
      /* NAME                        ID  VA POP R   L   C              VALIDATE */
-     { "onstateexit",                24, 0, 0, 0, -1,  1, c1_gool_ins_onexit_params },
-     { "settrans",                   24, 0, 0, 0, -1,  1, c1_gool_ins_settrans_params },
-     { "setfield",                   28, 1, 0, 0, -1,  2, c1_gool_ins_setfield_params },
-     { "entitysetspawn",             28, 0, 0, 0, -1,  1, c1_gool_ins_entitysetspawn_params },
-     { "movetozoneinposition",       28, 0, 0, 0, -1,  2, c1_gool_ins_movetozoneinposition_params },
-     { "entitysetstate",             28, 0, 0, 0, -1,  2, c1_gool_ins_entitysetstate_params },
-     { "loadlevel",                  28, 0, 0, 0, -1,  1, c1_gool_ins_loadlevel_params },
-     { "movetolist",                 28, 0, 0, 0, -1,  1, c1_gool_ins_movetolist_params },
-     { "savecheckpoint",             28, 0, 0, 0, -1,  0, c1_gool_ins_savecheckpoint_params },
-     { "loadcheckpoint",             28, 0, 0, 0, -1,  0, c1_gool_ins_loadcheckpoint_params },
-     { "gamefunc4",                  28, 0, 0, 0, -1,  1, c1_gool_ins_gamefunc4_params },
-     { "soundstop",                  28, 0, 0, 0, -1,  0, c1_gool_ins_soundstop_params },
-     { "seqplay",                    28, 0, 0, 0, -1,  1, c1_gool_ins_seqplay_params },
-     { "gamefunc10",                 28, 0, 0, 0, -1,  1, c1_gool_ins_gamefunc10_params },
-     { "setcolor",                   36, 0, 0, 0, -1,  3, c1_gool_ins_setcolor_params },
-     { "anim",                       39, 0, 0, 0, -1,  2, c1_gool_ins_anim_params },
-     { "nop",                      0x81, 0, 0, 0, -1,  0, c1_gool_ins_nop_params },
-     { "changestate",              0x82, 0, 0, 0, -1,  1, c1_gool_ins_state_params },
-     { "changestateif",            0x82, 0, 0, 0, -1,  2, c1_gool_ins_stateif_params },
-     { "changestateifn",           0x82, 0, 0, 0, -1,  2, c1_gool_ins_stateifn_params },
-     { "playanim",                 0x83, 1, 1, 1, -1,  4, c1_gool_ins_playanim_params },
-     { "playtext",                 0x83, 1, 1, 1, -1,  2, c1_gool_ins_playtext_params },
-     { "playframe",                0x84, 1, 1, 1, -1,  3, c1_gool_ins_playframe_params },
-     { "calcpath",                 0x85, 0, 0, 0, -1,  3, c1_gool_ins_calcpath_params },
-     { "getvert",                  0x85, 0, 0, 0, -1,  3, c1_gool_ins_getvert_params },
-     { "moveto2d",                 0x85, 0, 0, 0, -1,  2, c1_gool_ins_moveto2d_params },
-     { "setvel",                   0x85, 0, 0, 0, -1,  2, c1_gool_ins_setvel_params },
-     { "sendevent",                0x87, 1, 0, 0,  2,  3, c1_gool_ins_sendevent_params },
-     { "rejectevent",              0x88, 0, 0, 0, -1,  1, c1_gool_ins_eventstatus_params },
-     { "acceptevent",              0x89, 0, 0, 0, -1,  1, c1_gool_ins_eventstatus_params },
-     { "rejecteventandreturn",     0x88, 0, 0, 0, -1,  1, c1_gool_ins_eventstatusreturn_params },
-     { "accepteventandreturn",     0x89, 0, 0, 0, -1,  1, c1_gool_ins_eventstatusreturn_params },
-     { "rejecteventandchangestate",0x88, 0, 0, 0, -1,  2, c1_gool_ins_eventstatusstate_params },
-     { "accepteventandchangestate",0x89, 0, 0, 0, -1,  2, c1_gool_ins_eventstatusstate_params },
-     { "spawn",                    0x8A, 1, 0, 0, -1,  3, c1_gool_ins_spawn_params },
-     { "loadfile",                 0x8B, 0, 0, 0, -1,  1, c1_gool_ins_loadfile_params },
-     { "deloadfile",               0x8B, 0, 0, 0, -1,  1, c1_gool_ins_deloadfile_params },
-     { "loadtpage",                0x8B, 0, 0, 0, -1,  1, c1_gool_ins_loadtpage_params },
-     { "soundplay",                0x8C, 0, 0, 0, -1,  2, c1_gool_ins_playsound_params },
-     { "soundsetup",               0x8D, 0, 0, 0, -1,  2, c1_gool_ins_setupsound_params },
-     { "soundfadev",               0x8D, 0, 0, 0, -1,  2, c1_gool_ins_soundfadevol_params },
-     { "soundpitch",               0x8D, 0, 0, 0, -1,  2, c1_gool_ins_soundpitch_params },
-     { "soundcount",               0x8D, 0, 0, 0, -1,  2, c1_gool_ins_soundcount_params },
-     { "soundfadet",               0x8D, 0, 0, 0, -1,  2, c1_gool_ins_soundfadetime_params },
-     { "sounddelay",               0x8D, 0, 0, 0, -1,  2, c1_gool_ins_sounddelay_params },
-     { "sounddecay",               0x8D, 0, 0, 0, -1,  2, c1_gool_ins_sounddecay_params },
-     { "calclight",                0x8E, 0, 0, 0, -1,  0, c1_gool_ins_calclight_params },
-     { "broadcastevent",           0x8F, 1, 0, 0,  2,  3, c1_gool_ins_sendevent_params },
-     { "cascadeevent",             0x90, 1, 0, 0,  2,  3, c1_gool_ins_sendevent_params },
-     { "spawn2",                   0x91, 1, 0, 0, -1,  3, c1_gool_ins_spawn_params },
-     { NULL, 0, 0, NULL }
+    { "onstateexit",                24, 0, 0, 0, -1,  1, c1_gool_ins_onexit_params },
+    { "settrans",                   24, 0, 0, 0, -1,  1, c1_gool_ins_settrans_params },
+    { "setfield",                   28, 1, 0, 0, -1,  2, c1_gool_ins_setfield_params },
+    { "entitysetspawn",             28, 0, 0, 0, -1,  1, c1_gool_ins_entitysetspawn_params },
+    { "movetozoneinposition",       28, 0, 0, 0, -1,  2, c1_gool_ins_movetozoneinposition_params },
+    { "entitysetstate",             28, 0, 0, 0, -1,  2, c1_gool_ins_entitysetstate_params },
+    { "loadlevel",                  28, 0, 0, 0, -1,  1, c1_gool_ins_loadlevel_params },
+    { "movetolist",                 28, 0, 0, 0, -1,  1, c1_gool_ins_movetolist_params },
+    { "savecheckpoint",             28, 0, 0, 0, -1,  0, c1_gool_ins_savecheckpoint_params },
+    { "loadcheckpoint",             28, 0, 0, 0, -1,  0, c1_gool_ins_loadcheckpoint_params },
+    { "gamefunc4",                  28, 0, 0, 0, -1,  1, c1_gool_ins_gamefunc4_params },
+    { "soundstop",                  28, 0, 0, 0, -1,  0, c1_gool_ins_soundstop_params },
+    { "seqplay",                    28, 0, 0, 0, -1,  1, c1_gool_ins_seqplay_params },
+    { "gamefunc10",                 28, 0, 0, 0, -1,  1, c1_gool_ins_gamefunc10_params },
+    { "setcolor",                   36, 0, 0, 0, -1,  3, c1_gool_ins_setcolor_params },
+    { "anim",                       39, 0, 0, 0, -1,  2, c1_gool_ins_anim_params },
+    { "nop",                      0x81, 0, 0, 0, -1,  0, c1_gool_ins_nop_params },
+    { "changestate",              0x82, 0, 0, 0, -1,  1, c1_gool_ins_state_params },
+    { "changestateif",            0x82, 0, 0, 0, -1,  2, c1_gool_ins_stateif_params },
+    { "changestateifn",           0x82, 0, 0, 0, -1,  2, c1_gool_ins_stateifn_params },
+    { "playanim",                 0x83, 1, 1, 1, -1,  4, c1_gool_ins_playanim_params },
+    { "playtext",                 0x83, 1, 1, 1, -1,  2, c1_gool_ins_playtext_params },
+    { "playframe",                0x84, 1, 1, 1, -1,  3, c1_gool_ins_playframe_params },
+    { "calcpath",                 0x85, 0, 0, 0, -1,  3, c1_gool_ins_calcpath_params },
+    { "getvert",                  0x85, 0, 0, 0, -1,  3, c1_gool_ins_getvert_params },
+    { "moveto2d",                 0x85, 0, 0, 0, -1,  2, c1_gool_ins_moveto2d_params },
+    { "setvel",                   0x85, 0, 0, 0, -1,  2, c1_gool_ins_setvel_params },
+    { "sendevent",                0x87, 1, 0, 0,  2,  3, c1_gool_ins_sendevent_params },
+    { "rejectevent",              0x88, 0, 0, 0, -1,  1, c1_gool_ins_eventstatus_params },
+    { "acceptevent",              0x89, 0, 0, 0, -1,  1, c1_gool_ins_eventstatus_params },
+    { "rejecteventandreturn",     0x88, 0, 0, 0, -1,  1, c1_gool_ins_eventstatusreturn_params },
+    { "accepteventandreturn",     0x89, 0, 0, 0, -1,  1, c1_gool_ins_eventstatusreturn_params },
+    { "rejecteventandchangestate",0x88, 0, 0, 0, -1,  2, c1_gool_ins_eventstatusstate_params },
+    { "accepteventandchangestate",0x89, 0, 0, 0, -1,  2, c1_gool_ins_eventstatusstate_params },
+    { "spawn",                    0x8A, 1, 0, 0, -1,  3, c1_gool_ins_spawn_params },
+    { "loadfile",                 0x8B, 0, 0, 0, -1,  1, c1_gool_ins_loadfile_params },
+    { "deloadfile",               0x8B, 0, 0, 0, -1,  1, c1_gool_ins_deloadfile_params },
+    { "loadtpage",                0x8B, 0, 0, 0, -1,  1, c1_gool_ins_loadtpage_params },
+    { "soundplay",                0x8C, 0, 0, 0, -1,  2, c1_gool_ins_playsound_params },
+    { "soundsetup",               0x8D, 0, 0, 0, -1,  2, c1_gool_ins_setupsound_params },
+    { "soundfadev",               0x8D, 0, 0, 0, -1,  2, c1_gool_ins_soundfadevol_params },
+    { "soundpitch",               0x8D, 0, 0, 0, -1,  2, c1_gool_ins_soundpitch_params },
+    { "soundcount",               0x8D, 0, 0, 0, -1,  2, c1_gool_ins_soundcount_params },
+    { "soundfadet",               0x8D, 0, 0, 0, -1,  2, c1_gool_ins_soundfadetime_params },
+    { "sounddelay",               0x8D, 0, 0, 0, -1,  2, c1_gool_ins_sounddelay_params },
+    { "sounddecay",               0x8D, 0, 0, 0, -1,  2, c1_gool_ins_sounddecay_params },
+    { "calclight",                0x8E, 0, 0, 0, -1,  0, c1_gool_ins_calclight_params },
+    { "broadcastevent",           0x8F, 1, 0, 0,  2,  3, c1_gool_ins_sendevent_params },
+    { "cascadeevent",             0x90, 1, 0, 0,  2,  3, c1_gool_ins_sendevent_params },
+    { "spawn2",                   0x91, 1, 0, 0, -1,  3, c1_gool_ins_spawn_params },
+    { NULL, 0, 0, 0, 0, 0, 0, NULL }
+};
+
+static const gool_ins_t
+c2_gool_ins[] = {
+     /* NAME                        ID  VA POP R   L   C              VALIDATE */
+    { "onstateexit",                24, 0, 0, 0, -1,  1, c1_gool_ins_onexit_params },
+    { "settrans",                   24, 0, 0, 0, -1,  1, c1_gool_ins_settrans_params },
+    { "savecheckpoint",             28, 0, 0, 0, -1,  0, c1_gool_ins_savecheckpoint_params },
+    { "loadcheckpoint",             28, 0, 0, 0, -1,  0, c1_gool_ins_loadcheckpoint_params },
+    { "setcolor",                   36, 0, 0, 0, -1,  3, c1_gool_ins_setcolor_params },
+    { "anim",                       39, 0, 0, 0, -1,  2, c1_gool_ins_anim_params },
+    { "nop",                        47, 0, 0, 0, -1,  0, c1_gool_ins_nop_params },
+    { "changestate",                53, 0, 0, 0, -1,  1, c1_gool_ins_state_params },
+    { "changestateif",              54, 0, 0, 0, -1,  2, c1_gool_ins_stateif_params },
+    { "changestateifn",             55, 0, 0, 0, -1,  2, c1_gool_ins_stateifn_params },
+    { "playanim",                   56, 1, 1, 1, -1,  4, c1_gool_ins_playanim_params },
+    { "playtext",                   56, 1, 1, 1, -1,  2, c1_gool_ins_playtext_params },
+    { "playframe",                  57, 1, 1, 1, -1,  3, c1_gool_ins_playframe_params },
+    { "sendevent",                  60, 1, 0, 0,  2,  3, c1_gool_ins_sendevent_params },
+    { "rejectevent",                61, 0, 0, 0, -1,  1, c1_gool_ins_eventstatus_params },
+    { "acceptevent",                62, 0, 0, 0, -1,  1, c1_gool_ins_eventstatus_params },
+    { "rejecteventandreturn",       61, 0, 0, 0, -1,  1, c1_gool_ins_eventstatusreturn_params },
+    { "accepteventandreturn",       62, 0, 0, 0, -1,  1, c1_gool_ins_eventstatusreturn_params },
+    { "rejecteventandchangestate",  61, 0, 0, 0, -1,  2, c1_gool_ins_eventstatusstate_params },
+    { "accepteventandchangestate",  62, 0, 0, 0, -1,  2, c1_gool_ins_eventstatusstate_params },
+    { "spawn",                      63, 1, 0, 0, -1,  3, c1_gool_ins_spawn_params },
+    { "loadfile",                   64, 0, 0, 0, -1,  1, c1_gool_ins_loadfile_params },
+    { "deloadfile",                 64, 0, 0, 0, -1,  1, c1_gool_ins_deloadfile_params },
+    { "loadtpage",                  64, 0, 0, 0, -1,  1, c1_gool_ins_loadtpage_params },
+    { "soundplay",                  65, 0, 0, 0, -1,  2, c1_gool_ins_playsound_params },
+    { "soundsetup",                 66, 0, 0, 0, -1,  2, c1_gool_ins_setupsound_params },
+    { "soundfadev",                 66, 0, 0, 0, -1,  2, c1_gool_ins_soundfadevol_params },
+    { "soundpitch",                 66, 0, 0, 0, -1,  2, c1_gool_ins_soundpitch_params },
+    { "soundcount",                 66, 0, 0, 0, -1,  2, c1_gool_ins_soundcount_params },
+    { "soundfadet",                 66, 0, 0, 0, -1,  2, c1_gool_ins_soundfadetime_params },
+    { "sounddelay",                 66, 0, 0, 0, -1,  2, c1_gool_ins_sounddelay_params },
+    { "sounddecay",                 66, 0, 0, 0, -1,  2, c1_gool_ins_sounddecay_params },
+    { "broadcastevent",             68, 1, 0, 0,  2,  3, c1_gool_ins_sendevent_params },
+    { "cascadeevent",               69, 1, 0, 0,  2,  3, c1_gool_ins_sendevent_params },
+    { "spawn2",                     70, 1, 0, 0, -1,  3, c1_gool_ins_spawn_params },
+    { NULL, 0, 0, 0, 0, 0, 0, NULL }
 };
 
 static const gool_ins_t*
@@ -1105,8 +1146,19 @@ gool_ins_get_by_name(
     char* name)
 {
     const gool_ins_t* ret = NULL;
+    const gool_ins_t* table = NULL;
 
-    if (version == 1 && !ret) ret = gool_ins_get_by_name_from_table(c1_gool_ins, name);
+    switch (version)
+    {
+    case 2:
+        table = c2_gool_ins;
+        break;
+    case 1:
+        table = c1_gool_ins;
+        break;
+    }
+
+    ret = gool_ins_get_by_name_from_table(table, name);
 
     return ret;
 }
@@ -1131,8 +1183,19 @@ gool_ins_get_by_id(
     uint8_t id)
 {
     const gool_ins_t* ret = NULL;
+    const gool_ins_t* table = NULL;
 
-    if (version == 1 && !ret) ret = gool_ins_get_by_id_from_table(c1_gool_ins, id);
+    switch (version)
+    {
+    case 2:
+        table = c2_gool_ins;
+        break;
+    case 1:
+        table = c1_gool_ins;
+        break;
+    }
+
+    ret = gool_ins_get_by_id_from_table(table, id);
 
     return ret;
 }
