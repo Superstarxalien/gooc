@@ -1150,12 +1150,8 @@ gool_ins_get_by_name(
 
     switch (version)
     {
-    case 2:
-        table = c2_gool_ins;
-        break;
-    case 1:
-        table = c1_gool_ins;
-        break;
+    case 2: table = c2_gool_ins; break;
+    case 1: table = c1_gool_ins; break;
     }
 
     ret = gool_ins_get_by_name_from_table(table, name);
@@ -1187,12 +1183,8 @@ gool_ins_get_by_id(
 
     switch (version)
     {
-    case 2:
-        table = c2_gool_ins;
-        break;
-    case 1:
-        table = c1_gool_ins;
-        break;
+    case 2: table = c2_gool_ins; break;
+    case 1: table = c1_gool_ins; break;
     }
 
     ret = gool_ins_get_by_id_from_table(table, id);
