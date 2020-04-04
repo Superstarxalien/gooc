@@ -1117,13 +1117,11 @@ c2_compile(
         }
     }
 
-    if (!file_write(out, &entry_header, sizeof(entry_header_t) + 7 * sizeof(uint32_t)))
-        return 0;
+    if (!file_write(out, &entry_header, sizeof(entry_header_t) + 7 * sizeof(uint32_t))) return 0;
 
     entry_header.offsets[0] = file_tell(out);
 
-    if (!file_write(out, &header, sizeof(gool_header_t)))
-        return 0;
+    if (!file_write(out, &header, sizeof(gool_header_t))) return 0;
 
     entry_header.offsets[1] = file_tell(out);
 
@@ -1135,14 +1133,12 @@ c2_compile(
             continue;
         sub->instr_data->was_written = 1;
 
-        if (!file_write(out, &sub->instr_data->data, sizeof(uint32_t) * sub->offset))
-            return 0;
+        if (!file_write(out, &sub->instr_data->data, sizeof(uint32_t) * sub->offset)) return 0;
     }
 
     entry_header.offsets[2] = file_tell(out);
 
-    if (!file_write(out, ecl->consts, sizeof(int) * ecl->const_count))
-        return 0;
+    if (!file_write(out, ecl->consts, sizeof(int) * ecl->const_count)) return 0;
 
     entry_header.offsets[3] = file_tell(out);
 
@@ -1153,11 +1149,9 @@ c2_compile(
         while (header.interrupt_count <= interrupt->event->offset) {
             ++header.interrupt_count;
             uint16_t state_id = 255;
-            if (!file_write(out, &state_id, sizeof(uint16_t)))
-                return 0;
+            if (!file_write(out, &state_id, sizeof(uint16_t))) return 0;
         }
-        if (!file_seek(out, pos + interrupt->event->offset * 2))
-            return 0;
+        if (!file_seek(out, pos + interrupt->event->offset * 2)) return 0;
         uint16_t interrupt_val;
         if (interrupt->type == INTERRUPT_STATE) {
             state = c1_find_state(ecl, interrupt->lambda_name);
@@ -1177,30 +1171,25 @@ c2_compile(
             sub = th10_find_sub(ecl, interrupt->lambda_name);
             interrupt_val = 0x8000 | sub->start_offset;
         }
-        if (!file_write(out, &interrupt_val, sizeof(uint16_t)))
-            return 0;
-        if (!file_seek(out, pos + header.interrupt_count * 2))
-            return 0;
+        if (!file_write(out, &interrupt_val, sizeof(uint16_t))) return 0;
+        if (!file_seek(out, pos + header.interrupt_count * 2)) return 0;
     }
 
-    thecl_spawn_t* spawn;
+    const thecl_spawn_t* spawn;
     list_for_each(&ecl->spawns, spawn) {
         state = c1_find_state(ecl, spawn->state_name);
         uint16_t state_id = 255;
         if (state == NULL) {
-            if (!file_write(out, &state_id, sizeof(uint16_t)))
-                return 0;
+            if (!file_write(out, &state_id, sizeof(uint16_t))) return 0;
         }
         else {
-            if (!file_write(out, &state->index, sizeof(uint16_t)))
-                return 0;
+            if (!file_write(out, &state->index, sizeof(uint16_t))) return 0;
         }
     }
     pos = file_tell(out) % 4;
     if (pos != 0) {
         uint32_t a = 0;
-        if (!file_write(out, &a, 4 - pos))
-            return 0;
+        if (!file_write(out, &a, 4 - pos)) return 0;
     }
 
     entry_header.offsets[4] = file_tell(out);
@@ -1219,34 +1208,27 @@ c2_compile(
             state->trans == NULL ? 0x3FFFU : state->trans->start_offset,
             state->code == NULL ? 0x3FFFU : state->code->start_offset };
 
-        if (!file_write(out, &gstate, sizeof(gstate)))
-            return 0;
+        if (!file_write(out, &gstate, sizeof(gstate))) return 0;
     }
 
     entry_header.offsets[5] = file_tell(out);
 
     list_for_each(&ecl->anims, anim) {
-        if (!file_write(out, anim->anim, anim->size))
-            return 0;
+        if (!file_write(out, anim->anim, anim->size)) return 0;
         pos = file_tell(out) % 4;
         if (pos != 0) {
             uint32_t a = 0;
-            if (!file_write(out, &a, 4 - pos))
-                return 0;
+            if (!file_write(out, &a, 4 - pos)) return 0;
         }
     }
 
     entry_header.offsets[6] = file_tell(out);
 
-    if (!file_seek(out, entry_header.offsets[0]))
-        return 0;
-    if (!file_write(out, &header, sizeof(gool_header_t)))
-        return 0;
+    if (!file_seek(out, entry_header.offsets[0])) return 0;
+    if (!file_write(out, &header, sizeof(gool_header_t))) return 0;
 
-    if (!file_seek(out, 0))
-        return 0;
-    if (!file_write(out, &entry_header, sizeof(entry_header_t) + 7 * sizeof(uint32_t)))
-        return 0;
+    if (!file_seek(out, 0)) return 0;
+    if (!file_write(out, &entry_header, sizeof(entry_header_t) + 7 * sizeof(uint32_t))) return 0;
 
     if (parser->ecl_cnt && !g_module_fmt) {
         fprintf(stderr, "%s: external module name format not specified\n", argv0);
@@ -1311,13 +1293,11 @@ c2_compile(
                 }
             }
 
-            if (!file_write(out, &entry_header, sizeof(entry_header_t) + 4 * sizeof(uint32_t)))
-                return 0;
+            if (!file_write(out, &entry_header, sizeof(entry_header_t) + 4 * sizeof(uint32_t))) return 0;
 
             entry_header.offsets[0] = file_tell(out);
 
-            if (!file_write(out, &header, sizeof(gool_header_t)))
-                return 0;
+            if (!file_write(out, &header, sizeof(gool_header_t))) return 0;
 
             entry_header.offsets[1] = file_tell(out);
 
@@ -1329,21 +1309,17 @@ c2_compile(
                     continue;
                 sub->instr_data->was_written = 1;
 
-                if (!file_write(out, &sub->instr_data->data, sizeof(uint32_t) * sub->offset))
-                    return 0;
+                if (!file_write(out, &sub->instr_data->data, sizeof(uint32_t) * sub->offset)) return 0;
             }
 
             entry_header.offsets[2] = file_tell(out);
 
-            if (!file_write(out, ecl->consts, sizeof(int) * ecl->const_count))
-                return 0;
+            if (!file_write(out, ecl->consts, sizeof(int) * ecl->const_count)) return 0;
 
             entry_header.offsets[3] = file_tell(out);
 
-            if (!file_seek(out, 0))
-                return 0;
-            if (!file_write(out, &entry_header, sizeof(entry_header_t) + 4 * sizeof(uint32_t)))
-                return 0;
+            if (!file_seek(out, 0)) return 0;
+            if (!file_write(out, &entry_header, sizeof(entry_header_t) + 4 * sizeof(uint32_t))) return 0;
             
             fclose(out);
         }
