@@ -2161,16 +2161,16 @@ static void instr_create_inline_call(
      * gets written to, or the passed parameter is an expression.
      * We will use a param_replace array to replace all argument variable references from the code of copied inline sub. */
     thecl_param_t** param_replace = calloc(sub->arg_count, sizeof(thecl_param_t*));
-    thecl_variable_t* var;
+    thecl_variable_t* arg;
     i = 0;
 
     list_for_each(params, param) { /* It has alredy been verified that param amount is correct. */
-        var = sub->args[i];
+        arg = sub->args[i];
 
-        if (param->value.val.S >= 0 && (var->is_written || param->is_expression_param || (param->stack && param->object_link == -1))) {
+        if (param->value.val.S >= 0 && (arg->is_written || param->is_expression_param || (param->stack && param->object_link == -1))) {
             /* Non-static param value or the param is written to, need to create var. */
             strcpy(buf, name);
-            strcat(buf, var->name);
+            strcat(buf, arg->name);
             thecl_param_t* new_param = param_new(param->type);
             new_param->stack = 1;
 
@@ -2211,7 +2211,6 @@ static void instr_create_inline_call(
 
     /* And finally, copy the instructions. */
 
-    uint32_t offset_diff = 0;
     thecl_instr_t* instr;
     list_for_each(&sub->instrs, instr) {
         thecl_instr_t* new_instr = instr_copy(instr);
@@ -2761,7 +2760,7 @@ static void
 labels_adjust(
     list_t* labels,
     uint32_t min_offset,
-    uint32_t adjust
+    int32_t adjust
 ) {
     thecl_label_t* label;
     list_for_each(labels, label) {

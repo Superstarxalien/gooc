@@ -124,8 +124,9 @@ thecl_free(
         free(sub->name);
 
         thecl_instr_t* instr;
-        list_for_each(&sub->instrs, instr)
+        list_for_each(&sub->instrs, instr) {
             thecl_instr_free(instr);
+        }
         list_free_nodes(&sub->instrs);
 
         for (size_t v = 0; v < sub->var_count; ++v)
@@ -133,8 +134,9 @@ thecl_free(
         free(sub->vars);
 
         thecl_label_t* label;
-        list_for_each(&sub->labels, label)
+        list_for_each(&sub->labels, label) {
             free(label);
+        }
         list_free_nodes(&sub->labels);
 
         if (sub->instr_data) {
