@@ -232,13 +232,6 @@ vol\([0-9]+\.[0-9]+\) {
     yylval.integer = 1;
     return INTEGER;
 }
-"s" |
-"sec" |
-"second" {
-    /* framerate shortcut */
-    yylval.integer = g_rate;
-    return INTEGER;
-}
 [a-zA-Z_][a-zA-Z0-9_]* {
     yylval.string = strdup(yytext);
     if (global_get(g_parser_state->version, yytext))
