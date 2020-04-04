@@ -41,7 +41,7 @@ extern const char* gool_ename_charmap;
 extern const int gool_null_eid;
 extern const char* gool_null_ename;
 
-extern int sine_table[];
+extern short sine_table[];
 int sin_psx(
     int r);
 

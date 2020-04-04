@@ -272,6 +272,7 @@ int yydebug = 0;
 %token RSHIFT ">>"
 %token TEST "\\"
 %token ADDRESSOF
+%token ARRL "array load"
 %token ABS "abs"
 %token SEEK "seek"
 %token DEGSEEK "degseek"
@@ -704,29 +705,29 @@ Font_Char:
             if (y < 0 || x < 0) {
                 yyerror(state, "syntax error, invalid character texture parameters");
             }
-            character->r = $2 >> 0 & 0xFF;
-            character->g = $2 >> 8 & 0xFF;
-            character->b = $2 >> 16 & 0xFF;
-            character->primtype = 11;
-            character->unk1 = 0;
-            character->unk2 = 0;
-            character->unused1 = 0;
-            character->unused2 = 0;
-            character->unk3 = 0;
-            character->segment = x / 256;
+            character->tex.r = $2 >> 0 & 0xFF;
+            character->tex.g = $2 >> 8 & 0xFF;
+            character->tex.b = $2 >> 16 & 0xFF;
+            character->tex.primtype = 11;
+            character->tex.unk1 = 0;
+            character->tex.unk2 = 0;
+            character->tex.unused1 = 0;
+            character->tex.unused2 = 0;
+            character->tex.unk3 = 0;
+            character->tex.segment = x / 256;
             x &= 0xFF;
-            character->color = $3;
-            character->blend = $4;
-            character->cx = $5;
-            character->cy = $6;
-            character->u1 = x;
-            character->v1 = y;
-            character->u2 = x+w;
-            character->v2 = y;
-            character->u3 = x;
-            character->v3 = y+h;
-            character->u4 = x+w;
-            character->v4 = y+h;
+            character->tex.color = $3;
+            character->tex.blend = $4;
+            character->tex.cx = $5;
+            character->tex.cy = $6;
+            character->tex.u1 = x;
+            character->tex.v1 = y;
+            character->tex.u2 = x+w;
+            character->tex.v2 = y;
+            character->tex.u3 = x;
+            character->tex.v3 = y+h;
+            character->tex.u4 = x+w;
+            character->tex.v4 = y+h;
             character->w = $11;
             character->h = $12;
         }
@@ -1660,8 +1661,8 @@ ExpressionSubset:
     | "dirbuffer" "(" Expression "," Expression ")"               { $$ = EXPR_5(PAD, expression_val_new(state, 0), expression_val_new(state, 0), expression_val_new(state, 3), $3, $5); }
     | "spd" "(" Expression "," Expression ")"                     { $$ = EXPR_2(SPD, $3, $5); }
     | "sin" "(" Expression "," Expression ")"                     { $$ = EXPR_2(PSIN, $3, $5); }
-    | "sin" "(" Expression ")"                                    { $$ = EXPR_2(SIN, $3); }
-    | "cos" "(" Expression ")"                                    { $$ = EXPR_2(COS, $3); }
+    | "sin" "(" Expression ")"                                    { $$ = EXPR_1(SIN, $3); }
+    | "cos" "(" Expression ")"                                    { $$ = EXPR_1(COS, $3); }
     | Address "[" Expression "]"                                  { if (state->version == 1) $$ = EXPR_4(MISC, expression_load_new(state, $1), expression_val_new(state, 5), $3, expression_val_new(state, 0));
                                                                     else if (state->version == 2) $$ = EXPR_2(ARRL, expression_load_new(state, $1), $3);
                                                                   }
