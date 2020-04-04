@@ -1,10 +1,10 @@
 cmake_minimum_required(VERSION 3.0)
 set(CMP0048 NEW)
 
-project("Touhou Toolkit"
+project("GOOC Compiler (thtk fork)"
   VERSION 12)
-set(PROJECT_URL "https://github.com/thpatch/thtk")
-set(PROJECT_BUGREPORT "https://github.com/thpatch/thtk/issues")
+set(PROJECT_URL "https://github.com/mandude/thtk")
+set(PROJECT_BUGREPORT "https://github.com/mandude/thtk/issues")
 
 include(CheckCSourceRuns)
 include(CheckTypeSize)
