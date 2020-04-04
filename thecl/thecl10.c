@@ -838,6 +838,8 @@ c1_create_header(
     list_for_each(&gool->spawns, spawn) {
         fprintf(out, "expr %s_%s = %u\n", gool_name, spawn->name, (int)spawn->offset);
     }
+
+    return 1;
 }
 
 static int
