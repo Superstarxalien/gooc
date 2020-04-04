@@ -1,0 +1,112 @@
+<!-- Creator     : groff version 1.22.4 -->
+<!-- CreationDate: Sat Apr 04 19:16:41 2020 -->
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+"http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta name="generator" content="groff -Thtml, see www.gnu.org">
+<meta http-equiv="Content-Type" content="text/html; charset=US-ASCII">
+<meta name="Content-Style" content="text/css">
+<style type="text/css">
+       p       { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       pre     { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       table   { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       h1      { text-align: center }
+</style>
+<title></title>
+</head>
+<body>
+
+<hr>
+
+
+<p>GOOC(1) BSD General Commands Manual GOOC(1)</p>
+
+<p style="margin-top: 1em"><b>NAME</b></p>
+
+<p style="margin-left:6%;"><b>gooc</b> &mdash; Crash
+Bandicoot game-oriented object C script compiler tool</p>
+
+<p style="margin-top: 1em"><b>SYNOPSIS</b></p>
+
+<p style="margin-left:13%;"><b>gooc</b> [<b>&minus;V</b>]
+[<b>&minus;c&nbsp;</b><i>version</i>]
+[<b>&minus;r&nbsp;</b><i>region</i>]
+[<b>&minus;h&nbsp;</b><i>output</i>]
+[<b>&minus;e&nbsp;</b><i>format</i>] <i>...</i>
+[<i>input&nbsp;</i>[<i>output</i>]]</p>
+
+<p style="margin-top: 1em"><b>DESCRIPTION</b></p>
+
+<p style="margin-left:6%;">The <b>gooc</b> utility compiles
+gooc scripts. These options are accepted:</p>
+
+<p style="margin-top: 1em"><b>gooc &minus;c</b>
+<i>version</i> [ <b><br>
+&minus;r</b> <i>region</i>] [ <b><br>
+&minus;h</b> <i>output</i>]<i>...</i> [<i>input</i>
+[<i>output</i>]]</p>
+
+<p style="margin-left:17%;">Compiles an enemy script.</p>
+
+<p style="margin-top: 1em"><b>&minus;V</b></p>
+
+<p style="margin-left:17%; margin-top: 1em">Displays the
+program version and exits.</p>
+
+<p style="margin-top: 1em"><b>&minus;c</b>
+<i>version</i></p>
+
+<p style="margin-left:17%;">Compiles a script.</p>
+
+<p style="margin-top: 1em"><b>&minus;r</b>
+<i>region</i></p>
+
+<p style="margin-left:17%;">Sets the region mode, used for
+time based units. &quot;ntsc-u&quot;, &quot;ntsc-j&quot; and
+&quot;pal&quot; are acceptable. Defaults to
+&quot;ntsc-u&quot;.</p>
+
+<p style="margin-top: 1em"><b>&minus;h</b>
+<i>output</i></p>
+
+<p style="margin-left:17%;">Set the output path for a
+&quot;header&quot; file, which can be included in gooc
+scripts, and contains the resulting values of the GOOL
+object ID and its spawns.</p>
+
+<p style="margin-top: 1em"><b>&minus;e</b>
+<i>format</i></p>
+
+<p style="margin-left:17%;">Set the output path
+<i>format</i> for external GOOL modules. For example. using
+format &lsquo;%s.gool&rsquo; and a module named
+&lsquo;TestC&rsquo; will result in an output directory of
+&lsquo;TestC.gool&rsquo; for this particular module.</p>
+
+<p style="margin-left:6%; margin-top: 1em">Replace the
+<i>version</i> option by the gool script format version
+requested. Running the program without a command will list
+the supported formats.</p>
+
+<p style="margin-top: 1em"><b>EXIT STATUS</b></p>
+
+<p style="margin-left:6%;">The <b>gooc</b> utility exits
+with 0 on success, 1 on error.</p>
+
+<p style="margin-top: 1em"><b>SEE ALSO</b></p>
+
+<p style="margin-left:6%;"><i>Project homepage</i>:
+<b>https://github.com/ManDude/thtk/tree/gooc</b></p>
+
+<p style="margin-top: 1em"><b>SECURITY
+CONSIDERATIONS</b></p>
+
+<p style="margin-left:6%;">Invalid data may not be properly
+handled. Do not operate on untrusted files.</p>
+
+<p style="margin-left:6%; margin-top: 1em">thtk
+April&nbsp;4, 2020 thtk</p>
+<hr>
+</body>
+</html>
