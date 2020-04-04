@@ -49,13 +49,13 @@ int* g_reg_blocks = NULL;
 char* g_module_fmt = NULL;
 
 #define PI 3.1415926535897932384626433832795028841971693993751058209749445923078164062
-int sine_table[1025];
+short sine_table[1025];
 static void
 make_sin_table(
     void)
 {
     for (int i = 0; i <= 1024; ++i) {
-        sine_table[i] = lround(sin(i / 1024.0 * (PI / 2.0)) * 0x1000);
+        sine_table[i] = (short)lround(sin(i / 1024.0 * (PI / 2.0)) * 0x1000);
     }
 }
 

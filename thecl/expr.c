@@ -33,20 +33,13 @@
 #include "expr.h"
 
 static const expr_t
-c1_expressions[] = {
+global_expressions[] = {
     /* The program checks against the number of params, as well as the
      * requested stack depth, and does the replacements. */
     /* p0 is the first param, p1 the second ... */
     /* s0 is the previous instruction, s1 the one previous to s0 ... */
 
     /*SYM        ID     P  A SP2 O  U */
-    { CALL,    0x86, NULL, 0, 0, 0, 0 }, /* return */
-    { RETURN,  0x82, NULL, 0, 0, 0, 0 }, /* return */
-
-    { GOTO,    0x82,  "o", 0, 0, 0, 0 }, /* goto p0 */
-    { UNLESS,  0x82,  "o", 1, 0, 0, 0 }, /* unless (s0) goto p0 */
-    { IF,      0x82,  "o", 1, 0, 0, 0 }, /* if (s0) goto p0 */
-
     { LOAD,      22,  "S", 0, 0, 0, 0 }, /* p0 */
     { GLOAD,     31,  "S", 0, 0, 0, 0 }, /* p0 */
     { PLOAD,     38,  "S", 0, 0, 0, 0 }, /* [p0] */
@@ -80,12 +73,50 @@ c1_expressions[] = {
     { PAD,       26, NULL, 5, 0, 0, 0 }, /* pad(s0, s1, s2, s3, s4) */
     { SPD,       27, NULL, 2, 0, 0, 0 }, /* spd(s0, s1) */
     { MISC,      28, NULL, 4, 0, 0, 0 }, /* misc(s0, s1, s2, s3) */
-    { SIN,       29, NULL, 2, 0, 1, 0 }, /* sin(s0, s1) */
+    { PSIN,      29, NULL, 2, 0, 1, 0 }, /* sin(s0, s1) */
     { TIME,      30, NULL, 2, 0, 0, 0 }, /* time(s0, s1) */
     { DEGDIST,   33, NULL, 2, 0, 0, 0 }, /* degdist(s0, s1) */
     { SEEK,      34, NULL, 3, 1, 0, 0 }, /* seek(s0, s1, s2) */
     { GETCOLOR,  35, NULL, 2, 0, 0, 0 }, /* getcolor(s0, s1) */
     { DEGSEEK,   37, NULL, 3, 1, 0, 0 }, /* degseek(s0, s1, s2) */
+    { 0,          0, NULL, 0, 0, 0, 0 }
+};
+
+static const expr_t
+c1_expressions[] = {
+    /* The program checks against the number of params, as well as the
+     * requested stack depth, and does the replacements. */
+    /* p0 is the first param, p1 the second ... */
+    /* s0 is the previous instruction, s1 the one previous to s0 ... */
+
+    /*SYM        ID     P  A SP2 O  U */
+    { CALL,    0x86, NULL, 0, 0, 0, 0 }, /* return */
+    { RETURN,  0x82, NULL, 0, 0, 0, 0 }, /* return */
+
+    { GOTO,    0x82,  "o", 0, 0, 0, 0 }, /* goto p0 */
+    { UNLESS,  0x82,  "o", 1, 0, 0, 0 }, /* unless (s0) goto p0 */
+    { IF,      0x82,  "o", 1, 0, 0, 0 }, /* if (s0) goto p0 */
+    { 0,          0, NULL, 0, 0, 0, 0 }
+};
+
+static const expr_t
+c2_expressions[] = {
+    /* The program checks against the number of params, as well as the
+     * requested stack depth, and does the replacements. */
+    /* p0 is the first param, p1 the second ... */
+    /* s0 is the previous instruction, s1 the one previous to s0 ... */
+
+    /*SYM        ID     P  A SP2 O  U */
+    { CALL,      59, NULL, 0, 0, 0, 0 }, /* return */
+    { RETURN,    49, NULL, 0, 0, 0, 0 }, /* return */
+
+    { GOTO,      50,  "o", 0, 0, 0, 0 }, /* goto p0 */
+    { IF,        51,  "o", 1, 0, 0, 0 }, /* if (s0) goto p0 */
+    { UNLESS,    52,  "o", 1, 0, 0, 0 }, /* unless (s0) goto p0 */
+
+    { ARRL,      42, NULL, 2, 0, 0, 0 }, /* s0[s1] */
+    { SIN,       43, NULL, 2, 0, 1, 1 }, /* sin(s0) */
+    { COS,       44, NULL, 2, 0, 1, 1 }, /* cos(s0) */
     { 0,          0, NULL, 0, 0, 0, 0 }
 };
 
@@ -110,7 +141,9 @@ expr_get_by_symbol(
 {
     const expr_t* ret = NULL;
 
+    ret = expr_get_by_symbol_from_table(global_expressions, symbol);
     if (!ret && version == 1) ret = expr_get_by_symbol_from_table(c1_expressions, symbol);
+    if (!ret && version == 2) ret = expr_get_by_symbol_from_table(c2_expressions, symbol);
 
     return ret;
 }
@@ -136,7 +169,9 @@ expr_get_by_id(
 {
     const expr_t* ret = NULL;
 
+    ret = expr_get_by_id_from_table(global_expressions, id);
     if (!ret && version == 1) ret = expr_get_by_id_from_table(c1_expressions, id);
+    if (!ret && version == 2) ret = expr_get_by_id_from_table(c2_expressions, id);
 
     return ret;
 }

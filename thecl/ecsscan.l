@@ -145,6 +145,7 @@
 "dirbuffer"        return DBUFFER;
 "spd"              return SPD;
 "sin"              return SIN;
+"cos"              return COS;
 "getval"                return GETVAL;
 "distance"              return DISTANCE;
 "atan2"                 return ATAN2;
@@ -308,9 +309,9 @@ vol\([0-9]+\.[0-9]+\) {
         return DIRECTIVE_SPRITE;
     else if (!strcmp(txt, "endif"))
         goto CHECK_ENDIF;
-    else if (!strcmp(txt, "fraganim"))
+    else if (!strcmp(txt, "fraganim") && g_parser_state->version == 1)
         return DIRECTIVE_FANIM;
-    else if (!strcmp(txt, "frag"))
+    else if (!strcmp(txt, "frag") && g_parser_state->version == 1)
         return DIRECTIVE_FRAG;
     yylval.string = strdup(yytext + 1);
     return DIRECTIVE;

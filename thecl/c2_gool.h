@@ -30,6 +30,7 @@
 #define C2_GOOL_H_
 
 #include <stdint.h>
+#include "c1_gool.h"
 #include "thecl.h"
 
 typedef struct {
@@ -40,6 +41,7 @@ typedef struct {
 } c2_anim_t;
 
 typedef struct {
+PACK_BEGIN
     uint8_t r;
     uint8_t g;
     uint8_t b;
@@ -57,12 +59,13 @@ typedef struct {
     uint16_t segment:2;
     uint16_t unused2:5;
     uint16_t color:2;
-    uint16_t unknown2:7;
+    uint16_t unk3:7;
     uint8_t u3;
     uint8_t v3;
     uint8_t u4;
     uint8_t v4;
-} c2_tex_t;
+PACK_END
+} PACK_ATTRIBUTE c2_tex_t;
 
 typedef struct {
     uint16_t type; /* 2 */
@@ -84,12 +87,6 @@ typedef struct {
     c2_char_t chars[];
 } c2_font_t;
 
-typedef struct {
-    uint16_t type; /* 4 */
-    uint16_t string_count;
-    uint32_t unknown;
-    uint32_t font;
-    char strings[];
-} c2_text_t;
+typedef c1_text_t c2_text_t;
 
 #endif

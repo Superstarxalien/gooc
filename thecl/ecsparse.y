@@ -45,6 +45,7 @@
 #include "value.h"
 #include "gool_ins.h"
 #include "c1_gool.h"
+#include "c2_gool.h"
 
 typedef struct {
     char* text;
@@ -159,6 +160,8 @@ static gool_anim_t* anim_get(parser_state_t* state, char* name);
 static size_t anim_get_offset(parser_state_t* state, char* name);
 /* Appends a new Crash 1 vertex animation to the animations list. */
 static void anim_create_anim_c1(parser_state_t* state, char* name, int frames, int eid);
+/* Appends a new Crash 2 vertex animation to the animations list. */
+static void anim_create_anim_c2(parser_state_t* state, char* name, int frames, int eid, int compressed);
 
 int yydebug = 0;
 %}
@@ -283,7 +286,9 @@ int yydebug = 0;
 %token DHOLD "dirhold"
 %token DBUFFER "dirbuffer"
 %token SPD "spd"
+%token PSIN
 %token SIN "sin"
+%token COS "cos"
 %token MISC "misc"
 %token GETVAL "getval"
 %token DISTANCE "distance"
@@ -417,7 +422,19 @@ Statement:
       }
     | DIRECTIVE IDENTIFIER ENTRY INTEGER {
         if (!strcmp($1, "anim")) {
-            anim_create_anim_c1(state, $2, $4, gool_to_eid($3));
+            if (state->version == 1) {
+                anim_create_anim_c1(state, $2, $4, gool_to_eid($3));
+            }
+        }
+        free($1);
+        free($2);
+        free($3);
+      }
+    | DIRECTIVE IDENTIFIER ENTRY INTEGER INTEGER {
+        if (!strcmp($1, "anim")) {
+            if (state->version == 2) {
+                anim_create_anim_c2(state, $2, $4, gool_to_eid($3), $5);
+            }
         }
         free($1);
         free($2);
@@ -469,14 +486,23 @@ Statement:
     | DIRECTIVE_FONT IDENTIFIER ENTRY {
         gool_anim_t* anim = malloc(sizeof(gool_anim_t));
         anim->name = strdup($2);
-        anim->size = sizeof(c1_font_t);
 
-        c1_font_t* font = malloc(sizeof(c1_font_t));
-        font->type = 3;
-        font->char_count = 0;
-        font->eid = gool_to_eid($3);
+        if (state->version == 1) {
+            c1_font_t* font = malloc(sizeof(c1_font_t));
+            font->type = 3;
+            font->char_count = 0;
+            font->eid = gool_to_eid($3);
+            anim->size = sizeof(c1_font_t);
+            anim->anim = font;
+        } else if (state->version == 2) {
+            c2_font_t* font = malloc(sizeof(c2_font_t));
+            font->type = 3;
+            font->char_count = 0;
+            font->eid = gool_to_eid($3);
+            anim->size = sizeof(c2_font_t);
+            anim->anim = font;
+        }
 
-        anim->anim = font;
         state->current_anim = anim;
 
         free($2);
@@ -489,14 +515,23 @@ Statement:
     | DIRECTIVE_SPRITE IDENTIFIER ENTRY {
         gool_anim_t* anim = malloc(sizeof(gool_anim_t));
         anim->name = strdup($2);
-        anim->size = sizeof(c1_sprite_t);
 
-        c1_sprite_t* sprite = malloc(sizeof(c1_sprite_t));
-        sprite->type = 2;
-        sprite->count = 0;
-        sprite->eid = gool_to_eid($3);
+        if (state->version == 1) {
+            anim->size = sizeof(c1_sprite_t);
+            c1_sprite_t* sprite = malloc(sizeof(c1_sprite_t));
+            sprite->type = 2;
+            sprite->count = 0;
+            sprite->eid = gool_to_eid($3);
+            anim->anim = sprite;
+        } else if (state->version == 2) {
+            anim->size = sizeof(c2_sprite_t);
+            c2_sprite_t* sprite = malloc(sizeof(c2_sprite_t));
+            sprite->type = 2;
+            sprite->count = 0;
+            sprite->eid = gool_to_eid($3);
+            anim->anim = sprite;
+        }
 
-        anim->anim = sprite;
         state->current_anim = anim;
 
         free($2);
@@ -609,43 +644,90 @@ Font_Chars:
 
 Font_Char:
     DIRECTIVE_CHAR INTEGER INTEGER INTEGER INTEGER INTEGER INTEGER INTEGER INTEGER INTEGER INTEGER INTEGER { /* jesus christ */
-        c1_font_t* font = state->current_anim->anim;
-        font = realloc(font, sizeof(c1_font_t) + sizeof(c1_char_t) * ++font->char_count);
-        state->current_anim->anim = font;
-        state->current_anim->size = sizeof(c1_font_t) + sizeof(c1_char_t) * font->char_count;
+        if (state->version == 1) {
+            c1_font_t* font = state->current_anim->anim;
+            font = realloc(font, sizeof(c1_font_t) + sizeof(c1_char_t) * ++font->char_count);
+            state->current_anim->anim = font;
+            state->current_anim->size = sizeof(c1_font_t) + sizeof(c1_char_t) * font->char_count;
 
-        c1_char_t* character = font->chars + font->char_count - 1;
-        if ($7 >= 128) {
-            yyerror(state, "syntax error, texture x offset is out of bounds");
+            c1_char_t* character = font->chars + font->char_count - 1;
+            if ($7 >= 128) {
+                yyerror(state, "syntax error, texture x offset is out of bounds");
+            }
+            int uv = 0;
+            if (($9 != 4 && $9 != 8 && $9 != 16 && $9 != 32 && $9 != 64) ||
+                ($10 != 4 && $10 != 8 && $10 != 16 && $10 != 32 && $10 != 64)) {
+                yyerror(state, "syntax error, invalid texture width/height");
+            }
+            if ($9 == 4) uv = 0;
+            if ($9 == 8) uv = 1;
+            if ($9 == 16) uv = 2;
+            if ($9 == 32) uv = 3;
+            if ($9 == 64) uv = 4;
+            if ($10 == 4) uv += 0;
+            if ($10 == 8) uv += 5;
+            if ($10 == 16) uv += 10;
+            if ($10 == 32) uv += 15;
+            if ($10 == 64) uv += 20;
+            character->tex1 = $2 & 0xFFFFFF; /* rgb */
+            character->tex1 |= ($5 & 0xF) << 24; /* clutx */
+            character->tex1 |= ($4 & 0x3) << 29; /* blend */
+            character->tex2 = $8 & 0x1F; /* yoff */
+            character->tex2 |= ($6 & 0x7F) << 6; /* cluty */
+            character->tex2 |= ($7 & 0x1F) << 13; /* xoff */
+            character->tex2 |= (($7 / 0x20) & 0x3) << 18; /* segment */
+            character->tex2 |= ($3 & 0x3) << 20; /* color */
+            character->tex2 |= (uv & 0x3FF) << 22; /* uv */
+            if (character->tex1 || character->tex2)
+                character->tex1 |= 0x80000000;
+            character->w = $11;
+            character->h = $12;
+        } else if (state->version == 2) {
+            c2_font_t* font = state->current_anim->anim;
+            font = realloc(font, sizeof(c2_font_t) + sizeof(c2_char_t) * ++font->char_count);
+            state->current_anim->anim = font;
+            state->current_anim->size = sizeof(c2_font_t) + sizeof(c2_char_t) * font->char_count;
+
+            c2_char_t* character = font->chars + font->char_count - 1;
+            int x = $7;
+            int y = $8;
+            int w = $9;
+            int h = $10;
+            if ((x & 0xff) + w > 256) {
+                yyerror(state, "syntax error, aligned character texture is too wide");
+            }
+            if (y + h > 128) {
+                yyerror(state, "syntax error, character texture is too tall");
+            }
+            if (y < 0 || x < 0) {
+                yyerror(state, "syntax error, invalid character texture parameters");
+            }
+            character->r = $2 >> 0 & 0xFF;
+            character->g = $2 >> 8 & 0xFF;
+            character->b = $2 >> 16 & 0xFF;
+            character->primtype = 11;
+            character->unk1 = 0;
+            character->unk2 = 0;
+            character->unused1 = 0;
+            character->unused2 = 0;
+            character->unk3 = 0;
+            character->segment = x / 256;
+            x &= 0xFF;
+            character->color = $3;
+            character->blend = $4;
+            character->cx = $5;
+            character->cy = $6;
+            character->u1 = x;
+            character->v1 = y;
+            character->u2 = x+w;
+            character->v2 = y;
+            character->u3 = x;
+            character->v3 = y+h;
+            character->u4 = x+w;
+            character->v4 = y+h;
+            character->w = $11;
+            character->h = $12;
         }
-        int uv = 0;
-        if (($9 != 4 && $9 != 8 && $9 != 16 && $9 != 32 && $9 != 64) ||
-            ($10 != 4 && $10 != 8 && $10 != 16 && $10 != 32 && $10 != 64)) {
-            yyerror(state, "syntax error, invalid texture width/height");
-        }
-        if ($9 == 4) uv = 0;
-        if ($9 == 8) uv = 1;
-        if ($9 == 16) uv = 2;
-        if ($9 == 32) uv = 3;
-        if ($9 == 64) uv = 4;
-        if ($10 == 4) uv += 0;
-        if ($10 == 8) uv += 5;
-        if ($10 == 16) uv += 10;
-        if ($10 == 32) uv += 15;
-        if ($10 == 64) uv += 20;
-        character->tex1 = $2 & 0xFFFFFF; /* rgb */
-        character->tex1 |= ($5 & 0xF) << 24; /* clutx */
-        character->tex1 |= ($4 & 0x3) << 29; /* blend */
-        character->tex2 = $8 & 0x1F; /* yoff */
-        character->tex2 |= ($6 & 0x7F) << 6; /* cluty */
-        character->tex2 |= ($7 & 0x1F) << 13; /* xoff */
-        character->tex2 |= (($7 / 0x20) & 0x3) << 18; /* segment */
-        character->tex2 |= ($3 & 0x3) << 20; /* color */
-        character->tex2 |= (uv & 0x3FF) << 22; /* uv */
-        if (character->tex1 || character->tex2)
-            character->tex1 |= 0x80000000;
-        character->w = $11;
-        character->h = $12;
     }
     ;
 
@@ -656,41 +738,86 @@ Sprite_Frames:
 
 Sprite_Frame:
     DIRECTIVE_TEXTURE INTEGER INTEGER INTEGER INTEGER INTEGER INTEGER INTEGER INTEGER INTEGER { /* rgb color blend cx cy x y w h */
-        c1_sprite_t* sprite = state->current_anim->anim;
-        sprite = realloc(sprite, sizeof(c1_sprite_t) + sizeof(c1_frame_t) * ++sprite->count);
-        state->current_anim->anim = sprite;
-        state->current_anim->size = sizeof(c1_sprite_t) + sizeof(c1_frame_t) * sprite->count;
+        if (state->version == 1) {
+            c1_sprite_t* sprite = state->current_anim->anim;
+            sprite = realloc(sprite, sizeof(c1_sprite_t) + sizeof(c1_frame_t) * ++sprite->count);
+            state->current_anim->anim = sprite;
+            state->current_anim->size = sizeof(c1_sprite_t) + sizeof(c1_frame_t) * sprite->count;
 
-        c1_frame_t* frame = sprite->frames + sprite->count - 1;
-        if ($7 >= 128) {
-            yyerror(state, "syntax error, texture x offset is out of bounds");
+            c1_frame_t* frame = sprite->frames + sprite->count - 1;
+            if ($7 >= 128) {
+                yyerror(state, "syntax error, texture x offset is out of bounds");
+            }
+            int uv = 0;
+            if (($9 != 4 && $9 != 8 && $9 != 16 && $9 != 32 && $9 != 64) ||
+                ($10 != 4 && $10 != 8 && $10 != 16 && $10 != 32 && $10 != 64)) {
+                yyerror(state, "syntax error, invalid texture width/height");
+            }
+            if ($9 == 4) uv = 0;
+            if ($9 == 8) uv = 1;
+            if ($9 == 16) uv = 2;
+            if ($9 == 32) uv = 3;
+            if ($9 == 64) uv = 4;
+            if ($10 == 4) uv += 0;
+            if ($10 == 8) uv += 5;
+            if ($10 == 16) uv += 10;
+            if ($10 == 32) uv += 15;
+            if ($10 == 64) uv += 20;
+            frame->tex1 = $2 & 0xFFFFFF; /* rgb */
+            frame->tex1 |= ($5 & 0xF) << 24; /* clutx */
+            frame->tex1 |= ($4 & 0x3) << 29; /* blend */
+            frame->tex2 = $8 & 0x1F; /* yoff */
+            frame->tex2 |= ($6 & 0x7F) << 6; /* cluty */
+            frame->tex2 |= ($7 & 0x1F) << 13; /* xoff */
+            frame->tex2 |= (($7 / 0x20) & 0x3) << 18; /* segment */
+            frame->tex2 |= ($3 & 0x3) << 20; /* color */
+            frame->tex2 |= (uv & 0x3FF) << 22; /* uv */
+            if (frame->tex1 || frame->tex2)
+                frame->tex1 |= 0x80000000;
+        } else if (state->version == 2) {
+            c2_sprite_t* sprite = state->current_anim->anim;
+            sprite = realloc(sprite, sizeof(c2_sprite_t) + sizeof(c2_tex_t) * ++sprite->count);
+            state->current_anim->anim = sprite;
+            state->current_anim->size = sizeof(c2_sprite_t) + sizeof(c2_tex_t) * sprite->count;
+
+            c2_tex_t* tex = sprite->frames + sprite->count - 1;
+            int x = $7;
+            int y = $8;
+            int w = $9;
+            int h = $10;
+            if ((x & 0xff) + w > 256) {
+                yyerror(state, "syntax error, aligned texture is too wide");
+            }
+            if (y + h > 128) {
+                yyerror(state, "syntax error, texture is too tall");
+            }
+            if (y < 0 || x < 0) {
+                yyerror(state, "syntax error, invalid texture parameters");
+            }
+            tex->r = $2 >> 0 & 0xFF;
+            tex->g = $2 >> 8 & 0xFF;
+            tex->b = $2 >> 16 & 0xFF;
+            tex->primtype = 11;
+            tex->unk1 = 0;
+            tex->unk2 = 0;
+            tex->unused1 = 0;
+            tex->unused2 = 0;
+            tex->unk3 = 0;
+            tex->segment = x / 256;
+            x &= 0xFF;
+            tex->color = $3;
+            tex->blend = $4;
+            tex->cx = $5;
+            tex->cy = $6;
+            tex->u1 = x;
+            tex->v1 = y;
+            tex->u2 = x+w;
+            tex->v2 = y;
+            tex->u3 = x;
+            tex->v3 = y+h;
+            tex->u4 = x+w;
+            tex->v4 = y+h;
         }
-        int uv = 0;
-        if (($9 != 4 && $9 != 8 && $9 != 16 && $9 != 32 && $9 != 64) ||
-            ($10 != 4 && $10 != 8 && $10 != 16 && $10 != 32 && $10 != 64)) {
-            yyerror(state, "syntax error, invalid texture width/height");
-        }
-        if ($9 == 4) uv = 0;
-        if ($9 == 8) uv = 1;
-        if ($9 == 16) uv = 2;
-        if ($9 == 32) uv = 3;
-        if ($9 == 64) uv = 4;
-        if ($10 == 4) uv += 0;
-        if ($10 == 8) uv += 5;
-        if ($10 == 16) uv += 10;
-        if ($10 == 32) uv += 15;
-        if ($10 == 64) uv += 20;
-        frame->tex1 = $2 & 0xFFFFFF; /* rgb */
-        frame->tex1 |= ($5 & 0xF) << 24; /* clutx */
-        frame->tex1 |= ($4 & 0x3) << 29; /* blend */
-        frame->tex2 = $8 & 0x1F; /* yoff */
-        frame->tex2 |= ($6 & 0x7F) << 6; /* cluty */
-        frame->tex2 |= ($7 & 0x1F) << 13; /* xoff */
-        frame->tex2 |= (($7 / 0x20) & 0x3) << 18; /* segment */
-        frame->tex2 |= ($3 & 0x3) << 20; /* color */
-        frame->tex2 |= (uv & 0x3FF) << 22; /* uv */
-        if (frame->tex1 || frame->tex2)
-            frame->tex1 |= 0x80000000;
     }
     ;
 
@@ -1530,22 +1657,26 @@ ExpressionSubset:
     | "dirhold" "(" Expression "," Expression ")"                 { $$ = EXPR_5(PAD, expression_val_new(state, 0), expression_val_new(state, 0), expression_val_new(state, 2), $3, $5); }
     | "dirbuffer" "(" Expression "," Expression ")"               { $$ = EXPR_5(PAD, expression_val_new(state, 0), expression_val_new(state, 0), expression_val_new(state, 3), $3, $5); }
     | "spd" "(" Expression "," Expression ")"                     { $$ = EXPR_2(SPD, $3, $5); }
-    | "sin" "(" Expression "," Expression ")"                     { $$ = EXPR_2(SIN, $3, $5); }
-    | Address "[" Expression "]"                                  { $$ = EXPR_4(MISC, expression_load_new(state, $1), expression_val_new(state, 5), $3, expression_val_new(state, 0)); }
-    | "getval" "(" Expression "," Expression ")"                  { $$ = EXPR_4(MISC, $3, expression_val_new(state, 5), $5, expression_val_new(state, 0)); }
+    | "sin" "(" Expression "," Expression ")"                     { $$ = EXPR_2(PSIN, $3, $5); }
+    | "sin" "(" Expression ")"                                    { $$ = EXPR_2(SIN, $3); }
+    | "cos" "(" Expression ")"                                    { $$ = EXPR_2(COS, $3); }
+    | Address "[" Expression "]"                                  { if (state->version == 1) $$ = EXPR_4(MISC, expression_load_new(state, $1), expression_val_new(state, 5), $3, expression_val_new(state, 0));
+                                                                    else if (state->version == 2) $$ = EXPR_2(ARRL, expression_load_new(state, $1), $3);
+                                                                  }
+    | "getval" "(" Expression "," Expression ")"                  { if (state->version == 1) $$ = EXPR_4(MISC, $3, expression_val_new(state, 5), $5, expression_val_new(state, 0)); }
     | "distance" "(" Expression "," Expression ")"                { $$ = EXPR_4(MISC, expression_load_new(state, param_null_new()), $3, $5, expression_val_new(state, 1)); }
-    | "atan2" "(" Expression "," Expression ")"                   { $$ = EXPR_4(MISC, $5, $3, expression_val_new(state, 0), expression_val_new(state, 2)); }
-    | "getfield" "(" Expression "," Expression ")"                { $$ = EXPR_4(MISC, $5, $3, expression_val_new(state, 0), expression_val_new(state, 3)); }
+    | "atan2" "(" Expression "," Expression ")"                   { if (state->version == 1) $$ = EXPR_4(MISC, $5, $3, expression_val_new(state, 0), expression_val_new(state, 2)); }
+    | "getfield" "(" Expression "," Expression ")"                { if (state->version == 1) $$ = EXPR_4(MISC, $5, $3, expression_val_new(state, 0), expression_val_new(state, 3)); }
 
-    | "atan2_mirrored" "(" Expression ")"                         { $$ = EXPR_4(MISC, expression_load_new(state, param_null_new()), $3, expression_val_new(state, 0), expression_val_new(state, 5)); }
+    | "atan2_mirrored" "(" Expression ")"                         { if (state->version == 1) $$ = EXPR_4(MISC, expression_load_new(state, param_null_new()), $3, expression_val_new(state, 0), expression_val_new(state, 5)); }
     | "distance" "(" Expression "," Expression "," Expression ")" { $$ = EXPR_4(MISC, $3, $5, $7, expression_val_new(state, 6)); }
-    | "objectget" "(" Expression ")"                              { $$ = EXPR_4(MISC, $3, expression_val_new(state, 0), expression_val_new(state, 0), expression_val_new(state, 7)); }
+    | "objectget" "(" Expression ")"                              { if (state->version == 1) $$ = EXPR_4(MISC, $3, expression_val_new(state, 0), expression_val_new(state, 0), expression_val_new(state, 7)); }
 
-    | "entitygetstate" "(" Expression "," Expression ")"          { $$ = EXPR_4(MISC, $3, expression_val_new(state, 0), $5, expression_val_new(state, 11)); }
-//  | "gamefunc" "(" Expression "," Expression ")"                { $$ = EXPR_4(MISC, $3, expression_val_new(state, 0), $5, expression_val_new(state, 12)); }
-    | "__unk1" "(" Expression "," Expression "," Expression ")"   { $$ = EXPR_4(MISC, $5, $3, $7, expression_val_new(state, 13)); }
-    | "iscolliding" "(" Expression "," Expression ")"             { $$ = EXPR_4(MISC, $3, $5, expression_val_new(state, 0), expression_val_new(state, 14)); }
-//  | "__unk2" "(" Expression "," Expression ")"                  { $$ = EXPR_4(MISC, $3, expression_val_new(state, 0), $5, expression_val_new(state, 15)); }
+    | "entitygetstate" "(" Expression "," Expression ")"          { if (state->version == 1) $$ = EXPR_4(MISC, $3, expression_val_new(state, 0), $5, expression_val_new(state, 11)); }
+//  | "gamefunc" "(" Expression "," Expression ")"                { if (state->version == 1) $$ = EXPR_4(MISC, $3, expression_val_new(state, 0), $5, expression_val_new(state, 12)); }
+    | "__unk1" "(" Expression "," Expression "," Expression ")"   { if (state->version == 1) $$ = EXPR_4(MISC, $5, $3, $7, expression_val_new(state, 13)); }
+    | "iscolliding" "(" Expression "," Expression ")"             { if (state->version == 1) $$ = EXPR_4(MISC, $3, $5, expression_val_new(state, 0), expression_val_new(state, 14)); }
+//  | "__unk2" "(" Expression "," Expression ")"                  { if (state->version == 1) $$ = EXPR_4(MISC, $3, expression_val_new(state, 0), $5, expression_val_new(state, 15)); }
 
     /* Custom expressions. */
 
@@ -1832,7 +1963,7 @@ instr_add(
         }
     }
     /* branch optimization */
-    else if ((instr->id == bra_expr->id || instr->id == beqz_expr->id || instr->id == bnez_expr->id) && instr->param_count == 5 &&
+    else if ((instr->id == beqz_expr->id || instr->id == bnez_expr->id) && instr->param_count == 5 &&
         ((state->version != 1) ||
         ((state->version == 1) &&
         ((thecl_param_t*)instr->params.tail->data)->value.val.S == 0 &&
@@ -1852,8 +1983,13 @@ instr_add(
                     if (param->value.val.S != 0x1F || !param->stack || param->object_link)
                         goto NO_OPTIM;
                 }
-                param = instr->params.tail->prev->data;
-                param->value.val.S = param->value.val.S == 1 ? 2 : 1;
+                
+                if (state->version == 1) {
+                    param = instr->params.tail->prev->data;
+                    param->value.val.S = param->value.val.S == 1 ? 2 : 1;
+                } else if (state->version == 2) {
+                    instr->id = instr->id == beqz_expr->id ? bnez_expr->id : beqz_expr->id;
+                }
 
                 list_del(&sub->instrs, sub->instrs.tail);
                 thecl_instr_free(last_ins);
@@ -1863,10 +1999,9 @@ instr_add(
                 if (last_ins->id == expr->id && last_ins->param_count > 0) {
                     thecl_param_t* param = list_tail(&last_ins->params);
                     if (!param->stack) {
-                        thecl_param_t* branch_type_param = (thecl_param_t*)instr->params.tail->prev->data;
-                        int branch_type = branch_type_param->value.val.S;
-                        --branch_type;
                         list_del(&last_ins->params, last_ins->params.tail);
+                        thecl_param_t* branch_type_param = (thecl_param_t*)instr->params.tail->prev->data;
+                        int branch_type = state->version == 2 ? instr->id - bra_expr->id - 1 : branch_type_param->value.val.S - 1;
                         if (--last_ins->param_count == 0) {
                             list_del(&sub->instrs, sub->instrs.tail);
                             thecl_instr_free(last_ins);
@@ -1881,6 +2016,7 @@ instr_add(
                             branch_type_param->value.val.S = 0;
                             branch_type_param = (thecl_param_t*)instr->params.tail->prev->prev->data;
                             branch_type_param->value.val.S = 0x25;
+                            instr->id = bra_expr->id;
                         }
                     }
                 }
@@ -2484,9 +2620,11 @@ math_preprocess(
         case NOT:      return !val2;
         case B_NOT:    return ~val2;
         case ABS:      return val2 < 0 ? -val2 : val2;
-        case SIN:      return (sin((val1 * PI) / val2 - PI / 2) + 1.0) * val2 / 2.0; /* casts to int on return */
+        case PSIN:     return (sin((val1 * PI) / val2 - PI / 2) + 1.0) * val2 / 2.0; /* casts to int on return */
+        case SIN:      return lround(sin(val2 / 2048.0 * PI) * 0x1000); /* casts to int on return */
+        case COS:      return lround(cos(val2 / 2048.0 * PI) * 0x1000); /* casts to int on return */
         default:
-            /* Since the cases above cover all existing 2-parameter expressions there is no possibility of this ever hapenning.
+            /* Since the cases above cover all existing expressions there is no possibility of this ever hapenning.
                Just putting this error message in case someone adds new expressions and forgets about handling them here... */
             yyerror(state, "Math preprocessing error!");
     }
@@ -2621,8 +2759,6 @@ scope_finish(
     thecl_variable_t* var;
     for (int v=0; v < state->current_sub->var_count; ++v)
         if (state->current_sub->vars[v]->scope == state->scope_stack[state->scope_cnt]) {
-            //memmove(state->current_sub->vars + v, state->current_sub->vars + (v + 1), (--state->current_sub->var_count - v) * sizeof(int));
-            //--v;
             state->current_sub->vars[v]->is_unused = true;
             ++pop;
         }
@@ -3018,6 +3154,28 @@ anim_create_anim_c1(
     anim->type = 1;
     anim->frames = frames;
     anim->eid = eid;
+
+    gool_anim_t* anim_header = malloc(sizeof(gool_anim_t));
+    anim_header->name = strdup(name);
+    anim_header->size = anim_size;
+    anim_header->anim = anim;
+    list_append_new(&state->main_ecl->anims, anim_header);
+}
+
+static void
+anim_create_anim_c2(
+    parser_state_t* state,
+    char* name,
+    uint16_t frames,
+    int eid,
+    int compressed)
+{
+    size_t anim_size = sizeof(c2_anim_t);
+    c2_anim_t *anim = malloc(anim_size);
+    anim->type = 1;
+    anim->frames = frames;
+    anim->eid = eid;
+    anim->compressed = compressed;
 
     gool_anim_t* anim_header = malloc(sizeof(gool_anim_t));
     anim_header->name = strdup(name);
