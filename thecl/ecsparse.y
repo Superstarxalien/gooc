@@ -133,6 +133,8 @@ static int var_exists(parser_state_t* state, thecl_sub_t* sub, const char* name)
 static void var_shorthand_assign(parser_state_t* state, thecl_param_t* param, expression_t* expr, int EXPR);
 /* Stores a new label in the current subroutine pointing to the current offset. */
 static void label_create(parser_state_t* state, char* label);
+/* Change offset of all labels in the given list that have at least offset min_offset by subtracting the given value. */
+static void labels_adjust(list_t* labels, uint32_t min_offset, int32_t adjust);
 /* Returns the spawn of the given name, or NULL if it doesn't exist */
 static thecl_spawn_t* spawn_get(parser_state_t* state, const char* name);
 
@@ -2190,18 +2192,25 @@ static void instr_create_inline_call(
         state->current_sub->vars = realloc(state->current_sub->vars, --state->current_sub->var_count * sizeof(thecl_variable_t*));
     }
 
-    /* Create labels that the inline sub uses (with changed offsets) */
+    /* Temprary label list that modifications will be apply to when needed.
+     * Content of this list will be later copied into the sub that created the inline call. */
+    list_t tmp_labels;
+    list_init(&tmp_labels);
     thecl_label_t* label;
     list_for_each(&sub->labels, label) {
         snprintf(buf, 256, "%s%s", name, label->name);
         thecl_label_t* new_label = malloc(sizeof(thecl_label_t) + strlen(buf) + 1);
-        new_label->offset = label->offset + state->current_sub->offset;
+        new_label->offset = label->offset;
         strcpy(new_label->name, buf);
-        list_append_new(&state->current_sub->labels, new_label);
+        list_append_new(&tmp_labels, new_label);
     }
+
+    /* Save these for later, as labels will have to be adjusted by these values. */
+    uint32_t org_off = state->current_sub->offset;
 
     /* And finally, copy the instructions. */
 
+    uint32_t offset_diff = 0;
     thecl_instr_t* instr;
     list_for_each(&sub->instrs, instr) {
         thecl_instr_t* new_instr = instr_copy(instr);
@@ -2245,6 +2254,13 @@ static void instr_create_inline_call(
         }
         instr_add(state, state->current_sub, new_instr);
     }
+    
+    /* Apply final adjustments to the label list and copy them into the caller sub. */
+    list_for_each(&tmp_labels, label) {
+        label->offset += org_off;
+        list_append_new(&state->current_sub->labels, label);
+    }
+    list_free_nodes(&tmp_labels);
 
     scope_finish(state, true);
 
@@ -2738,6 +2754,19 @@ sub_finish(
     }
 
     state->current_sub = NULL;
+}
+
+static void
+labels_adjust(
+    list_t* labels,
+    uint32_t min_offset,
+    uint32_t adjust
+) {
+    thecl_label_t* label;
+    list_for_each(labels, label) {
+        if (label->offset >= min_offset)
+            label->offset -= adjust;
+    }
 }
 
 static void
