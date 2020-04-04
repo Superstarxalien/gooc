@@ -537,7 +537,7 @@ c1_compile(
     entry_header_t entry_header = { 0x100FFFFU, ecl->eid, 11U, 6U, { 0, 0, 0, 0, 0, 0, 0 } };
     gool_header_t header = { ecl->id, ecl->type << 8, 1, ecl->var_count + 0x40, 0, 8 };
     thecl_sub_t* sub;
-    thecl_state_t* state;
+    const thecl_state_t* state;
     gool_anim_t* anim;
 
     /* write GOOL EIDs to const pool before anything else */
@@ -971,13 +971,13 @@ c2_instr_serialize(
             }
             else {
                 if (!(p % 0x100) && p >= -256 * 0x100 && p <= 255 * 0x100) {
-                    /* frac ref */
+                    /* int ref */
                     val = 0x800;
                     val |= (p / 0x100)
                         & 0x1FF;
                 }
                 else if (!(p % 0x10) && p >= -128 * 0x10 && p <= 127 * 0x10) {
-                    /* int ref */
+                    /* frac ref */
                     val = 0xA00;
                     val |= (p / 0x10) & 0xFF;
                 }
@@ -1066,7 +1066,7 @@ c2_compile(
     entry_header_t entry_header = { 0x100FFFFU, ecl->eid, 11U, 6U, { 0, 0, 0, 0, 0, 0, 0 } };
     gool_header_t header = { ecl->id, ecl->type << 8, 1, ecl->var_count + 0x40, 0, 8 };
     thecl_sub_t* sub;
-    thecl_state_t* state;
+    const thecl_state_t* state;
     gool_anim_t* anim;
 
     /* write GOOL EIDs to const pool before anything else */
@@ -1175,7 +1175,7 @@ c2_compile(
         if (!file_seek(out, pos + header.interrupt_count * 2)) return 0;
     }
 
-    const thecl_spawn_t* spawn;
+    thecl_spawn_t* spawn;
     list_for_each(&ecl->spawns, spawn) {
         state = c1_find_state(ecl, spawn->state_name);
         uint16_t state_id = 255;
