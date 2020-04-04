@@ -43,7 +43,8 @@ typedef struct {
     uint8_t r;
     uint8_t g;
     uint8_t b;
-    uint8_t blend:2;
+    uint8_t unk1:1;
+    uint8_t blend:1;
     uint8_t primtype:6;
     uint8_t u1;
     uint8_t v1;
@@ -90,21 +91,5 @@ typedef struct {
     uint32_t font;
     char strings[];
 } c2_text_t;
-
-typedef struct {
-    c2_tex_t tex;
-    int16_t x;
-    int16_t y;
-    int16_t w;
-    int16_t h;
-} c2_frag_t;
-
-typedef struct {
-    uint16_t type; /* 5 */
-    uint16_t sprite_count;
-    uint32_t eid;
-    uint32_t frag_count;
-    c2_frag_t frags[];
-} c2_fraganim_t;
 
 #endif
