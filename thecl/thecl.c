@@ -407,7 +407,7 @@ print_usage(void)
            "  -h  set the output path for a \"header\" file which contains definitions for spawns and the GOOL ID\n"
            "  -e  set the output path format for external GOOL modules, where the first parameter is the entry-name\n"
            "VERSION can be:\n"
-           "  1\n"
+           "  1, 2\n"
            "REGION can be:\n"
            "  ntsc-u, ntsc-j, pal\n"
            "Report bugs to <" PACKAGE_BUGREPORT ">.\n", argv0);
