@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.0)
 set(CMP0048 NEW)
 
 project("GOOC Compiler (thtk fork)"
-  VERSION 12)
+  VERSION 15)
 set(PROJECT_URL "https://github.com/mandude/thtk")
 set(PROJECT_BUGREPORT "https://github.com/mandude/thtk/issues")
 
