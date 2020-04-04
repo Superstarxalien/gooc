@@ -1085,11 +1085,51 @@ c1_gool_ins[] = {
     { NULL, 0, 0, 0, 0, 0, 0, NULL }
 };
 
+static list_t*
+c2_gool_ins_onexit_params(
+    list_t* params,
+    int argc)
+{
+    thecl_param_t* param;
+    size_t c = list_count(params);
+    if (c == 1) {
+        list_append_new(params, param_val_new(0));
+        param = param_new('S');
+        param->value.val.S = field_get("hpc")->offset;
+        list_append_new(params, param);
+    }
+    else {
+        fprintf(stderr, "%s: onstateexit: wrong number of arguments (expected 1, got %zu)\n", argv0, c);
+        return NULL;
+    }
+    return params;
+}
+
+static list_t*
+c2_gool_ins_settrans_params(
+    list_t* params,
+    int argc)
+{
+    thecl_param_t* param;
+    size_t c = list_count(params);
+    if (c == 1) {
+        list_append_new(params, param_val_new(0));
+        param = param_new('S');
+        param->value.val.S = field_get("tpc")->offset;
+        list_append_new(params, param);
+    }
+    else {
+        fprintf(stderr, "%s: settrans: wrong number of arguments (expected 1, got %zu)\n", argv0, c);
+        return NULL;
+    }
+    return params;
+}
+
 static const gool_ins_t
 c2_gool_ins[] = {
      /* NAME                        ID  VA POP R   L   C              VALIDATE */
-    { "onstateexit",                24, 0, 0, 0, -1,  1, c1_gool_ins_onexit_params },
-    { "settrans",                   24, 0, 0, 0, -1,  1, c1_gool_ins_settrans_params },
+    { "onstateexit",                24, 0, 0, 0, -1,  1, c2_gool_ins_onexit_params },
+    { "settrans",                   24, 0, 0, 0, -1,  1, c2_gool_ins_settrans_params },
     { "savecheckpoint",             28, 0, 0, 0, -1,  0, c1_gool_ins_savecheckpoint_params },
     { "loadcheckpoint",             28, 0, 0, 0, -1,  0, c1_gool_ins_loadcheckpoint_params },
     { "setcolor",                   36, 0, 0, 0, -1,  3, c1_gool_ins_setcolor_params },
