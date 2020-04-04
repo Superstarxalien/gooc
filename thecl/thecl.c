@@ -80,6 +80,7 @@ sin_psx(
 #undef PI
 
 extern const thecl_module_t c1_gool;
+extern const thecl_module_t c2_gool;
 
 bool g_was_error = false;
 
@@ -482,6 +483,9 @@ main(int argc, char* argv[])
     g_reg_blocks = malloc(0);
 
     switch (version) {
+    case 2:
+        module = &c2_gool;
+        break;
     case 1:
         module = &c1_gool;
         break;
