@@ -3,8 +3,6 @@ Build requirements:
   flex >=2.5.31
   bison
   (optional) pkg-config
-  (optional) zlib
-  (optional) libpng
 
 Build instructions for Linux(GNU toolchain):
   $ mkdir -p build && cd build

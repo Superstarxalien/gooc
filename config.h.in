@@ -18,12 +18,6 @@
 
 #define PACK_ATTRIBUTE @PACK_ATTRIBUTE@
 
-#cmakedefine WITH_LIBPNG_SOURCE
-#cmakedefine PNG_FOUND
-#if defined(WITH_LIBPNG_SOURCE) || defined(PNG_FOUND)
-# define HAVE_LIBPNG
-#endif
-
 #cmakedefine HAVE_OFF_T
 #cmakedefine HAVE_SIZE_T
 #cmakedefine HAVE_SIZE_T_BASETSD
