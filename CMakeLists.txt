@@ -1,10 +1,10 @@
 cmake_minimum_required(VERSION 3.0)
 set(CMP0048 NEW)
 
-project("GOOC Compiler (thtk fork)"
-  VERSION 15)
-set(PROJECT_URL "https://github.com/mandude/thtk")
-set(PROJECT_BUGREPORT "https://github.com/mandude/thtk/issues")
+project("GOOC Compiler"
+  VERSION 1)
+set(PROJECT_URL "https://github.com/mandude/gooc")
+set(PROJECT_BUGREPORT "https://github.com/mandude/gooc/issues")
 
 include(CheckCSourceRuns)
 include(CheckTypeSize)
