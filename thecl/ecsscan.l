@@ -332,6 +332,14 @@ vol\([0-9]+\.[0-9]+\) {
     g_reg_blocks[g_reg_block_depth - 1] = !cmp;
     free(reg_text);
 }
+#ifn?ver[\t\n\r ]+[0-9]+[\t\n\r ]+ {
+    int cmp = (atoi(yytext + 7) == g_parser_state->version) ^ (yytext[3] == 'n');
+    g_reg_blocks = realloc(g_reg_blocks, sizeof(int) * ++g_reg_block_depth);
+    if (!cmp) {
+        BEGIN(P_BLOCK);
+    }
+    g_reg_blocks[g_reg_block_depth - 1] = !cmp;
+}
 <P_BLOCK>#endif {
 CHECK_ENDIF:
     if (g_reg_block_depth == 0) {
