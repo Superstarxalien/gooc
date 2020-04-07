@@ -233,6 +233,10 @@ vol\([0-9]+\.[0-9]+\) {
     yylval.integer = 1;
     return INTEGER;
 }
+"null" |
+"nil" {
+    return NIL;
+}
 [a-zA-Z_][a-zA-Z0-9_]* {
     yylval.string = strdup(yytext);
     if (global_get(g_parser_state->version, yytext))
@@ -246,10 +250,6 @@ vol\([0-9]+\.[0-9]+\) {
     strncpy(yylval.string, yytext + 1, 5);
     yylval.string[5] = '\0';
     return ENTRY;
-}
-"null" |
-"nil" {
-    return NIL;
 }
 
 \" {
@@ -295,29 +295,8 @@ vol\([0-9]+\.[0-9]+\) {
 <COMMENT_SINGLE>.*    ;
 <COMMENT_SINGLE>"\n"  BEGIN(INITIAL);
 
-#([a-zA-Z]+) {
-    char* txt = yytext + 1;
-    if (!strcmp(txt, "font"))
-        return DIRECTIVE_FONT;
-    else if (!strcmp(txt, "char"))
-        return DIRECTIVE_CHAR;
-    else if (!strcmp(txt, "text"))
-        return DIRECTIVE_TEXT;
-    else if (!strcmp(txt, "tex"))
-        return DIRECTIVE_TEXTURE;
-    else if (!strcmp(txt, "sprite"))
-        return DIRECTIVE_SPRITE;
-    else if (!strcmp(txt, "endif"))
-        goto CHECK_ENDIF;
-    else if (!strcmp(txt, "fraganim") && g_parser_state->version == 1)
-        return DIRECTIVE_FANIM;
-    else if (!strcmp(txt, "frag") && g_parser_state->version == 1)
-        return DIRECTIVE_FRAG;
-    yylval.string = strdup(yytext + 1);
-    return DIRECTIVE;
-}
-
-#ifn?reg[\t\n\r ]+\"[a-zA-Z\-]+\"[\t\n\r ]+ {
+#ifn?reg[\t\n\r ]+\"[a-zA-Z\-]+\"[\t\n\r ]+ |
+<P_BLOCK>#ifn?reg[\t\n\r ]+\"[a-zA-Z\-]+\"[\t\n\r ]+ {
     char* o_reg_text = strchr(yytext, '"') + 1;
     int len = strchr_o(o_reg_text, '"');
     char* reg_text = malloc(len + 1);
@@ -325,23 +304,24 @@ vol\([0-9]+\.[0-9]+\) {
     reg_text[len] = '\0';
 
     int cmp = (yytext[3] == 'n') == strcmp(reg_text, g_region);
+    free(reg_text);
     g_reg_blocks = realloc(g_reg_blocks, sizeof(int) * ++g_reg_block_depth);
+    g_reg_blocks[g_reg_block_depth - 1] = !cmp;
     if (!cmp) {
         BEGIN(P_BLOCK);
     }
-    g_reg_blocks[g_reg_block_depth - 1] = !cmp;
-    free(reg_text);
 }
-#ifn?ver[\t\n\r ]+[0-9]+[\t\n\r ]+ {
+#ifn?ver[\t\n\r ]+[0-9]+[\t\n\r ]+ |
+<P_BLOCK>#ifn?ver[\t\n\r ]+[0-9]+[\t\n\r ]+ {
     int cmp = (atoi(yytext + 7) == g_parser_state->version) ^ (yytext[3] == 'n');
     g_reg_blocks = realloc(g_reg_blocks, sizeof(int) * ++g_reg_block_depth);
+    g_reg_blocks[g_reg_block_depth - 1] = !cmp;
     if (!cmp) {
         BEGIN(P_BLOCK);
     }
-    g_reg_blocks[g_reg_block_depth - 1] = !cmp;
 }
+#endif | {
 <P_BLOCK>#endif {
-CHECK_ENDIF:
     if (g_reg_block_depth == 0) {
         yyerror(NULL, "invalid #endif");
         yyterminate();
@@ -358,6 +338,26 @@ CHECK_ENDIF:
     }
 }
 <P_BLOCK>([\n\r]|.) ;
+
+#([a-zA-Z]+) {
+    char* txt = yytext + 1;
+    if (!strcmp(txt, "font"))
+        return DIRECTIVE_FONT;
+    else if (!strcmp(txt, "char"))
+        return DIRECTIVE_CHAR;
+    else if (!strcmp(txt, "text"))
+        return DIRECTIVE_TEXT;
+    else if (!strcmp(txt, "tex"))
+        return DIRECTIVE_TEXTURE;
+    else if (!strcmp(txt, "sprite"))
+        return DIRECTIVE_SPRITE;
+    else if (!strcmp(txt, "fraganim") && g_parser_state->version == 1)
+        return DIRECTIVE_FANIM;
+    else if (!strcmp(txt, "frag") && g_parser_state->version == 1)
+        return DIRECTIVE_FRAG;
+    yylval.string = strdup(yytext + 1);
+    return DIRECTIVE;
+}
 
 [\t\n\r ]+ ;
 . {
