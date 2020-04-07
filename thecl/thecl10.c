@@ -845,7 +845,6 @@ c2_instr_serialize(
         list_node_t* node = instr->params.head;
         thecl_param_t* sub_name_param = node->data;
         char* sub_name = sub_name_param->value.val.z;
-        thecl_param_t* sub_argc_param = node->next->next->data;
         const thecl_sub_t* called_sub = th10_find_sub(ecl, sub_name);
         if (!called_sub && ecl_ext) {
             called_sub = th10_find_sub(ecl_ext, sub_name);
@@ -856,15 +855,18 @@ c2_instr_serialize(
                     argv0, sub->name, sub_name);
             was_error = true;
         } else {
-            if (sub_argc_param->value.val.S > called_sub->arg_count) {
-                fprintf(stderr, "%s:c2_instr_serialize: in sub %s: too many parameters when calling sub \"%s\" (expected %d)\n",
-                    argv0, sub->name, sub_name, called_sub->arg_count);
-                was_error = true;
-            }
-            else if (sub_argc_param->value.val.S < called_sub->arg_count) {
-                fprintf(stderr, "%s:c2_instr_serialize: in sub %s: not enough parameters when calling sub %s (expected %d)\n",
-                    argv0, sub->name, sub_name, called_sub->arg_count);
-                was_error = true;
+            if (instr->id == 59) {
+                thecl_param_t* sub_argc_param = node->next->next->data;
+                if (sub_argc_param->value.val.S > called_sub->arg_count) {
+                    fprintf(stderr, "%s:c2_instr_serialize: in sub %s: too many parameters when calling sub \"%s\" (expected %d)\n",
+                        argv0, sub->name, sub_name, called_sub->arg_count);
+                    was_error = true;
+                }
+                else if (sub_argc_param->value.val.S < called_sub->arg_count) {
+                    fprintf(stderr, "%s:c2_instr_serialize: in sub %s: not enough parameters when calling sub %s (expected %d)\n",
+                        argv0, sub->name, sub_name, called_sub->arg_count);
+                    was_error = true;
+                }
             }
             free(sub_name_param->value.val.z);
             sub_name_param->type = 'S';
