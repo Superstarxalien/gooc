@@ -163,7 +163,7 @@ static size_t anim_get_offset(parser_state_t* state, char* name);
 /* Appends a new Crash 1 vertex animation to the animations list. */
 static void anim_create_anim_c1(parser_state_t* state, char* name, int frames, int eid);
 /* Appends a new Crash 2 vertex animation to the animations list. */
-static void anim_create_anim_c2(parser_state_t* state, char* name, int frames, int eid, int compressed);
+static void anim_create_anim_c2(parser_state_t* state, char* name, int frames, int eid, int interp);
 
 int yydebug = 0;
 %}
@@ -3200,14 +3200,14 @@ anim_create_anim_c2(
     char* name,
     uint16_t frames,
     int eid,
-    int compressed)
+    int interp)
 {
     size_t anim_size = sizeof(c2_anim_t);
     c2_anim_t *anim = malloc(anim_size);
     anim->type = 1;
     anim->frames = frames;
     anim->eid = eid;
-    anim->compressed = compressed;
+    anim->interp = interp;
 
     gool_anim_t* anim_header = malloc(sizeof(gool_anim_t));
     anim_header->name = strdup(name);

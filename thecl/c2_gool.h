@@ -37,7 +37,7 @@ typedef struct {
     uint16_t type; /* 1 */
     uint16_t frames;
     uint32_t eid;
-    uint32_t compressed;
+    uint32_t interp;
 } c2_anim_t;
 
 typedef struct {
