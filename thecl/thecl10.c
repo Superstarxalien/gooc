@@ -236,6 +236,20 @@ th10_find_sub(
     return NULL;
 }
 
+static const thecl_sub_t*
+th10_find_sub_overload(
+    thecl_t* ecl,
+    const char* name,
+    int argc)
+{
+    const thecl_sub_t* sub;
+    list_for_each(&ecl->subs, sub) {
+        if (!strcmp(sub->name, name) && sub->arg_count == argc)
+            return sub;
+    }
+    return NULL;
+}
+
 static const thecl_state_t*
 c1_find_state(
     thecl_t* ecl,
@@ -337,7 +351,6 @@ c1_instr_serialize(
         list_node_t* node = instr->params.head;
         thecl_param_t* sub_name_param = node->data;
         char* sub_name = sub_name_param->value.val.z;
-        thecl_param_t* sub_argc_param = node->next->next->data;
         const thecl_sub_t* called_sub = th10_find_sub(ecl, sub_name);
         if (!called_sub && ecl_ext) {
             called_sub = th10_find_sub(ecl_ext, sub_name);
@@ -348,19 +361,20 @@ c1_instr_serialize(
                     argv0, sub->name, sub_name);
             was_error = true;
         } else {
-            if (ext_sub) {
-                fprintf(stderr, "%s:c1_instr_serialize: in sub %s: cannot call subs in external gool module: \"%s\"\n",
+            thecl_param_t* sub_argc_param = node->next->next->data;
+            called_sub = th10_find_sub_overload(ecl, sub_name, sub_argc_param->value.val.S);
+            if (!called_sub && ecl_ext) {
+                called_sub = th10_find_sub(ecl_ext, sub_name);
+                ext_sub = true;
+            }
+            if (!called_sub) {
+                fprintf(stderr, "%s:c1_instr_serialize: in sub %s: no suitable parameter count for sub \"%s\"\n",
                     argv0, sub->name, sub_name);
                 was_error = true;
             }
-            else if (sub_argc_param->value.val.S > called_sub->arg_count) {
-                fprintf(stderr, "%s:c1_instr_serialize: in sub %s: too many parameters when calling sub \"%s\" (expected %d)\n",
-                    argv0, sub->name, sub_name, called_sub->arg_count);
-                was_error = true;
-            }
-            else if (sub_argc_param->value.val.S < called_sub->arg_count) {
-                fprintf(stderr, "%s:c1_instr_serialize: in sub %s: not enough parameters when calling sub %s (expected %d)\n",
-                    argv0, sub->name, sub_name, called_sub->arg_count);
+            else if (ext_sub) {
+                fprintf(stderr, "%s:c1_instr_serialize: in sub %s: cannot call subs in external gool module: \"%s\"\n",
+                    argv0, sub->name, sub_name);
                 was_error = true;
             }
             free(sub_name_param->value.val.z);
@@ -857,14 +871,14 @@ c2_instr_serialize(
         } else {
             if (instr->id == 59) {
                 thecl_param_t* sub_argc_param = node->next->next->data;
-                if (sub_argc_param->value.val.S > called_sub->arg_count) {
-                    fprintf(stderr, "%s:c2_instr_serialize: in sub %s: too many parameters when calling sub \"%s\" (expected %d)\n",
-                        argv0, sub->name, sub_name, called_sub->arg_count);
-                    was_error = true;
+                called_sub = th10_find_sub_overload(ecl, sub_name, sub_argc_param->value.val.S);
+                if (!called_sub && ecl_ext) {
+                    called_sub = th10_find_sub(ecl_ext, sub_name);
+                    ext_sub = true;
                 }
-                else if (sub_argc_param->value.val.S < called_sub->arg_count) {
-                    fprintf(stderr, "%s:c2_instr_serialize: in sub %s: not enough parameters when calling sub %s (expected %d)\n",
-                        argv0, sub->name, sub_name, called_sub->arg_count);
+                if (!called_sub) {
+                    fprintf(stderr, "%s:c2_instr_serialize: in sub %s: no suitable parameter count for sub \"%s\"\n",
+                        argv0, sub->name, sub_name);
                     was_error = true;
                 }
             }

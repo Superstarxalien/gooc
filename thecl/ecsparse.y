@@ -2281,10 +2281,11 @@ instr_create_call(
     char *name,
     list_t *params)
 {
+    size_t param_count = params ? list_count(params) : 0;
     /* First, check if the called sub is inline. */
     thecl_sub_t* sub;
     list_for_each(&state->main_ecl->subs, sub) {
-        if (sub->is_inline && !strcmp(sub->name, name)) {
+        if (sub->is_inline && !strcmp(sub->name, name) && sub->arg_count == param_count) {
             instr_create_inline_call(state, sub, params);
             free(name);
             return true;
@@ -2680,15 +2681,6 @@ sub_begin(
     parser_state_t* state,
     char* name)
 {
-    thecl_sub_t* iter_sub;
-    list_for_each(&state->ecl->subs, iter_sub) {
-        if(!strcmp(name, iter_sub->name) && !iter_sub->forward_declaration) {
-            yyerror(state, "duplicate sub: %s", name);
-            g_was_error = true;
-            break;
-        }
-    }
-
     scope_begin(state);
 
     thecl_sub_t* sub = malloc(sizeof(thecl_sub_t));
@@ -2716,6 +2708,14 @@ static void
 sub_finish(
     parser_state_t* state)
 {
+    thecl_sub_t* iter_sub;
+    list_for_each(&state->ecl->subs, iter_sub) {
+        if(state->current_sub != iter_sub && !strcmp(state->current_sub->name, iter_sub->name) && iter_sub->arg_count == state->current_sub->arg_count && !iter_sub->forward_declaration) {
+            yyerror(state, "duplicate sub: %s", state->current_sub->name);
+            g_was_error = true;
+            break;
+        }
+    }
 
     if (state->current_sub->is_inline) {
         thecl_instr_t* last_ins = list_tail(&state->current_sub->instrs);
