@@ -1658,6 +1658,7 @@ ExpressionSubset:
     | "dirhold" "(" Expression "," Expression ")"                 { $$ = EXPR_5(PAD, expression_val_new(state, 0), expression_val_new(state, 0), expression_val_new(state, 2), $3, $5); }
     | "dirbuffer" "(" Expression "," Expression ")"               { $$ = EXPR_5(PAD, expression_val_new(state, 0), expression_val_new(state, 0), expression_val_new(state, 3), $3, $5); }
     | "spd" "(" Expression "," Expression ")"                     { $$ = EXPR_2(SPD, $3, $5); }
+    | "spd" "(" Expression ")"                                    { $$ = EXPR_2(SPD, expression_val_new(state, 0), $3); }
     | "sin" "(" Expression "," Expression ")"                     { $$ = EXPR_2(PSIN, $3, $5); }
     | "sin" "(" Expression ")"                                    { $$ = EXPR_2(SIN, expression_load_new(state, param_sp_new()), $3); }
     | "cos" "(" Expression ")"                                    { $$ = EXPR_2(COS, expression_load_new(state, param_sp_new()), $3); }
