@@ -184,6 +184,11 @@ c1_gool_ins_stateif_params(
     list_t* params,
     int argc)
 {
+    size_t c = list_count(params);
+    if (c != 2) {
+        fprintf(stderr, "%s: changestateif: wrong number of arguments (expected 2, got %zu)\n", argv0, c);
+        return NULL;
+    }
     return c1_gool_ins_changestate_params(params, argc, 1);
 }
 
@@ -192,6 +197,11 @@ c1_gool_ins_stateifn_params(
     list_t* params,
     int argc)
 {
+    size_t c = list_count(params);
+    if (c != 2) {
+        fprintf(stderr, "%s: changestateifn: wrong number of arguments (expected 2, got %zu)\n", argv0, c);
+        return NULL;
+    }
     return c1_gool_ins_changestate_params(params, argc, 2);
 }
 
