@@ -786,7 +786,8 @@ Sprite_Frame:
             int y = $8;
             int w = $9;
             int h = $10;
-            if ((x & 0xff) + w > 256) {
+            int segsize = 256 >> $3;
+            if ((x & 0xff) + w > segsize) {
                 yyerror(state, "syntax error, aligned texture is too wide");
             }
             if (y + h > 128) {
@@ -795,8 +796,8 @@ Sprite_Frame:
             if (y < 0 || x < 0) {
                 yyerror(state, "syntax error, invalid texture parameters");
             }
-			--w;
-			--h;
+            --w;
+            --h;
             tex->r = $2 >> 0 & 0xFF;
             tex->g = $2 >> 8 & 0xFF;
             tex->b = $2 >> 16 & 0xFF;
@@ -806,7 +807,7 @@ Sprite_Frame:
             tex->unused1 = 0;
             tex->unused2 = 0;
             tex->unk3 = 0;
-            tex->segment = x / 256;
+            tex->segment = x / segsize;
             x &= 0xFF;
             tex->color = $3;
             tex->blend = $4;
