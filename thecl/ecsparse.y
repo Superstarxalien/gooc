@@ -808,7 +808,7 @@ Sprite_Frame:
             tex->unused2 = 0;
             tex->unk3 = 0;
             tex->segment = x / segsize;
-            x &= 0xFF;
+            x &= segsize - 1;
             tex->color = $3;
             tex->blend = $4;
             tex->cx = $5;
