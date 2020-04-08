@@ -795,6 +795,8 @@ Sprite_Frame:
             if (y < 0 || x < 0) {
                 yyerror(state, "syntax error, invalid texture parameters");
             }
+			--w;
+			--h;
             tex->r = $2 >> 0 & 0xFF;
             tex->g = $2 >> 8 & 0xFF;
             tex->b = $2 >> 16 & 0xFF;
