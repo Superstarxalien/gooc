@@ -1142,6 +1142,7 @@ c2_gool_ins[] = {
     { "playanim",                   56, 1, 1, 1, -1,  4, c1_gool_ins_playanim_params },
     { "playtext",                   56, 1, 1, 1, -1,  2, c1_gool_ins_playtext_params },
     { "playframe",                  57, 1, 1, 1, -1,  3, c1_gool_ins_playframe_params },
+    { "setvel",                     58, 0, 0, 0, -1,  2, c1_gool_ins_setvel_params },
     { "sendevent",                  60, 1, 0, 0,  2,  3, c1_gool_ins_sendevent_params },
     { "rejectevent",                61, 0, 0, 0, -1,  1, c1_gool_ins_eventstatus_params },
     { "acceptevent",                62, 0, 0, 0, -1,  1, c1_gool_ins_eventstatus_params },
