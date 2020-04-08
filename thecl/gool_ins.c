@@ -223,7 +223,7 @@ c1_gool_ins_setcolor_params(
         node = node->next;
     }
     else {
-        fprintf(stderr, "%s: setcolor: wrong number of arguments (expected 3, got %zu)\n", argv0, c);
+        fprintf(stderr, "%s: setcolor: wrong number of arguments (expected 3 or 2, got %zu)\n", argv0, c);
         return NULL;
     }
     return params;
