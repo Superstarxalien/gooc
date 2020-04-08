@@ -261,6 +261,8 @@ c2_globals[] = {
 
     { "DEATHCOUNT",      108 },
 
+    { "LEVELBOXCOUNT",   148 },
+
     { "BOXBELOW",        160 },
     { "BOXSTACKOFFSET",  161 },
     { "BOXENTITYBELOW",  162 },
