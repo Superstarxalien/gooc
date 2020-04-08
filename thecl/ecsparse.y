@@ -787,7 +787,7 @@ Sprite_Frame:
             int w = $9;
             int h = $10;
             int segsize = 256 >> $3;
-            if ((x & 0xff) + w > segsize) {
+            if ((x & 0xff) + w > 256) {
                 yyerror(state, "syntax error, aligned texture is too wide");
             }
             if (y + h > 128) {
