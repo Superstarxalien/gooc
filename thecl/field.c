@@ -218,7 +218,6 @@ c2_globals[] = {
     { "LIFECOUNTER",       7 },
 
     { "PAUSEMENU",        12 },
-    { "LIFEICONTRANSX",   13 },
 
     { "DOCTOR",           16 },
 
@@ -261,6 +260,10 @@ c2_globals[] = {
     { "SPAWNTRANSZ",     104 },
 
     { "DEATHCOUNT",      108 },
+
+    { "BOXBELOW",        160 },
+    { "BOXSTACKOFFSET",  161 },
+    { "BOXENTITYBELOW",  162 },
 
     { NULL, 0 }
 };
