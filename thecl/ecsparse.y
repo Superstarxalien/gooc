@@ -208,6 +208,7 @@ int yydebug = 0;
 %token CODE "code"
 %token TRANS "trans"
 %token ONCE "once"
+%token NOFIRST "nofirst"
 %token EVENT "event"
 %token INLINE "inline"
 %token DEFAULT "default"
@@ -1027,17 +1028,29 @@ OnceBlock:
     } CodeBlock {
         const expr_t* expr = expr_get_by_symbol(state->version, ASSIGN);
 
-        thecl_param_t* p1 = param_new('S');
-        p1->value.val.S = field_get("tpc")->offset;
-        p1->object_link = 0;
-        p1->stack = 1;
-
-        thecl_param_t* p2 = param_new('S');
-        p2->value.val.S = field_get("pc")->offset;
-        p2->object_link = 0;
-        p2->stack = 1;
+        thecl_param_t* p1 = param_var_new(field_get("tpc")->offset);
+        thecl_param_t* p2 = param_var_new(field_get("pc")->offset);
 
         instr_add(state, state->current_sub, instr_new(state, expr->id, "pp", p1, p2));
+    }
+    | "nofirst" {
+        state->current_sub->has_nofirst = true;
+
+        instr_add(state, state->current_sub, instr_new(state, expr_get_by_symbol(state->version, ADD)->id, "pp",
+        param_var_new(field_get("pc")->offset), param_val_new(4*2)));
+        instr_add(state, state->current_sub, instr_new(state, expr_get_by_symbol(state->version, ASSIGN)->id, "pp",
+        param_var_new(field_get("tpc")->offset), param_sp_new()));
+
+        char labelstr[256];
+        snprintf(labelstr, 256, "nofirst_%i_%i", yylloc.first_line, yylloc.first_column);
+        list_prepend_new(&state->block_stack, strdup(labelstr));
+        expression_create_goto(state, GOTO, labelstr, NULL);
+    } CodeBlock {
+        list_node_t *head = state->block_stack.head;
+        label_create(state, head->data);
+        state->block_stack.head = head->next;
+        free(head->data);
+        list_del(&state->block_stack, head);
     }
     ;
 
@@ -2697,6 +2710,7 @@ sub_begin(
     sub->instr_data = NULL;
     sub->is_trans = false;
     sub->has_once = false;
+    sub->has_nofirst = false;
     list_init(&sub->labels);
 
     list_append_new(&state->ecl->subs, sub);
