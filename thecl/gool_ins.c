@@ -654,9 +654,7 @@ c1_gool_ins_soundspec_params(
         list_append_new(params, param_val_new(type));
     }
     else if (c == 2) {
-        param = param_new('S');
-        param->value.val.S = 0;
-        list_append_to(params, param, params->head);
+        list_append_to(params, param_val_new(0), params->head);
         list_append_new(params, param_val_new(type));
     }
     else if (c == 3) {
