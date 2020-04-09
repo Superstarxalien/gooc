@@ -2018,10 +2018,14 @@ instr_add(
 
             expr = expr_get_by_symbol(state->version, NOT);
             if (last_ins->id == expr->id && last_ins->param_count == 2) {
-                thecl_param_t* param;
-                list_for_each(&last_ins->params, param) {
-                    if (param->value.val.S != 0x1F || !param->stack || param->object_link)
-                        goto NO_OPTIM;
+                thecl_param_t* param = list_head(&last_ins->params);
+                if (param->value.val.S != 0x1F || !param->stack || param->object_link != 0)
+                    goto NO_OPTIM;
+                param = list_tail(&last_ins->params);
+                
+                if (!(param->value.val.S <= 0x3F && param->value.val.S >= 0 && param->stack && param->object_link != 0)) {
+                    thecl_param_t* reg_param = instr->params.head->next->next->data;
+                    reg_param->value.val.S = param->value.val.S;
                 }
                 
                 if (state->version == 1) {
