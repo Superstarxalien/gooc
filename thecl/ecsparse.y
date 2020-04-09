@@ -2769,10 +2769,11 @@ sub_finish(
         scope_finish(state, false);
     }
     else {
+        int bb = state->block_bound;
         scope_finish(state, true);
         thecl_instr_t* last_ins = state->version == 1 ? NULL : list_tail(&state->current_sub->instrs);
         const expr_t* expr = expr_get_by_symbol(state->version, RETURN);
-        if (last_ins == NULL || last_ins->id != expr->id) {
+        if (bb || last_ins == NULL || last_ins->id != expr->id) {
             instr_add(state, state->current_sub, instr_new(state, expr->id, "SSSSS", 0, 0, 0x25, 0, 2));
         }
         state->ecl->ins_offset += state->current_sub->offset;
