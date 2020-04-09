@@ -306,7 +306,7 @@ int yydebug = 0;
 %token UNK1 "__unk1"
 %token ISCOLLIDING "iscolliding"
 %token UNK2 "__unk2"
-%token TRYDELOAD "trydeload"
+%token TRYLOAD "tryload"
 
 %type <list> Instruction_Parameters_List
 %type <list> Instruction_Parameters
