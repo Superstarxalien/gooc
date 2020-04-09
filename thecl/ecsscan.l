@@ -160,6 +160,7 @@
 "__unk1"           return UNK1;
 "iscolliding"      return ISCOLLIDING;
 "__unk2"           return UNK2;
+"trydeload"        return TRYDELOAD;
 
 vol\([0-9]+\.[0-9]+\) {
     yylval.integer = (int)(strtod(yytext+4, NULL) * 0x3FFF);

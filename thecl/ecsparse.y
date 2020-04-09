@@ -292,6 +292,7 @@ int yydebug = 0;
 %token SIN "sin"
 %token COS "cos"
 %token MISC "misc"
+%token NTRY "entry operation"
 %token FVAL "fieldval"
 %token FROW "fieldrow"
 %token GETVAL "getval"
@@ -305,6 +306,7 @@ int yydebug = 0;
 %token UNK1 "__unk1"
 %token ISCOLLIDING "iscolliding"
 %token UNK2 "__unk2"
+%token TRYDELOAD "trydeload"
 
 %type <list> Instruction_Parameters_List
 %type <list> Instruction_Parameters
@@ -1699,6 +1701,8 @@ ExpressionSubset:
     | "__unk1" "(" Expression "," Expression "," Expression ")"   { if (state->version == 1) $$ = EXPR_4(MISC, $5, $3, $7, expression_val_new(state, 13)); }
     | "iscolliding" "(" Expression "," Expression ")"             { if (state->version == 1) $$ = EXPR_4(MISC, $3, $5, expression_val_new(state, 0), expression_val_new(state, 14)); }
 //  | "__unk2" "(" Expression "," Expression ")"                  { if (state->version == 1) $$ = EXPR_4(MISC, $3, expression_val_new(state, 0), $5, expression_val_new(state, 15)); }
+
+    | "trydeload" "(" Expression ")"                              { $$ = EXPR_2(NTRY, $3, expression_val_new(state, 3)); }
 
     /* Custom expressions. */
 

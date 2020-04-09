@@ -96,6 +96,8 @@ c1_expressions[] = {
     { GOTO,    0x82,  "o", 0, 0, 0, 0 }, /* goto p0 */
     { UNLESS,  0x82,  "o", 1, 0, 0, 0 }, /* unless (s0) goto p0 */
     { IF,      0x82,  "o", 1, 0, 0, 0 }, /* if (s0) goto p0 */
+
+    { NTRY,    0x8B, NULL, 2, 0, 0, 0 }, /* entry operation */
     { 0,          0, NULL, 0, 0, 0, 0 }
 };
 
@@ -119,6 +121,7 @@ c2_expressions[] = {
     { ARRL,      42, NULL, 2, 0, 0, 0 }, /* s0[s1] */
     { SIN,       43, NULL, 2, 0, 1, 1 }, /* sin(s0) */
     { COS,       44, NULL, 2, 0, 1, 1 }, /* cos(s0) */
+    { NTRY,      64, NULL, 2, 0, 0, 0 }, /* entry operation */
     { 0,          0, NULL, 0, 0, 0, 0 }
 };
 
