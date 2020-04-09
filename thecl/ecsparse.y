@@ -1534,8 +1534,22 @@ Assignment:
             yyerror(state, "invalid address: %s", $1->value.val.z);
             return 0;
         }
-        thecl_param_t* src_param;
         const expr_t* expr = expr_get_by_id(state->version, $3->id);
+        thecl_param_t* src_param = expr->is_unary ? ((expression_t*)$3->children.head->data)->value : NULL;
+        if (($1->stack == 1 && expr->is_unary && src_param->value.val.S == 0x1F && src_param->stack == 1 && src_param->object_link == 0)) {
+            src_param->value.val.S = $1->value.val.S;
+            if ($1->object_link == -1 && $1->value.val.S >= 3) {
+                state->current_sub->vars[$1->value.val.S - 3]->is_written = true;
+            }
+            else if ($1->object_link == -1 && $1->value.val.S < 0) {
+                state->current_sub->args[-$1->value.val.S - 1]->is_written = true;
+            }
+            param_free($1);
+            expression_output(state, $3, 0);
+            expression_free($3);
+            break;
+        }
+
         if ($3->type == EXPRESSION_VAL && ($1->stack != 2 || ($1->stack == 2 && !expr->is_unary))) {
             src_param = $3->value;
         } else {
