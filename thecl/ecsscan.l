@@ -147,17 +147,19 @@
 "spd"              return SPD;
 "sin"              return SIN;
 "cos"              return COS;
-"getval"                return GETVAL;
-"distance"              return DISTANCE;
-"atan2"                 return ATAN2;
-"getfield"              return GETFIELD;
-"atan2_mirrored"        return ATAN2M;
-"objectget"             return OBJGET;
-"entitygetstate"        return ENTITYSTATEGET;
-"gamefunc"              return GAMEFUNC;
-"__unk1"                return UNK1;
-"iscolliding"           return ISCOLLIDING;
-"__unk2"                return UNK2;
+"fieldval"         return FVAL;
+"fieldrow"         return FROW;
+"getval"           return GETVAL;
+"distance"         return DISTANCE;
+"atan2"            return ATAN2;
+"getfield"         return GETFIELD;
+"atan2_mirrored"   return ATAN2M;
+"objectget"        return OBJGET;
+"entitygetstate"   return ENTITYSTATEGET;
+"gamefunc"         return GAMEFUNC;
+"__unk1"           return UNK1;
+"iscolliding"      return ISCOLLIDING;
+"__unk2"           return UNK2;
 
 vol\([0-9]+\.[0-9]+\) {
     yylval.integer = (int)(strtod(yytext+4, NULL) * 0x3FFF);

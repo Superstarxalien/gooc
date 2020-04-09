@@ -292,6 +292,8 @@ int yydebug = 0;
 %token SIN "sin"
 %token COS "cos"
 %token MISC "misc"
+%token FVAL "fieldval"
+%token FROW "fieldrow"
 %token GETVAL "getval"
 %token DISTANCE "distance"
 %token ATAN2 "atan2"
@@ -1678,12 +1680,14 @@ ExpressionSubset:
     | "sin" "(" Expression "," Expression ")"                     { $$ = EXPR_2(PSIN, $3, $5); }
     | "sin" "(" Expression ")"                                    { $$ = EXPR_2(SIN, expression_load_new(state, param_sp_new()), $3); }
     | "cos" "(" Expression ")"                                    { $$ = EXPR_2(COS, expression_load_new(state, param_sp_new()), $3); }
+    | "fieldval" "(" Expression ")"                               { $$ = EXPR_2(FVAL, expression_load_new(state, param_sp_new()), $3); }
+    | "fieldrow" "(" Expression "," Expression ")"                { $$ = EXPR_2(FROW, $3, $5); }
     | Address "[" Expression "]"                                  { if (state->version == 1) $$ = EXPR_4(MISC, expression_load_new(state, $1), expression_val_new(state, 5), $3, expression_val_new(state, 0));
                                                                     else if (state->version == 2) $$ = EXPR_2(ARRL, expression_load_new(state, $1), $3);
                                                                   }
     | "getval" "(" Expression "," Expression ")"                  { if (state->version == 1) $$ = EXPR_4(MISC, $3, expression_val_new(state, 5), $5, expression_val_new(state, 0)); }
     | "distance" "(" Expression "," Expression ")"                { $$ = EXPR_4(MISC, expression_load_new(state, param_null_new()), $3, $5, expression_val_new(state, 1)); }
-    | "atan2" "(" Expression "," Expression ")"                   { if (state->version == 1) $$ = EXPR_4(MISC, $5, $3, expression_val_new(state, 0), expression_val_new(state, 2)); }
+    | "atan2" "(" Expression "," Expression ")"                   { $$ = EXPR_4(MISC, $5, $3, expression_val_new(state, 0), expression_val_new(state, 2)); }
     | "getfield" "(" Expression "," Expression ")"                { if (state->version == 1) $$ = EXPR_4(MISC, $5, $3, expression_val_new(state, 0), expression_val_new(state, 3)); }
 
     | "atan2_mirrored" "(" Expression ")"                         { if (state->version == 1) $$ = EXPR_4(MISC, expression_load_new(state, param_null_new()), $3, expression_val_new(state, 0), expression_val_new(state, 5)); }
