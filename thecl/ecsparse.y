@@ -1500,12 +1500,6 @@ Instruction:
             }
         }
         else {
-            expression_t* expression;
-            list_for_each(&state->expressions, expression) {
-                expression_output(state, expression, 1);
-                expression_free(expression);
-            }
-            list_free_nodes(&state->expressions);
             const expr_t* expr = expr_get_by_symbol(state->version, CALL);
             instr_create_call(state, expr->id, $1, $3);
         }
