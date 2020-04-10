@@ -83,6 +83,7 @@ static void expression_optimize(parser_state_t* state, expression_t* expr);
 
 static expression_t *expression_copy(expression_t *expr);
 static void expression_create_goto(parser_state_t *state, int type, char *labelstr, expression_t* cond);
+static void expression_create_goto_pop(parser_state_t *state, int type, char *labelstr, expression_t* cond, int pop);
 
 /* Bison things. */
 void yyerror(const parser_state_t*, const char*, ...);
@@ -1520,11 +1521,25 @@ Instruction:
     | VarDeclaration
     | BreakStatement
     | "return" {
-        const expr_t* expr = expr_get_by_symbol(state->version, RETURN);
         if (state->current_sub->is_inline)
             expression_create_goto(state, GOTO, "inline_end", NULL);
-        else 
-            instr_add(state, state->current_sub, instr_new(state, expr->id, "SSSSS", 0, 0, 0x25, 0, 2));
+        else {
+            int pop = 0;
+            thecl_variable_t* var;
+            for (int v=0; v < state->current_sub->var_count; ++v)
+                for (int s=1; s < state->scope_cnt; ++s)
+                    if (state->current_sub->vars[v]->scope == state->scope_stack[s])
+                        ++pop;
+            if (pop > 0) {
+                char buf[512];
+                snprintf(buf, 512, "@%s_sub_end", state->current_sub->name);
+                expression_create_goto(state, GOTO, buf, NULL, pop);
+            }
+            else {
+                const expr_t* expr = expr_get_by_symbol(state->version, RETURN);
+                instr_add(state, state->current_sub, instr_new(state, expr->id, "SSSSS", 0, 0, 0x25, 0, 2));
+            }
+        }
     }
     ;
 
@@ -2484,6 +2499,17 @@ expression_create_goto(
     char *labelstr,
     expression_t* cond)
 {
+    expression_create_goto_pop(state, type, labelstr, cond, 0);
+}
+
+static void
+expression_create_goto_pop(
+    parser_state_t *state,
+    int type,
+    char *labelstr,
+    expression_t* cond,
+    int pop)
+{
     const expr_t* expr = expr_get_by_symbol(state->version, type);
     thecl_param_t *p1 = param_new('o');
     p1->value.type = 'z';
@@ -2504,7 +2530,7 @@ expression_create_goto(
             pcond = cond->value;
         }
     }
-    instr_add(state, state->current_sub, instr_new(state, expr->id, "pSpSS", p1, 0, pcond, state->version == 1 ? (type == GOTO ? 0 : (type == IF ? 1 : (type == UNLESS ? 2 : 3))) : 0, 0));
+    instr_add(state, state->current_sub, instr_new(state, expr->id, "pSpSS", p1, pop, pcond, state->version == 1 ? (type == GOTO ? 0 : (type == IF ? 1 : (type == UNLESS ? 2 : 3))) : 0, 0));
 }
 
 static void
@@ -2774,6 +2800,9 @@ sub_finish(
     }
     else {
         int bb = state->block_bound;
+        char buf[512];
+        snprintf(buf, 512, "@%s_sub_end", state->current_sub->name);
+        label_create(state, buf);
         scope_finish(state, true);
         thecl_instr_t* last_ins = state->version == 1 ? NULL : list_tail(&state->current_sub->instrs);
         const expr_t* expr = expr_get_by_symbol(state->version, RETURN);
