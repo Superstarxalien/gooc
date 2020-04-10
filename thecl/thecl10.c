@@ -913,6 +913,7 @@ c2_instr_serialize(
                         if (!was_error) {
                             fprintf(stderr, "%s:c2_instr_serialize: in sub %s: sub/state/label not found: %s\n", argv0, sub->name, param->value.val.z);
                         }
+                        p = o;
                     }
                     else {
                         p = called_sub->start_offset;
