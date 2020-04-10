@@ -1513,9 +1513,9 @@ Instruction:
             free($3);
         }
       }
-    | "goto" IDENTIFIER {
+    /*| "goto" IDENTIFIER {
         expression_create_goto(state, GOTO, $2, NULL);
-    }
+    }*/
     | Assignment
     | VarDeclaration
     | BreakStatement
