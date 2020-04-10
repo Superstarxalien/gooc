@@ -96,6 +96,7 @@
 "while"    return WHILE;
 "until"    return UNTIL;
 "break"    return BREAK;
+"continue" return CONTINUE;
 "="        return ASSIGN;
 "+="       return ASSIGNADD;
 "-="       return ASSIGNSUB;

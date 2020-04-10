@@ -233,6 +233,7 @@ int yydebug = 0;
 %token WHILE "while"
 %token UNTIL "until"
 %token BREAK "break"
+%token CONTINUE "continue"
 %token CALL
 %token LOAD
 %token GLOAD
@@ -1066,11 +1067,34 @@ CodeBlock:
     | Instruction ";"
     ;
 
+ContinueStatement:
+      "continue" {
+          list_node_t *head = state->block_stack.head;
+          for(; head; head = head->next) {
+              if (
+                  strncmp(head->data, "do", 2) == 0 ||
+                  strncmp(head->data, "while", 5) == 0 ||
+                  strncmp(head->data, "until", 5) == 0
+              ) {
+                  char labelstr[256];
+                  snprintf(labelstr, 256, "%s_continue", (char*)head->data);
+                  expression_create_goto(state, GOTO, labelstr, NULL);
+                  break;
+              }
+          }
+          if(!head) {
+              yyerror(state, "continue not within while or until");
+              g_was_error = true;
+          }
+      }
+      ;
+
 BreakStatement:
       "break" {
           list_node_t *head = state->block_stack.head;
           for(; head; head = head->next) {
               if (
+                  strncmp(head->data, "do", 2) == 0 ||
                   strncmp(head->data, "while", 5) == 0 ||
                   strncmp(head->data, "until", 5) == 0
               ) {
@@ -1191,10 +1215,13 @@ WhileBlock:
           }
           char labelstr_st[256];
           char labelstr_end[256];
+          char labelstr_continue[256];
           list_node_t *head = state->block_stack.head;
           snprintf(labelstr_st, 256, "%s_st", (char*)head->data);
           snprintf(labelstr_end, 256, "%s_end", (char*)head->data);
+          snprintf(labelstr_continue, 256, "%s_continue", (char*)head->data);
 
+          label_create(state, labelstr_continue);
           expression_create_goto(state, GOTO, labelstr_st, NULL);
           label_create(state, labelstr_end);
 
@@ -1226,10 +1253,13 @@ WhileBlock:
           }
           char labelstr_st[256];
           char labelstr_end[256];
+          char labelstr_continue[256];
           list_node_t *head = state->block_stack.head;
           snprintf(labelstr_st, 256, "%s_st", (char*)head->data);
           snprintf(labelstr_end, 256, "%s_end", (char*)head->data);
+          snprintf(labelstr_continue, 256, "%s_continue", (char*)head->data);
 
+          label_create(state, labelstr_continue);
           expression_create_goto(state, GOTO, labelstr_st, NULL);
           label_create(state, labelstr_end);
 
@@ -1261,10 +1291,13 @@ WhileBlock:
           }
           char labelstr_st[256];
           char labelstr_end[256];
+          char labelstr_continue[256];
           list_node_t *head = state->block_stack.head;
           snprintf(labelstr_st, 256, "%s_st", (char*)head->data);
           snprintf(labelstr_end, 256, "%s_end", (char*)head->data);
+          snprintf(labelstr_continue, 256, "%s_continue", (char*)head->data);
 
+          label_create(state, labelstr_continue);
           expression_create_goto(state, GOTO, labelstr_st, NULL);
           label_create(state, labelstr_end);
 
@@ -1297,10 +1330,13 @@ WhileBlock:
           }
           char labelstr_st[256];
           char labelstr_end[256];
+          char labelstr_continue[256];
           list_node_t *head = state->block_stack.head;
           snprintf(labelstr_st, 256, "%s_st", (char*)head->data);
           snprintf(labelstr_end, 256, "%s_end", (char*)head->data);
+          snprintf(labelstr_continue, 256, "%s_continue", (char*)head->data);
 
+          label_create(state, labelstr_continue);
           expression_create_goto(state, GOTO, labelstr_st, NULL);
           label_create(state, labelstr_end);
 
@@ -1334,10 +1370,13 @@ DoBlock:
       CodeBlock "while" ParenExpression[cond]  {
           char labelstr_st[256];
           char labelstr_end[256];
+          char labelstr_continue[256];
           list_node_t *head = state->block_stack.head;
           snprintf(labelstr_st, 256, "%s_st", (char*)head->data);
           snprintf(labelstr_end, 256, "%s_end", (char*)head->data);
+          snprintf(labelstr_continue, 256, "%s_continue", (char*)head->data);
 
+          label_create(state, labelstr_continue);
           expression_create_goto(state, IF, labelstr_st, $cond);
           expression_free($cond);
           label_create(state, labelstr_end);
@@ -1348,10 +1387,13 @@ DoBlock:
     | CodeBlock "until" ParenExpression[cond]  {
           char labelstr_st[256];
           char labelstr_end[256];
+          char labelstr_continue[256];
           list_node_t *head = state->block_stack.head;
           snprintf(labelstr_st, 256, "%s_st", (char*)head->data);
           snprintf(labelstr_end, 256, "%s_end", (char*)head->data);
+          snprintf(labelstr_continue, 256, "%s_continue", (char*)head->data);
 
+          label_create(state, labelstr_continue);
           expression_create_goto(state, UNLESS, labelstr_st, $cond);
           expression_free($cond);
           label_create(state, labelstr_end);
@@ -1515,6 +1557,7 @@ Instruction:
     | Assignment
     | VarDeclaration
     | BreakStatement
+    | ContinueStatement
     | "return" {
         if (state->current_sub->is_inline)
             expression_create_goto(state, GOTO, "inline_end", NULL);
