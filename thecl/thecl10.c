@@ -377,7 +377,7 @@ c1_instr_serialize(
             free(sub_name_param->value.val.z);
             sub_name_param->type = 'S';
             sub_name_param->value.type = 'S';
-            sub_name_param->value.val.S = called_sub->start_offset;
+            sub_name_param->value.val.S = called_sub ? called_sub->start_offset : 0x3FFF;
         }
     }
 
