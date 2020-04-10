@@ -949,7 +949,7 @@ State_Instructions:
         if (state->current_state->trans)
             yyerror(state, "duplicate trans block in state: %s", state->current_state->name);
         char buf[256];
-        snprintf(buf, 256, "%s_TRANS_%i_%i", state->current_state->name, yylloc.first_line, yylloc.first_column);
+        snprintf(buf, 256, "__%s_TRANS", state->current_state->name);
         sub_begin(state, buf);
         state->current_sub->is_inline = false;
         state->current_sub->is_trans = true;
@@ -962,7 +962,7 @@ State_Instructions:
         if (state->current_state->code)
             yyerror(state, "duplicate code block in state: %s", state->current_state->name);
         char buf[256];
-        snprintf(buf, 256, "%s_CODE_%i_%i", state->current_state->name, yylloc.first_line, yylloc.first_column);
+        snprintf(buf, 256, "__%s_CODE", state->current_state->name);
         sub_begin(state, buf);
         state->current_sub->is_inline = false;
         state->current_state->code = state->current_sub;
@@ -974,7 +974,7 @@ State_Instructions:
         if (state->current_state->event)
             yyerror(state, "duplicate event block in state: %s", state->current_state->name);
         char buf[256];
-        snprintf(buf, 256, "%s_EVENT_%i_%i", state->current_state->name, yylloc.first_line, yylloc.first_column);
+        snprintf(buf, 256, "__%s_EVENT", state->current_state->name);
         sub_begin(state, buf);
         state->current_sub->is_inline = false;
         state->current_state->event = state->current_sub;
