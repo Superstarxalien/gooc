@@ -308,6 +308,7 @@ int yydebug = 0;
 %token ISCOLLIDING "iscolliding"
 %token UNK2 "__unk2"
 %token TRYLOAD "tryload"
+%token GETANIM "getanim"
 
 %type <list> Instruction_Parameters_List
 %type <list> Instruction_Parameters
@@ -1674,6 +1675,7 @@ ExpressionSubset:
     | "-" Expression              { $$ = EXPR_2(SUBTRACT, expression_val_new(state, 0), $2); }
     | "&" Expression              { $$ = EXPR_2(ADDRESSOF,expression_load_new(state, param_sp_new()), $2); }
     | "abs" "(" Expression ")"    { $$ = EXPR_2(ABS,      expression_load_new(state, param_sp_new()), $3); }
+    | "getanim" "(" Expression ")"{ $$ = EXPR_2(GETANIM,  expression_load_new(state, param_sp_new()), $3); }
     | "seek" "(" Expression "," Expression "," Expression ")"     { $$ = EXPR_3(SEEK, $3, $5, $7); }
     | "seek" "(" Expression "," Expression ")"                    { $$ = EXPR_2(SEEK, $3, $5); }
     | "degseek" "(" Expression "," Expression "," Expression ")"  { $$ = EXPR_3(DEGSEEK, $3, $5, $7); }

@@ -161,6 +161,7 @@
 "iscolliding"      return ISCOLLIDING;
 "__unk2"           return UNK2;
 "tryload"          return TRYLOAD;
+"getanim"          return GETANIM;
 
 vol\([0-9]+\.[0-9]+\) {
     yylval.integer = (int)(strtod(yytext+4, NULL) * 0x3FFF);
