@@ -574,7 +574,6 @@ c1_gool_ins_calcpath_params(
         list_append_new(params, param_val_new(0));
     }
     else if (c == 2) {
-
         list_append_new(params, param_val_new(5));
         list_append_new(params, param_val_new(0));
         list_append_new(params, param_val_new(0));
