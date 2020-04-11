@@ -2077,7 +2077,7 @@ instr_add(
                     goto NO_OPTIM;
                 param = list_tail(&last_ins->params);
                 
-                if (!(param->value.val.S <= 0x3F && param->value.val.S >= 0 && param->stack && param->object_link != 0)) {
+                if (!(param->value.val.S <= 0x3F && param->value.val.S >= 0 && param->stack == 1 && param->object_link != 0)) {
                     thecl_param_t* reg_param = instr->params.head->next->next->data;
                     reg_param->value.val.S = param->value.val.S;
                 }
