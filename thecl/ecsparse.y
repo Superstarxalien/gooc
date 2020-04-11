@@ -1571,7 +1571,7 @@ Instruction:
             if (pop > 0) {
                 char buf[512];
                 snprintf(buf, 512, "@%s_sub_end", state->current_sub->name);
-                expression_create_goto(state, GOTO, buf, NULL, pop);
+                expression_create_goto_pop(state, GOTO, buf, NULL, pop);
             }
             else {
                 const expr_t* expr = expr_get_by_symbol(state->version, RETURN);
