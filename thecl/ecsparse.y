@@ -1718,7 +1718,7 @@ ExpressionSubset:
     | "-" Expression              { $$ = EXPR_2(SUBTRACT, expression_val_new(state, 0), $2); }
     | "&" Expression              { $$ = EXPR_2(ADDRESSOF,expression_load_new(state, param_sp_new()), $2); }
     | "abs" "(" Expression ")"    { $$ = EXPR_2(ABS,      expression_load_new(state, param_sp_new()), $3); }
-    | "getanim" "(" Expression ")"{ $$ = EXPR_2(GETANIM,  expression_load_new(state, param_sp_new()), $3); }
+    | "getanim" "(" Expression ")"{ $$ = EXPR_2(GETANIM,  $3, expression_load_new(state, param_sp_new())); }
     | "seek" "(" Expression "," Expression "," Expression ")"     { $$ = EXPR_3(SEEK, $3, $5, $7); }
     | "seek" "(" Expression "," Expression ")"                    { $$ = EXPR_2(SEEK, $3, $5); }
     | "degseek" "(" Expression "," Expression "," Expression ")"  { $$ = EXPR_3(DEGSEEK, $3, $5, $7); }
@@ -2075,13 +2075,7 @@ instr_add(
                 thecl_param_t* param = list_head(&last_ins->params);
                 if (param->value.val.S != 0x1F || !param->stack || param->object_link != 0)
                     goto NO_OPTIM;
-                param = list_tail(&last_ins->params);
-                
-                if (!(param->value.val.S <= 0x3F && param->value.val.S >= 0 && param->stack == 1 && param->object_link != 0)) {
-                    thecl_param_t* reg_param = instr->params.head->next->next->data;
-                    reg_param->value.val.S = param->value.val.S;
-                }
-                
+
                 if (state->version == 1) {
                     param = instr->params.tail->prev->data;
                     param->value.val.S = param->value.val.S == 1 ? 2 : 1;
@@ -2089,9 +2083,22 @@ instr_add(
                     instr->id = instr->id == beqz_expr->id ? bnez_expr->id : beqz_expr->id;
                 }
 
-                list_del(&sub->instrs, sub->instrs.tail);
-                thecl_instr_free(last_ins);
-                --sub->offset;
+                param = list_tail(&last_ins->params);
+
+                if (param->value.val.S <= 0x3F && param->value.val.S >= 0 && param->stack == 1 && param->object_link == 0) {
+                    thecl_param_t* reg_param = instr->params.head->next->next->data;
+                    reg_param->value.val.S = param->value.val.S;
+                    list_del(&sub->instrs, sub->instrs.tail);
+                    thecl_instr_free(last_ins);
+                    --sub->offset;
+                }
+				else {
+					expr = expr_get_by_symbol(state->version, LOAD);
+					last_ins->id = expr->id;
+					param = list_head(&last_ins->params);
+					list_del(&last_ins->params, last_ins->params.head);
+					param_free(param);
+				}
             } else { /* optimize if literal conditions */
                 expr = expr_get_by_symbol(state->version, LOAD);
                 if (last_ins->id == expr->id && last_ins->param_count > 0) {
