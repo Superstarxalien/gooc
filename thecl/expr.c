@@ -79,7 +79,7 @@ global_expressions[] = {
     { SEEK,      34, NULL, 3, 1, 0, 0 }, /* seek(s0, s1, s2) */
     { GETCOLOR,  35, NULL, 2, 0, 0, 0 }, /* getcolor(s0, s1) */
     { DEGSEEK,   37, NULL, 3, 1, 0, 0 }, /* degseek(s0, s1, s2) */
-    { GETANIM,   39, NULL, 1, 0, 0, 1 }, /* getanim(s0) */
+    { GETANIM,   39, NULL, 2, 0, 0, 1 }, /* getanim(s0) */
     { 0,          0, NULL, 0, 0, 0, 0 }
 };
 
