@@ -291,6 +291,7 @@ c1_parse(
     path_add(state, filename);
 
     state->has_mips = false;
+    state->declared_tempfields = false;
     state->state_count = 0;
     state->spawn_count = 0;
 

@@ -1038,7 +1038,7 @@ c1_gool_ins_gamefunc10_params(
 
 static const gool_ins_t
 c1_gool_ins[] = {
-     /* NAME                        ID  VA POP R  L   C              VALIDATE */
+     /* NAME                        ID VA POP R   L   C              VALIDATE */
     { "onstateexit",                24, 0, 0, 0, -1,  1, c1_gool_ins_onexit_params },
     { "settrans",                   24, 0, 0, 0, -1,  1, c1_gool_ins_settrans_params },
     { "setfield",                   28, 1, 0, 0, -1,  2, c1_gool_ins_setfield_params },
@@ -1134,7 +1134,7 @@ c2_gool_ins_settrans_params(
 
 static const gool_ins_t
 c2_gool_ins[] = {
-     /* NAME                        ID  VA POP R  L   C              VALIDATE */
+     /* NAME                        ID VA POP R   L   C              VALIDATE */
     { "onstateexit",                24, 0, 0, 0, -1,  1, c2_gool_ins_onexit_params },
     { "settrans",                   24, 0, 0, 0, -1,  1, c2_gool_ins_settrans_params },
     { "entitysetspawn",             28, 0, 0, 0, -1,  1, c1_gool_ins_entitysetspawn_params },

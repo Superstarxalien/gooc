@@ -152,6 +152,8 @@ typedef struct {
     uint32_t stateflag;
     uint32_t statusc;
 
+    bool trans_args;
+
     uint16_t index;
 } thecl_state_t;
 
@@ -253,6 +255,7 @@ typedef struct {
     thecl_state_t* current_state;
     thecl_interrupt_t* current_interrupt;
     gool_anim_t* current_anim;
+    bool declared_tempfields;
     thecl_t* main_ecl;
     thecl_t* ecl;
     thecl_t** ecl_stack;

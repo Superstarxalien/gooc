@@ -87,6 +87,7 @@
 "return"   return RETURN;
 "expr"     return EXPRESSION;
 "inline"   return INLINE;
+"__transargs"      return TRANSARGS;
 
 "goto"     return GOTO;
 "unless"   return UNLESS;

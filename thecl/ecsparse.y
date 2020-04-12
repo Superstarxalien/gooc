@@ -112,6 +112,8 @@ static expr_macro_t* macro_create(parser_state_t* state, const char* name, expre
 static thecl_variable_t* arg_create(parser_state_t* state, thecl_sub_t* sub, const char* name);
 /* Creates a new object field. */
 static field_t* objfield_create(parser_state_t* state, const char* name);
+/* Deletes an object field. */
+static void objfield_delete(parser_state_t* state, const char* name);
 /* Creates a new variable in the specified subroutine. */
 static thecl_variable_t* var_create(parser_state_t* state, thecl_sub_t* sub, const char* name, bool push);
 /* Creates a new variable in the specified subroutine, and assigns a value to it. */
@@ -208,6 +210,7 @@ int yydebug = 0;
 %token STATE "state"
 %token CODE "code"
 %token TRANS "trans"
+%token TRANSARGS "__transargs"
 %token ONCE "once"
 %token NOFIRST "nofirst"
 %token EVENT "event"
@@ -934,8 +937,11 @@ ArgumentDeclaration:
 
 State_Instructions:
     %empty
-    | State_Instructions IDENTIFIER INTEGER
-      {
+    | State_Instructions "__transargs" {
+        state->current_state->trans_args = true;
+        state->declared_tempfields = true;
+    }
+    | State_Instructions IDENTIFIER INTEGER {
         if (!strcmp($2, "stateflag"))
             state->current_state->stateflag = $3;
         else if (!strcmp($2, "statusc"))
@@ -954,8 +960,25 @@ State_Instructions:
         state->current_sub->is_inline = false;
         state->current_sub->is_trans = true;
         state->current_state->trans = state->current_sub;
+        
+        if (state->current_state->trans_args) {
+            if (!state->current_state->code) {
+                yyerror(state, "cannot use trans args without code block first in state: %s", state->current_state->name);
+                state->current_state->trans_args = false;
+            }
+            else {
+                for (int a=0; a < state->current_state->code->arg_count; ++a) {
+                    objfield_create(state, state->current_state->code->args[a]->name);
+                }
+            }
+        }
       }
       Subroutine_Body {
+        if (state->current_state->trans_args) {
+            for (int a=0; a < state->current_state->code->arg_count; ++a) {
+                objfield_delete(state, state->current_state->code->args[a]->name);
+            }
+        }
         sub_finish(state);
       }
     | State_Instructions "code" {
@@ -1588,8 +1611,8 @@ Assignment:
             return 0;
         }
         const expr_t* expr = expr_get_by_id(state->version, $3->id);
-        thecl_param_t* src_param = expr->is_unary ? ((expression_t*)$3->children.head->data)->value : NULL;
-        if (($1->stack == 1 && expr->is_unary && src_param->value.val.S == 0x1F && src_param->stack == 1 && src_param->object_link == 0)) {
+        thecl_param_t* src_param = expr != NULL && expr->is_unary ? ((expression_t*)$3->children.head->data)->value : NULL;
+        if (($1->stack == 1 && src_param && src_param->value.val.S == 0x1F && src_param->stack == 1 && src_param->object_link == 0)) {
             src_param->value.val.S = $1->value.val.S;
             if ($1->object_link == -1 && $1->value.val.S >= 3) {
                 state->current_sub->vars[$1->value.val.S - 3]->is_written = true;
@@ -2092,13 +2115,13 @@ instr_add(
                     thecl_instr_free(last_ins);
                     --sub->offset;
                 }
-				else {
-					expr = expr_get_by_symbol(state->version, LOAD);
-					last_ins->id = expr->id;
-					param = list_head(&last_ins->params);
-					list_del(&last_ins->params, last_ins->params.head);
-					param_free(param);
-				}
+                else {
+                    expr = expr_get_by_symbol(state->version, LOAD);
+                    last_ins->id = expr->id;
+                    param = list_head(&last_ins->params);
+                    list_del(&last_ins->params, last_ins->params.head);
+                    param_free(param);
+                }
             } else { /* optimize if literal conditions */
                 expr = expr_get_by_symbol(state->version, LOAD);
                 if (last_ins->id == expr->id && last_ins->param_count > 0) {
@@ -2774,6 +2797,7 @@ state_begin(
     gstate->exe_eid = state->ecl->eid;
     gstate->stateflag = 1;
     gstate->statusc = 2;
+    gstate->trans_args = false;
     gstate->index = state->state_count++;
     list_append_new(&state->main_ecl->states, gstate);
 
@@ -2966,7 +2990,10 @@ objfield_create(
     const char* name)
 {
     if (objfield_get(state, name) != NULL) {
-        yyerror(state, "redeclaration of global variable: %s", name);
+        yyerror(state, "redeclaration of object variable: %s", name);
+    }
+    if (state->declared_tempfields) {
+        yyerror(state, "trans arguments used before variable declaration: %s", name);
     }
 
     field_t* var = malloc(sizeof(field_t));
@@ -2977,6 +3004,20 @@ objfield_create(
     state->main_ecl->vars[state->main_ecl->var_count - 1] = var;
 
     return var;
+}
+
+static void
+objfield_delete(
+    parser_state_t* state,
+    const char* name)
+{
+    field_t* field = objfield_get(state, name);
+    if (field == NULL) {
+        yyerror(state, "nonexistant object variable: %s", name);
+    }
+
+    free(field);
+    state->main_ecl->vars = realloc(state->main_ecl->vars, --state->main_ecl->var_count * sizeof(field_t*));
 }
 
 static thecl_variable_t*
