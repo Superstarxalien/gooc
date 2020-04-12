@@ -640,11 +640,17 @@ Interrupt_Body:
 
 GlobalVarDeclaration:
       "var" IDENTIFIER {
-        objfield_create(state, $2);
+		if (state->declared_tempfields)
+			yyerror(state, "trans arguments used before variable declaration: %s", $2);
+        else
+			objfield_create(state, $2);
         free($2);
       }
     | GlobalVarDeclaration "," IDENTIFIER {
-        objfield_create(state, $3);
+		if (state->declared_tempfields)
+			yyerror(state, "trans arguments used before variable declaration: %s", $3);
+        else
+			objfield_create(state, $3);
         free($3);
       }
     ;
@@ -2991,9 +2997,6 @@ objfield_create(
 {
     if (objfield_get(state, name) != NULL) {
         yyerror(state, "redeclaration of object variable: %s", name);
-    }
-    if (state->declared_tempfields) {
-        yyerror(state, "trans arguments used before variable declaration: %s", name);
     }
 
     field_t* var = malloc(sizeof(field_t));
