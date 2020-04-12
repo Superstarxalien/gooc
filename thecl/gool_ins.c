@@ -1141,6 +1141,7 @@ c2_gool_ins[] = {
     { "entitysetstate",             28, 0, 0, 0, -1,  2, c1_gool_ins_entitysetstate_params },
     { "savecheckpoint",             28, 0, 0, 0, -1,  0, c1_gool_ins_savecheckpoint_params },
     { "loadcheckpoint",             28, 0, 0, 0, -1,  0, c1_gool_ins_loadcheckpoint_params },
+    { "movetolist",                 28, 0, 0, 0, -1,  1, c1_gool_ins_movetolist_params },
     { "setcolor",                   36, 0, 0, 0, -1,  3, c1_gool_ins_setcolor_params },
     { "anim",                       39, 0, 0, 0, -1,  2, c1_gool_ins_anim_params },
     { "nop",                        47, 0, 0, 0, -1,  0, c1_gool_ins_nop_params },
