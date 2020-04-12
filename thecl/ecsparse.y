@@ -981,7 +981,7 @@ State_Instructions:
       }
       Subroutine_Body {
         if (state->current_state->trans_args) {
-            for (int a=0; a < state->current_state->code->arg_count; ++a) {
+            for (int a=state->current_state->code->arg_count-1; a >= 0; --a) {
                 objfield_delete(state, state->current_state->code->args[a]->name);
             }
         }
