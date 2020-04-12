@@ -1565,6 +1565,26 @@ Instruction:
                     expression_free(expression);
                 }
                 list_free_nodes(&state->expressions);
+
+                if (gool_ins->late_param >= 0) {
+                    thecl_param_t* param = NULL;
+                    int i = 0;
+                    list_for_each($3, param) {
+                        if (i++ == gool_ins->late_param && !param->is_expression_param) {
+                            break;
+                        }
+                        param = NULL;
+                    }
+
+                    if (param && (param->stack != 1 || param->object_link != 0 || param->value.val.S < 0 || param->value.val.S > 0x3F)) {
+                        expression_t* expression = expression_load_new(state, param_copy(param));
+                        expression_output(state, expression, 1);
+                        expression_free(expression);
+                        param->stack = 1;
+                        param->object_link = 0;
+                        param->value.val.S = 0x1F;
+                    }
+                }
                 if (!$3) {
                     $3 = list_new();
                 }
