@@ -68,7 +68,7 @@ static expression_t* expression_pointer_new(const parser_state_t* state, thecl_p
 static expression_t* expression_operation_new(const parser_state_t* state, const int symbol, expression_t** operands);
 static expression_t* expression_ternary_new(const parser_state_t* state, expression_t* cond, expression_t* val1, expression_t* val2);
 
-static void expression_output(parser_state_t* state, expression_t* expr, int has_no_parents);
+static void expression_output(parser_state_t* state, expression_t* expr);
 static void expression_optimize(parser_state_t* state, expression_t* expr);
 #define EXPR_5(a, A, B, C, D, E) \
     expression_operation_new(state, a, (expression_t*[]){ A, B, C, D, E, NULL })
@@ -1487,7 +1487,7 @@ Instruction:
                     list_for_each(param_list, param) {
                         if (param->is_expression_param && param != late_param) {
                             expression_t* expression = expr_node->data;
-                            expression_output(state, expression, 1);
+                            expression_output(state, expression);
                             expression_free(expression);
                             if (gool_ins->reverse_args) {
                                 expr_node = expr_node->next;
@@ -1511,7 +1511,7 @@ Instruction:
                     }
                     else if (param->is_expression_param) {
                         expression_t* expression = expr_node->data;
-                        expression_output(state, expression, 1);
+                        expression_output(state, expression);
                         expression_free(expression);
                         if (gool_ins->reverse_args) {
                             expr_node = expr_node->next;
@@ -1540,7 +1540,7 @@ Instruction:
 
                 if (late_expr) {
                     if (late_expr->type != EXPRESSION_VAL || late_param->stack != 1 || late_param->object_link != 0 || late_param->value.val.S < 0 || late_param->value.val.S > 0x3F) {
-                        expression_output(state, late_expr, 1);
+                        expression_output(state, late_expr);
                         expression_free(late_expr);
                         late_param->stack = 1;
                         late_param->object_link = 0;
@@ -1566,7 +1566,7 @@ Instruction:
             else {
                 expression_t* expression;
                 list_for_each(&state->expressions, expression) {
-                    expression_output(state, expression, 1);
+                    expression_output(state, expression);
                     expression_free(expression);
                 }
                 list_free_nodes(&state->expressions);
@@ -1583,7 +1583,7 @@ Instruction:
 
                     if (param && (param->stack != 1 || param->object_link != 0 || param->value.val.S < 0 || param->value.val.S > 0x3F)) {
                         expression_t* expression = expression_load_new(state, param_copy(param));
-                        expression_output(state, expression, 1);
+                        expression_output(state, expression);
                         expression_free(expression);
                         param->stack = 1;
                         param->object_link = 0;
@@ -1652,7 +1652,7 @@ Assignment:
                 state->current_sub->args[-$1->value.val.S - 1]->is_written = true;
             }
             param_free($1);
-            expression_output(state, $3, 0);
+            expression_output(state, $3);
             expression_free($3);
             break;
         }
@@ -1660,7 +1660,7 @@ Assignment:
         if ($3->type == EXPRESSION_VAL && ($1->stack != 2 || ($1->stack == 2 && !expr->is_unary))) {
             src_param = $3->value;
         } else {
-            expression_output(state, $3, 0);
+            expression_output(state, $3);
             src_param = param_sp_new();
         }
         expression_free($3);
@@ -2476,7 +2476,7 @@ instr_create_call(
                         expression_free(current_expr);
                     }
                 } else if (current_expr->type == EXPRESSION_OP) {
-                    expression_output(state, current_expr, 0);
+                    expression_output(state, current_expr);
                     list_del(&state->expressions, last_node);
                     expression_free(current_expr);
                 }
@@ -2626,7 +2626,7 @@ expression_create_goto_pop(
     }
     else {
         if (cond->type != EXPRESSION_VAL || cond->value->stack != 1 || cond->value->object_link != 0 || cond->value->value.val.S < 0 || cond->value->value.val.S > 0x3F) {
-            expression_output(state, cond, 1);
+            expression_output(state, cond);
             pcond = param_sp_new();
         }
         else {
@@ -2639,13 +2639,8 @@ expression_create_goto_pop(
 static void
 expression_output(
     parser_state_t* state,
-    expression_t* expr,
-    int has_no_parents)
+    expression_t* expr)
 {
-    if (has_no_parents)
-        /* Since expression_optimize is already done recursively for children, it shouldn't be called for child expressions. */
-        expression_optimize(state, expr);
-
     if (expr->type == EXPRESSION_VAL) {
         instr_add(state, state->current_sub, instr_new(state, expr->id, "p", expr->value));
     } else if (expr->type == EXPRESSION_GLOBAL) {
@@ -2662,7 +2657,7 @@ expression_output(
                 list_append_new(param_list, child_expr->value);
             }
             else {
-                expression_output(state, child_expr, 1);
+                expression_output(state, child_expr);
                 list_append_new(param_list, param_sp_new());
             }
         }
@@ -2689,11 +2684,11 @@ expression_output(
             if (i == 0) {
                 expression_create_goto(state, UNLESS, labelstr_unless, child_expr);
             } else if (i == 1) {
-                expression_output(state, child_expr, 1);
+                expression_output(state, child_expr);
                 expression_create_goto(state, GOTO, labelstr_end, NULL);
                 label_create(state, labelstr_unless);
             } else {
-                expression_output(state, child_expr, 1);
+                expression_output(state, child_expr);
                 label_create(state, labelstr_end);
             }
             ++i;
@@ -3099,7 +3094,7 @@ var_create_assign(
     if (expr->type == EXPRESSION_VAL) {
         param = expr->value;
     } else {
-        expression_output(state, expr, 0);
+        expression_output(state, expr);
         param = NULL;
     }
     expression_free(expr);
@@ -3214,7 +3209,7 @@ var_shorthand_assign(
 
     expression_t* expr_load = expression_load_new(state, param_clone);
     expression_t* expr_main = EXPR_2(EXPR, expr_load, expr_assign);
-    expression_output(state, expr_main, 1);
+    expression_output(state, expr_main);
     expression_free(expr_main);
     /* No need to free expr_load or expr, since they both got freed as children of expr_main. */
 
