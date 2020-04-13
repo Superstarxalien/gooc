@@ -57,9 +57,11 @@ PACK_BEGIN
     uint8_t u2;
     uint8_t v2;
     uint16_t segment:2;
-    uint16_t unused2:5;
+    uint16_t unk3:3;
+    uint16_t additive:1;
+    uint16_t unk4:1;
     uint16_t color:2;
-    uint16_t unk3:7;
+    uint16_t unk5:7;
     uint8_t u3;
     uint8_t v3;
     uint8_t u4;
