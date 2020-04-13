@@ -137,6 +137,7 @@ typedef struct {
     bool has_once;
     bool has_nofirst;
 
+    bool deleted;
     gool_sub_t* instr_data;
 } thecl_sub_t;
 

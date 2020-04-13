@@ -1101,9 +1101,7 @@ c2_gool_ins_onexit_params(
     size_t c = list_count(params);
     if (c == 1) {
         list_append_new(params, param_val_new(0));
-        param = param_new('S');
-        param->value.val.S = field_get("hpc")->offset;
-        list_append_new(params, param);
+        list_append_new(params, param_val_new(field_get("hpc")->offset));
     }
     else {
         fprintf(stderr, "%s: onstateexit: wrong number of arguments (expected 1, got %zu)\n", argv0, c);
@@ -1121,9 +1119,7 @@ c2_gool_ins_settrans_params(
     size_t c = list_count(params);
     if (c == 1) {
         list_append_new(params, param_val_new(0));
-        param = param_new('S');
-        param->value.val.S = field_get("tpc")->offset;
-        list_append_new(params, param);
+        list_append_new(params, param_val_new(field_get("tpc")->offset));
     }
     else {
         fprintf(stderr, "%s: settrans: wrong number of arguments (expected 1, got %zu)\n", argv0, c);

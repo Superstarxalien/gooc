@@ -140,14 +140,9 @@ thecl_free(
         }
         list_free_nodes(&sub->labels);
 
-        if (sub->instr_data) {
-            for (size_t i = 0; i < datacount; ++i) {
-                if (datas[i] == sub->instr_data)
-                    goto data_exists;
-            }
+        if (sub->instr_data && !sub->deleted) {
             datas = realloc(datas, sizeof(gool_sub_t*) * ++datacount);
             datas[datacount - 1] = sub->instr_data;
-        data_exists:;
         }
 
         free(sub);

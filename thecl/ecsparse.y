@@ -2860,6 +2860,7 @@ sub_begin(
     sub->start_offset = state->ecl->ins_offset;
     sub->offset = 0;
     sub->instr_data = NULL;
+    sub->deleted = false;
     sub->is_trans = false;
     sub->has_once = false;
     sub->has_nofirst = false;

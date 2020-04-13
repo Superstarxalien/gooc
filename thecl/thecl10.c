@@ -330,7 +330,7 @@ c1_instr_serialize(
     thecl_sub_t* sub,
     thecl_instr_t* instr)
 {
-    thecl_param_t* param;
+    const thecl_param_t* param;
 
     const char* format = th10_find_format(ecl->version, instr->id);
 
@@ -347,7 +347,7 @@ c1_instr_serialize(
     if (instr->id == 0x86) {
         /* Validate sub call parameters. */
         list_node_t* node = instr->params.head;
-        thecl_param_t* sub_name_param = node->data;
+        const thecl_param_t* sub_name_param = node->data;
         char* sub_name = sub_name_param->value.val.z;
         const thecl_sub_t* called_sub = th10_find_sub(ecl, sub_name);
         if (!called_sub && ecl_ext) {
@@ -359,7 +359,7 @@ c1_instr_serialize(
                     argv0, sub->name, sub_name);
             was_error = true;
         } else {
-            thecl_param_t* sub_argc_param = node->next->next->data;
+            const thecl_param_t* sub_argc_param = node->next->next->data;
             called_sub = th10_find_sub_overload(ecl, sub_name, sub_argc_param->value.val.S);
             if (!called_sub && ecl_ext) {
                 called_sub = th10_find_sub(ecl_ext, sub_name);
@@ -375,10 +375,6 @@ c1_instr_serialize(
                     argv0, sub->name, sub_name);
                 was_error = true;
             }
-            free(sub_name_param->value.val.z);
-            sub_name_param->type = 'S';
-            sub_name_param->value.type = 'S';
-            sub_name_param->value.val.S = called_sub ? called_sub->start_offset : 0x3FFF;
         }
     }
 
@@ -387,9 +383,9 @@ c1_instr_serialize(
     char op;
     list_for_each(&instr->params, param) {
         int p;
-        if (param->type == 'o') {
+        if (param->type == 'o' || param->type == 'z') {
             /* This calculates the relative offset from the current instruction. */
-            thecl_label_t* label = label_find(sub, param->value.val.z);
+            thecl_label_t* label = param->type == 'z' ? NULL :label_find(sub, param->value.val.z);
             if (label) {
                 p = label->offset - (instr->offset + 1);
             }
@@ -403,7 +399,21 @@ c1_instr_serialize(
                     called_state = NULL;
                 }
                 if (!called_state) {
-                    const thecl_sub_t* called_sub = th10_find_sub(ecl, param->value.val.z);
+                    /* Validate sub call parameters. */
+                    char* sub_name = param->value.val.z;
+                    const thecl_sub_t* called_sub = th10_find_sub(ecl, sub_name);
+                    if (!called_sub && ecl_ext) {
+                        called_sub = th10_find_sub(ecl_ext, sub_name);
+                    }
+                    if (called_sub) {
+                        if (instr->id == 59) {
+                            const thecl_param_t* sub_argc_param = node->next->next->data;
+                            called_sub = th10_find_sub_overload(ecl, sub_name, sub_argc_param->value.val.S);
+                            if (!called_sub && ecl_ext) {
+                                called_sub = th10_find_sub(ecl_ext, sub_name);
+                            }
+                        }
+                    }
                     if (!called_sub) {
                         if (!was_error) {
                             fprintf(stderr, "%s:c1_instr_serialize: in sub %s: sub/state/label not found: %s\n", argv0, sub->name, param->value.val.z);
@@ -535,44 +545,37 @@ c1_instr_serialize(
 }
 
 static int
-c1_compile(
+c1_compile_gool(
     const parser_state_t* parser,
-    FILE* out)
+    FILE* out,
+    thecl_t* main_ecl,
+    thecl_t* ecl_ext
+)
 {
-    if (!file_seekable(out)) {
-        fprintf(stderr, "%s: output is not seekable\n", argv0);
-        return 0;
-    }
-
-    thecl_t* ecl = parser->main_ecl;
-
-    entry_header_t entry_header = { 0x100FFFFU, ecl->eid, 11U, 6U, { 0, 0, 0, 0, 0, 0, 0 } };
-    gool_header_t header = { ecl->id, ecl->type << 8, 1, ecl->var_count + 0x40, 0, 8 };
+    entry_header_t entry_header = { 0x100FFFFU, main_ecl->eid, 11U, ecl_ext ? 3U : 6U, { 0, 0, 0, 0, 0, 0, 0 } };
+    gool_header_t header = { main_ecl->id, main_ecl->type << 8, ecl_ext == NULL, ecl_ext ? 0 : main_ecl->var_count + 0x40, 0, 8 };
     thecl_sub_t* sub;
     const thecl_state_t* state;
     gool_anim_t* anim;
+    thecl_instr_t* instr;
 
-    /* write GOOL EIDs to const pool before anything else */
-    list_for_each(&ecl->states, state) {
-        gool_pool_force_get_index(ecl, state->exe_eid);
-    }
+    thecl_t* ecl = ecl_ext ? ecl_ext : main_ecl;
 
     list_for_each(&ecl->subs, sub) {
-        if (sub->forward_declaration || sub->is_inline)
+        if (sub->forward_declaration || sub->is_inline || sub->deleted)
             continue;
 
         sub->instr_data = malloc(sizeof(gool_sub_t) + sizeof(uint32_t) * sub->offset);
         sub->instr_data->was_written = 0;
 
-        thecl_instr_t* instr;
         int i = 0;
         list_for_each(&sub->instrs, instr) {
-            sub->instr_data->data[i++] = c1_instr_serialize(ecl, NULL, sub, instr);
+            sub->instr_data->data[i++] = c1_instr_serialize(main_ecl, ecl_ext, sub, instr);
         }
 
         thecl_sub_t* comp_sub;
         list_for_each(&ecl->subs, comp_sub) {
-            if (comp_sub == sub || !comp_sub->instr_data || comp_sub->offset != sub->offset)
+            if (sub->forward_declaration || sub->is_inline || sub->deleted || comp_sub == sub || !comp_sub->instr_data || comp_sub->offset != sub->offset)
                 continue;
 
             for (i = 0; i < sub->offset; ++i) {
@@ -581,6 +584,7 @@ c1_compile(
             }
             free(sub->instr_data);
             sub->instr_data = comp_sub->instr_data;
+            sub->deleted = true;
 
             thecl_instr_t* instr;
             list_for_each(&sub->instrs, instr)
@@ -600,19 +604,27 @@ c1_compile(
         }
     }
 
-    if (!file_write(out, &entry_header, sizeof(entry_header_t) + 7 * sizeof(uint32_t))) return 0;
+    list_for_each(&ecl->subs, sub) {
+        if (!sub->deleted) {
+            sub->instr_data = realloc(sub->instr_data, sizeof(gool_sub_t) + sizeof(uint32_t) * sub->offset);
 
+            int i = 0;
+            list_for_each(&sub->instrs, instr) {
+                sub->instr_data->data[i++] = c1_instr_serialize(main_ecl, ecl_ext, sub, instr);
+            }
+        }
+    }
+
+    if (!file_write(out, &entry_header, sizeof(entry_header_t) + (entry_header.count+1) * sizeof(uint32_t))) return 0;
     entry_header.offsets[0] = file_tell(out);
-
     if (!file_write(out, &header, sizeof(gool_header_t))) return 0;
-
     entry_header.offsets[1] = file_tell(out);
 
     list_for_each(&ecl->subs, sub) {
         if (sub->forward_declaration || sub->is_inline)
             continue;
 
-        if (sub->instr_data->was_written)
+        if (sub->instr_data->was_written || sub->deleted)
             continue;
         sub->instr_data->was_written = 1;
 
@@ -620,98 +632,119 @@ c1_compile(
     }
 
     entry_header.offsets[2] = file_tell(out);
-
     if (!file_write(out, ecl->consts, sizeof(int) * ecl->const_count)) return 0;
-
     entry_header.offsets[3] = file_tell(out);
 
-    /* write interrupts here */
-    size_t pos = file_tell(out);
-    thecl_interrupt_t* interrupt;
-    list_for_each(&ecl->interrupts, interrupt) {
-        while (header.interrupt_count <= interrupt->event->offset) {
-            ++header.interrupt_count;
-            uint16_t state_id = 255;
-            if (!file_write(out, &state_id, sizeof(uint16_t))) return 0;
-        }
-        if (!file_seek(out, pos + interrupt->event->offset * 2)) return 0;
-        uint16_t interrupt_val;
-        if (interrupt->type == INTERRUPT_STATE) {
-            state = c1_find_state(ecl, interrupt->lambda_name);
-            if (state == NULL) {
-                fprintf(stderr, "%s: state for interrupt %s not found: %s\n", argv0, interrupt->event->name, interrupt->lambda_name);
-                interrupt_val = 255;
+    if (!ecl_ext) {
+        size_t pos = file_tell(out);
+        thecl_interrupt_t* interrupt;
+        list_for_each(&ecl->interrupts, interrupt) {
+            while (header.interrupt_count <= interrupt->event->offset) {
+                ++header.interrupt_count;
+                uint16_t state_id = 255;
+                if (!file_write(out, &state_id, sizeof(uint16_t))) return 0;
             }
-            else {
-                interrupt_val = state->index;
-                if (state->index == 255) { /* lol */
-                    fprintf(stderr, "%s: state '%s' for interrupt %s has index 255 and will be ignored. consider using less states.\n",
-                        argv0, interrupt->lambda_name, interrupt->event->name);
+            if (!file_seek(out, pos + interrupt->event->offset * 2)) return 0;
+            uint16_t interrupt_val;
+            if (interrupt->type == INTERRUPT_STATE) {
+                state = c1_find_state(ecl, interrupt->lambda_name);
+                if (state == NULL) {
+                    fprintf(stderr, "%s: state for interrupt %s not found: %s\n", argv0, interrupt->event->name, interrupt->lambda_name);
+                    interrupt_val = 255;
+                }
+                else {
+                    interrupt_val = state->index;
+                    if (state->index == 255) { /* lol */
+                        fprintf(stderr, "%s: state '%s' for interrupt %s has index 255 and will be ignored. consider using less states.\n",
+                            argv0, interrupt->lambda_name, interrupt->event->name);
+                    }
                 }
             }
+            else if (interrupt->type == INTERRUPT_SUB) {
+                sub = th10_find_sub(ecl, interrupt->lambda_name);
+                interrupt_val = 0x8000 | sub->start_offset;
+            }
+            if (!file_write(out, &interrupt_val, sizeof(uint16_t))) return 0;
+            if (!file_seek(out, pos + header.interrupt_count * 2)) return 0;
         }
-        else if (interrupt->type == INTERRUPT_SUB) {
-            sub = th10_find_sub(ecl, interrupt->lambda_name);
-            interrupt_val = 0x8000 | sub->start_offset;
-        }
-        if (!file_write(out, &interrupt_val, sizeof(uint16_t))) return 0;
-        if (!file_seek(out, pos + header.interrupt_count * 2)) return 0;
-    }
 
-    thecl_spawn_t* spawn;
-    list_for_each(&ecl->spawns, spawn) {
-        state = c1_find_state(ecl, spawn->state_name);
-        uint16_t state_id = 255;
-        if (state == NULL) {
-            if (!file_write(out, &state_id, sizeof(uint16_t))) return 0;
-        }
-        else {
-            if (!file_write(out, &state->index, sizeof(uint16_t))) return 0;
-        }
-    }
-    pos = file_tell(out) % 4;
-    if (pos != 0) {
-        uint32_t a = 0;
-        if (!file_write(out, &a, 4 - pos)) return 0;
-    }
-
-    entry_header.offsets[4] = file_tell(out);
-
-    list_for_each(&ecl->states, state) {
-        if (!state->code) {
-            fprintf(stderr, "%s: warning: state %s has no code block\n", argv0, state->name);
-        }
-        if (state->event) {
-            if (state->event->arg_count != 2) {
-                fprintf(stderr, "%s: warning: state %s event block does not have 2 arguments\n", argv0, state->name);
+        thecl_spawn_t* spawn;
+        list_for_each(&ecl->spawns, spawn) {
+            state = c1_find_state(ecl, spawn->state_name);
+            uint16_t state_id = 255;
+            if (state == NULL) {
+                if (!file_write(out, &state_id, sizeof(uint16_t))) return 0;
+            }
+            else {
+                if (!file_write(out, &state->index, sizeof(uint16_t))) return 0;
             }
         }
-        state_t gstate = { state->stateflag, state->statusc, gool_pool_force_get_index(ecl, state->exe_eid),
-            state->event == NULL ? 0x3FFFU : state->event->start_offset,
-            state->trans == NULL ? 0x3FFFU : state->trans->start_offset,
-            state->code == NULL ? 0x3FFFU : state->code->start_offset };
-
-        if (!file_write(out, &gstate, sizeof(gstate))) return 0;
-    }
-
-    entry_header.offsets[5] = file_tell(out);
-
-    list_for_each(&ecl->anims, anim) {
-        if (!file_write(out, anim->anim, anim->size)) return 0;
         pos = file_tell(out) % 4;
         if (pos != 0) {
             uint32_t a = 0;
             if (!file_write(out, &a, 4 - pos)) return 0;
         }
+
+        entry_header.offsets[4] = file_tell(out);
+
+        list_for_each(&ecl->states, state) {
+            if (!state->code) {
+                fprintf(stderr, "%s: warning: state %s has no code block\n", argv0, state->name);
+            }
+            if (state->event) {
+                if (state->event->arg_count != 2) {
+                    fprintf(stderr, "%s: warning: state %s event block does not have 2 arguments\n", argv0, state->name);
+                }
+            }
+            state_t gstate = { state->stateflag, state->statusc, gool_pool_force_get_index(ecl, state->exe_eid),
+                state->event == NULL ? 0x3FFFU : state->event->start_offset,
+                state->trans == NULL ? 0x3FFFU : state->trans->start_offset,
+                state->code == NULL ? 0x3FFFU : state->code->start_offset };
+
+            if (!file_write(out, &gstate, sizeof(gstate))) return 0;
+        }
+
+        entry_header.offsets[5] = file_tell(out);
+
+        list_for_each(&ecl->anims, anim) {
+            if (!file_write(out, anim->anim, anim->size)) return 0;
+            pos = file_tell(out) % 4;
+            if (pos != 0) {
+                uint32_t a = 0;
+                if (!file_write(out, &a, 4 - pos)) return 0;
+            }
+        }
+
+        entry_header.offsets[6] = file_tell(out);
+
+        if (!file_seek(out, entry_header.offsets[0])) return 0;
+        if (!file_write(out, &header, sizeof(gool_header_t))) return 0;
     }
 
-    entry_header.offsets[6] = file_tell(out);
-
-    if (!file_seek(out, entry_header.offsets[0])) return 0;
-    if (!file_write(out, &header, sizeof(gool_header_t))) return 0;
-
     if (!file_seek(out, 0)) return 0;
-    if (!file_write(out, &entry_header, sizeof(entry_header_t) + 7 * sizeof(uint32_t))) return 0;
+    if (!file_write(out, &entry_header, sizeof(entry_header_t) + (entry_header.count+1) * sizeof(uint32_t))) return 0;
+}
+
+static int
+c1_compile(
+    const parser_state_t* parser,
+    FILE* out)
+{
+    if (!file_seekable(out)) {
+        fprintf(stderr, "%s: output is not seekable\n", argv0);
+        return 0;
+    }
+
+    thecl_t* ecl = parser->main_ecl;
+
+    const thecl_state_t* state;
+
+    /* write GOOL EIDs to const pool before anything else */
+    list_for_each(&ecl->states, state) {
+        gool_pool_force_get_index(ecl, state->exe_eid);
+    }
+
+    if (!c1_compile_gool(parser, out, ecl, NULL)) return 0;
 
     if (parser->ecl_cnt && !g_module_fmt) {
         fprintf(stderr, "%s: external module name format not specified\n", argv0);
@@ -719,10 +752,7 @@ c1_compile(
     else {
         for (int i = 0; i < parser->ecl_cnt; ++i) {
             ecl = parser->ecl_stack[i];
-            entry_header.count = 3;
-            entry_header.id = ecl->eid;
-            header.exe_type = 0;
-            header.stack_depth = 0;
+
             char buf[_MAX_PATH + 1];
             char ename[6];
             snprintf(buf, _MAX_PATH + 1, g_module_fmt, gool_to_ename(ename, parser->ecl_stack[i]->eid));
@@ -733,77 +763,8 @@ c1_compile(
                 return 0;
             }
 
-            list_for_each(&ecl->subs, sub) {
-                if (sub->forward_declaration || sub->is_inline)
-                    continue;
+            if (!c1_compile_gool(parser, out, parser->main_ecl, ecl)) return 0;
 
-                sub->instr_data = malloc(sizeof(gool_sub_t) + sizeof(uint32_t) * sub->offset);
-                sub->instr_data->was_written = 0;
-
-                thecl_instr_t* instr;
-                int i = 0;
-                list_for_each(&sub->instrs, instr) {
-                    sub->instr_data->data[i++] = c1_instr_serialize(parser->main_ecl, ecl, sub, instr);
-                }
-
-                thecl_sub_t* comp_sub;
-                list_for_each(&ecl->subs, comp_sub) {
-                    if (comp_sub == sub || !comp_sub->instr_data || comp_sub->offset != sub->offset)
-                        continue;
-
-                    for (i = 0; i < sub->offset; ++i) {
-                        if (sub->instr_data->data[i] != comp_sub->instr_data->data[i])
-                            goto different_subs_e;
-                    }
-                    free(sub->instr_data);
-                    sub->instr_data = comp_sub->instr_data;
-
-                    thecl_instr_t* instr;
-                    list_for_each(&sub->instrs, instr)
-                        thecl_instr_free(instr);
-                    list_free_nodes(&sub->instrs);
-
-                    thecl_sub_t* sub2;
-                    list_for_each(&ecl->subs, sub2) {
-                        if (sub2->start_offset > sub->start_offset)
-                            sub2->start_offset -= sub->offset;
-                    }
-
-                    sub->start_offset = comp_sub->start_offset;
-
-                    break;
-                different_subs_e:;
-                }
-            }
-
-            if (!file_write(out, &entry_header, sizeof(entry_header_t) + 4 * sizeof(uint32_t))) return 0;
-
-            entry_header.offsets[0] = file_tell(out);
-
-            if (!file_write(out, &header, sizeof(gool_header_t))) return 0;
-
-            entry_header.offsets[1] = file_tell(out);
-
-            list_for_each(&ecl->subs, sub) {
-                if (sub->forward_declaration || sub->is_inline)
-                    continue;
-
-                if (sub->instr_data->was_written)
-                    continue;
-                sub->instr_data->was_written = 1;
-
-                if (!file_write(out, &sub->instr_data->data, sizeof(uint32_t) * sub->offset)) return 0;
-            }
-
-            entry_header.offsets[2] = file_tell(out);
-
-            if (!file_write(out, ecl->consts, sizeof(int) * ecl->const_count)) return 0;
-
-            entry_header.offsets[3] = file_tell(out);
-
-            if (!file_seek(out, 0)) return 0;
-            if (!file_write(out, &entry_header, sizeof(entry_header_t) + 4 * sizeof(uint32_t))) return 0;
-            
             fclose(out);
         }
     }
@@ -837,7 +798,7 @@ c2_instr_serialize(
     thecl_sub_t* sub,
     thecl_instr_t* instr)
 {
-    thecl_param_t* param;
+    const thecl_param_t* param;
 
     const char* format = th10_find_format(ecl->version, instr->id);
 
@@ -854,7 +815,7 @@ c2_instr_serialize(
     if (instr->id == 59 || instr->id == 24) {
         /* Validate sub call parameters. */
         list_node_t* node = instr->params.head;
-        thecl_param_t* sub_name_param = node->data;
+        const thecl_param_t* sub_name_param = node->data;
         char* sub_name = sub_name_param->value.val.z;
         const thecl_sub_t* called_sub = th10_find_sub(ecl, sub_name);
         if (!called_sub && ecl_ext) {
@@ -867,7 +828,7 @@ c2_instr_serialize(
             was_error = true;
         } else {
             if (instr->id == 59) {
-                thecl_param_t* sub_argc_param = node->next->next->data;
+                const thecl_param_t* sub_argc_param = node->next->next->data;
                 called_sub = th10_find_sub_overload(ecl, sub_name, sub_argc_param->value.val.S);
                 if (!called_sub && ecl_ext) {
                     called_sub = th10_find_sub(ecl_ext, sub_name);
@@ -879,10 +840,6 @@ c2_instr_serialize(
                     was_error = true;
                 }
             }
-            free(sub_name_param->value.val.z);
-            sub_name_param->type = 'S';
-            sub_name_param->value.type = 'S';
-            sub_name_param->value.val.S = called_sub->start_offset;
             thecl_param_t* sub_ext_param = instr->params.head->next->data;
             sub_ext_param->value.val.S = ext_sub;
         }
@@ -893,9 +850,9 @@ c2_instr_serialize(
     char op;
     list_for_each(&instr->params, param) {
         int p;
-        if (param->type == 'o') {
+        if (param->type == 'o' || param->type == 'z') {
             /* This calculates the relative offset from the current instruction. */
-            thecl_label_t* label = label_find(sub, param->value.val.z);
+            thecl_label_t* label = param->type == 'z' ? NULL : label_find(sub, param->value.val.z);
             if (label) {
                 p = label->offset - (instr->offset + 1);
             }
@@ -909,7 +866,21 @@ c2_instr_serialize(
                     called_state = NULL;
                 }
                 if (!called_state) {
-                    const thecl_sub_t* called_sub = th10_find_sub(ecl, param->value.val.z);
+                    /* Validate sub call parameters. */
+                    char* sub_name = param->value.val.z;
+                    const thecl_sub_t* called_sub = th10_find_sub(ecl, sub_name);
+                    if (!called_sub && ecl_ext) {
+                        called_sub = th10_find_sub(ecl_ext, sub_name);
+                    }
+                    if (called_sub) {
+                        if (instr->id == 59) {
+                            const thecl_param_t* sub_argc_param = node->next->next->data;
+                            called_sub = th10_find_sub_overload(ecl, sub_name, sub_argc_param->value.val.S);
+                            if (!called_sub && ecl_ext) {
+                                called_sub = th10_find_sub(ecl_ext, sub_name);
+                            }
+                        }
+                    }
                     if (!called_sub) {
                         if (!was_error) {
                             fprintf(stderr, "%s:c2_instr_serialize: in sub %s: sub/state/label not found: %s\n", argv0, sub->name, param->value.val.z);
@@ -1042,44 +1013,37 @@ c2_instr_serialize(
 }
 
 static int
-c2_compile(
+c2_compile_gool(
     const parser_state_t* parser,
-    FILE* out)
+    FILE* out,
+    thecl_t* main_ecl,
+    thecl_t* ecl_ext
+)
 {
-    if (!file_seekable(out)) {
-        fprintf(stderr, "%s: output is not seekable\n", argv0);
-        return 0;
-    }
-
-    thecl_t* ecl = parser->main_ecl;
-
-    entry_header_t entry_header = { 0x100FFFFU, ecl->eid, 11U, 6U, { 0, 0, 0, 0, 0, 0, 0 } };
-    gool_header_t header = { ecl->id, ecl->type << 8, 1, ecl->var_count + 0x40, 0, 8 };
+    entry_header_t entry_header = { 0x100FFFFU, main_ecl->eid, 11U, ecl_ext ? 3U : 6U, { 0, 0, 0, 0, 0, 0, 0 } };
+    gool_header_t header = { main_ecl->id, main_ecl->type << 8, ecl_ext == NULL, ecl_ext ? 0 : main_ecl->var_count + 0x40, 0, 8 };
     thecl_sub_t* sub;
     const thecl_state_t* state;
     gool_anim_t* anim;
+    thecl_instr_t* instr;
 
-    /* write GOOL EIDs to const pool before anything else */
-    list_for_each(&ecl->states, state) {
-        gool_pool_force_get_index(ecl, state->exe_eid);
-    }
+    thecl_t* ecl = ecl_ext ? ecl_ext : main_ecl;
 
     list_for_each(&ecl->subs, sub) {
-        if (sub->forward_declaration || sub->is_inline)
+        if (sub->forward_declaration || sub->is_inline || sub->deleted)
             continue;
 
         sub->instr_data = malloc(sizeof(gool_sub_t) + sizeof(uint32_t) * sub->offset);
         sub->instr_data->was_written = 0;
 
-        thecl_instr_t* instr;
         int i = 0;
         list_for_each(&sub->instrs, instr) {
-            sub->instr_data->data[i++] = c2_instr_serialize(ecl, NULL, sub, instr);
+            sub->instr_data->data[i++] = c2_instr_serialize(main_ecl, ecl_ext, sub, instr);
         }
 
         thecl_sub_t* comp_sub;
         list_for_each(&ecl->subs, comp_sub) {
-            if (comp_sub == sub || !comp_sub->instr_data || comp_sub->offset != sub->offset)
+            if (sub->forward_declaration || sub->is_inline || sub->deleted || comp_sub == sub || !comp_sub->instr_data || comp_sub->offset != sub->offset)
                 continue;
 
             for (i = 0; i < sub->offset; ++i) {
@@ -1088,6 +1052,7 @@ c2_compile(
             }
             free(sub->instr_data);
             sub->instr_data = comp_sub->instr_data;
+            sub->deleted = true;
 
             thecl_instr_t* instr;
             list_for_each(&sub->instrs, instr)
@@ -1107,19 +1072,27 @@ c2_compile(
         }
     }
 
-    if (!file_write(out, &entry_header, sizeof(entry_header_t) + 7 * sizeof(uint32_t))) return 0;
+    list_for_each(&ecl->subs, sub) {
+        if (!sub->deleted) {
+            sub->instr_data = realloc(sub->instr_data, sizeof(gool_sub_t) + sizeof(uint32_t) * sub->offset);
 
+            int i = 0;
+            list_for_each(&sub->instrs, instr) {
+                sub->instr_data->data[i++] = c2_instr_serialize(main_ecl, ecl_ext, sub, instr);
+            }
+        }
+    }
+
+    if (!file_write(out, &entry_header, sizeof(entry_header_t) + (entry_header.count+1) * sizeof(uint32_t))) return 0;
     entry_header.offsets[0] = file_tell(out);
-
     if (!file_write(out, &header, sizeof(gool_header_t))) return 0;
-
     entry_header.offsets[1] = file_tell(out);
 
     list_for_each(&ecl->subs, sub) {
         if (sub->forward_declaration || sub->is_inline)
             continue;
 
-        if (sub->instr_data->was_written)
+        if (sub->instr_data->was_written || sub->deleted)
             continue;
         sub->instr_data->was_written = 1;
 
@@ -1127,98 +1100,119 @@ c2_compile(
     }
 
     entry_header.offsets[2] = file_tell(out);
-
     if (!file_write(out, ecl->consts, sizeof(int) * ecl->const_count)) return 0;
-
     entry_header.offsets[3] = file_tell(out);
 
-    /* write interrupts here */
-    size_t pos = file_tell(out);
-    thecl_interrupt_t* interrupt;
-    list_for_each(&ecl->interrupts, interrupt) {
-        while (header.interrupt_count <= interrupt->event->offset) {
-            ++header.interrupt_count;
-            uint16_t state_id = 255;
-            if (!file_write(out, &state_id, sizeof(uint16_t))) return 0;
-        }
-        if (!file_seek(out, pos + interrupt->event->offset * 2)) return 0;
-        uint16_t interrupt_val;
-        if (interrupt->type == INTERRUPT_STATE) {
-            state = c1_find_state(ecl, interrupt->lambda_name);
-            if (state == NULL) {
-                fprintf(stderr, "%s: state for interrupt %s not found: %s\n", argv0, interrupt->event->name, interrupt->lambda_name);
-                interrupt_val = 255;
+    if (!ecl_ext) {
+        size_t pos = file_tell(out);
+        thecl_interrupt_t* interrupt;
+        list_for_each(&ecl->interrupts, interrupt) {
+            while (header.interrupt_count <= interrupt->event->offset) {
+                ++header.interrupt_count;
+                uint16_t state_id = 255;
+                if (!file_write(out, &state_id, sizeof(uint16_t))) return 0;
             }
-            else {
-                interrupt_val = state->index;
-                if (state->index == 255) { /* lol */
-                    fprintf(stderr, "%s: state '%s' for interrupt %s has index 255 and will be ignored. consider using less states.\n",
-                        argv0, interrupt->lambda_name, interrupt->event->name);
+            if (!file_seek(out, pos + interrupt->event->offset * 2)) return 0;
+            uint16_t interrupt_val;
+            if (interrupt->type == INTERRUPT_STATE) {
+                state = c1_find_state(ecl, interrupt->lambda_name);
+                if (state == NULL) {
+                    fprintf(stderr, "%s: state for interrupt %s not found: %s\n", argv0, interrupt->event->name, interrupt->lambda_name);
+                    interrupt_val = 255;
+                }
+                else {
+                    interrupt_val = state->index;
+                    if (state->index == 255) { /* lol */
+                        fprintf(stderr, "%s: state '%s' for interrupt %s has index 255 and will be ignored. consider using less states.\n",
+                            argv0, interrupt->lambda_name, interrupt->event->name);
+                    }
                 }
             }
+            else if (interrupt->type == INTERRUPT_SUB) {
+                sub = th10_find_sub(ecl, interrupt->lambda_name);
+                interrupt_val = 0x8000 | sub->start_offset;
+            }
+            if (!file_write(out, &interrupt_val, sizeof(uint16_t))) return 0;
+            if (!file_seek(out, pos + header.interrupt_count * 2)) return 0;
         }
-        else if (interrupt->type == INTERRUPT_SUB) {
-            sub = th10_find_sub(ecl, interrupt->lambda_name);
-            interrupt_val = 0x8000 | sub->start_offset;
-        }
-        if (!file_write(out, &interrupt_val, sizeof(uint16_t))) return 0;
-        if (!file_seek(out, pos + header.interrupt_count * 2)) return 0;
-    }
 
-    thecl_spawn_t* spawn;
-    list_for_each(&ecl->spawns, spawn) {
-        state = c1_find_state(ecl, spawn->state_name);
-        uint16_t state_id = 255;
-        if (state == NULL) {
-            if (!file_write(out, &state_id, sizeof(uint16_t))) return 0;
-        }
-        else {
-            if (!file_write(out, &state->index, sizeof(uint16_t))) return 0;
-        }
-    }
-    pos = file_tell(out) % 4;
-    if (pos != 0) {
-        uint32_t a = 0;
-        if (!file_write(out, &a, 4 - pos)) return 0;
-    }
-
-    entry_header.offsets[4] = file_tell(out);
-
-    list_for_each(&ecl->states, state) {
-        if (!state->code) {
-            fprintf(stderr, "%s: warning: state %s has no code block\n", argv0, state->name);
-        }
-        if (state->event) {
-            if (state->event->arg_count != 2) {
-                fprintf(stderr, "%s: warning: state %s event block does not have 2 arguments\n", argv0, state->name);
+        thecl_spawn_t* spawn;
+        list_for_each(&ecl->spawns, spawn) {
+            state = c1_find_state(ecl, spawn->state_name);
+            uint16_t state_id = 255;
+            if (state == NULL) {
+                if (!file_write(out, &state_id, sizeof(uint16_t))) return 0;
+            }
+            else {
+                if (!file_write(out, &state->index, sizeof(uint16_t))) return 0;
             }
         }
-        state_t gstate = { state->stateflag, state->statusc, gool_pool_force_get_index(ecl, state->exe_eid),
-            state->event == NULL ? 0x3FFFU : state->event->start_offset,
-            state->trans == NULL ? 0x3FFFU : state->trans->start_offset,
-            state->code == NULL ? 0x3FFFU : state->code->start_offset };
-
-        if (!file_write(out, &gstate, sizeof(gstate))) return 0;
-    }
-
-    entry_header.offsets[5] = file_tell(out);
-
-    list_for_each(&ecl->anims, anim) {
-        if (!file_write(out, anim->anim, anim->size)) return 0;
         pos = file_tell(out) % 4;
         if (pos != 0) {
             uint32_t a = 0;
             if (!file_write(out, &a, 4 - pos)) return 0;
         }
+
+        entry_header.offsets[4] = file_tell(out);
+
+        list_for_each(&ecl->states, state) {
+            if (!state->code) {
+                fprintf(stderr, "%s: warning: state %s has no code block\n", argv0, state->name);
+            }
+            if (state->event) {
+                if (state->event->arg_count != 2) {
+                    fprintf(stderr, "%s: warning: state %s event block does not have 2 arguments\n", argv0, state->name);
+                }
+            }
+            state_t gstate = { state->stateflag, state->statusc, gool_pool_force_get_index(ecl, state->exe_eid),
+                state->event == NULL ? 0x3FFFU : state->event->start_offset,
+                state->trans == NULL ? 0x3FFFU : state->trans->start_offset,
+                state->code == NULL ? 0x3FFFU : state->code->start_offset };
+
+            if (!file_write(out, &gstate, sizeof(gstate))) return 0;
+        }
+
+        entry_header.offsets[5] = file_tell(out);
+
+        list_for_each(&ecl->anims, anim) {
+            if (!file_write(out, anim->anim, anim->size)) return 0;
+            pos = file_tell(out) % 4;
+            if (pos != 0) {
+                uint32_t a = 0;
+                if (!file_write(out, &a, 4 - pos)) return 0;
+            }
+        }
+
+        entry_header.offsets[6] = file_tell(out);
+
+        if (!file_seek(out, entry_header.offsets[0])) return 0;
+        if (!file_write(out, &header, sizeof(gool_header_t))) return 0;
     }
 
-    entry_header.offsets[6] = file_tell(out);
-
-    if (!file_seek(out, entry_header.offsets[0])) return 0;
-    if (!file_write(out, &header, sizeof(gool_header_t))) return 0;
-
     if (!file_seek(out, 0)) return 0;
-    if (!file_write(out, &entry_header, sizeof(entry_header_t) + 7 * sizeof(uint32_t))) return 0;
+    if (!file_write(out, &entry_header, sizeof(entry_header_t) + (entry_header.count+1) * sizeof(uint32_t))) return 0;
+}
+
+static int
+c2_compile(
+    const parser_state_t* parser,
+    FILE* out)
+{
+    if (!file_seekable(out)) {
+        fprintf(stderr, "%s: output is not seekable\n", argv0);
+        return 0;
+    }
+
+    thecl_t* ecl = parser->main_ecl;
+
+    const thecl_state_t* state;
+
+    /* write GOOL EIDs to const pool before anything else */
+    list_for_each(&ecl->states, state) {
+        gool_pool_force_get_index(ecl, state->exe_eid);
+    }
+
+    if (!c2_compile_gool(parser, out, ecl, NULL)) return 0;
 
     if (parser->ecl_cnt && !g_module_fmt) {
         fprintf(stderr, "%s: external module name format not specified\n", argv0);
@@ -1226,10 +1220,7 @@ c2_compile(
     else {
         for (int i = 0; i < parser->ecl_cnt; ++i) {
             ecl = parser->ecl_stack[i];
-            entry_header.count = 3;
-            entry_header.id = ecl->eid;
-            header.exe_type = 0;
-            header.stack_depth = 0;
+
             char buf[_MAX_PATH + 1];
             char ename[6];
             snprintf(buf, _MAX_PATH + 1, g_module_fmt, gool_to_ename(ename, parser->ecl_stack[i]->eid));
@@ -1240,76 +1231,7 @@ c2_compile(
                 return 0;
             }
 
-            list_for_each(&ecl->subs, sub) {
-                if (sub->forward_declaration || sub->is_inline)
-                    continue;
-
-                sub->instr_data = malloc(sizeof(gool_sub_t) + sizeof(uint32_t) * sub->offset);
-                sub->instr_data->was_written = 0;
-
-                thecl_instr_t* instr;
-                int i = 0;
-                list_for_each(&sub->instrs, instr) {
-                    sub->instr_data->data[i++] = c1_instr_serialize(parser->main_ecl, ecl, sub, instr);
-                }
-
-                thecl_sub_t* comp_sub;
-                list_for_each(&ecl->subs, comp_sub) {
-                    if (comp_sub == sub || !comp_sub->instr_data || comp_sub->offset != sub->offset)
-                        continue;
-
-                    for (i = 0; i < sub->offset; ++i) {
-                        if (sub->instr_data->data[i] != comp_sub->instr_data->data[i])
-                            goto different_subs_e;
-                    }
-                    free(sub->instr_data);
-                    sub->instr_data = comp_sub->instr_data;
-
-                    thecl_instr_t* instr;
-                    list_for_each(&sub->instrs, instr)
-                        thecl_instr_free(instr);
-                    list_free_nodes(&sub->instrs);
-
-                    thecl_sub_t* sub2;
-                    list_for_each(&ecl->subs, sub2) {
-                        if (sub2->start_offset > sub->start_offset)
-                            sub2->start_offset -= sub->offset;
-                    }
-
-                    sub->start_offset = comp_sub->start_offset;
-
-                    break;
-                different_subs_e:;
-                }
-            }
-
-            if (!file_write(out, &entry_header, sizeof(entry_header_t) + 4 * sizeof(uint32_t))) return 0;
-
-            entry_header.offsets[0] = file_tell(out);
-
-            if (!file_write(out, &header, sizeof(gool_header_t))) return 0;
-
-            entry_header.offsets[1] = file_tell(out);
-
-            list_for_each(&ecl->subs, sub) {
-                if (sub->forward_declaration || sub->is_inline)
-                    continue;
-
-                if (sub->instr_data->was_written)
-                    continue;
-                sub->instr_data->was_written = 1;
-
-                if (!file_write(out, &sub->instr_data->data, sizeof(uint32_t) * sub->offset)) return 0;
-            }
-
-            entry_header.offsets[2] = file_tell(out);
-
-            if (!file_write(out, ecl->consts, sizeof(int) * ecl->const_count)) return 0;
-
-            entry_header.offsets[3] = file_tell(out);
-
-            if (!file_seek(out, 0)) return 0;
-            if (!file_write(out, &entry_header, sizeof(entry_header_t) + 4 * sizeof(uint32_t))) return 0;
+            if (!c2_compile_gool(parser, out, parser->main_ecl, ecl)) return 0;
             
             fclose(out);
         }
