@@ -159,7 +159,7 @@
 "objectget"        return OBJGET;
 "entitygetstate"   return ENTITYSTATEGET;
 "gamefunc"         return GAMEFUNC;
-"__unk1"           return UNK1;
+"getvalideventobj" return GETVALIDEVENTOBJ;
 "iscolliding"      return ISCOLLIDING;
 "__unk2"           return UNK2;
 "tryload"          return TRYLOAD;

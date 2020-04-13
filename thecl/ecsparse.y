@@ -308,7 +308,7 @@ int yydebug = 0;
 %token OBJGET "objectget"
 %token ENTITYSTATEGET "entitygetstate"
 %token GAMEFUNC "gamefunc"
-%token UNK1 "__unk1"
+%token GETVALIDEVENTOBJ "getvalideventobj"
 %token ISCOLLIDING "iscolliding"
 %token UNK2 "__unk2"
 %token TRYLOAD "tryload"
@@ -640,17 +640,17 @@ Interrupt_Body:
 
 GlobalVarDeclaration:
       "var" IDENTIFIER {
-		if (state->declared_tempfields)
-			yyerror(state, "trans arguments used before variable declaration: %s", $2);
+        if (state->declared_tempfields)
+            yyerror(state, "trans arguments used before variable declaration: %s", $2);
         else
-			objfield_create(state, $2);
+            objfield_create(state, $2);
         free($2);
       }
     | GlobalVarDeclaration "," IDENTIFIER {
-		if (state->declared_tempfields)
-			yyerror(state, "trans arguments used before variable declaration: %s", $3);
+        if (state->declared_tempfields)
+            yyerror(state, "trans arguments used before variable declaration: %s", $3);
         else
-			objfield_create(state, $3);
+            objfield_create(state, $3);
         free($3);
       }
     ;
@@ -1819,7 +1819,8 @@ ExpressionSubset:
 
     | "entitygetstate" "(" Expression "," Expression ")"          { $$ = EXPR_4(MISC, $3, expression_val_new(state, 0), $5, expression_val_new(state, 11)); }
 //  | "gamefunc" "(" Expression "," Expression ")"                { if (state->version == 1) $$ = EXPR_4(MISC, $3, expression_val_new(state, 0), $5, expression_val_new(state, 12)); }
-    | "__unk1" "(" Expression "," Expression "," Expression ")"   { if (state->version == 1) $$ = EXPR_4(MISC, $5, $3, $7, expression_val_new(state, 13)); }
+    | "getvalideventobj" "(" Expression "," Expression "," Expression ")"   { $$ = EXPR_4(MISC, $3, $5, $7, expression_val_new(state, 13)); }
+    | "getvalideventobj" "(" Expression "," Expression ")"        { $$ = EXPR_4(MISC, $3, expression_val_new(state, 0), $5, expression_val_new(state, 13)); }
     | "iscolliding" "(" Expression "," Expression ")"             { if (state->version == 1) $$ = EXPR_4(MISC, $3, $5, expression_val_new(state, 0), expression_val_new(state, 14)); }
 //  | "__unk2" "(" Expression "," Expression ")"                  { if (state->version == 1) $$ = EXPR_4(MISC, $3, expression_val_new(state, 0), $5, expression_val_new(state, 15)); }
 

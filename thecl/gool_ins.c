@@ -876,7 +876,7 @@ c1_gool_ins_moveto2d_params(
     size_t c = list_count(params);
     if (c == 0) {
         param = param_new('S');
-        param->value.val.S = field_get("scalex")->offset;
+        param->value.val.S = field_get("scale")->offset;
         param->object_link = 0;
         param->stack = 1;
         list_append_new(params, param);
