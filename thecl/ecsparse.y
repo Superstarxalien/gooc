@@ -314,6 +314,7 @@ int yydebug = 0;
 %token UNK2 "__unk2"
 %token TRYLOAD "tryload"
 %token GETANIM "getanim"
+%token OFFSETOF "offsetof"
 
 %type <list> Instruction_Parameters_List
 %type <list> Instruction_Parameters
@@ -1831,8 +1832,18 @@ ExpressionSubset:
 
     /* Custom expressions. */
 
-    | Expression "?" Expression ":" Expression  %prec QUESTION
-                                  { $$ = expression_ternary_new(state, $1, $3, $5); }
+    | Expression "?" Expression ":" Expression  %prec QUESTION    { $$ = expression_ternary_new(state, $1, $3, $5); }
+    | "offsetof" "(" Expression ")"                               {
+        if ($3->type != EXPRESSION_VAL) {
+            yyerror(state, "syntax error, offsetof parameter must be value expression");
+            exit(2);
+        }
+        if ($3->value->stack != 1 || $3->value->object_link > 7 || $3->value->object_link < 0) {
+            yyerror(state, "syntax error, offsetof parameter is an invalid expression");
+            exit(2);
+        }
+        $$ = expression_val_new(state, $3->value->value.val.S << 8);
+      }
     ;
 
 Address:
@@ -2641,11 +2652,11 @@ expression_output(
     parser_state_t* state,
     expression_t* expr)
 {
-	if (expr->id < 0) {
-		yyerror(state, "error, cannot output non-compileable expression %d", expr->symbol);
-		exit(2);
-	}
-	
+    if (expr_get_by_id(state->version, expr->id)->symbol < 0) {
+        yyerror(state, "error, cannot output non-compileable expression %d", expr->id);
+        exit(2);
+    }
+    
     if (expr->type == EXPRESSION_VAL) {
         instr_add(state, state->current_sub, instr_new(state, expr->id, "p", expr->value));
     } else if (expr->type == EXPRESSION_GLOBAL) {
