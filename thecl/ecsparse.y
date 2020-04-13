@@ -2641,6 +2641,11 @@ expression_output(
     parser_state_t* state,
     expression_t* expr)
 {
+	if (expr->id < 0) {
+		yyerror(state, "error, cannot output non-compileable expression %d", expr->symbol);
+		exit(2);
+	}
+	
     if (expr->type == EXPRESSION_VAL) {
         instr_add(state, state->current_sub, instr_new(state, expr->id, "p", expr->value));
     } else if (expr->type == EXPRESSION_GLOBAL) {

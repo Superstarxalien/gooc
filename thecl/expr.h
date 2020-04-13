@@ -34,7 +34,7 @@
 
 typedef struct {
     int symbol;
-    uint8_t id;
+    int id;
     /* 0 indicates no return value. */
     char* param_format;
     size_t stack_arity;
