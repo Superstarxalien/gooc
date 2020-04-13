@@ -117,6 +117,7 @@ c2_expressions[] = {
     { IF,        51,  "o", 1, 0, 0, 0 }, /* if (s0) goto p0 */
     { UNLESS,    52,  "o", 1, 0, 0, 0 }, /* unless (s0) goto p0 */
 
+    { MOVC,      24, NULL, 3, 0, 0, 0 }, /* getins(s0) */
     { FROW,      40, NULL, 2, 0, 0, 0 }, /* fieldrow(s0, s1) */
     { FVAL,      41, NULL, 2, 0, 0, 1 }, /* fieldval(s0) */
     { ARRL,      42, NULL, 2, 0, 0, 0 }, /* s0[s1] */

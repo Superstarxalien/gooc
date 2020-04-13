@@ -300,6 +300,7 @@ int yydebug = 0;
 %token NTRY "entry operation"
 %token FVAL "fieldval"
 %token FROW "fieldrow"
+%token MOVC "getins"
 %token GETVAL "getval"
 %token DISTANCE "distance"
 %token ATAN2 "atan2"
@@ -1825,6 +1826,8 @@ ExpressionSubset:
 //  | "__unk2" "(" Expression "," Expression ")"                  { if (state->version == 1) $$ = EXPR_4(MISC, $3, expression_val_new(state, 0), $5, expression_val_new(state, 15)); }
 
     | "tryload" "(" Expression ")"                                { $$ = EXPR_2(NTRY, $3, expression_val_new(state, 3)); }
+    
+    | "getins" "(" Expression ")"                                 { $$ = EXPR_3(MOVC, $3, expression_val_new(state, 0), expression_val_new(state, 0x1F)); }
 
     /* Custom expressions. */
 

@@ -1147,6 +1147,23 @@ c2_gool_ins_checkzonecollision_params(
     return params;
 }
 
+static list_t*
+c2_gool_ins_call_params(
+    list_t* params,
+    int argc)
+{
+    thecl_param_t* param;
+    size_t c = list_count(params);
+    if (c == 1) {
+        list_append_new(params, param_val_new(argc));
+    }
+    else {
+        fprintf(stderr, "%s: call: wrong number of arguments (expected at least 1, got %zu)\n", argv0, c);
+        return NULL;
+    }
+    return params;
+}
+
 static const gool_ins_t
 c2_gool_ins[] = {
      /* NAME                        ID VA POP R   L   C              VALIDATE */
@@ -1192,6 +1209,7 @@ c2_gool_ins[] = {
     { "broadcastevent",             68, 1, 0, 0,  2,  3, c1_gool_ins_sendevent_params },
     { "cascadeevent",               69, 1, 0, 0,  2,  3, c1_gool_ins_sendevent_params },
     { "spawn2",                     70, 1, 0, 0, -1,  3, c1_gool_ins_spawn_params },
+    { "call",                       71, 1, 0, 0, -1,  1, c2_gool_ins_call_params },
     { NULL, 0, 0, 0, 0, 0, 0, NULL }
 };
 

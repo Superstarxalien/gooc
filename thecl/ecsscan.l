@@ -151,6 +151,7 @@
 "cos"              return COS;
 "fieldval"         return FVAL;
 "fieldrow"         return FROW;
+"getins"           return MOVC;
 "getval"           return GETVAL;
 "distance"         return DISTANCE;
 "atan2"            return ATAN2;
