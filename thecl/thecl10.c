@@ -383,7 +383,7 @@ c1_instr_serialize(
     char op;
     list_for_each(&instr->params, param) {
         if (total_bits >= 24) {
-            fprintf(stderr, "%s:c1_instr_serialize: in sub %s: gool instruction %d format overflow\n", argv0, sub->name, instr->id);
+            fprintf(stderr, "%s:c1_instr_serialize: in sub %s: gool instruction %d parameter overflow\n", argv0, sub->name, instr->id);
             break;
         }
         int p;
@@ -539,6 +539,10 @@ c1_instr_serialize(
             total_bits += b;
         }
         ret |= val << bits;
+    }
+
+    if (total_bits > 24) {
+        fprintf(stderr, "%s:c1_instr_serialize: in sub %s: gool instruction %d format overflow\n", argv0, sub->name, instr->id);
     }
 
     return ret;
@@ -850,7 +854,7 @@ c2_instr_serialize(
     char op;
     list_for_each(&instr->params, param) {
         if (total_bits >= 24) {
-            fprintf(stderr, "%s:c2_instr_serialize: in sub %s: gool instruction %d format overflow\n", argv0, sub->name, instr->id);
+            fprintf(stderr, "%s:c2_instr_serialize: in sub %s: gool instruction %d parameter overflow\n", argv0, sub->name, instr->id);
             break;
         }
         int p;
@@ -1007,6 +1011,10 @@ c2_instr_serialize(
             total_bits += b;
         }
         ret |= val << bits;
+    }
+
+    if (total_bits > 24) {
+        fprintf(stderr, "%s:c2_instr_serialize: in sub %s: gool instruction %d format overflow\n", argv0, sub->name, instr->id);
     }
 
     return ret;
