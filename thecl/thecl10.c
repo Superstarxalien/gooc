@@ -382,6 +382,10 @@ c1_instr_serialize(
     int i = 0;
     char op;
     list_for_each(&instr->params, param) {
+        if (total_bits >= 24) {
+            fprintf(stderr, "%s:c1_instr_serialize: in sub %s: gool instruction %d format overflow\n", argv0, sub->name, instr->id);
+            break;
+        }
         int p;
         if (param->type == 'o' || param->type == 'z') {
             /* This calculates the relative offset from the current instruction. */
@@ -535,10 +539,6 @@ c1_instr_serialize(
             total_bits += b;
         }
         ret |= val << bits;
-    }
-
-    if (total_bits > 24) {
-        fprintf(stderr, "%s:c1_instr_serialize: in sub %s: gool instruction %d format overflow\n", argv0, sub->name, instr->id);
     }
 
     return ret;
@@ -849,6 +849,10 @@ c2_instr_serialize(
     int i = 0;
     char op;
     list_for_each(&instr->params, param) {
+        if (total_bits >= 24) {
+            fprintf(stderr, "%s:c2_instr_serialize: in sub %s: gool instruction %d format overflow\n", argv0, sub->name, instr->id);
+            break;
+        }
         int p;
         if (param->type == 'o' || param->type == 'z') {
             /* This calculates the relative offset from the current instruction. */
@@ -1003,10 +1007,6 @@ c2_instr_serialize(
             total_bits += b;
         }
         ret |= val << bits;
-    }
-
-    if (total_bits > 24) {
-        fprintf(stderr, "%s:c2_instr_serialize: in sub %s: gool instruction %d format overflow\n", argv0, sub->name, instr->id);
     }
 
     return ret;
