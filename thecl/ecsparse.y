@@ -275,7 +275,7 @@ int yydebug = 0;
 %token LSHIFT "<<"
 %token RSHIFT ">>"
 %token TEST "\\"
-%token ADDRESSOF
+%token PASSIGN
 %token ARRL "array load"
 %token ABS "abs"
 %token SEEK "seek"
@@ -332,6 +332,7 @@ int yydebug = 0;
 %type <param> Entry
 //%type <param> Text
 %type <param> Load_Type
+%type <param> Pointer_Type
 
 %type <integer> Literal_Int
 
@@ -347,7 +348,7 @@ int yydebug = 0;
 %left LSHIFT RSHIFT
 %left ADD SUBTRACT
 %left MULTIPLY DIVIDE MODULO
-%precedence NOT B_NOT ADDRESSOF
+%precedence NOT B_NOT
 %precedence ABS
 
 %expect 0
@@ -1504,7 +1505,7 @@ Instruction:
                 }
                 list_for_each(arg_list, param) {
                     if (!(param->stack && param->object_link == 0 && param->value.val.S == 0x1F)) { /* argument is already on the stack */
-                        if (param->object_link == -3) { /* TODO */
+                        if (param->stack == 3) {
                             const expr_t* expr = expr_get_by_symbol(state->version, PLOAD);
                             instr_add(state, state->current_sub, instr_new(state, expr->id, "p", param));
                         }
@@ -1661,15 +1662,15 @@ Assignment:
             break;
         }
 
-        if ($3->type == EXPRESSION_VAL && ($1->stack != 2 || ($1->stack == 2 && !expr->is_unary))) {
+        if ($3->type == EXPRESSION_VAL && ($1->stack == 1 || ($1->stack == 2 && !expr->is_unary))) {
             src_param = $3->value;
         } else {
             expression_output(state, $3);
             src_param = param_sp_new();
         }
         expression_free($3);
-        if ($1->stack != 2) {
-            expr = expr_get_by_symbol(state->version, ASSIGN);
+        if ($1->stack == 1) {
+            expr = expr_get_by_symbol(state->version, src_param->stack == 3 ? PASSIGN : ASSIGN);
 
             instr_add(state, state->current_sub, instr_new(state, expr->id, "pp", $1, src_param));
 
@@ -1679,7 +1680,7 @@ Assignment:
             else if ($1->object_link == -1 && $1->value.val.S < 0) {
                 state->current_sub->args[-$1->value.val.S - 1]->is_written = true;
             }
-        } else { /* WGL */
+        } else if ($1->stack == 2) { /* WGL */
             expr = expr_get_by_symbol(state->version, GASSIGN);
 
             instr_add(state, state->current_sub, instr_new(state, expr->id, "Sp", $1->value.val.S, src_param));
@@ -1716,6 +1717,15 @@ Instruction_Parameters_List:
 
 Instruction_Parameter:
       Load_Type
+    | Pointer_Type {
+          list_prepend_new(&state->expressions, expression_pointer_new(state, $1));
+
+          $$ = param_new('S');
+          $$->stack = 1;
+          $$->object_link = 0;
+          $$->is_expression_param = 1;
+          $$->value.val.S = 0x1F;
+      }
     | ExpressionSubsetInstParam {
           if ($1->type == EXPRESSION_VAL) {
               $$ = param_copy($1->value);
@@ -1742,12 +1752,13 @@ ExpressionSubsetInstParam:
 
 ExpressionLoadType:
       Load_Type                      { $$ = expression_load_new(state, $1); }
+    | Pointer_Type                   { $$ = expression_pointer_new(state, $1); }
     ;
 
 /* This is the lowest common denominator between expression-instructions and expression-parameters */
 ExpressionSubset:
       MACRO { $$ = expression_copy(macro_get(state, $1)->expr); }
-    |             "(" Expression ")" { $$ = $2; }
+    |          "(" Expression ")" { $$ = $2; }
     | Expression "+"   Expression { $$ = EXPR_2(ADD,      $1, $3); }
     | Expression "-"   Expression { $$ = EXPR_2(SUBTRACT, $1, $3); }
     | Expression "*"   Expression { $$ = EXPR_2(MULTIPLY, $1, $3); }
@@ -1774,7 +1785,6 @@ ExpressionSubset:
       }
     | "+" Expression              { $$ = $2; }
     | "-" Expression              { $$ = EXPR_2(SUBTRACT, expression_val_new(state, 0), $2); }
-    | "&" Expression              { $$ = EXPR_2(ADDRESSOF,expression_load_new(state, param_sp_new()), $2); }
     | "abs" "(" Expression ")"    { $$ = EXPR_2(ABS,      expression_load_new(state, param_sp_new()), $3); }
     | "getanim" "(" Expression ")"{ $$ = EXPR_2(GETANIM,  expression_load_new(state, param_sp_new()), EXPR_2(LSHIFT, $3, expression_val_new(state, 8))); }
     | "seek" "(" Expression "," Expression "," Expression ")"     { $$ = EXPR_3(SEEK, $3, $5, $7); }
@@ -1958,6 +1968,16 @@ Load_Type:
     | Entry
     ;
 
+Pointer_Type:
+      "&" Load_Type {
+          if ($2->stack == 0) {
+              $2->object_link = -3;
+          }
+          $2->stack = 3;
+          $$ = $2;
+      }
+    ;
+
 Literal_Int:
       INTEGER
     | "-" INTEGER { $$ = -$2; }
@@ -2061,6 +2081,10 @@ instr_add(
         return;
     }
     const expr_t* load_expr = expr_get_by_symbol(state->version, LOAD);
+    const expr_t* ptr_expr = expr_get_by_symbol(state->version, PLOAD);
+    if (instr->id == ptr_expr->id) {
+        load_expr = ptr_expr;
+    }
     if (state->block_bound) {
         if (instr->id == load_expr->id && instr->param_count == 1) {
             thecl_param_t* load_param = list_head(&instr->params);
@@ -2072,7 +2096,6 @@ instr_add(
         state->block_bound = 0;
         goto NO_OPTIM;
     }
-    const expr_t* expr = expr_get_by_symbol(state->version, PLOAD);
     const expr_t* bra_expr = expr_get_by_symbol(state->version, GOTO);
     const expr_t* beqz_expr = expr_get_by_symbol(state->version, UNLESS);
     const expr_t* bnez_expr = expr_get_by_symbol(state->version, IF);
@@ -2093,29 +2116,7 @@ instr_add(
                     goto NO_OPTIM;
             }
 
-            while (last_ins->id == load_expr->id && last_ins->param_count < 2 && instr->param_count > 0) {
-                ++last_ins->param_count;
-                list_append_new(&last_ins->params, list_head(&instr->params));
-                list_del(&instr->params, instr->params.head);
-                if (--instr->param_count == 0) {
-                    thecl_instr_free(instr);
-                    instr->offset = sub->offset;
-                    return;
-                }
-            }
-        }
-    }
-    /* pointer push optimization */
-    else if (instr->id == expr->id) {
-        thecl_instr_t* last_ins = list_tail(&sub->instrs);
-        if (last_ins != NULL) {
-            thecl_label_t* tmp_label;
-            list_for_each(&sub->labels, tmp_label) {
-                if (tmp_label->offset == sub->offset)
-                    goto NO_OPTIM;
-            }
-
-            while (last_ins->id == expr->id && last_ins->param_count < 2 && instr->param_count > 0) {
+            while (last_ins->id == instr->id && last_ins->param_count < 2 && instr->param_count > 0) {
                 ++last_ins->param_count;
                 list_append_new(&last_ins->params, list_head(&instr->params));
                 list_del(&instr->params, instr->params.head);
@@ -2141,7 +2142,7 @@ instr_add(
                     goto NO_OPTIM;
             }
 
-            expr = expr_get_by_symbol(state->version, NOT);
+            const expr_t* expr = expr_get_by_symbol(state->version, NOT);
             if (last_ins->id == expr->id && last_ins->param_count == 2) {
                 thecl_param_t* param = list_head(&last_ins->params);
                 if (param->value.val.S != 0x1F || !param->stack || param->object_link != 0)
@@ -2566,6 +2567,12 @@ expression_operation_new(
         }
         else if (!operands[o] && expr->has_double_param && o == expr->stack_arity - 1)
             break;
+        if (operands[o]->type == EXPRESSION_VAL && operands[o]->value->stack == 3) /* pointer, must be pushed by PSHP first */ {
+            expression_t* ex = expression_pointer_new(state, operands[o]->value);
+            expression_output(state, ex);
+            expression_free(ex);
+            operands[o] = expression_load_new(state, param_sp_new());
+        }
         list_append_new(&ret->children, operands[o]);
     }
 
@@ -2655,7 +2662,7 @@ expression_output(
     parser_state_t* state,
     expression_t* expr)
 {
-    if (expr_get_by_id(state->version, expr->id)->symbol < 0) {
+    if (expr->type != EXPRESSION_TERNARY && expr_get_by_id(state->version, expr->id)->symbol < 0) {
         yyerror(state, "error, cannot output non-compileable expression %d", expr->id);
         exit(2);
     }
@@ -3119,7 +3126,7 @@ var_create_assign(
     expression_free(expr);
 
     if (param != NULL) { /* if param is NULL, then an expression was pushed to stack, which is enough */
-        const expr_t* expr_load = expr_get_by_symbol(state->version, LOAD);
+        const expr_t* expr_load = expr_get_by_symbol(state->version, param->stack == 3 ? PLOAD : LOAD);
         instr_add(state, state->current_sub, instr_new(state, expr_load->id, "p", param));
     }
 

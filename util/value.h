@@ -33,7 +33,7 @@
 #include <inttypes.h>
 
 typedef struct {
-    uint8_t id;
+    int id;
     const char* format;
 } id_format_pair_t;
 

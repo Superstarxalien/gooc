@@ -465,6 +465,18 @@ c1_instr_serialize(
                     val |= param->value.val.S
                         << 4;
                 }
+                else if (param->object_link == -3) {
+                    if (!ecl_ext || (ecl_ext && gool_pool_get_index(ecl, p) != -1)) {
+                        /* pool ref */
+                        val = 0x000;
+                        val |= gool_pool_force_get_index(ecl, p);
+                    }
+                    else {
+                        /* pool ref */
+                        val = 0x400;
+                        val |= gool_pool_force_get_index(ecl_ext, p);
+                    }
+                }
             }
             else {
                 if (!(p % 0x100) && p >= -256 * 0x100 && p <= 255 * 0x100) {
@@ -936,6 +948,18 @@ c2_instr_serialize(
                     val = 0xBE0;
                     val |= param->value.val.S
                         << 4;
+                }
+                else if (param->object_link == -3) {
+                    if (!ecl_ext || (ecl_ext && gool_pool_get_index(ecl, p) != -1)) {
+                        /* pool ref */
+                        val = 0x000;
+                        val |= gool_pool_force_get_index(ecl, p);
+                    }
+                    else {
+                        /* pool ref */
+                        val = 0x400;
+                        val |= gool_pool_force_get_index(ecl_ext, p);
+                    }
                 }
             }
             else {

@@ -42,9 +42,10 @@ global_expressions[] = {
     /*SYM        ID     P  A SP2 O  U */
     { LOAD,      22,  "S", 0, 0, 0, 0 }, /* p0 */
     { GLOAD,     31,  "S", 0, 0, 0, 0 }, /* p0 */
-    { PLOAD,     38,  "S", 0, 0, 0, 0 }, /* [p0] */
+    { PLOAD,     38,  "S", 0, 0, 0, 0 }, /* &p0 */
     { GASSIGN,   32,  "S", 1, 0, 0, 0 }, /* p0 = s0 */
     { ASSIGN,    17,  "S", 1, 0, 0, 0 }, /* p0 = s0 */
+    { PASSIGN,   20,  "S", 2, 0, 0, 1 }, /* p0 = &s0 */
 
     { ADD,        0, NULL, 2, 0, 1, 0 }, /* s1 + s0 */
     { SUBTRACT,   1, NULL, 2, 0, 1, 0 }, /* s1 - s0 */
@@ -66,7 +67,6 @@ global_expressions[] = {
     { RAND,      16, NULL, 2, 0, 0, 0 }, /* rand(s0, s1) */
     { NOT,       18, NULL, 2, 0, 1, 1 }, /* !s0 */
     { NEARSEEK,  19, NULL, 3, 1, 0, 0 }, /* nearseek(s0, s1, s2) */
-    { ADDRESSOF, 20, NULL, 2, 0, 0, 1 }, /* &s0 */
     { LSHIFT,    21, NULL, 2, 0, 1, 0 }, /* s1 << s0 */
     { B_NOT,     23, NULL, 2, 0, 1, 1 }, /* ~s0 */
     { ABS,       25, NULL, 2, 0, 1, 1 }, /* abs(s0) */
