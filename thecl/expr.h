@@ -35,8 +35,6 @@
 typedef struct {
     int symbol;
     int id;
-    /* 0 indicates no return value. */
-    char* param_format;
     size_t stack_arity;
     int has_double_param;
     int allow_optim;
