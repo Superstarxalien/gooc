@@ -713,19 +713,22 @@ Font_Char:
             int y = $8;
             int w = $9;
             int h = $10;
+            int segsize = 256 >> $3;
             if ((x & 0xff) + w > 256) {
-                yyerror(state, "syntax error, aligned character texture is too wide");
+                yyerror(state, "syntax error, aligned texture is too wide");
             }
             if (y + h > 128) {
-                yyerror(state, "syntax error, character texture is too tall");
+                yyerror(state, "syntax error, texture is too tall");
             }
             if (y < 0 || x < 0) {
-                yyerror(state, "syntax error, invalid character texture parameters");
+                yyerror(state, "syntax error, invalid texture parameters");
             }
+            --w;
+            --h;
             character->tex.r = $2 >> 0 & 0xFF;
             character->tex.g = $2 >> 8 & 0xFF;
             character->tex.b = $2 >> 16 & 0xFF;
-            character->tex.primtype = 11;
+            character->tex.primtype = $2 == 0 ? 0 : 11;
             character->tex.unk1 = 0;
             character->tex.unk2 = 0;
             character->tex.unused1 = 0;
@@ -733,8 +736,8 @@ Font_Char:
             character->tex.additive = $4 >> 1 & 0x1;
             character->tex.unk4 = 0;
             character->tex.unk5 = 0;
-            character->tex.segment = x / 256;
-            x &= 0xFF;
+            character->tex.segment = x / segsize;
+            x &= segsize - 1;
             character->tex.color = $3;
             character->tex.blend = $4 & 0x1;
             character->tex.cx = $5;
@@ -822,7 +825,7 @@ Sprite_Frame:
             tex->r = $2 >> 0 & 0xFF;
             tex->g = $2 >> 8 & 0xFF;
             tex->b = $2 >> 16 & 0xFF;
-            tex->primtype = 11;
+            tex->primtype = $2 == 0 ? 0 : 11;
             tex->unk1 = 0;
             tex->unk2 = 0;
             tex->unused1 = 0;
