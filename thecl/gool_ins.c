@@ -645,7 +645,7 @@ c1_gool_ins_soundcheck_params(
         param->stack = 1;
         param->object_link = -2;
         list_prepend_new(params, param);
-        list_prepend_to(params, param_val_new(0), params->tail);
+        list_append_new(params, param_val_new(0));
         list_append_new(params, param_val_new(13));
     }
     else if (c == 2) {
@@ -696,7 +696,7 @@ c1_gool_ins_soundspec_params(
         list_append_new(params, param_val_new(type));
     }
     else if (c == 2) {
-        list_prepend_to(params, param_val_new(0), params->tail);
+        list_append_new(params, param_val_new(0));
         list_append_new(params, param_val_new(type));
     }
     else if (c == 3) {
