@@ -1155,7 +1155,7 @@ c2_gool_ins_call_params(
     thecl_param_t* param;
     size_t c = list_count(params);
     if (c == 1) {
-        list_append_new(params, param_val_new(argc));
+        list_append_new(params, param_val_new(argc << 8));
     }
     else {
         fprintf(stderr, "%s: call: wrong number of arguments (expected at least 1, got %zu)\n", argv0, c);
