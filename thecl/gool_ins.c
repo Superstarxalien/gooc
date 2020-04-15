@@ -606,15 +606,17 @@ c1_gool_ins_setupsound_params(
 {
     thecl_param_t* param;
     size_t c = list_count(params);
-    if (c == 3) {
-        param = param_new('S');
-        param->value.val.S = 0;
-        list_append_to(params, param, params->head);
+    if (c == 2) {
+        list_append_to(params, param_val_new(0), params->head);
+        list_prepend_to(params, param_val_new(0), params->tail);
+    }
+    else if (c == 3) {
+        list_prepend_to(params, param_val_new(0), params->tail);
     }
     else if (c == 4) {
     }
     else {
-        fprintf(stderr, "%s: soundsetup: wrong number of arguments (expected 3 or 4, got %zu)\n", argv0, c);
+        fprintf(stderr, "%s: soundsetup: wrong number of arguments (expected 2, 3 or 4, got %zu)\n", argv0, c);
         return NULL;
     }
     return params;
@@ -653,7 +655,7 @@ c1_gool_ins_soundspec_params(
         list_append_new(params, param_val_new(type));
     }
     else if (c == 2) {
-        list_append_to(params, param_val_new(0), params->head);
+        list_prepend_to(params, param_val_new(0), params->tail);
         list_append_new(params, param_val_new(type));
     }
     else if (c == 3) {
