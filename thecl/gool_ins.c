@@ -1240,7 +1240,7 @@ c2_gool_ins[] = {
     { "calcpath",                   58, 0, 0, 0, -1, c1_gool_ins_calcpath_params },
     { "getvert",                    58, 0, 0, 0, -1, c1_gool_ins_getvert_params },
     { "setvel",                     58, 0, 0, 0, -1, c1_gool_ins_setvel_params },
-    { "sendevent",                  60, 1, 0, 0,  2, c1_gool_ins_sendevent_params },
+    { "sendevent",                  60, 3, 0, 0,  2, c1_gool_ins_sendevent_params },
     { "rejectevent",                61, 0, 0, 0, -1, c1_gool_ins_eventstatus_params },
     { "acceptevent",                62, 0, 0, 0, -1, c1_gool_ins_eventstatus_params },
     { "rejecteventandreturn",       61, 0, 0, 0, -1, c1_gool_ins_eventstatusreturn_params },
