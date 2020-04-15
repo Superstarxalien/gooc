@@ -40,7 +40,6 @@ typedef struct {
     int pop_args;
     int reverse_args;
     int late_param;
-    int param_count;
 
     list_t* (*param_list_validate)(list_t* params, int argc);
 } gool_ins_t;

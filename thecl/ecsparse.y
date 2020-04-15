@@ -1446,11 +1446,11 @@ Instruction:
       IDENTIFIER "(" Instruction_Parameters ")" {
         const gool_ins_t* gool_ins = gool_ins_get_by_name(state->version, $1);
         if (gool_ins) {
-            if (gool_ins->varargs) {
+            if (gool_ins->varargs != 0) {
                 list_t* param_list = list_new();
                 list_t* arg_list = list_new();
 
-                int argc = gool_ins->param_count;
+                int argc = gool_ins->varargs;
                 if ($3 != NULL) {
                     list_node_t* node, *next_node;
                     list_for_each_node_safe($3, node, next_node) {
