@@ -101,6 +101,7 @@ gool_fields[] = {
     { "yzapproach",   57 },
     { "density",      58 },
     { "field_59",     59 },
+    { "voice",        59 },
     { "field_60",     60 },
     { "field_61",     61 },
     { "field_62",     62 },
