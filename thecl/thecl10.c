@@ -621,13 +621,13 @@ c1_compile_gool(
     }
 
     list_for_each(&ecl->subs, sub) {
-        if (!sub->deleted) {
-            sub->instr_data = realloc(sub->instr_data, sizeof(gool_sub_t) + sizeof(uint32_t) * sub->offset);
+        if (sub->forward_declaration || sub->is_inline || sub->deleted)
+            continue;
+        sub->instr_data = realloc(sub->instr_data, sizeof(gool_sub_t) + sizeof(uint32_t) * sub->offset);
 
-            int i = 0;
-            list_for_each(&sub->instrs, instr) {
-                sub->instr_data->data[i++] = c1_instr_serialize(main_ecl, ecl_ext, sub, instr);
-            }
+        int i = 0;
+        list_for_each(&sub->instrs, instr) {
+            sub->instr_data->data[i++] = c1_instr_serialize(main_ecl, ecl_ext, sub, instr);
         }
     }
 
@@ -1105,13 +1105,13 @@ c2_compile_gool(
     }
 
     list_for_each(&ecl->subs, sub) {
-        if (!sub->deleted) {
-            sub->instr_data = realloc(sub->instr_data, sizeof(gool_sub_t) + sizeof(uint32_t) * sub->offset);
+        if (sub->forward_declaration || sub->is_inline || sub->deleted)
+            continue;
+        sub->instr_data = realloc(sub->instr_data, sizeof(gool_sub_t) + sizeof(uint32_t) * sub->offset);
 
-            int i = 0;
-            list_for_each(&sub->instrs, instr) {
-                sub->instr_data->data[i++] = c2_instr_serialize(main_ecl, ecl_ext, sub, instr);
-            }
+        int i = 0;
+        list_for_each(&sub->instrs, instr) {
+            sub->instr_data->data[i++] = c2_instr_serialize(main_ecl, ecl_ext, sub, instr);
         }
     }
 
