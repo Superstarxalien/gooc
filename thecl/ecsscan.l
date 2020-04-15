@@ -175,20 +175,22 @@ vol\([0-9]+\.[0-9]+\) {
     yylval.integer = (int)(strtod(yytext, NULL) / 180.0 * 0x800);
     return GOOL_INTEGER;
 }
-[0-9]+\.[0-9]+([Mms]|[Hh]z)? {
+[0-9]+\.[0-9]+([MmsVv]|[Hh]z)? {
     char* afternum;
     double num = strtod(yytext, &afternum);
     if (strstr(afternum, "hz") || strstr(afternum, "Hz"))
         yylval.integer = (int)(num / 11025.0 * 0x400);
     else if (strchr(afternum, 'M') || strchr(afternum, 'm'))
         yylval.integer = (int)(num * 102400);
+    else if (strchr(afternum, 'V') || strchr(afternum, 'v'))
+        yylval.integer = (int)(num * 0x3FFF);
     else if (strchr(afternum, 's'))
         yylval.integer = (int)(num * g_rate);
     else
         yylval.integer = (int)(num * 0x100);
     return GOOL_INTEGER;
 }
-[0-9]+([GgMms]|[Hh]z)? {
+[0-9]+([GgMmVvs]|[Hh]z)? {
     char* afternum;
     yylval.integer = strtoul(yytext, &afternum, 10);
     if (strstr(afternum, "hz") || strstr(afternum, "Hz"))
@@ -197,6 +199,8 @@ vol\([0-9]+\.[0-9]+\) {
         yylval.integer *= 102400;
     else if (strchr(afternum, 'G') || strchr(afternum, 'g'))
         yylval.integer *= 0x100;
+    else if (strchr(afternum, 'V') || strchr(afternum, 'v'))
+        yylval.integer *= 0x3FFF;
     else if (strchr(afternum, 's'))
         yylval.integer *= g_rate;
     else
