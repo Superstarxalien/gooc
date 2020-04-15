@@ -623,6 +623,47 @@ c1_gool_ins_setupsound_params(
 }
 
 static list_t*
+c1_gool_ins_soundcheck_params(
+    list_t* params,
+    int argc)
+{
+    thecl_param_t* param;
+    size_t c = list_count(params);
+    if (c == 0) {
+        param = param_new('S');
+        param->value.val.S = 0;
+        param->stack = 1;
+        param->object_link = -2;
+        list_prepend_new(params, param);
+        list_append_new(params, param_val_new(0));
+        list_append_new(params, param_val_new(0));
+        list_append_new(params, param_val_new(13));
+    }
+    else if (c == 1) {
+        param = param_new('S');
+        param->value.val.S = 0;
+        param->stack = 1;
+        param->object_link = -2;
+        list_prepend_new(params, param);
+        list_prepend_to(params, param_val_new(0), params->tail);
+        list_append_new(params, param_val_new(13));
+    }
+    else if (c == 2) {
+        param = param_new('S');
+        param->value.val.S = 0;
+        param->stack = 1;
+        param->object_link = -2;
+        list_prepend_new(params, param);
+        list_append_new(params, param_val_new(13));
+    }
+    else {
+        fprintf(stderr, "%s: soundcheck: wrong number of arguments (expected 0, 1 or 2, got %zu)\n", argv0, c);
+        return NULL;
+    }
+    return params;
+}
+
+static list_t*
 c1_gool_ins_loadlevel_params(
     list_t* params,
     int argc)
@@ -1096,6 +1137,7 @@ c1_gool_ins[] = {
     { "sounddelay",               0x8D, 0, 0, 0, -1,  2, c1_gool_ins_sounddelay_params },
     { "sounddecay",               0x8D, 0, 0, 0, -1,  2, c1_gool_ins_sounddecay_params },
     { "soundset",                 0x8D, 0, 0, 0, -1,  2, c1_gool_ins_soundset_params },
+    { "soundcheck",               0x8D, 0, 0, 0, -1,  3, c1_gool_ins_soundcheck_params },
     { "calclight",                0x8E, 0, 0, 0, -1,  0, c1_gool_ins_calclight_params },
     { "broadcastevent",           0x8F, 1, 0, 0,  2,  3, c1_gool_ins_sendevent_params },
     { "cascadeevent",             0x90, 1, 0, 0,  2,  3, c1_gool_ins_sendevent_params },
@@ -1169,7 +1211,7 @@ c2_gool_ins_call_params(
         list_append_new(params, param_val_new(argc << 8));
     }
     else {
-        fprintf(stderr, "%s: call: wrong number of arguments (expected at least 1, got %zu)\n", argv0, c);
+        fprintf(stderr, "%s: call: wrong number of arguments (expected at least 1, got %zu)\n", argv0, c+argc);
         return NULL;
     }
     return params;
@@ -1218,6 +1260,7 @@ c2_gool_ins[] = {
     { "sounddelay",                 66, 0, 0, 0, -1,  2, c1_gool_ins_sounddelay_params },
     { "sounddecay",                 66, 0, 0, 0, -1,  2, c1_gool_ins_sounddecay_params },
     { "soundset",                   66, 0, 0, 0, -1,  2, c1_gool_ins_soundset_params },
+    { "soundcheck",                 66, 0, 0, 0, -1,  2, c1_gool_ins_soundcheck_params },
     { "checkzonecollision",         67, 0, 0, 0, -1,  2, c2_gool_ins_checkzonecollision_params },
     { "broadcastevent",             68, 1, 0, 0,  2,  3, c1_gool_ins_sendevent_params },
     { "cascadeevent",               69, 1, 0, 0,  2,  3, c1_gool_ins_sendevent_params },
