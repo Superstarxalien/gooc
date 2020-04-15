@@ -715,6 +715,14 @@ c1_gool_ins_sounddecay_params(
 }
 
 static list_t*
+c1_gool_ins_soundset_params(
+    list_t* params,
+    int argc)
+{
+    return c1_gool_ins_soundspec_params(params, 13, "soundset");
+}
+
+static list_t*
 c1_gool_ins_ntry_params(
     list_t* params,
     int type,
@@ -1085,6 +1093,7 @@ c1_gool_ins[] = {
     { "soundfadet",               0x8D, 0, 0, 0, -1,  2, c1_gool_ins_soundfadetime_params },
     { "sounddelay",               0x8D, 0, 0, 0, -1,  2, c1_gool_ins_sounddelay_params },
     { "sounddecay",               0x8D, 0, 0, 0, -1,  2, c1_gool_ins_sounddecay_params },
+    { "soundset",                 0x8D, 0, 0, 0, -1,  2, c1_gool_ins_soundset_params },
     { "calclight",                0x8E, 0, 0, 0, -1,  0, c1_gool_ins_calclight_params },
     { "broadcastevent",           0x8F, 1, 0, 0,  2,  3, c1_gool_ins_sendevent_params },
     { "cascadeevent",             0x90, 1, 0, 0,  2,  3, c1_gool_ins_sendevent_params },
@@ -1206,6 +1215,7 @@ c2_gool_ins[] = {
     { "soundfadet",                 66, 0, 0, 0, -1,  2, c1_gool_ins_soundfadetime_params },
     { "sounddelay",                 66, 0, 0, 0, -1,  2, c1_gool_ins_sounddelay_params },
     { "sounddecay",                 66, 0, 0, 0, -1,  2, c1_gool_ins_sounddecay_params },
+    { "soundset",                   66, 0, 0, 0, -1,  2, c1_gool_ins_soundset_params },
     { "checkzonecollision",         67, 0, 0, 0, -1,  2, c2_gool_ins_checkzonecollision_params },
     { "broadcastevent",             68, 1, 0, 0,  2,  3, c1_gool_ins_sendevent_params },
     { "cascadeevent",               69, 1, 0, 0,  2,  3, c1_gool_ins_sendevent_params },
