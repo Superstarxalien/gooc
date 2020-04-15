@@ -1142,7 +1142,7 @@ c1_gool_ins[] = {
     { "broadcastevent",           0x8F, 3, 0, 0,  2, c1_gool_ins_sendevent_params },
     { "cascadeevent",             0x90, 3, 0, 0,  2, c1_gool_ins_sendevent_params },
     { "spawn2",                   0x91, 3, 0, 0, -1, c1_gool_ins_spawn_params },
-    { NULL, 0, 0, 0, 0, 0, 0, NULL }
+    { NULL, 0, 0, 0, 0, 0, NULL }
 };
 
 static list_t*
@@ -1266,7 +1266,7 @@ c2_gool_ins[] = {
     { "cascadeevent",               69, 3, 0, 0,  2, c1_gool_ins_sendevent_params },
     { "spawn2",                     70, 3, 0, 0, -1, c1_gool_ins_spawn_params },
     { "call",                       71, 1, 0, 0, -1, c2_gool_ins_call_params },
-    { NULL, 0, 0, 0, 0, 0, 0, NULL }
+    { NULL, 0, 0, 0, 0, 0, NULL }
 };
 
 static const gool_ins_t*
