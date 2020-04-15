@@ -569,7 +569,7 @@ c1_compile_gool(
 )
 {
     entry_header_t entry_header = { 0x100FFFFU, ecl_ext ? ecl_ext->eid : main_ecl->eid, 11U, ecl_ext ? 3U : 6U, { 0, 0, 0, 0, 0, 0, 0 } };
-    gool_header_t header = { main_ecl->id, main_ecl->type << 8, ecl_ext == NULL, ecl_ext ? 0x40 : main_ecl->var_count + 0x40, 0, 8 };
+    gool_header_t header = { main_ecl->id, main_ecl->type << 8, ecl_ext == NULL, main_ecl->var_count + 0x40, 0, 8 };
     thecl_sub_t* sub;
     const thecl_state_t* state;
     gool_anim_t* anim;
@@ -1053,7 +1053,7 @@ c2_compile_gool(
 )
 {
     entry_header_t entry_header = { 0x100FFFFU, ecl_ext ? ecl_ext->eid : main_ecl->eid, 11U, ecl_ext ? 3U : 6U, { 0, 0, 0, 0, 0, 0, 0 } };
-    gool_header_t header = { main_ecl->id, main_ecl->type << 8, ecl_ext == NULL, ecl_ext ? 0x40 : main_ecl->var_count + 0x40, 0, 8 };
+    gool_header_t header = { main_ecl->id, main_ecl->type << 8, ecl_ext == NULL, main_ecl->var_count + 0x40, 0, 8 };
     thecl_sub_t* sub;
     const thecl_state_t* state;
     gool_anim_t* anim;
