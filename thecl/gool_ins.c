@@ -136,26 +136,10 @@ c1_gool_ins_changestate_params(
     thecl_param_t* param;
     size_t c = list_count(params);
     if (c == 1) {
-        list_node_t* node = params->head;
-
-        param = param_new('S');
-        param->value.val.S = argc;
-        list_append_to(params, param, node);
-        node = node->next;
-
-        param = param_new('S');
-        param->value.val.S = 0x25;
-        list_append_to(params, param, node);
-        node = node->next;
-
-        param = param_new('S');
-        param->value.val.S = type;
-        list_append_to(params, param, node);
-        node = node->next;
-
-        param = param_new('S');
-        param->value.val.S = 1;
-        list_append_to(params, param, node);
+        list_append_new(params, param_val_new(argc));
+        list_append_new(params, param_val_new(0x25));
+        list_append_new(params, param_val_new(type));
+        list_append_new(params, param_val_new(1));
     }
     else if (c == 2) {
         param = param_new('S');
@@ -165,7 +149,7 @@ c1_gool_ins_changestate_params(
         list_append_new(params, param_val_new(1));
     }
     else {
-        fprintf(stderr, "%s: changestate: wrong number of arguments (expected 1 or 2, got %zu)\n", argv0, c);
+        fprintf(stderr, "%s: %s: wrong number of arguments (expected at least %d, got %zu)\n", argv0, type == 0 ? "changestate" : (type == 1 ? "changestateif" : "changestateifn"), 1 + (type == 1 || type == 2), c+argc);
         return NULL;
     }
     return params;
@@ -1107,9 +1091,9 @@ c1_gool_ins[] = {
     { "setcolor",                   36, 0, 0, 0, -1, c1_gool_ins_setcolor_params },
     { "anim",                       39, 0, 0, 0, -1, c1_gool_ins_anim_params },
     { "nop",                      0x81, 0, 0, 0, -1, c1_gool_ins_nop_params },
-    { "changestate",              0x82, 0, 0, 0, -1, c1_gool_ins_state_params },
-    { "changestateif",            0x82, 0, 0, 0, -1, c1_gool_ins_stateif_params },
-    { "changestateifn",           0x82, 0, 0, 0, -1, c1_gool_ins_stateifn_params },
+    { "changestate",              0x82, 1, 0, 0, -1, c1_gool_ins_state_params },
+    { "changestateif",            0x82, 2, 0, 0, -1, c1_gool_ins_stateif_params },
+    { "changestateifn",           0x82, 2, 0, 0, -1, c1_gool_ins_stateifn_params },
     { "playanim",                 0x83, 4, 1, 1, -1, c1_gool_ins_playanim_params },
     { "playtext",                 0x83, 2, 1, 1, -1, c1_gool_ins_playtext_params },
     { "playframe",                0x84, 3, 1, 1, -1, c1_gool_ins_playframe_params },
@@ -1231,9 +1215,9 @@ c2_gool_ins[] = {
     { "setcolor",                   36, 0, 0, 0, -1, c1_gool_ins_setcolor_params },
     { "anim",                       39, 0, 0, 0, -1, c1_gool_ins_anim_params },
     { "nop",                        47, 0, 0, 0, -1, c1_gool_ins_nop_params },
-    { "changestate",                53, 0, 0, 0, -1, c1_gool_ins_state_params },
-    { "changestateif",              54, 0, 0, 0,  1, c1_gool_ins_stateif_params },
-    { "changestateifn",             55, 0, 0, 0,  1, c1_gool_ins_stateifn_params },
+    { "changestate",                53, 1, 0, 0, -1, c1_gool_ins_state_params },
+    { "changestateif",              54, 2, 0, 0,  1, c1_gool_ins_stateif_params },
+    { "changestateifn",             55, 2, 0, 0,  1, c1_gool_ins_stateifn_params },
     { "playanim",                   56, 4, 1, 1, -1, c1_gool_ins_playanim_params },
     { "playtext",                   56, 2, 1, 1, -1, c1_gool_ins_playtext_params },
     { "playframe",                  57, 3, 1, 1, -1, c1_gool_ins_playframe_params },
