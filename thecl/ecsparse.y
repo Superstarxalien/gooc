@@ -954,6 +954,8 @@ ArgumentDeclaration:
 State_Instructions:
     %empty
     | State_Instructions "__transargs" {
+        if (state->current_state->trans)
+            yyerror(state, "useless modifier __transargs, trans block already defined");
         state->current_state->trans_args = true;
         state->declared_tempfields = true;
     }
