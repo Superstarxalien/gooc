@@ -237,6 +237,7 @@ int yydebug = 0;
 %token UNTIL "until"
 %token BREAK "break"
 %token CONTINUE "continue"
+%token SAVE "save"
 %token CALL
 %token LOAD
 %token GLOAD
@@ -316,6 +317,7 @@ int yydebug = 0;
 %token GETANIM "getanim"
 %token OFFSETOF "offsetof"
 
+%type <list> Address_List
 %type <list> Instruction_Parameters_List
 %type <list> Instruction_Parameters
 
@@ -1068,7 +1070,31 @@ Block:
     | WhileBlock
     | CodeBlock
     | OnceBlock
+    | SaveBlock
     ;
+
+SaveBlock:
+    "save" "(" Address_List ")" {
+        const expr_t* expr = expr_get_by_symbol(state->version, LOAD);
+        if ($3 == NULL)
+            $3 = list_new();
+        list_node_t* n;
+        list_for_each_node($3, n) {
+            list_append(&state->addresses, n);
+            instr_add(state, state->current_sub, instr_new(state, expr->id, "p", n->data));
+        }
+        list_append_new(&state->addresses, list_count($3));
+        free($3);
+    } CodeBlock {
+        int m = list_tail(&state->addresses);
+        list_del(&state->addresses, state->addresses.tail);
+
+        const expr_t* expr = expr_get_by_symbol(state->version, ASSIGN);
+        for (int i=0; i<m; ++i) {
+            instr_add(state, state->current_sub, instr_new(state, expr->id, "pp", param_copy(list_tail(&state->addresses)), param_sp_new()));
+            list_del(&state->addresses, state->addresses.tail);
+        }
+    }
 
 OnceBlock:
     "once" {
@@ -1700,6 +1726,11 @@ Assignment:
     | Address ">>=" Expression { var_shorthand_assign(state, $1, EXPR_2(SUBTRACT, expression_val_new(state, 0), $3), LSHIFT); }
     | Address "\\=" Expression { var_shorthand_assign(state, $1, $3, TEST); }
     ;
+
+Address_List:
+    %empty { $$ = NULL; }
+    | Address { $$ = list_new(); list_append_new($$, $1); }
+    | Address_List "," Address { $$ = $1; list_append_new($$, $3); }
 
 Instruction_Parameters:
     %empty { $$ = NULL; }

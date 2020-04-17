@@ -248,6 +248,7 @@ typedef struct {
     unsigned int version;
     bool has_mips;
     list_t expressions;
+    list_t addresses;
     list_t block_stack;
     int* scope_stack;
     int scope_cnt;

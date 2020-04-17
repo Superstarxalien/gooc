@@ -98,6 +98,7 @@
 "until"    return UNTIL;
 "break"    return BREAK;
 "continue" return CONTINUE;
+"save"     return SAVE;
 "="        return ASSIGN;
 "+="       return ASSIGNADD;
 "-="       return ASSIGNSUB;
