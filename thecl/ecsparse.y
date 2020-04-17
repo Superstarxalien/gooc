@@ -316,6 +316,8 @@ int yydebug = 0;
 %token TRYLOAD "tryload"
 %token GETANIM "getanim"
 %token OFFSETOF "offsetof"
+%token NTRY4 "ntry4"
+%token NTRY5 "ntry5"
 
 %type <list> Address_List
 %type <list> Instruction_Parameters_List
@@ -1873,6 +1875,19 @@ ExpressionSubset:
 //  | "__unk2" "(" Expression "," Expression ")"                  { if (state->version == 1) $$ = EXPR_4(MISC, $3, expression_val_new(state, 0), $5, expression_val_new(state, 15)); }
 
     | "tryload" "(" Expression ")"                                { $$ = EXPR_2(NTRY, $3, expression_val_new(state, 3)); }
+    | "ntry5" "(" Expression "," Expression ")" {
+		expression_output(state, $3); expression_free($3);
+		expression_output(state, $5); expression_free($5);
+		$$ = EXPR_2(NTRY, expression_val_new(state, 2), expression_val_new(state, 5));
+	  }
+    | "ntry5" "(" Expression "," Expression "," Expression "," Expression ")" {
+		expression_output(state, $3); expression_free($3);
+		expression_output(state, $5); expression_free($5);
+		expression_output(state, $7); expression_free($7);
+		expression_output(state, $9); expression_free($9);
+		$$ = EXPR_2(NTRY, expression_val_new(state, 4), expression_val_new(state, 5));
+	  }
+    | "ntry4" "(" ")"                                             { $$ = EXPR_2(NTRY, expression_load_new(state, param_null_new()), expression_val_new(state, 4)); }
     
     | "getins" "(" Expression ")"                                 { $$ = EXPR_3(MOVC, $3, expression_val_new(state, 0), expression_val_new(state, 0x1F)); }
 

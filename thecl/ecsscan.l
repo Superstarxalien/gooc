@@ -167,6 +167,8 @@
 "tryload"          return TRYLOAD;
 "getanim"          return GETANIM;
 "offsetof"         return OFFSETOF;
+"ntry4"            return NTRY4;
+"ntry5"            return NTRY5;
 
 vol\([0-9]+\.[0-9]+\) {
     yylval.integer = (int)(strtod(yytext+4, NULL) * 0x3FFF);
