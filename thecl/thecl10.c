@@ -329,7 +329,8 @@ c1_instr_serialize(
     thecl_t* ecl,
     thecl_t* ecl_ext,
     thecl_sub_t* sub,
-    thecl_instr_t* instr)
+    thecl_instr_t* instr,
+    bool ignore_error)
 {
     const thecl_param_t* param;
 
@@ -355,7 +356,7 @@ c1_instr_serialize(
             called_sub = th10_find_sub(ecl_ext, sub_name);
             ext_sub = true;
         }
-        if (!called_sub) {
+        if (!called_sub && !ignore_error) {
             fprintf(stderr, "%s:c1_instr_serialize: in sub %s: unknown sub call \"%s\"\n",
                     argv0, sub->name, sub_name);
             was_error = true;
@@ -366,12 +367,12 @@ c1_instr_serialize(
                 called_sub = th10_find_sub(ecl_ext, sub_name);
                 ext_sub = true;
             }
-            if (!called_sub) {
+            if (!called_sub && !ignore_error) {
                 fprintf(stderr, "%s:c1_instr_serialize: in sub %s: no suitable parameter count for sub \"%s\"\n",
                     argv0, sub->name, sub_name);
                 was_error = true;
             }
-            else if (ext_sub) {
+            else if (ext_sub && !ignore_error) {
                 fprintf(stderr, "%s:c1_instr_serialize: in sub %s: cannot call subs in external gool module: \"%s\"\n",
                     argv0, sub->name, sub_name);
                 was_error = true;
@@ -383,7 +384,7 @@ c1_instr_serialize(
     int i = 0;
     char op;
     list_for_each(&instr->params, param) {
-        if (total_bits >= 24) {
+        if (total_bits >= 24 && !ignore_error) {
             fprintf(stderr, "%s:c1_instr_serialize: in sub %s: gool instruction %d parameter overflow\n", argv0, sub->name, instr->id);
             break;
         }
@@ -420,9 +421,10 @@ c1_instr_serialize(
                         }
                     }
                     if (!called_sub) {
-                        if (!was_error) {
+                        if (!was_error && !ignore_error) {
                             fprintf(stderr, "%s:c1_instr_serialize: in sub %s: sub/state/label not found: %s\n", argv0, sub->name, param->value.val.z);
                         }
+                        p = o;
                     }
                     else {
                         p = called_sub->start_offset;
@@ -516,7 +518,7 @@ c1_instr_serialize(
             int s = 32 - b;
             int sm = s-1;
             val &= 0xFFFFFFFFU >> s;
-            if (p != ((val << s) >> s) && p != ((val << sm) >> sm)) {
+            if (p != ((val << s) >> s) && p != ((val << sm) >> sm) && !ignore_error) {
                 fprintf(stderr, "%s:c1_instr_serialize: in sub %s: parameter out of bounds for instruction %d (%u bits)\n", argv0, sub->name, instr->id, b);
             }
             total_bits += b;
@@ -554,7 +556,7 @@ c1_instr_serialize(
         ret |= val << bits;
     }
 
-    if (total_bits > 24) {
+    if (total_bits > 24 && !ignore_error) {
         fprintf(stderr, "%s:c1_instr_serialize: in sub %s: gool instruction %d format overflow\n", argv0, sub->name, instr->id);
     }
 
@@ -587,7 +589,7 @@ c1_compile_gool(
 
         int i = 0;
         list_for_each(&sub->instrs, instr) {
-            sub->instr_data->data[i++] = c1_instr_serialize(main_ecl, ecl_ext, sub, instr);
+            sub->instr_data->data[i++] = c1_instr_serialize(main_ecl, ecl_ext, sub, instr, true);
         }
 
         thecl_sub_t* comp_sub;
@@ -628,7 +630,7 @@ c1_compile_gool(
 
         int i = 0;
         list_for_each(&sub->instrs, instr) {
-            sub->instr_data->data[i++] = c1_instr_serialize(main_ecl, ecl_ext, sub, instr);
+            sub->instr_data->data[i++] = c1_instr_serialize(main_ecl, ecl_ext, sub, instr, false);
         }
     }
 
@@ -813,7 +815,8 @@ c2_instr_serialize(
     thecl_t* ecl,
     thecl_t* ecl_ext,
     thecl_sub_t* sub,
-    thecl_instr_t* instr)
+    thecl_instr_t* instr,
+    bool ignore_error)
 {
     const thecl_param_t* param;
 
@@ -839,7 +842,7 @@ c2_instr_serialize(
             called_sub = th10_find_sub(ecl_ext, sub_name);
             ext_sub = true;
         }
-        if (!called_sub) {
+        if (!called_sub && !ignore_error) {
             fprintf(stderr, "%s:c2_instr_serialize: in sub %s: unknown sub call \"%s\"\n",
                     argv0, sub->name, sub_name);
             was_error = true;
@@ -851,7 +854,7 @@ c2_instr_serialize(
                     called_sub = th10_find_sub(ecl_ext, sub_name);
                     ext_sub = true;
                 }
-                if (!called_sub) {
+                if (!called_sub && !ignore_error) {
                     fprintf(stderr, "%s:c2_instr_serialize: in sub %s: no suitable parameter count for sub \"%s\"\n",
                         argv0, sub->name, sub_name);
                     was_error = true;
@@ -866,7 +869,7 @@ c2_instr_serialize(
     int i = 0;
     char op;
     list_for_each(&instr->params, param) {
-        if (total_bits >= 24) {
+        if (total_bits >= 24 && !ignore_error) {
             fprintf(stderr, "%s:c2_instr_serialize: in sub %s: gool instruction %d parameter overflow\n", argv0, sub->name, instr->id);
             break;
         }
@@ -903,7 +906,7 @@ c2_instr_serialize(
                         }
                     }
                     if (!called_sub) {
-                        if (!was_error) {
+                        if (!was_error && !ignore_error) {
                             fprintf(stderr, "%s:c2_instr_serialize: in sub %s: sub/state/label not found: %s\n", argv0, sub->name, param->value.val.z);
                         }
                         p = o;
@@ -1000,7 +1003,7 @@ c2_instr_serialize(
             int s = 32 - b;
             int sm = s-1;
             val &= 0xFFFFFFFFU >> s;
-            if (p != ((val << s) >> s) && p != ((val << sm) >> sm)) {
+            if (p != ((val << s) >> s) && p != ((val << sm) >> sm) && !ignore_error) {
                 fprintf(stderr, "%s:c2_instr_serialize: in sub %s: parameter out of bounds for instruction %d (%u bits)\n", argv0, sub->name, instr->id, b);
             }
             total_bits += b;
@@ -1038,7 +1041,7 @@ c2_instr_serialize(
         ret |= val << bits;
     }
 
-    if (total_bits > 24) {
+    if (total_bits > 24 && !ignore_error) {
         fprintf(stderr, "%s:c2_instr_serialize: in sub %s: gool instruction %d format overflow\n", argv0, sub->name, instr->id);
     }
 
@@ -1071,7 +1074,7 @@ c2_compile_gool(
 
         int i = 0;
         list_for_each(&sub->instrs, instr) {
-            sub->instr_data->data[i++] = c2_instr_serialize(main_ecl, ecl_ext, sub, instr);
+            sub->instr_data->data[i++] = c2_instr_serialize(main_ecl, ecl_ext, sub, instr, true);
         }
 
         thecl_sub_t* comp_sub;
@@ -1112,7 +1115,7 @@ c2_compile_gool(
 
         int i = 0;
         list_for_each(&sub->instrs, instr) {
-            sub->instr_data->data[i++] = c2_instr_serialize(main_ecl, ecl_ext, sub, instr);
+            sub->instr_data->data[i++] = c2_instr_serialize(main_ecl, ecl_ext, sub, instr, false);
         }
     }
 
