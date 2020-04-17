@@ -278,6 +278,7 @@ typedef struct {
 extern parser_state_t* g_parser_state;
 extern int g_rate;
 extern char* g_region;
+extern char g_lev;
 extern int g_reg_block_depth;
 extern int* g_reg_blocks;
 extern char* g_module_fmt;

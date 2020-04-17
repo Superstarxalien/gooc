@@ -44,6 +44,7 @@ const char* gool_null_ename = "NONE!";
 parser_state_t* g_parser_state = NULL;
 int g_rate = 30; /* ntsc default */
 char* g_region = NULL;
+char g_lev = '0';
 int g_reg_block_depth = 0;
 int* g_reg_blocks = NULL;
 char* g_module_fmt = NULL;
@@ -395,15 +396,18 @@ free_globals(void)
 static void
 print_usage(void)
 {
-    printf("Usage: %s [-V] [-c VERSION] [-r REGION] [-h OUTPUT] [-e OUTPUT]... [INPUT [OUTPUT]]\n"
+    printf("Usage: %s [-V] [-c VERSION] [-r REGION] [-l LEVEL] [-h OUTPUT] [-e OUTPUT]... [INPUT [OUTPUT]]\n"
            "Options:\n"
            "  -c  create GOOL file\n"
            "  -V  display version information and exit\n"
            "  -r  set the region, used for specific time and frame calculations, and #ifreg parse blocks\n"
+           "  -l  set the level, used for #iflev parse blocks\n"
            "  -h  set the output path for a \"header\" file which contains definitions for spawns and the GOOL ID\n"
            "  -e  set the output path format for external GOOL modules, where the first parameter is the entry-name\n"
            "VERSION can be:\n"
            "  1, 2\n"
+           "LEVEL can be:\n"
+           "  Any valid ename character (0-9, a-z, A-Z, '_', '!')\n"
            "REGION can be:\n"
            "  ntsc-u, ntsc-j, pal\n"
            "Report bugs to <" PACKAGE_BUGREPORT ">.\n", argv0);
@@ -429,7 +433,7 @@ main(int argc, char* argv[])
     int opt;
     int ind=0;
     while(argv[util_optind]) {
-        switch(opt = util_getopt(argc, argv, ":c:Vr:h:e:")) {
+        switch(opt = util_getopt(argc, argv, ":c:Vr:l:h:e:")) {
         case 'c':
             if(mode != -1) {
                 fprintf(stderr,"%s: More than one mode specified\n", argv0);
@@ -447,13 +451,23 @@ main(int argc, char* argv[])
                 g_rate = 25;
             }
             else {
-                fprintf(stderr,"%s: Invalid display mode specified\n", argv0);
+                fprintf(stderr,"%s: Invalid region specified\n", argv0);
                 print_usage();
                 exit(1);
             }
             if (g_region)
                 free(g_region);
             g_region = strdup(util_optarg);
+            break;
+        case 'l':
+            if (strchr(gool_ename_charmap, util_optarg[0]) != NULL) {
+                g_lev = util_optarg[0];
+            }
+            else {
+                fprintf(stderr, "%s: Invalid level specified\n", argv0);
+                print_usage();
+                exit(1);
+            }
             break;
         case 'h':
             h_out = fopen(util_optarg, "w");
