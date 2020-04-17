@@ -99,6 +99,7 @@
 "break"    return BREAK;
 "continue" return CONTINUE;
 "save"     return SAVE;
+"@"        return AT;
 "="        return ASSIGN;
 "+="       return ASSIGNADD;
 "-="       return ASSIGNSUB;

@@ -136,6 +136,7 @@ typedef struct {
     bool is_trans;
     bool has_once;
     bool has_nofirst;
+    bool self_reference;
 
     bool deleted;
     gool_sub_t* instr_data;

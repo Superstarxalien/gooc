@@ -61,6 +61,7 @@ static void instr_del(parser_state_t* state, thecl_sub_t* sub, thecl_instr_t* in
 static void instr_prepend(thecl_sub_t* sub, thecl_instr_t* instr);
 /* Returns true if the created call was inline. */
 static bool instr_create_call(parser_state_t *state, uint8_t type, char *name, list_t *params);
+static bool instr_create_inline_call(parser_state_t *state, thecl_sub_t *sub, list_t *params);
 
 static expression_t* expression_load_new(const parser_state_t* state, thecl_param_t* value);
 static expression_t* expression_val_new(const parser_state_t* state, int value);
@@ -238,6 +239,7 @@ int yydebug = 0;
 %token BREAK "break"
 %token CONTINUE "continue"
 %token SAVE "save"
+%token AT "@"
 %token CALL
 %token LOAD
 %token GLOAD
@@ -1551,6 +1553,25 @@ Instruction:
             free($3);
         }
       }
+    | "@" IDENTIFIER "(" Instruction_Parameters ")" {
+        const expr_t* expr = expr_get_by_symbol(state->version, CALL);
+        size_t param_count = $4 ? list_count($4) : 0;
+        thecl_sub_t* sub = state->current_sub;
+        list_for_each(&state->main_ecl->subs, sub) {
+            if (sub != state->current_sub && !sub->self_reference && !strcmp(sub->name, $2) && sub->arg_count == param_count) {
+                instr_create_inline_call(state, sub, $4);
+                sub = NULL;
+            }
+        }
+        if (sub) {
+            yyerror(state, "no valid inline call for %s", $2);
+        }
+        free($2);
+        if ($4 != NULL) {
+            list_free_nodes($4);
+            free($4);
+        }
+      }
     /*| "goto" IDENTIFIER {
         expression_create_goto(state, GOTO, $2, NULL);
     }*/
@@ -2467,6 +2488,10 @@ instr_create_call(
         }
     }
 
+    if (!strcmp(state->current_sub->name, name)) {
+        state->current_sub->self_reference = true;
+    }
+
     instr_add(state, state->current_sub, instr_new(state, type, "pSS", name_param, 38, argc));
     return false;
 }
@@ -2853,6 +2878,7 @@ sub_begin(
     sub->is_trans = false;
     sub->has_once = false;
     sub->has_nofirst = false;
+    sub->self_reference = false;
     list_init(&sub->labels);
 
     list_append_new(&state->ecl->subs, sub);
