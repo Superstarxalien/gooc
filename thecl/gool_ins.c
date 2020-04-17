@@ -570,14 +570,14 @@ c1_gool_ins_calcpath_params(
 }
 
 static list_t*
-c1_gool_ins_playsound_params(
+c1_gool_ins_soundplay_params(
     list_t* params,
     int argc)
 {
     thecl_param_t* param;
     size_t c = list_count(params);
     if (c != 2) {
-        fprintf(stderr, "%s: playsound: wrong number of arguments (expected 2, got %zu)\n", argv0, c);
+        fprintf(stderr, "%s: soundplay: wrong number of arguments (expected 2, got %zu)\n", argv0, c);
         return NULL;
     }
     return params;
@@ -1112,7 +1112,7 @@ c1_gool_ins[] = {
     { "loadfile",                 0x8B, 0, 0, 0, -1, c1_gool_ins_loadfile_params },
     { "deloadfile",               0x8B, 0, 0, 0, -1, c1_gool_ins_deloadfile_params },
     { "loadtpage",                0x8B, 0, 0, 0, -1, c1_gool_ins_loadtpage_params },
-    { "soundplay",                0x8C, 0, 0, 0, -1, c1_gool_ins_playsound_params },
+    { "soundplay",                0x8C, 0, 0, 0, -1, c1_gool_ins_soundplay_params },
     { "soundsetup",               0x8D, 0, 0, 0, -1, c1_gool_ins_setupsound_params },
     { "soundfadev",               0x8D, 0, 0, 0, -1, c1_gool_ins_soundfadevol_params },
     { "soundpitch",               0x8D, 0, 0, 0, -1, c1_gool_ins_soundpitch_params },
@@ -1235,7 +1235,7 @@ c2_gool_ins[] = {
     { "loadfile",                   64, 0, 0, 0, -1, c1_gool_ins_loadfile_params },
     { "deloadfile",                 64, 0, 0, 0, -1, c1_gool_ins_deloadfile_params },
     { "loadtpage",                  64, 0, 0, 0, -1, c1_gool_ins_loadtpage_params },
-    { "soundplay",                  65, 0, 0, 0, -1, c1_gool_ins_playsound_params },
+    { "soundplay",                  65, 0, 0, 0, -1, c1_gool_ins_soundplay_params },
     { "soundsetup",                 66, 0, 0, 0, -1, c1_gool_ins_setupsound_params },
     { "soundfadev",                 66, 0, 0, 0, -1, c1_gool_ins_soundfadevol_params },
     { "soundpitch",                 66, 0, 0, 0, -1, c1_gool_ins_soundpitch_params },
