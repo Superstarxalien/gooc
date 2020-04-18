@@ -78,6 +78,7 @@ gool_fields[] = {
     { "hpc",          36 },
     { "misc",         37 },
     { "eventaccepted",37 },
+    { "objectspawned",37 },
     { "v0",           38 },
     { "frametime",    39 },
     { "statetime",    40 },
