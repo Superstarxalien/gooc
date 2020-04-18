@@ -1835,17 +1835,19 @@ ExpressionSubset:
 //  | "__unk2" "(" Expression "," Expression ")"                  { if (state->version == 1) $$ = EXPR_4(MISC, $3, expression_val_new(state, 0), $5, expression_val_new(state, 15)); }
 
     | "tryload" "(" Expression ")"                                { $$ = EXPR_2(NTRY, $3, expression_val_new(state, 3)); }
-    | "ntry5" "(" Expression "," Expression ")" {
-        expression_output(state, $3); expression_free($3);
-        expression_output(state, $5); expression_free($5);
-        $$ = EXPR_2(NTRY, expression_val_new(state, 2), expression_val_new(state, 5));
-      }
-    | "ntry5" "(" Expression "," Expression "," Expression "," Expression ")" {
-        expression_output(state, $3); expression_free($3);
-        expression_output(state, $5); expression_free($5);
-        expression_output(state, $7); expression_free($7);
-        expression_output(state, $9); expression_free($9);
-        $$ = EXPR_2(NTRY, expression_val_new(state, 4), expression_val_new(state, 5));
+    | "ntry5" "(" Expression_List ")" {
+        if ($3 != NULL) {
+            expression_t* expr;
+            list_for_each($3, expr) {
+                expression_output(state, expr); expression_free(expr);
+            }
+            $$ = EXPR_2(NTRY, expression_val_new(state, list_count($3)), expression_val_new(state, 5));
+            list_free_nodes($3);
+            free($3);
+        }
+        else {
+            $$ = EXPR_2(NTRY, expression_val_new(state, 0), expression_val_new(state, 5));
+        }
       }
     | "ntry4" "(" ")"                                             { $$ = EXPR_2(NTRY, expression_load_new(state, param_null_new()), expression_val_new(state, 4)); }
 
