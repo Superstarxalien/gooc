@@ -512,13 +512,8 @@ c1_gool_ins_getvert_params(
         list_prepend_new(params, params->tail->data);
         list_del(params, params->tail);
 
-        param = param_new('S');
-        param->value.val.S = 5;
-        list_prepend_to(params, param, params->tail);
-
-        param = param_new('S');
-        param->value.val.S = 6;
-        list_prepend_to(params, param, params->tail);
+        list_prepend_to(params, param_val_new(5), params->tail);
+        list_prepend_to(params, param_val_new(6), params->tail);
 
         param = params->head->next->data;
         if (param->value.val.S >= 8) {
