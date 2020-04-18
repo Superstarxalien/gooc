@@ -242,14 +242,18 @@ c2_globals[] = {
     { "CAMROTZ",          42 },
     { "FRAMETIME",        43 },
 
+    { "GEMPOOL1",         48 },
+    { "GEMPOOL2",         49 },
+
+    { "CRYSTALPOOL1",     56 },
+    { "CRYSTALPOOL2",     57 },
+
     { "BOXCOUNT",         62 },
-    { "GAMEITEMPOOL1",    63 },
 
     { "DEBUG",            68 },
     { "CHECKPOINTID",     69 },
     { "PREVBOXCOUNT",     70 },
     { "PREVLEVEL",        71 },
-    { "GAMEITEMPOOL2",    72 },
 
     { "DEMOTEXTOBJ",      76 },
 
