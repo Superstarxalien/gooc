@@ -1436,6 +1436,10 @@ Instruction:
                             list_del(&state->expressions, e);
                             break;
                         }
+                        else if (i - 1 == gool_ins->late_param) {
+                            late_param = param;
+                            break;
+                        }
                         else if (param->is_expression_param) {
                             e = e->prev;
                         }
@@ -1503,10 +1507,12 @@ Instruction:
                 }
                 list_free_nodes(&state->expressions);
 
-                if (late_expr) {
-                    if (late_expr->type != EXPRESSION_VAL || late_param->stack != 1 || late_param->object_link != 0 || late_param->value.val.S < 0 || late_param->value.val.S > 0x3F) {
-                        expression_output(state, late_expr);
-                        expression_free(late_expr);
+                if (late_param) {
+                    if ((late_expr && late_expr->type != EXPRESSION_VAL) || late_param->stack != 1 || late_param->object_link != 0 || late_param->value.val.S < 0 || late_param->value.val.S > 0x3F) {
+                        if (late_expr) {
+                            expression_output(state, late_expr);
+                            expression_free(late_expr);
+                        }
                         late_param->stack = 1;
                         late_param->object_link = 0;
                         late_param->value.val.S = 0x1F;
