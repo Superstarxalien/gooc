@@ -1553,7 +1553,7 @@ Instruction:
             free($3);
         }
       }
-    | "@" IDENTIFIER "(" Instruction_Parameters ")" {
+    /* | "@" IDENTIFIER "(" Instruction_Parameters ")" {
         const expr_t* expr = expr_get_by_symbol(state->version, CALL);
         size_t param_count = $4 ? list_count($4) : 0;
         thecl_sub_t* sub = state->current_sub;
@@ -1571,7 +1571,7 @@ Instruction:
             list_free_nodes($4);
             free($4);
         }
-      }
+      } */
     /*| "goto" IDENTIFIER {
         expression_create_goto(state, GOTO, $2, NULL);
     }*/
