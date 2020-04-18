@@ -962,8 +962,8 @@ ArgumentDeclaration:
 State_Instructions:
     %empty
     | State_Instructions "__transargs" {
-        if (state->current_state->trans)
-            yyerror(state, "useless modifier __transargs, trans block already defined");
+        if (state->current_state->trans && state->current_state->event)
+            yyerror(state, "useless modifier __transargs, trans and event blocks already defined");
         state->current_state->trans_args = true;
         state->declared_tempfields = true;
     }
@@ -1027,8 +1027,25 @@ State_Instructions:
         sub_begin(state, buf);
         state->current_sub->is_inline = false;
         state->current_state->event = state->current_sub;
+
+        if (state->current_state->trans_args) {
+            if (!state->current_state->code) {
+                yyerror(state, "cannot use trans args without code block first in state: %s", state->current_state->name);
+                state->current_state->trans_args = false;
+            }
+            else {
+                for (int a=0; a < state->current_state->code->arg_count; ++a) {
+                    objfield_create(state, state->current_state->code->args[a]->name);
+                }
+            }
+        }
       }
       "(" ArgumentDeclaration ")" Subroutine_Body {
+        if (state->current_state->trans_args) {
+            for (int a=state->current_state->code->arg_count-1; a >= 0; --a) {
+                objfield_delete(state, state->current_state->code->args[a]->name);
+            }
+        }
         sub_finish(state);
       }
     ;
