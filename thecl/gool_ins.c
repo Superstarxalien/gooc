@@ -1201,6 +1201,44 @@ c2_gool_ins_call_params(
     return params;
 }
 
+static list_t*
+c2_gool_ins_savecheckpoint_params(
+    list_t* params,
+    int argc)
+{
+    thecl_param_t* param;
+    size_t c = list_count(params);
+    if (c == 1) {
+        list_append_new(params, param_val_new(5));
+        list_append_new(params, param_val_new(0));
+        list_append_new(params, param_val_new(12));
+    }
+    else {
+        fprintf(stderr, "%s: savecheckpoint: wrong number of arguments (expected 1, got %zu)\n", argv0, c);
+        return NULL;
+    }
+    return params;
+}
+
+static list_t*
+c2_gool_ins_loadcheckpoint_params(
+    list_t* params,
+    int argc)
+{
+    thecl_param_t* param;
+    size_t c = list_count(params);
+    if (c == 1) {
+        list_append_new(params, param_val_new(5));
+        list_append_new(params, param_val_new(1));
+        list_append_new(params, param_val_new(12));
+    }
+    else {
+        fprintf(stderr, "%s: loadcheckpoint: wrong number of arguments (expected 1, got %zu)\n", argv0, c);
+        return NULL;
+    }
+    return params;
+}
+
 static const gool_ins_t
 c2_gool_ins[] = {
      /* NAME                        ID VA POP R   L              VALIDATE */
@@ -1209,8 +1247,8 @@ c2_gool_ins[] = {
     { "setfield",                   28, 2, 0, 0, -1, c1_gool_ins_setfield_params },
     { "entitysetspawn",             28, 0, 0, 0, -1, c1_gool_ins_entitysetspawn_params },
     { "entitysetstate",             28, 0, 0, 0, -1, c1_gool_ins_entitysetstate_params },
-    { "savecheckpoint",             28, 0, 0, 0, -1, c1_gool_ins_savecheckpoint_params },
-    { "loadcheckpoint",             28, 0, 0, 0, -1, c1_gool_ins_loadcheckpoint_params },
+    { "savecheckpoint",             28, 0, 0, 0, -1, c2_gool_ins_savecheckpoint_params },
+    { "loadcheckpoint",             28, 0, 0, 0, -1, c2_gool_ins_loadcheckpoint_params },
     { "movetolist",                 28, 0, 0, 0, -1, c1_gool_ins_movetolist_params },
     { "setcolor",                   36, 0, 0, 0, -1, c1_gool_ins_setcolor_params },
     { "anim",                       39, 0, 0, 0, -1, c1_gool_ins_anim_params },
