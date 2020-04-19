@@ -248,6 +248,15 @@ int gool_pool_force_get_index(
     return ecl->const_count++;
 }
 
+int gool_pool_force_make_index(
+    thecl_t* ecl,
+    uint32_t val)
+{
+    ecl->consts = realloc(ecl->consts, (ecl->const_count + 1) * sizeof(uint32_t));
+    ecl->consts[ecl->const_count] = val;
+    return ecl->const_count++;
+}
+
 thecl_instr_t*
 thecl_instr_new(void)
 {

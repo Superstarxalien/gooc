@@ -247,6 +247,10 @@ int gool_pool_force_get_index(
     thecl_t* ecl,
     uint32_t val);
 
+int gool_pool_force_make_index(
+    thecl_t* ecl,
+    uint32_t val);
+
 typedef struct {
     int instr_flags; /* Special flags that are copied to instr->flags, used by ecsparse.y */
     unsigned int version;

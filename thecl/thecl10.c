@@ -469,16 +469,9 @@ c1_instr_serialize(
                         << 4;
                 }
                 else if (param->object_link == -3) {
-                    if (!ecl_ext || (ecl_ext && gool_pool_get_index(ecl, p) != -1)) {
-                        /* pool ref */
-                        val = 0x000;
-                        val |= gool_pool_force_get_index(ecl, p);
-                    }
-                    else {
-                        /* pool ref */
-                        val = 0x400;
-                        val |= gool_pool_force_get_index(ecl_ext, p);
-                    }
+                    /* pool ref */
+                    val = 0x000;
+                    val |= gool_pool_force_make_index(ecl, p);
                 }
             }
             else {
@@ -954,16 +947,9 @@ c2_instr_serialize(
                         << 4;
                 }
                 else if (param->object_link == -3) {
-                    if (!ecl_ext || (ecl_ext && gool_pool_get_index(ecl, p) != -1)) {
-                        /* pool ref */
-                        val = 0x000;
-                        val |= gool_pool_force_get_index(ecl, p);
-                    }
-                    else {
-                        /* pool ref */
-                        val = 0x400;
-                        val |= gool_pool_force_get_index(ecl_ext, p);
-                    }
+                    /* pool ref */
+                    val = 0x000;
+                    val |= gool_pool_force_make_index(ecl, p);
                 }
             }
             else {
