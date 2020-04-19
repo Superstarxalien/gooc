@@ -111,6 +111,8 @@ static void scope_finish(parser_state_t* state, bool pop_vars);
 static expr_macro_t* macro_create(parser_state_t* state, const char* name, expression_t* expr);
 /* Creates a new argument in the specified subroutine. */
 static thecl_variable_t* arg_create(parser_state_t* state, thecl_sub_t* sub, const char* name);
+/* Deletes an argument in the specified subroutine. */
+static void arg_delete(parser_state_t* state, thecl_sub_t* sub, const char* name);
 /* Creates a new object field. */
 static field_t* objfield_create(parser_state_t* state, const char* name);
 /* Deletes an object field. */
@@ -212,6 +214,7 @@ int yydebug = 0;
 %token CODE "code"
 %token TRANS "trans"
 %token TRANSARGS "__transargs"
+%token MOD_TRANS "__trans"
 %token ONCE "once"
 %token NOFIRST "nofirst"
 %token EVENT "event"
@@ -372,7 +375,12 @@ Statement:
         state->current_sub->is_inline = false;
         free($2);
       }
-      "(" ArgumentDeclaration ")" Subroutine_Body {
+      "(" ArgumentDeclaration ")" Subroutine_Modifiers Subroutine_Body {
+        if (state->current_sub->mod_trans) {
+            for (int a=state->current_sub->mod_trans_count-1; a >= 0; --a) {
+                objfield_delete(state, state->main_ecl->vars[state->main_ecl->var_count - 1]->name);
+            }
+        }
         sub_finish(state);
       }
     | "inline" "sub" IDENTIFIER {
@@ -610,6 +618,20 @@ Statement:
         state->current_anim = NULL;
       }
     | GlobalVarDeclaration
+    ;
+
+Subroutine_Modifiers:
+    %empty
+    | Subroutine_Modifiers Subroutine_Modifier
+    ;
+
+Subroutine_Modifier:
+      "__trans" {
+        state->current_sub->mod_trans_count = state->current_sub->arg_count;
+        for (int i=0;i<state->current_sub->arg_count;++i)
+            objfield_create(state, state->current_sub->args[i]->name);
+        state->current_sub->mod_trans = true;
+    }
     ;
 
 Subroutine_Body:
@@ -2949,6 +2971,7 @@ sub_begin(
     sub->has_once = false;
     sub->has_nofirst = false;
     sub->self_reference = false;
+    sub->mod_trans = false;
     list_init(&sub->labels);
 
     list_append_new(&state->ecl->subs, sub);
@@ -3089,8 +3112,7 @@ arg_create(
     arg->is_unused = false;
     arg->is_written = false;
 
-    ++sub->arg_count;
-    sub->args = realloc(sub->args, sub->arg_count * sizeof(thecl_variable_t*));
+    sub->args = realloc(sub->args, ++sub->arg_count * sizeof(thecl_variable_t*));
     sub->args[sub->arg_count - 1] = arg;
 
     for (int i = 0; i < sub->arg_count; ++i) {
@@ -3098,6 +3120,32 @@ arg_create(
     }
 
     return arg;
+}
+
+static void
+arg_delete(
+    parser_state_t* state,
+    thecl_sub_t* sub,
+    const char* name)
+{
+    if (!arg_exists(state, sub, name)) {
+        yyerror(state, "nonexistent argument: %s", name);
+        return;
+    }
+
+    int i;
+    for (i=0;i<sub->arg_count;++i) {
+        if (!strcmp(sub->args[i]->name, name))
+            break;
+    }
+
+    free(sub->args[i]);
+    memmove(sub->args+i, sub->args+i+1, sub->arg_count-i-1);
+    sub->args = realloc(sub->args, --sub->arg_count * sizeof(thecl_variable_t*));
+
+    for (i = 0; i < sub->arg_count; ++i) {
+        sub->args[i]->stack = -sub->arg_count + i;
+    }
 }
 
 static field_t*
@@ -3124,12 +3172,18 @@ objfield_delete(
     parser_state_t* state,
     const char* name)
 {
-    field_t* field = objfield_get(state, name);
-    if (field == NULL) {
+    if (objfield_get(state, name) == NULL) {
         yyerror(state, "nonexistant object variable: %s", name);
     }
 
-    free(field);
+    int i;
+    for (i=0;i<state->main_ecl->var_count;++i) {
+        if (!strcmp(state->main_ecl->vars[i]->name, name))
+            break;
+    }
+
+    free(state->main_ecl->vars[i]);
+    memmove(state->main_ecl->vars+i, state->main_ecl->vars+i+1, state->main_ecl->var_count-i-1);
     state->main_ecl->vars = realloc(state->main_ecl->vars, --state->main_ecl->var_count * sizeof(field_t*));
 }
 
@@ -3196,8 +3250,8 @@ var_create_assign(
 static bool
 var_accessible(
     parser_state_t* state,
-    thecl_variable_t* var
-) {
+    thecl_variable_t* var)
+{
     for (int scope_state=0; scope_state<state->scope_cnt; ++scope_state) {
         if (state->scope_stack[scope_state] == var->scope)
             return true;
@@ -3209,8 +3263,8 @@ static thecl_variable_t*
 arg_get(
     parser_state_t* state,
     thecl_sub_t* sub,
-    const char* name
-) {
+    const char* name)
+{
     if (!sub) return NULL;
 
     for (size_t i = 0; i < sub->arg_count; ++i) {
@@ -3223,8 +3277,8 @@ arg_get(
 static field_t*
 objfield_get(
     parser_state_t* state,
-    const char* name
-) {
+    const char* name)
+{
     for (size_t i = 0; i < state->main_ecl->var_count; ++i) {
         if (!strcmp(name, state->main_ecl->vars[i]->name))
             return state->main_ecl->vars[i];
@@ -3236,8 +3290,8 @@ static thecl_variable_t*
 var_get(
     parser_state_t* state,
     thecl_sub_t* sub,
-    const char* name
-) {
+    const char* name)
+{
     for (size_t i = 0; i < sub->var_count; ++i) {
         if (strcmp(name, sub->vars[i]->name) == 0 && var_accessible(state, sub->vars[i]))
             return sub->vars[i];

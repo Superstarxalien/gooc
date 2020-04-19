@@ -138,6 +138,9 @@ typedef struct {
     bool has_nofirst;
     bool self_reference;
 
+    bool mod_trans;
+    int mod_trans_count;
+
     bool deleted;
     gool_sub_t* instr_data;
 } thecl_sub_t;
