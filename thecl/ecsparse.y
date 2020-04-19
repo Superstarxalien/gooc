@@ -1307,7 +1307,7 @@ WhileBlock:
           char labelstr_continue[256];
           snprintf(labelstr_st, 256, "%s_st", (char*)labelstr);
           snprintf(labelstr_end, 256, "%s_end", (char*)labelstr);
-          snprintf(labelstr_continue, 256, "%s_continue", (char*)labelstr_continue);
+          snprintf(labelstr_continue, 256, "%s_continue", (char*)labelstr);
 
           expression_create_goto(state, GOTO, labelstr_continue, NULL);
           label_create(state, labelstr_st);
@@ -1370,7 +1370,7 @@ WhileBlock:
           char labelstr_continue[256];
           snprintf(labelstr_st, 256, "%s_st", (char*)labelstr);
           snprintf(labelstr_end, 256, "%s_end", (char*)labelstr);
-          snprintf(labelstr_continue, 256, "%s_continue", (char*)labelstr_continue);
+          snprintf(labelstr_continue, 256, "%s_continue", (char*)labelstr);
 
           expression_create_goto(state, GOTO, labelstr_continue, NULL);
           label_create(state, labelstr_st);
