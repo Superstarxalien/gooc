@@ -1245,6 +1245,7 @@ c2_gool_ins[] = {
     { "loadlevel",                  28, 0, 0, 0, -1, c1_gool_ins_loadlevel_params },
     { "savecheckpoint",             28, 0, 0, 0, -1, c2_gool_ins_savecheckpoint_params },
     { "loadcheckpoint",             28, 0, 0, 0, -1, c2_gool_ins_loadcheckpoint_params },
+    { "soundstop",                  28, 0, 0, 0, -1, c1_gool_ins_soundstop_params },
     { "movetolist",                 28, 0, 0, 0, -1, c1_gool_ins_movetolist_params },
     { "setcolor",                   36, 0, 0, 0, -1, c1_gool_ins_setcolor_params },
     { "anim",                       39, 0, 0, 0, -1, c1_gool_ins_anim_params },
