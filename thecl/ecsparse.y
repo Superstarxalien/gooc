@@ -1774,7 +1774,17 @@ Instruction_Parameters_List:
     ;
 
 Instruction_Parameter:
-      Load_Type
+      Load_Type {
+          if ($1->stack == 2) {
+              list_prepend_new(&state->expressions, expression_load_new(state, $1));
+
+              $$ = param_new('S');
+              $$->stack = 1;
+              $$->object_link = 0;
+              $$->is_expression_param = 1;
+              $$->value.val.S = 0x1F;
+          }
+      }
     | Pointer_Type {
           list_prepend_new(&state->expressions, expression_pointer_new(state, $1));
 
