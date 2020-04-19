@@ -1584,7 +1584,7 @@ Instruction:
                 list_free_nodes(&state->expressions);
 
                 if (late_param) {
-                    if ((late_expr && late_expr->type != EXPRESSION_VAL) || (late_param->stack == 1 && late_param->object_link != 0) || (late_param->stack == 0 && late_param->object_link != -1) || late_param->value.val.S < 0 || late_param->value.val.S > 0x3F) {
+                    if ((late_expr && late_expr->type != EXPRESSION_VAL) || (late_param->stack == 1 && late_param->object_link != 0) || (late_param->stack == 0 && late_param->object_link != -1) || (late_param->stack != 0 && late_param->stack != 1) || late_param->value.val.S < 0 || late_param->value.val.S > 0x3F) {
                         if (late_expr) {
                             expression_output(state, late_expr);
                             expression_free(late_expr);
