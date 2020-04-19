@@ -1242,6 +1242,7 @@ c2_gool_ins[] = {
     { "setfield",                   28, 2, 0, 0, -1, c1_gool_ins_setfield_params },
     { "entitysetspawn",             28, 0, 0, 0, -1, c1_gool_ins_entitysetspawn_params },
     { "entitysetstate",             28, 0, 0, 0, -1, c1_gool_ins_entitysetstate_params },
+    { "loadlevel",                  28, 0, 0, 0, -1, c1_gool_ins_loadlevel_params },
     { "savecheckpoint",             28, 0, 0, 0, -1, c2_gool_ins_savecheckpoint_params },
     { "loadcheckpoint",             28, 0, 0, 0, -1, c2_gool_ins_loadcheckpoint_params },
     { "movetolist",                 28, 0, 0, 0, -1, c1_gool_ins_movetolist_params },
