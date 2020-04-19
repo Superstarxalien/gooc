@@ -326,13 +326,12 @@ int yydebug = 0;
 %type <list> Instruction_Parameters_List
 %type <list> Instruction_Parameters
 %type <list> ParenExpressionList
+%type <list> ParenExpressionListNoScope
 
 %type <expression> Expression
 %type <expression> ExpressionSubsetInstParam
 %type <expression> ExpressionLoadType
 %type <expression> ExpressionSubset
-%type <expression> ParenExpression
-%type <expression> ParenExpressionNoScope
 
 %type <param> Instruction_Parameter
 %type <param> Address
@@ -1057,24 +1056,15 @@ Instructions:
     | Instructions Block
     ;
 
-ParenExpression:
-      "(" { scope_begin(state); } Expression[expr] ")"
-        { $$ = $expr; }
-    | "(" { scope_begin(state); } VarDeclaration ";" Expression[expr] ")"
-        { $$ = $expr; }
-    ;
-
-ParenExpressionNoScope:
-      "(" Expression[expr] ")"
-        { $$ = $expr; }
-    | "(" VarDeclaration ";" Expression[expr] ")"
-        { $$ = $expr; }
-    ;
-
 ParenExpressionList:
       "(" { scope_begin(state); } Expression_List[list] ")"
         { $$ = $list; }
     | "(" { scope_begin(state); } VarDeclaration ";" Expression_List[list] ")"
+        { $$ = $list; }
+    ;
+
+ParenExpressionListNoScope:
+      "(" Expression_List[list] ")"
         { $$ = $list; }
     ;
 
@@ -1264,12 +1254,29 @@ ElseBlock:
       ;
 
 WhileBlock:
-      "while" ParenExpression[cond] {
-          if ($cond->type == EXPRESSION_VAL && !$cond->value->stack && !$cond->value->value.val.S) {
-              ++state->ignore_block;
-              expression_free($cond);
+      "while" ParenExpressionList[cond] {
+          if ($cond == NULL) {
+              yyerror(state, "warning: empty conditional");
               break;
           }
+          expression_t* expr;
+          list_node_t *node, *next;
+          list_for_each_node_safe($cond, node, next) {
+              expr = node->data;
+              if (expr->type == EXPRESSION_VAL && !expr->value->stack && !expr->value->value.val.S) {
+                  expression_free(expr);
+                  list_del($cond, node);
+              }
+              else {
+                  break;
+              }
+          }
+          if (list_empty($cond)) {
+              free($cond);
+              ++state->ignore_block;
+              break;
+          }
+
           char labelstr[256];
           snprintf(labelstr, 256, "while_%i_%i", yylloc.first_line, yylloc.first_column);
           char labelstr_st[256];
@@ -1279,8 +1286,11 @@ WhileBlock:
 
           list_prepend_new(&state->block_stack, strdup(labelstr));
           label_create(state, labelstr_st);
-          expression_create_goto(state, UNLESS, labelstr_end, $cond);
-          expression_free($cond);
+          list_for_each($cond, expr) {
+              expression_create_goto(state, UNLESS, labelstr_end, expr);
+              expression_free(expr);
+          }
+          list_free_nodes($cond);
       } CodeBlock {
           if (state->ignore_block) {
               --state->ignore_block;
@@ -1303,13 +1313,29 @@ WhileBlock:
           list_del(&state->block_stack, head);
           scope_finish(state, true);
       }
-    | "until" ParenExpression[cond] {
-          if ($cond->type == EXPRESSION_VAL && !$cond->value->stack && $cond->value->value.val.S) {
-              ++state->ignore_block;
-              expression_free($cond);
-              scope_finish(state, true);
+    | "until" ParenExpressionList[cond] {
+          if ($cond == NULL) {
+              yyerror(state, "warning: empty conditional");
               break;
           }
+          expression_t* expr;
+          list_node_t *node, *next;
+          list_for_each_node_safe($cond, node, next) {
+              expr = node->data;
+              if (expr->type == EXPRESSION_VAL && !expr->value->stack && expr->value->value.val.S) {
+                  expression_free(expr);
+                  list_del($cond, node);
+              }
+              else {
+                  break;
+              }
+          }
+          if (list_empty($cond)) {
+              free($cond);
+              ++state->ignore_block;
+              break;
+          }
+
           char labelstr[256];
           snprintf(labelstr, 256, "until_%i_%i", yylloc.first_line, yylloc.first_column);
           char labelstr_st[256];
@@ -1319,9 +1345,11 @@ WhileBlock:
 
           list_prepend_new(&state->block_stack, strdup(labelstr));
           label_create(state, labelstr_st);
-          expression_create_goto(state, IF, labelstr_end, $cond);
-          expression_free($cond);
-          scope_finish(state, true);
+          list_for_each($cond, expr) {
+              expression_create_goto(state, IF, labelstr_end, expr);
+              expression_free(expr);
+          }
+          list_free_nodes($cond);
       } CodeBlock {
           if (state->ignore_block) {
               --state->ignore_block;
@@ -1341,6 +1369,7 @@ WhileBlock:
 
           free(head->data);
           list_del(&state->block_stack, head);
+          scope_finish(state, true);
       }
     | "do" {
           char labelstr[256];
@@ -1366,7 +1395,11 @@ WhileBlock:
     } DoBlock { scope_finish(state, true); }
     ;
 DoBlock:
-      CodeBlock "while" ParenExpressionNoScope[cond]  {
+      CodeBlock "while" ParenExpressionListNoScope[cond]  {
+          if ($cond == NULL) {
+              yyerror(state, "warning: empty conditional");
+              break;
+          }
           char labelstr_st[256];
           char labelstr_end[256];
           char labelstr_continue[256];
@@ -1376,14 +1409,22 @@ DoBlock:
           snprintf(labelstr_continue, 256, "%s_continue", (char*)head->data);
 
           label_create(state, labelstr_continue);
-          expression_create_goto(state, IF, labelstr_st, $cond);
-          expression_free($cond);
+          expression_t* expr;
+          list_for_each($cond, expr) {
+              expression_create_goto(state, IF, labelstr_st, expr);
+              expression_free(expr);
+          }
+          list_free_nodes($cond);
           label_create(state, labelstr_end);
 
           free(head->data);
           list_del(&state->block_stack, head);
     }
-    | CodeBlock "until" ParenExpressionNoScope[cond]  {
+    | CodeBlock "until" ParenExpressionListNoScope[cond]  {
+          if ($cond == NULL) {
+              yyerror(state, "warning: empty conditional");
+              break;
+          }
           char labelstr_st[256];
           char labelstr_end[256];
           char labelstr_continue[256];
@@ -1393,8 +1434,12 @@ DoBlock:
           snprintf(labelstr_continue, 256, "%s_continue", (char*)head->data);
 
           label_create(state, labelstr_continue);
-          expression_create_goto(state, UNLESS, labelstr_st, $cond);
-          expression_free($cond);
+          expression_t* expr;
+          list_for_each($cond, expr) {
+              expression_create_goto(state, UNLESS, labelstr_st, expr);
+              expression_free(expr);
+          }
+          list_free_nodes($cond);
           label_create(state, labelstr_end);
 
           free(head->data);
