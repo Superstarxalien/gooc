@@ -1304,16 +1304,15 @@ WhileBlock:
           snprintf(labelstr, 256, "while_%i_%i", yylloc.first_line, yylloc.first_column);
           char labelstr_st[256];
           char labelstr_end[256];
+          char labelstr_continue[256];
           snprintf(labelstr_st, 256, "%s_st", (char*)labelstr);
           snprintf(labelstr_end, 256, "%s_end", (char*)labelstr);
+          snprintf(labelstr_continue, 256, "%s_continue", (char*)labelstr_continue);
+
+          expression_create_goto(state, GOTO, labelstr_continue, NULL);
+          label_create(state, labelstr_st);
 
           list_prepend_new(&state->block_stack, strdup(labelstr));
-          label_create(state, labelstr_st);
-          list_for_each($cond, expr) {
-              expression_create_goto(state, UNLESS, labelstr_end, expr);
-              expression_free(expr);
-          }
-          list_free_nodes($cond);
       } CodeBlock {
           if (state->ignore_block) {
               --state->ignore_block;
@@ -1329,7 +1328,12 @@ WhileBlock:
           snprintf(labelstr_continue, 256, "%s_continue", (char*)head->data);
 
           label_create(state, labelstr_continue);
-          expression_create_goto(state, GOTO, labelstr_st, NULL);
+          expression_t* expr;
+          list_for_each($cond, expr) {
+              expression_create_goto(state, IF, labelstr_st, expr);
+              expression_free(expr);
+          }
+          list_free_nodes($cond);
           label_create(state, labelstr_end);
 
           free(head->data);
@@ -1363,16 +1367,15 @@ WhileBlock:
           snprintf(labelstr, 256, "until_%i_%i", yylloc.first_line, yylloc.first_column);
           char labelstr_st[256];
           char labelstr_end[256];
+          char labelstr_continue[256];
           snprintf(labelstr_st, 256, "%s_st", (char*)labelstr);
           snprintf(labelstr_end, 256, "%s_end", (char*)labelstr);
+          snprintf(labelstr_continue, 256, "%s_continue", (char*)labelstr_continue);
+
+          expression_create_goto(state, GOTO, labelstr_continue, NULL);
+          label_create(state, labelstr_st);
 
           list_prepend_new(&state->block_stack, strdup(labelstr));
-          label_create(state, labelstr_st);
-          list_for_each($cond, expr) {
-              expression_create_goto(state, IF, labelstr_end, expr);
-              expression_free(expr);
-          }
-          list_free_nodes($cond);
       } CodeBlock {
           if (state->ignore_block) {
               --state->ignore_block;
@@ -1387,7 +1390,12 @@ WhileBlock:
           snprintf(labelstr_continue, 256, "%s_continue", (char*)head->data);
 
           label_create(state, labelstr_continue);
-          expression_create_goto(state, GOTO, labelstr_st, NULL);
+          expression_t* expr;
+          list_for_each($cond, expr) {
+              expression_create_goto(state, UNLESS, labelstr_st, expr);
+              expression_free(expr);
+          }
+          list_free_nodes($cond);
           label_create(state, labelstr_end);
 
           free(head->data);
