@@ -1073,7 +1073,7 @@ State_Instructions:
 
 Instructions:
     %empty
-    | Instructions IDENTIFIER ":" { label_create(state, $2); free($2); }
+    /*| Instructions IDENTIFIER ":" { label_create(state, $2); free($2); }*/
     | Instructions Instruction
     | Instructions Block
     ;
