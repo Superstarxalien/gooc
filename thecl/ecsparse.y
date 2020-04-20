@@ -1101,13 +1101,15 @@ Block:
 
 SaveBlock:
     "save" "(" Address_List ")" {
-        const expr_t* expr = expr_get_by_symbol(state->version, LOAD);
+        const expr_t* local_expr = expr_get_by_symbol(state->version, LOAD);
+        const expr_t* global_expr = expr_get_by_symbol(state->version, GLOAD);
         if ($3 == NULL)
             $3 = list_new();
-        list_node_t* n;
-        list_for_each_node($3, n) {
+        list_node_t *n, *x;
+        list_for_each_node_safe($3, n, x) {
             list_append(&state->addresses, n);
-            instr_add(state, state->current_sub, instr_new(state, expr->id, "p", n->data));
+            thecl_param_t* param = n->data;
+            instr_add(state, state->current_sub, instr_new(state, param->stack == 2 ? global_expr->id : local_expr->id, "p", param));
         }
         list_append_new(&state->addresses, list_count($3));
         free($3);
@@ -1115,9 +1117,11 @@ SaveBlock:
         int m = list_tail(&state->addresses);
         list_del(&state->addresses, state->addresses.tail);
 
-        const expr_t* expr = expr_get_by_symbol(state->version, ASSIGN);
+        const expr_t* local_expr = expr_get_by_symbol(state->version, ASSIGN);
+        const expr_t* global_expr = expr_get_by_symbol(state->version, GASSIGN);
         for (int i=0; i<m; ++i) {
-            instr_add(state, state->current_sub, instr_new(state, expr->id, "pp", param_copy(list_tail(&state->addresses)), param_sp_new()));
+            thecl_param_t* param = list_tail(&state->addresses);
+            instr_add(state, state->current_sub, instr_new(state, param->stack == 2 ? global_expr->id : local_expr->id, "pp", param_copy(param), param_sp_new()));
             list_del(&state->addresses, state->addresses.tail);
         }
     }
