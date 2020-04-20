@@ -1109,7 +1109,12 @@ SaveBlock:
         list_for_each_node_safe($3, n, x) {
             list_append(&state->addresses, n);
             thecl_param_t* param = n->data;
-            instr_add(state, state->current_sub, instr_new(state, param->stack == 2 ? global_expr->id : local_expr->id, "p", param));
+            if (param->stack == 2) {
+                instr_add(state, state->current_sub, instr_new(state, global_expr->id, "S", param->value.val.S));
+            }
+            else {
+                instr_add(state, state->current_sub, instr_new(state, local_expr->id, "p", param));
+            }
         }
         list_append_new(&state->addresses, list_count($3));
         free($3);
@@ -1121,7 +1126,13 @@ SaveBlock:
         const expr_t* global_expr = expr_get_by_symbol(state->version, GASSIGN);
         for (int i=0; i<m; ++i) {
             thecl_param_t* param = list_tail(&state->addresses);
-            instr_add(state, state->current_sub, instr_new(state, param->stack == 2 ? global_expr->id : local_expr->id, "pp", param_copy(param), param_sp_new()));
+            if (param->stack == 2) {
+                instr_add(state, state->current_sub, instr_new(state, global_expr->id, "Sp", param->value.val.S, param_sp_new()));
+                param_free(param);
+            }
+            else {
+                instr_add(state, state->current_sub, instr_new(state, local_expr->id, "pp", param_copy(param), param_sp_new()));
+            }
             list_del(&state->addresses, state->addresses.tail);
         }
     }
