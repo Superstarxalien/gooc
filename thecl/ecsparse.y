@@ -3410,11 +3410,7 @@ var_shorthand_assign(
     } else { /* WGL */
         const expr_t* expr = expr_get_by_symbol(state->version, GASSIGN);
 
-        thecl_instr_t* last_ins = state->current_sub->instrs.tail->prev->data;
-
-        thecl_param_t* last_param = param_copy(list_tail(&last_ins->params));
-
-        instr_add(state, state->current_sub, instr_new(state, expr->id, "pp", last_param, param_sp_new()));
+        instr_add(state, state->current_sub, instr_new(state, expr->id, "Sp", param->value.val.S, param_sp_new()));
     }
 }
 
