@@ -1347,6 +1347,7 @@ WhileBlock:
           label_create(state, labelstr_continue);
           expression_t* expr;
           if (list_count($cond) == 1) {
+              expr = list_head($cond);
               expression_create_goto(state, IF, labelstr_st, expr);
               expression_free(expr);
           }
@@ -1417,6 +1418,7 @@ WhileBlock:
           label_create(state, labelstr_continue);
           expression_t* expr;
           if (list_count($cond) == 1) {
+              expr = list_head($cond);
               expression_create_goto(state, UNLESS, labelstr_st, expr);
               expression_free(expr);
           }
