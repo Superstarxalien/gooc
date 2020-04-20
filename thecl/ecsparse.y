@@ -1722,6 +1722,15 @@ Assignment:
             expression_free($3);
             break;
         }
+        else if (expr && expr->symbol == MOVC
+        && ((expression_t*)$3->children.tail->data)->value->value.val.S == 0x1F
+        && $1->stack == 1 && $1->object_link == 0 && $1->value.val.S >= 0 && $1->value.val.S <= 0x3F) {
+            ((expression_t*)$3->children.tail->data)->value->value.val.S = $1->value.val.S;
+            param_free($1);
+            expression_output(state, $3);
+            expression_free($3);
+            break;
+        }
 
         if ($3->type == EXPRESSION_VAL && ($1->stack == 1 || ($1->stack == 2 && !expr->is_unary))) {
             src_param = $3->value;
