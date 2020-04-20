@@ -1474,9 +1474,17 @@ DoBlock:
 
           label_create(state, labelstr_continue);
           expression_t* expr;
-          list_for_each($cond, expr) {
+          if (list_count($cond) == 1) {
+              expr = list_head($cond);
               expression_create_goto(state, IF, labelstr_st, expr);
               expression_free(expr);
+          }
+          else {
+              list_for_each($cond, expr) {
+                  expression_create_goto(state, UNLESS, labelstr_end, expr);
+                  expression_free(expr);
+              }
+              expression_create_goto(state, GOTO, labelstr_st, NULL);
           }
           list_free_nodes($cond);
           label_create(state, labelstr_end);
@@ -1499,9 +1507,17 @@ DoBlock:
 
           label_create(state, labelstr_continue);
           expression_t* expr;
-          list_for_each($cond, expr) {
+          if (list_count($cond) == 1) {
+              expr = list_head($cond);
               expression_create_goto(state, UNLESS, labelstr_st, expr);
               expression_free(expr);
+          }
+          else {
+              list_for_each($cond, expr) {
+                  expression_create_goto(state, IF, labelstr_end, expr);
+                  expression_free(expr);
+              }
+              expression_create_goto(state, GOTO, labelstr_st, NULL);
           }
           list_free_nodes($cond);
           label_create(state, labelstr_end);
