@@ -1347,10 +1347,11 @@ WhileBlock:
           label_create(state, labelstr_continue);
           expression_t* expr;
           list_for_each($cond, expr) {
-              expression_create_goto(state, IF, labelstr_st, expr);
+              expression_create_goto(state, UNLESS, labelstr_end, expr);
               expression_free(expr);
           }
           list_free_nodes($cond);
+          expression_create_goto(state, GOTO, labelstr_st, NULL);
           label_create(state, labelstr_end);
 
           free(head->data);
@@ -1409,10 +1410,11 @@ WhileBlock:
           label_create(state, labelstr_continue);
           expression_t* expr;
           list_for_each($cond, expr) {
-              expression_create_goto(state, UNLESS, labelstr_st, expr);
+              expression_create_goto(state, IF, labelstr_end, expr);
               expression_free(expr);
           }
           list_free_nodes($cond);
+          expression_create_goto(state, GOTO, labelstr_st, NULL);
           label_create(state, labelstr_end);
 
           free(head->data);
