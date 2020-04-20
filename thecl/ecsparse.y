@@ -1744,6 +1744,7 @@ Assignment:
         thecl_param_t* src_param = expr != NULL && expr->is_unary ? ((expression_t*)$3->children.head->data)->value : NULL;
         if (($1->stack == 1 && src_param && src_param->value.val.S == 0x1F && src_param->stack == 1 && src_param->object_link == 0)) {
             src_param->value.val.S = $1->value.val.S;
+            src_param->object_link = $1->object_link;
             if ($1->object_link == -1 && $1->value.val.S >= 3) {
                 state->current_sub->vars[$1->value.val.S - 3]->is_written = true;
             }
