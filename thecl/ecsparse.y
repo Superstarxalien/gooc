@@ -2112,7 +2112,7 @@ Entry:
       ENTRY {
         $$ = param_new('S');
         $$->value.val.S = gool_to_eid($1);
-        gool_pool_force_get_index(state->ecl, $$->value.val.S);
+        gool_pool_force_get_index(state->main_ecl, $$->value.val.S);
         free($1);
       }
     ;
