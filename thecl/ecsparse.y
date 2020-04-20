@@ -1359,7 +1359,6 @@ WhileBlock:
               expression_create_goto(state, GOTO, labelstr_st, NULL);
           }
           list_free_nodes($cond);
-          expression_create_goto(state, GOTO, labelstr_st, NULL);
           label_create(state, labelstr_end);
 
           free(head->data);
