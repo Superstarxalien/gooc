@@ -647,10 +647,11 @@ c1_write_gool(
                 fprintf(stderr, "%s: warning: state %s event block does not have 2 arguments\n", argv0, state->name);
             }
         }
+        uint16_t e = state->external ? 0x4000 : 0;
         state_t gstate = { state->stateflag, state->statusc, gool_pool_force_get_index(ecl, state->exe_eid),
-            state->event == NULL ? 0x3FFFU : state->event->start_offset,
-            state->trans == NULL ? 0x3FFFU : state->trans->start_offset,
-            state->code == NULL ? 0x3FFFU : state->code->start_offset };
+            state->event == NULL ? 0x3FFFU : state->event->start_offset | e,
+            state->trans == NULL ? 0x3FFFU : state->trans->start_offset | e,
+            state->code == NULL ? 0x3FFFU : state->code->start_offset | e};
 
         if (!file_write(out, &gstate, sizeof(gstate))) return 0;
     }
@@ -999,19 +1000,16 @@ c2_instr_serialize(
                     val |= (p / 0x10) & 0xFF;
                 }
                 else {
-                    /* pool ref */
-                    val = 0x000;
-                    val |= gool_pool_force_get_index(ecl, p);
-                    //if (!ecl_ext || (ecl_ext && gool_pool_get_index(ecl, p) != -1)) {
-                    //    /* pool ref */
-                    //    val = 0x000;
-                    //    val |= gool_pool_force_get_index(ecl, p);
-                    //}
-                    //else {
-                    //    /* pool ref */
-                    //    val = 0x400;
-                    //    val |= gool_pool_force_get_index(ecl_ext, p);
-                    //}
+                    if (!ecl_ext || (ecl_ext && gool_pool_get_index(ecl, p) != -1)) {
+                        /* pool ref */
+                        val = 0x000;
+                        val |= gool_pool_force_get_index(ecl, p);
+                    }
+                    else {
+                        /* pool ref */
+                        val = 0x400;
+                        val |= gool_pool_force_get_index(ecl_ext, p);
+                    }
                 }
             }
             total_bits += 12;

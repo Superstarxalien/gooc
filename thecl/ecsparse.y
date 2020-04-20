@@ -498,6 +498,7 @@ Statement:
                 }
             }
             thecl_t* ecl = thecl_new();
+            gool_pool_force_get_index(state->main_ecl, eid);
             ecl->eid = eid;
             state->ecl = ecl;
             state->ecl_stack = realloc(state->ecl_stack, sizeof(thecl_t*) * ++state->ecl_cnt);
@@ -3015,6 +3016,7 @@ state_begin(
     gstate->trans = NULL;
     gstate->event = NULL;
     gstate->exe_eid = state->ecl->eid;
+    gstate->external = state->ecl != state->main_ecl;
     gstate->stateflag = 1;
     gstate->statusc = 2;
     gstate->trans_args = false;

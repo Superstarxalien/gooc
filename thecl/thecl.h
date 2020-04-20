@@ -153,6 +153,7 @@ typedef struct {
     thecl_sub_t* event;
 
     uint32_t exe_eid;
+    bool external;
 
     uint32_t stateflag;
     uint32_t statusc;
