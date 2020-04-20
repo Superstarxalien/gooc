@@ -2610,7 +2610,7 @@ instr_create_call(
                         list_del(&state->expressions, last_node);
                         expression_free(current_expr);
                     }
-                } else if (current_expr->type == EXPRESSION_OP) {
+                } else if (current_expr->type == EXPRESSION_OP || current_expr->type == EXPRESSION_GLOBAL) {
                     expression_output(state, current_expr);
                     list_del(&state->expressions, last_node);
                     expression_free(current_expr);
