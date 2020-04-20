@@ -2465,6 +2465,12 @@ static void instr_create_inline_call(
 
         if (param->value.val.S >= 0 && (arg->is_written || param->is_expression_param || (param->stack && param->object_link == -1))) {
             /* Non-static param value or the param is written to, need to create var. */
+            if (param->is_expression_param) {
+                expression_output(state, state->expressions.head->data);
+                expression_free(state->expressions.head->data);
+                list_del(&state->expressions, state->expressions.head);
+            }
+
             strcpy(buf, name);
             strcat(buf, arg->name);
             thecl_param_t* new_param = param_new(param->type);
