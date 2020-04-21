@@ -243,6 +243,8 @@ c2_globals[] = {
     { "CAMROTZ",          42 },
     { "FRAMETIME",        43 },
 
+    { "SAVEDGEMPOOL1",    46 },
+    { "SAVEDGEMPOOL2",    47 },
     { "GEMPOOL1",         48 },
     { "GEMPOOL2",         49 },
 
@@ -266,6 +268,9 @@ c2_globals[] = {
     { "SPAWNTRANSZ",     104 },
 
     { "DEATHCOUNT",      108 },
+
+    { "SAVEDCRYSTALPOOL1",141 },
+    { "SAVEDCRYSTALPOOL2",142 },
 
     { "LEVELBOXCOUNT",   148 },
 
