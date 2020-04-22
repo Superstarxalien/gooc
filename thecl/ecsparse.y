@@ -1983,11 +1983,11 @@ ExpressionSubset:
     | "tryload" "(" Expression ")"                                { $$ = EXPR_2(NTRY, $3, expression_val_new(state, 3)); }
     | "ntry5" "(" Expression_List ")" {
         if ($3 != NULL) {
+            $$ = EXPR_2(NTRY, expression_val_new(state, list_count($3)), expression_val_new(state, 5));
             expression_t* expr;
             list_for_each($3, expr) {
-                expression_output(state, expr); expression_free(expr);
+                list_append_new(&$$->children, expr);
             }
-            $$ = EXPR_2(NTRY, expression_val_new(state, list_count($3)), expression_val_new(state, 5));
             list_free_nodes($3);
             free($3);
         }
@@ -2733,12 +2733,6 @@ expression_operation_new(
         }
         else if (!operands[o] && expr->has_double_param && o == expr->stack_arity - 1)
             break;
-        if (operands[o]->type == EXPRESSION_VAL && operands[o]->value->stack == 3) /* pointer, must be pushed by PSHP first */ {
-            expression_t* ex = expression_pointer_new(state, operands[o]->value);
-            expression_output(state, ex);
-            expression_free(ex);
-            operands[o] = expression_load_new(state, param_sp_new());
-        }
         list_append_new(&ret->children, operands[o]);
     }
 
@@ -2752,8 +2746,8 @@ expression_ternary_new(
     const parser_state_t* state,
     expression_t* cond,
     expression_t* val1,
-    expression_t* val2
- ) {
+    expression_t* val2)
+{
     expression_t* expr = malloc(sizeof(expression_t));
     expr->type = EXPRESSION_TERNARY;
     list_init(&expr->children);
@@ -2839,18 +2833,30 @@ expression_output(
         instr_add(state, state->current_sub, instr_new(state, expr->id, "S", expr->value->value.val.S));
     } else if (expr->type == EXPRESSION_OP) {
         const expr_t* expression = expr_get_by_id(state->version, expr->id);
-        expression_t* child_expr;
-        list_t* param_list = list_new();
         int c = 0, lc = list_count(&expr->children);
+        list_t* param_list = list_new();
 
-        list_for_each(&expr->children, child_expr) {
+        expression_t* child_expr;
+        list_node_t* child_node;
+        list_node_t* child_next;
+        list_for_each_node_safe(&expr->children, child_node, child_next) {
             ++c;
-            if (child_expr->type == EXPRESSION_VAL && (!expression->has_double_param || (expression->has_double_param && lc <= 2) || (expression->has_double_param && lc > 2 && c == 1))) {
+            child_expr = child_node->data;
+            if (child_expr->type == EXPRESSION_VAL && child_expr->value->stack != 3 && (!expression->has_double_param || (expression->has_double_param && lc <= 2) || (expression->has_double_param && lc > 2 && c == 1))) {
                 list_append_new(param_list, child_expr->value);
             }
             else {
                 expression_output(state, child_expr);
-                list_append_new(param_list, param_sp_new());
+                if (child_expr->type == EXPRESSION_VAL && child_expr->value->stack == 3) {
+                    list_del(&expr->children, child_node);
+                    expression_free(child_expr);
+                    if (c <= expression->stack_arity) {
+                        list_append_new(param_list, param_sp_new());
+                    }
+                }
+                else {
+                    list_append_new(param_list, param_sp_new());
+                }
             }
         }
 
