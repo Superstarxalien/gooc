@@ -487,16 +487,20 @@ c1_instr_serialize(
                     val |= (p / 0x10) & 0xFF;
                 }
                 else {
-                    if (!ecl_ext || (ecl_ext && gool_pool_get_index(ecl, p) != -1)) {
-                        /* pool ref */
-                        val = 0x000;
-                        val |= gool_pool_force_get_index(ecl, p);
-                    }
-                    else {
-                        /* pool ref */
-                        val = 0x400;
-                        val |= gool_pool_force_get_index(ecl_ext, p);
-                    }
+                    /* pool ref */
+                    val = 0x000;
+                    val |= gool_pool_force_get_index(ecl, p);
+                    /* DOES NOT WORK IN-GAME! */
+                    //if (!ecl_ext || (ecl_ext && gool_pool_get_index(ecl, p) != -1)) {
+                    //    /* pool ref */
+                    //    val = 0x000;
+                    //    val |= gool_pool_force_get_index(ecl, p);
+                    //}
+                    //else {
+                    //    /* pool ref */
+                    //    val = 0x400;
+                    //    val |= gool_pool_force_get_index(ecl_ext, p);
+                    //}
                 }
             }
             total_bits += 12;
@@ -674,6 +678,8 @@ c1_write_gool(
 
     if (!file_seek(out, 0)) return 0;
     if (!file_write(out, entry_header, sizeof(entry_header_t) + (entry_header->count + 1) * sizeof(uint32_t))) return 0;
+
+    return 1;
 }
 
 static int
@@ -1000,16 +1006,20 @@ c2_instr_serialize(
                     val |= (p / 0x10) & 0xFF;
                 }
                 else {
-                    if (!ecl_ext || (ecl_ext && gool_pool_get_index(ecl, p) != -1)) {
-                        /* pool ref */
-                        val = 0x000;
-                        val |= gool_pool_force_get_index(ecl, p);
-                    }
-                    else {
-                        /* pool ref */
-                        val = 0x400;
-                        val |= gool_pool_force_get_index(ecl_ext, p);
-                    }
+                    /* pool ref */
+                    val = 0x000;
+                    val |= gool_pool_force_get_index(ecl, p);
+                    /* DOES NOT WORK IN-GAME! */
+                    //if (!ecl_ext || (ecl_ext && gool_pool_get_index(ecl, p) != -1)) {
+                    //    /* pool ref */
+                    //    val = 0x000;
+                    //    val |= gool_pool_force_get_index(ecl, p);
+                    //}
+                    //else {
+                    //    /* pool ref */
+                    //    val = 0x400;
+                    //    val |= gool_pool_force_get_index(ecl_ext, p);
+                    //}
                 }
             }
             total_bits += 12;
@@ -1151,7 +1161,7 @@ c2_compile(
 
             int j = 0;
             list_for_each(&sub->instrs, instr) {
-                sub->instr_data->data[j++] = c2_instr_serialize(parser->main_ecl, j > 0 ? ecl : NULL, sub, instr, false);
+                sub->instr_data->data[j++] = c2_instr_serialize(parser->main_ecl, i > 0 ? ecl : NULL, sub, instr, false);
             }
         }
     }
