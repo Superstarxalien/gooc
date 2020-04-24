@@ -759,7 +759,7 @@ c1_compile(
 
             int j = 0;
             list_for_each(&sub->instrs, instr) {
-                sub->instr_data->data[j++] = c1_instr_serialize(parser->main_ecl, j > 0 ? ecl : NULL, sub, instr, false);
+                sub->instr_data->data[j++] = c1_instr_serialize(parser->main_ecl, i > 0 ? ecl : NULL, sub, instr, false);
             }
         }
     }
