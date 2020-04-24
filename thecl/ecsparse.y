@@ -309,6 +309,7 @@ int yydebug = 0;
 %token MOVC "getins"
 %token GETVAL "getval"
 %token DISTANCE "distance"
+%token ATAN "atan"
 %token ATAN2 "atan2"
 %token GETFIELD "getfield"
 %token ATAN2M "atan2_mirrored"
@@ -1966,6 +1967,7 @@ ExpressionSubset:
                                                                   }
     | "getval" "(" Expression "," Expression ")"                  { if (state->version == 1) $$ = EXPR_4(MISC, $3, expression_val_new(state, 5), $5, expression_val_new(state, 0)); }
     | "distance" "(" Expression "," Expression ")"                { $$ = EXPR_4(MISC, expression_load_new(state, param_null_new()), $3, $5, expression_val_new(state, 1)); }
+    | "atan" "(" Expression "," Expression ")"                    { $$ = EXPR_2(ATAN, $3, $5); }
     | "atan2" "(" Expression "," Expression ")"                   { $$ = EXPR_4(MISC, $5, $3, expression_val_new(state, 0), expression_val_new(state, 2)); }
     | "getfield" "(" Expression "," Expression ")"                { $$ = EXPR_4(MISC, $5, $3, expression_val_new(state, 0), expression_val_new(state, 3)); }
 

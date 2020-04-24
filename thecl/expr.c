@@ -109,7 +109,7 @@ c2_expressions[] = {
     /* p0 is the first param, p1 the second ... */
     /* s0 is the previous instruction, s1 the one previous to s0 ... */
 
-    /*SYM        ID     P  A SP2 O  U */
+    /*SYM        ID  A SP2 O  U */
     { CALL,      59, 0, 0, 0, 0 }, /* return */
     { RETURN,    49, 0, 0, 0, 0 }, /* return */
 
@@ -123,6 +123,7 @@ c2_expressions[] = {
     { ARRL,      42, 2, 0, 0, 0 }, /* s0[s1] */
     { SIN,       43, 2, 0, 1, 1 }, /* sin(s0) */
     { COS,       44, 2, 0, 1, 1 }, /* cos(s0) */
+    { ATAN,      45, 2, 0, 0, 0 }, /* atan(s1, s0) */
     { NTRY,      64, 2, 0, 0, 0 }, /* entry operation */
     { 0,          0, 0, 0, 0, 0 }
 };

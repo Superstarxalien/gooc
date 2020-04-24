@@ -157,6 +157,7 @@
 "getins"           return MOVC;
 "getval"           return GETVAL;
 "distance"         return DISTANCE;
+"atan"             return ATAN;
 "atan2"            return ATAN2;
 "getfield"         return GETFIELD;
 "atan2_mirrored"   return ATAN2M;

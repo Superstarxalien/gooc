@@ -1235,6 +1235,22 @@ c2_gool_ins_loadcheckpoint_params(
 }
 
 static list_t*
+c2_gool_ins_ins46_params(
+    list_t* params,
+    int argc)
+{
+    thecl_param_t* param;
+    size_t c = list_count(params);
+    if (c == 2) {
+    }
+    else {
+        fprintf(stderr, "%s: ins46: wrong number of arguments (expected 2, got %zu)\n", argv0, c);
+        return NULL;
+    }
+    return params;
+}
+
+static list_t*
 c2_gool_ins_ins72_params(
     list_t* params,
     int argc)
@@ -1302,6 +1318,7 @@ c2_gool_ins[] = {
     { "cascadeevent",               69, 3, 0, 0,  2, c1_gool_ins_sendevent_params },
     { "spawn2",                     70, 3, 0, 0, -1, c1_gool_ins_spawn_params },
     { "call",                       71, 1, 0, 0, -1, c2_gool_ins_call_params },
+    { "ins46",                      46, 0, 0, 0, -1, c2_gool_ins_ins46_params },
     { "ins72",                      72, 0, 0, 0, -1, c2_gool_ins_ins72_params },
     { NULL, 0, 0, 0, 0, 0, NULL }
 };
