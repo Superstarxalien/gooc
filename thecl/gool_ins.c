@@ -1066,6 +1066,47 @@ c1_gool_ins_gamefunc10_params(
     return params;
 }
 
+/* Format is: trans, out, z, x, y */
+static list_t*
+c1_gool_ins_vectransf_params(
+    list_t* params,
+    int argc)
+{
+    thecl_param_t* param;
+    size_t c = list_count(params);
+    if (c == 3 && argc == 2) {
+        list_prepend_new(params, params->tail->data);
+        list_del(params, params->tail);
+        list_append_new(params, param_val_new(4));
+        list_append_new(params, param_val_new(0));
+    }
+    else {
+        fprintf(stderr, "%s: vectransf: wrong number of arguments (expected 5, got %zu)\n", argv0, c+argc);
+        return NULL;
+    }
+    return params;
+}
+
+static list_t*
+c1_gool_ins_vectransf2_params(
+    list_t* params,
+    int argc)
+{
+    thecl_param_t* param;
+    size_t c = list_count(params);
+    if (c == 3 && argc == 2) {
+        list_prepend_new(params, params->tail->data);
+        list_del(params, params->tail);
+        list_append_new(params, param_val_new(5));
+        list_append_new(params, param_val_new(0));
+    }
+    else {
+        fprintf(stderr, "%s: vectransf2: wrong number of arguments (expected 5, got %zu)\n", argv0, c + argc);
+        return NULL;
+    }
+    return params;
+}
+
 static const gool_ins_t
 c1_gool_ins[] = {
      /* NAME                        ID VA POP R   L              VALIDATE */
@@ -1096,6 +1137,8 @@ c1_gool_ins[] = {
     { "getvert",                  0x85, 0, 0, 0, -1, c1_gool_ins_getvert_params },
     { "moveto2d",                 0x85, 0, 0, 0, -1, c1_gool_ins_moveto2d_params },
     { "setvel",                   0x85, 0, 0, 0, -1, c1_gool_ins_setvel_params },
+    { "vectransf",                0x85, 3, 0, 0, -1, c1_gool_ins_vectransf_params },
+    { "vectransf2",               0x85, 3, 0, 0, -1, c1_gool_ins_vectransf2_params },
     { "sendevent",                0x87, 3, 0, 0,  2, c1_gool_ins_sendevent_params },
     { "rejectevent",              0x88, 0, 0, 0, -1, c1_gool_ins_eventstatus_params },
     { "acceptevent",              0x89, 0, 0, 0, -1, c1_gool_ins_eventstatus_params },
@@ -1298,6 +1341,8 @@ c2_gool_ins[] = {
     { "calcpath",                   58, 0, 0, 0, -1, c1_gool_ins_calcpath_params },
     { "getvert",                    58, 0, 0, 0, -1, c1_gool_ins_getvert_params },
     { "setvel",                     58, 0, 0, 0, -1, c1_gool_ins_setvel_params },
+    { "vectransf",                  58, 3, 0, 0, -1, c1_gool_ins_vectransf_params },
+    { "vectransf2",                 58, 3, 0, 0, -1, c1_gool_ins_vectransf2_params },
     { "sendevent",                  60, 3, 0, 0,  2, c1_gool_ins_sendevent_params },
     { "rejectevent",                61, 0, 0, 0, -1, c1_gool_ins_eventstatus_params },
     { "acceptevent",                62, 0, 0, 0, -1, c1_gool_ins_eventstatus_params },
