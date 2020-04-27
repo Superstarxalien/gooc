@@ -3066,6 +3066,7 @@ sub_begin(
     sub->has_nofirst = false;
     sub->self_reference = false;
     sub->mod_trans = false;
+    sub->is_external = state->main_ecl != state->ecl;
     list_init(&sub->labels);
 
     list_append_new(&state->ecl->subs, sub);

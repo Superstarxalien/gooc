@@ -344,7 +344,6 @@ c1_instr_serialize(
     }
 
     bool was_error = false;
-    bool ext_sub = false;
 
     if (instr->id == 0x86) {
         /* Validate sub call parameters. */
@@ -354,7 +353,6 @@ c1_instr_serialize(
         const thecl_sub_t* called_sub = th10_find_sub(ecl, sub_name);
         if (!called_sub && ecl_ext) {
             called_sub = th10_find_sub(ecl_ext, sub_name);
-            ext_sub = true;
         }
         if (!called_sub && !ignore_error) {
             fprintf(stderr, "%s:c1_instr_serialize: in sub %s: unknown sub call \"%s\"\n",
@@ -365,14 +363,13 @@ c1_instr_serialize(
             called_sub = th10_find_sub_overload(ecl, sub_name, sub_argc_param->value.val.S);
             if (!called_sub && ecl_ext) {
                 called_sub = th10_find_sub(ecl_ext, sub_name);
-                ext_sub = true;
             }
             if (!called_sub && !ignore_error) {
                 fprintf(stderr, "%s:c1_instr_serialize: in sub %s: no suitable parameter count for sub \"%s\"\n",
                     argv0, sub->name, sub_name);
                 was_error = true;
             }
-            else if (ext_sub && !ignore_error) {
+            else if (called_sub && called_sub->is_external && !ignore_error) {
                 fprintf(stderr, "%s:c1_instr_serialize: in sub %s: cannot call subs in external gool module: \"%s\"\n",
                     argv0, sub->name, sub_name);
                 was_error = true;
@@ -651,11 +648,10 @@ c1_write_gool(
                 fprintf(stderr, "%s: warning: state %s event block does not have 2 arguments\n", argv0, state->name);
             }
         }
-        uint16_t e = state->external ? 0x4000 : 0;
         state_t gstate = { state->stateflag, state->statusc, gool_pool_force_get_index(ecl, state->exe_eid),
-            state->event == NULL ? 0x3FFFU : state->event->start_offset | e,
-            state->trans == NULL ? 0x3FFFU : state->trans->start_offset | e,
-            state->code == NULL ? 0x3FFFU : state->code->start_offset | e};
+            state->event == NULL ? 0x3FFFU : state->event->start_offset | (state->event->is_external ? 0x4000 : 0),
+            state->trans == NULL ? 0x3FFFU : state->trans->start_offset | (state->trans->is_external ? 0x4000 : 0),
+            state->code == NULL ? 0x3FFFU : state->code->start_offset | (state->code->is_external ? 0x4000 : 0) };
 
         if (!file_write(out, &gstate, sizeof(gstate))) return 0;
     }
@@ -722,46 +718,55 @@ c1_compile(
             list_for_each(&sub->instrs, instr) {
                 sub->instr_data->data[j++] = c1_instr_serialize(parser->main_ecl, i > 0 ? ecl : NULL, sub, instr, true);
             }
-
-            thecl_sub_t* comp_sub;
-            list_for_each(&ecl->subs, comp_sub) {
-                if (sub->forward_declaration || sub->is_inline || sub->deleted || comp_sub == sub || !comp_sub->instr_data || comp_sub->offset != sub->offset)
-                    continue;
-
-                for (j = 0; j < sub->offset; ++j) {
-                    if (sub->instr_data->data[j] != comp_sub->instr_data->data[j])
-                        goto different_subs;
-                }
-                free(sub->instr_data);
-                sub->instr_data = comp_sub->instr_data;
-                sub->deleted = true;
-
-                thecl_instr_t* instr;
-                list_for_each(&sub->instrs, instr)
-                    thecl_instr_free(instr);
-                list_free_nodes(&sub->instrs);
-
-                thecl_sub_t* sub2;
-                list_for_each(&ecl->subs, sub2) {
-                    if (sub2->start_offset > sub->start_offset)
-                        sub2->start_offset -= sub->offset;
-                }
-
-                sub->start_offset = comp_sub->start_offset;
-
-                break;
-            different_subs:;
-            }
         }
     }
-
+    /* remove duplicates */
     for (int i = 0; i < parser->ecl_cnt + 1; ++i) {
         ecl = i == 0 ? parser->main_ecl : parser->ecl_stack[i - 1];
 
         list_for_each(&ecl->subs, sub) {
             if (sub->forward_declaration || sub->is_inline || sub->deleted)
                 continue;
-            sub->instr_data = realloc(sub->instr_data, sizeof(gool_sub_t) + sizeof(uint32_t) * sub->offset);
+
+            for (int e = 0; e < parser->ecl_cnt + 1; ++e) {
+                thecl_t* comp_ecl = e == 0 ? parser->main_ecl : parser->ecl_stack[e - 1];
+                if ((i == 0 && e > 0) || (i > 0 && (e != i && e > 0))) continue; /* main checks self; ext checks main+self */
+                thecl_sub_t* comp_sub;
+                list_for_each(&comp_ecl->subs, comp_sub) {
+                    if (comp_sub->deleted || comp_sub == sub || !comp_sub->instr_data || comp_sub->offset != sub->offset || (comp_sub->start_offset >= sub->start_offset && i == e))
+                        continue;
+
+                    for (int j = 0; j < sub->offset; ++j) {
+                        if (sub->instr_data->data[j] != comp_sub->instr_data->data[j])
+                            goto different_subs;
+                    }
+                    free(sub->instr_data);
+                    sub->instr_data = comp_sub->instr_data;
+                    sub->deleted = true;
+
+                    thecl_sub_t* sub2;
+                    list_for_each(&ecl->subs, sub2) {
+                        if (sub2->start_offset > sub->start_offset && sub2->is_external == sub->is_external)
+                            sub2->start_offset -= sub->offset;
+                    }
+
+                    sub->is_external = comp_sub->is_external;
+                    sub->start_offset = comp_sub->start_offset;
+
+                    goto double_break;
+                    different_subs:;
+                }
+            }
+            double_break:;
+        }
+    }
+    /* re-compile with new offsets */
+    for (int i = 0; i < parser->ecl_cnt + 1; ++i) {
+        ecl = i == 0 ? parser->main_ecl : parser->ecl_stack[i - 1];
+
+        list_for_each(&ecl->subs, sub) {
+            if (sub->forward_declaration || sub->is_inline || sub->deleted)
+                continue;
 
             int j = 0;
             list_for_each(&sub->instrs, instr) {
@@ -864,7 +869,6 @@ c2_instr_serialize(
     }
 
     bool was_error = false;
-    bool ext_sub = false;
 
     if (instr->id == 59 || instr->id == 24) {
         /* Validate sub call parameters. */
@@ -874,7 +878,6 @@ c2_instr_serialize(
         const thecl_sub_t* called_sub = th10_find_sub(ecl, sub_name);
         if (!called_sub && ecl_ext) {
             called_sub = th10_find_sub(ecl_ext, sub_name);
-            ext_sub = true;
         }
         if (!called_sub && !ignore_error) {
             fprintf(stderr, "%s:c2_instr_serialize: in sub %s: unknown sub call \"%s\"\n",
@@ -886,7 +889,6 @@ c2_instr_serialize(
                 called_sub = th10_find_sub_overload(ecl, sub_name, sub_argc_param->value.val.S);
                 if (!called_sub && ecl_ext) {
                     called_sub = th10_find_sub(ecl_ext, sub_name);
-                    ext_sub = true;
                 }
                 if (!called_sub && !ignore_error) {
                     fprintf(stderr, "%s:c2_instr_serialize: in sub %s: no suitable parameter count for sub \"%s\"\n",
@@ -895,7 +897,7 @@ c2_instr_serialize(
                 }
             }
             thecl_param_t* sub_ext_param = instr->params.head->next->data;
-            sub_ext_param->value.val.S = ext_sub;
+            sub_ext_param->value.val.S = called_sub ? called_sub->is_external : 0;
         }
     }
 
@@ -1118,46 +1120,55 @@ c2_compile(
             list_for_each(&sub->instrs, instr) {
                 sub->instr_data->data[j++] = c2_instr_serialize(parser->main_ecl, i > 0 ? ecl : NULL, sub, instr, true);
             }
-
-            thecl_sub_t* comp_sub;
-            list_for_each(&ecl->subs, comp_sub) {
-                if (sub->forward_declaration || sub->is_inline || sub->deleted || comp_sub == sub || !comp_sub->instr_data || comp_sub->offset != sub->offset)
-                    continue;
-
-                for (j = 0; j < sub->offset; ++j) {
-                    if (sub->instr_data->data[j] != comp_sub->instr_data->data[j])
-                        goto different_subs;
-                }
-                free(sub->instr_data);
-                sub->instr_data = comp_sub->instr_data;
-                sub->deleted = true;
-
-                thecl_instr_t* instr;
-                list_for_each(&sub->instrs, instr)
-                    thecl_instr_free(instr);
-                list_free_nodes(&sub->instrs);
-
-                thecl_sub_t* sub2;
-                list_for_each(&ecl->subs, sub2) {
-                    if (sub2->start_offset > sub->start_offset)
-                        sub2->start_offset -= sub->offset;
-                }
-
-                sub->start_offset = comp_sub->start_offset;
-
-                break;
-            different_subs:;
-            }
         }
     }
-
+    /* remove duplicates */
     for (int i = 0; i < parser->ecl_cnt + 1; ++i) {
         ecl = i == 0 ? parser->main_ecl : parser->ecl_stack[i - 1];
 
         list_for_each(&ecl->subs, sub) {
             if (sub->forward_declaration || sub->is_inline || sub->deleted)
                 continue;
-            sub->instr_data = realloc(sub->instr_data, sizeof(gool_sub_t) + sizeof(uint32_t) * sub->offset);
+
+            for (int e = 0; e < parser->ecl_cnt + 1; ++e) {
+                thecl_t* comp_ecl = e == 0 ? parser->main_ecl : parser->ecl_stack[e - 1];
+                if ((i == 0 && e > 0) || (i > 0 && (e != i && e > 0))) continue; /* main checks self; ext checks main+self */
+                thecl_sub_t* comp_sub;
+                list_for_each(&comp_ecl->subs, comp_sub) {
+                    if (comp_sub->deleted || comp_sub == sub || !comp_sub->instr_data || comp_sub->offset != sub->offset || (comp_sub->start_offset >= sub->start_offset && i == e))
+                        continue;
+
+                    for (int j = 0; j < sub->offset; ++j) {
+                        if (sub->instr_data->data[j] != comp_sub->instr_data->data[j])
+                            goto different_subs;
+                    }
+                    free(sub->instr_data);
+                    sub->instr_data = comp_sub->instr_data;
+                    sub->deleted = true;
+
+                    thecl_sub_t* sub2;
+                    list_for_each(&ecl->subs, sub2) {
+                        if (sub2->start_offset > sub->start_offset && sub2->is_external == sub->is_external)
+                            sub2->start_offset -= sub->offset;
+                    }
+
+                    sub->is_external = comp_sub->is_external;
+                    sub->start_offset = comp_sub->start_offset;
+
+                    goto double_break;
+                    different_subs:;
+                }
+            }
+            double_break:;
+        }
+    }
+    /* re-compile with new offsets */
+    for (int i = 0; i < parser->ecl_cnt + 1; ++i) {
+        ecl = i == 0 ? parser->main_ecl : parser->ecl_stack[i - 1];
+
+        list_for_each(&ecl->subs, sub) {
+            if (sub->forward_declaration || sub->is_inline || sub->deleted)
+                continue;
 
             int j = 0;
             list_for_each(&sub->instrs, instr) {

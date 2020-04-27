@@ -123,7 +123,10 @@ thecl_free(
 
     thecl_sub_t* sub;
     list_for_each(&ecl->subs, sub) {
-        free(sub->name);
+        if (sub->instr_data && !sub->deleted) {
+            datas = realloc(datas, sizeof(gool_sub_t*) * ++datacount);
+            datas[datacount - 1] = sub->instr_data;
+        }
 
         thecl_instr_t* instr;
         list_for_each(&sub->instrs, instr) {
@@ -141,11 +144,7 @@ thecl_free(
         }
         list_free_nodes(&sub->labels);
 
-        if (sub->instr_data && !sub->deleted) {
-            datas = realloc(datas, sizeof(gool_sub_t*) * ++datacount);
-            datas[datacount - 1] = sub->instr_data;
-        }
-
+        free(sub->name);
         free(sub);
     }
     list_free_nodes(&ecl->subs);

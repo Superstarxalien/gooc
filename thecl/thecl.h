@@ -120,6 +120,7 @@ typedef struct {
     char* name;
     bool forward_declaration;
     bool is_inline;
+    bool is_external;
 
     size_t stack;
     size_t var_count;
