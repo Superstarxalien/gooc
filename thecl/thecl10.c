@@ -278,8 +278,8 @@ c1_find_state_sub(
         else {
             switch (type) {
             case STATE_SUB_CODE: return state->code ? c1_find_state_sub(ecl, ecl_ext, state->code, STATE_SUB_CODE) : NULL;
-            case STATE_SUB_EVENT: return state->event ? c1_find_state_sub(ecl, ecl_ext, state->code, STATE_SUB_EVENT) : NULL;
-            case STATE_SUB_TRANS: return state->trans ? c1_find_state_sub(ecl, ecl_ext, state->code, STATE_SUB_TRANS) : NULL;
+            case STATE_SUB_EVENT: return state->event ? c1_find_state_sub(ecl, ecl_ext, state->event, STATE_SUB_EVENT) : NULL;
+            case STATE_SUB_TRANS: return state->trans ? c1_find_state_sub(ecl, ecl_ext, state->trans, STATE_SUB_TRANS) : NULL;
             }
         }
     }
