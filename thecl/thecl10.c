@@ -691,7 +691,6 @@ c1_compile(
     entry_header_t entry_header = { 0x100FFFFU, parser->main_ecl->eid, 11U, 6U, { 0, 0, 0, 0, 0, 0, 0 } };
     gool_header_t header = { parser->main_ecl->id, parser->main_ecl->type << 8, 1, parser->main_ecl->var_count + 0x40, 0, 8 };
     thecl_sub_t* sub;
-    gool_anim_t* anim;
     thecl_instr_t* instr;
 
     thecl_t* ecl = parser->main_ecl;
@@ -835,8 +834,6 @@ c1_create_header(
     const thecl_t* gool,
     FILE* out)
 {
-    thecl_sub_t* sub;
-    thecl_state_t* state;
     thecl_spawn_t* spawn;
     char gool_name[6];
 

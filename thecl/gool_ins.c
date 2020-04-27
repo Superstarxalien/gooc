@@ -28,6 +28,7 @@
  */
 #include <config.h>
 #include <stddef.h>
+#include <string.h>
 #include "thecl.h"
 #include "field.h"
 #include "program.h"

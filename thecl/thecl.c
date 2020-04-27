@@ -204,7 +204,7 @@ char* gool_to_ename(
 }
 
 int gool_to_eid(
-    char* ename)
+    const char* ename)
 {
     if (strlen(ename) != 5) {
         fprintf(stderr, "%s: ename is not 5 characters long: %s\n", argv0, ename);

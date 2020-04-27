@@ -61,7 +61,7 @@ static void instr_del(parser_state_t* state, thecl_sub_t* sub, thecl_instr_t* in
 static void instr_prepend(thecl_sub_t* sub, thecl_instr_t* instr);
 /* Returns true if the created call was inline. */
 static bool instr_create_call(parser_state_t *state, uint8_t type, char *name, list_t *params);
-static bool instr_create_inline_call(parser_state_t *state, thecl_sub_t *sub, list_t *params);
+/*static bool instr_create_inline_call(parser_state_t *state, thecl_sub_t *sub, list_t *params);*/
 
 static expression_t* expression_load_new(const parser_state_t* state, thecl_param_t* value);
 static expression_t* expression_val_new(const parser_state_t* state, int value);
@@ -165,9 +165,9 @@ static gool_anim_t* anim_get(parser_state_t* state, char* name);
 /* Return the offset of an animation of the given name */
 static size_t anim_get_offset(parser_state_t* state, char* name);
 /* Appends a new Crash 1 vertex animation to the animations list. */
-static void anim_create_anim_c1(parser_state_t* state, char* name, int frames, int eid);
+static void anim_create_anim_c1(parser_state_t* state, char* name, uint16_t frames, int eid);
 /* Appends a new Crash 2 vertex animation to the animations list. */
-static void anim_create_anim_c2(parser_state_t* state, char* name, int frames, int eid, int interp);
+static void anim_create_anim_c2(parser_state_t* state, char* name, uint16_t frames, int eid, int interp);
 
 int yydebug = 0;
 %}
@@ -411,7 +411,7 @@ Statement:
             break;
         }
 
-        state->current_interrupt = malloc(sizeof(thecl_interrupt_t));
+        state->current_interrupt = calloc(sizeof(thecl_interrupt_t), 1);
         state->current_interrupt->event = malloc(sizeof(field_t));
         memcpy(state->current_interrupt->event, event, sizeof(field_t));
 
@@ -1004,8 +1004,10 @@ State_Instructions:
         free($2);
       }
     | State_Instructions "trans" {
-        if (state->current_state->trans)
+        if (state->current_state->trans) {
             yyerror(state, "duplicate trans block in state: %s", state->current_state->name);
+            exit(2);
+        }
         char buf[256];
         snprintf(buf, 256, "__%s_TRANS", state->current_state->name);
         sub_begin(state, buf);
@@ -1034,8 +1036,10 @@ State_Instructions:
         sub_finish(state);
       }
     | State_Instructions "code" {
-        if (state->current_state->code)
+        if (state->current_state->code) {
             yyerror(state, "duplicate code block in state: %s", state->current_state->name);
+            exit(2);
+        }
         char buf[256];
         snprintf(buf, 256, "__%s_CODE", state->current_state->name);
         sub_begin(state, buf);
@@ -1046,8 +1050,10 @@ State_Instructions:
         sub_finish(state);
       }
     | State_Instructions "event" {
-        if (state->current_state->event)
+        if (state->current_state->event) {
             yyerror(state, "duplicate event block in state: %s", state->current_state->name);
+            exit(2);
+        }
         char buf[256];
         snprintf(buf, 256, "__%s_EVENT", state->current_state->name);
         sub_begin(state, buf);
@@ -1621,7 +1627,7 @@ Instruction:
                     list_for_each(param_list, param) {
                         if (param->is_expression_param) {
                             expression_t* expression = expr_node->data;
-                            expression_output(state, expression, 1);
+                            expression_output(state, expression);
                             expression_free(expression);
                             if (gool_ins->reverse_args) {
                                 expr_node = expr_node->next;
@@ -1734,7 +1740,6 @@ Instruction:
             expression_create_goto(state, GOTO, "inline_end", NULL);
         else {
             int pop = 0;
-            thecl_variable_t* var;
             for (int v=0; v < state->current_sub->var_count; ++v)
                 for (int s=1; s < state->scope_cnt; ++s)
                     if (state->current_sub->vars[v]->scope == state->scope_stack[s])
@@ -2429,7 +2434,8 @@ instr_copy(thecl_instr_t* instr) {
     return new_instr;
 }
 
-static void instr_create_inline_call(
+static void
+instr_create_inline_call(
     parser_state_t* state,
     thecl_sub_t* sub,
     list_t* params_org
@@ -3138,7 +3144,6 @@ scope_finish(
 
     /* pop GOOL stack variables */
     int pop = 0;
-    thecl_variable_t* var;
     for (int v=0; v < state->current_sub->var_count; ++v)
         if (state->current_sub->vars[v]->scope == state->scope_stack[state->scope_cnt]) {
             state->current_sub->vars[v]->is_unused = true;
