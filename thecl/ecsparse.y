@@ -1003,6 +1003,24 @@ State_Instructions:
         }
         free($2);
       }
+    | State_Instructions "trans" "=>" {
+        state->current_state->trans = calloc(sizeof(thecl_state_sub_t), 1);
+        state->current_state_sub = state->current_state->trans;
+    } State_Subroutine_Identifier {
+        state->current_state_sub = NULL;
+    }
+    | State_Instructions "code" "=>" {
+        state->current_state->code = calloc(sizeof(thecl_state_sub_t), 1);
+        state->current_state_sub = state->current_state->code;
+    } State_Subroutine_Identifier {
+        state->current_state_sub = NULL;
+    }
+    | State_Instructions "event" "=>" {
+        state->current_state->event = calloc(sizeof(thecl_state_sub_t), 1);
+        state->current_state_sub = state->current_state->event;
+    } State_Subroutine_Identifier {
+        state->current_state_sub = NULL;
+    }
     | State_Instructions "trans" {
         if (state->current_state->trans) {
             yyerror(state, "duplicate trans block in state: %s", state->current_state->name);
@@ -1090,6 +1108,11 @@ State_Instructions:
         }
         sub_finish(state);
       }
+    ;
+
+State_Subroutine_Identifier:
+    "state" IDENTIFIER { state->current_state_sub->type = INTERRUPT_STATE; state->current_state_sub->lambda_name = strdup($2); free($2); }
+    | "sub" IDENTIFIER { state->current_state_sub->type = INTERRUPT_SUB; state->current_state_sub->lambda_name = strdup($2); free($2); }
     ;
 
 Instructions:

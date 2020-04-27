@@ -272,6 +272,7 @@ typedef struct {
     thecl_sub_t* current_sub;
     thecl_state_t* current_state;
     thecl_interrupt_t* current_interrupt;
+    thecl_state_sub_t* current_state_sub;
     gool_anim_t* current_anim;
     bool declared_tempfields;
     thecl_t* main_ecl;
