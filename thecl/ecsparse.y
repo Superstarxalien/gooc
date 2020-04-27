@@ -1013,7 +1013,9 @@ State_Instructions:
         sub_begin(state, buf);
         state->current_sub->is_inline = false;
         state->current_sub->is_trans = true;
-        state->current_state->trans = state->current_sub;
+        state->current_state->trans = calloc(sizeof(thecl_state_sub_t), 1);
+        state->current_state->trans->lambda_name = strdup(buf);
+        state->current_state->trans->type = INTERRUPT_SUB;
 
         if (state->current_state->trans_args) {
             if (!state->current_state->code) {
@@ -1021,16 +1023,18 @@ State_Instructions:
                 state->current_state->trans_args = false;
             }
             else {
-                for (int a=0; a < state->current_state->code->arg_count; ++a) {
-                    objfield_create(state, state->current_state->code->args[a]->name);
+                thecl_sub_t* sub_code = state->find_state_sub(state->main_ecl, state->ecl != state->main_ecl ? state->ecl : NULL, state->current_state->code, STATE_SUB_CODE);
+                for (int a=0; a < sub_code->arg_count; ++a) {
+                    objfield_create(state, sub_code->args[a]->name);
                 }
             }
         }
       }
       Subroutine_Body {
         if (state->current_state->trans_args) {
-            for (int a=state->current_state->code->arg_count-1; a >= 0; --a) {
-                objfield_delete(state, state->current_state->code->args[a]->name);
+            thecl_sub_t* sub_code = state->find_state_sub(state->main_ecl, state->ecl != state->main_ecl ? state->ecl : NULL, state->current_state->code, STATE_SUB_CODE);
+            for (int a=sub_code->arg_count-1; a >= 0; --a) {
+                objfield_delete(state, sub_code->args[a]->name);
             }
         }
         sub_finish(state);
@@ -1044,7 +1048,9 @@ State_Instructions:
         snprintf(buf, 256, "__%s_CODE", state->current_state->name);
         sub_begin(state, buf);
         state->current_sub->is_inline = false;
-        state->current_state->code = state->current_sub;
+        state->current_state->code = calloc(sizeof(thecl_state_sub_t), 1);
+        state->current_state->code->lambda_name = strdup(buf);
+        state->current_state->code->type = INTERRUPT_SUB;
       }
       "(" ArgumentDeclaration ")" Subroutine_Body {
         sub_finish(state);
@@ -1058,7 +1064,9 @@ State_Instructions:
         snprintf(buf, 256, "__%s_EVENT", state->current_state->name);
         sub_begin(state, buf);
         state->current_sub->is_inline = false;
-        state->current_state->event = state->current_sub;
+        state->current_state->event = calloc(sizeof(thecl_state_sub_t), 1);
+        state->current_state->event->lambda_name = strdup(buf);
+        state->current_state->event->type = INTERRUPT_SUB;
 
         if (state->current_state->trans_args) {
             if (!state->current_state->code) {
@@ -1066,16 +1074,18 @@ State_Instructions:
                 state->current_state->trans_args = false;
             }
             else {
-                for (int a=0; a < state->current_state->code->arg_count; ++a) {
-                    objfield_create(state, state->current_state->code->args[a]->name);
+                thecl_sub_t* sub_code = state->find_state_sub(state->main_ecl, state->ecl != state->main_ecl ? state->ecl : NULL, state->current_state->code, STATE_SUB_CODE);
+                for (int a=0; a < sub_code->arg_count; ++a) {
+                    objfield_create(state, sub_code->args[a]->name);
                 }
             }
         }
       }
       "(" ArgumentDeclaration ")" Subroutine_Body {
         if (state->current_state->trans_args) {
-            for (int a=state->current_state->code->arg_count-1; a >= 0; --a) {
-                objfield_delete(state, state->current_state->code->args[a]->name);
+            thecl_sub_t* sub_code = state->find_state_sub(state->main_ecl, state->ecl != state->main_ecl ? state->ecl : NULL, state->current_state->code, STATE_SUB_CODE);
+            for (int a=sub_code->arg_count-1; a >= 0; --a) {
+                objfield_delete(state, sub_code->args[a]->name);
             }
         }
         sub_finish(state);
@@ -3029,7 +3039,7 @@ state_begin(
     gstate->code = NULL;
     gstate->trans = NULL;
     gstate->event = NULL;
-    gstate->exe_eid = state->ecl->eid;
+    gstate->exe = state->ecl;
     gstate->external = state->ecl != state->main_ecl;
     gstate->stateflag = 1;
     gstate->statusc = 2;

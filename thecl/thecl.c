@@ -156,6 +156,9 @@ thecl_free(
 
     thecl_state_t* state;
     list_for_each(&ecl->states, state) {
+        if (state->code) { free(state->code->lambda_name); free(state->code); }
+        if (state->event) { free(state->event->lambda_name); free(state->event); }
+        if (state->trans) { free(state->trans->lambda_name); free(state->trans); }
         free(state->name);
         free(state);
     }

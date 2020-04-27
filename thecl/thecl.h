@@ -98,6 +98,34 @@ typedef struct {
     char name[];
 } thecl_label_t;
 
+typedef struct {
+    unsigned int version;
+    /* TODO: Make local data. */
+    int is_defined;
+
+    uint32_t eid;
+    int id;
+    int type;
+
+    list_t anims;
+
+    size_t const_count;
+    uint32_t* consts;
+
+    size_t var_count;
+    field_t** vars;
+
+    list_t interrupts;
+    list_t spawns;
+
+    list_t states;
+    list_t subs;
+
+    bool no_warn;
+
+    int ins_offset;
+} thecl_t;
+
 /* TODO: Move label creation functions here. */
 
 typedef struct {
@@ -146,14 +174,30 @@ typedef struct {
     gool_sub_t* instr_data;
 } thecl_sub_t;
 
+typedef enum {
+    INTERRUPT_SUB,
+    INTERRUPT_STATE
+} thecl_interrupt_type;
+
+typedef enum {
+    STATE_SUB_CODE,
+    STATE_SUB_EVENT,
+    STATE_SUB_TRANS
+} thecl_state_sub_type;
+
+typedef struct {
+    enum thecl_interrupt_type type;
+    char* lambda_name;
+} thecl_state_sub_t;
+
 typedef struct {
     char* name;
 
-    thecl_sub_t* code;
-    thecl_sub_t* trans;
-    thecl_sub_t* event;
+    thecl_state_sub_t* code;
+    thecl_state_sub_t* trans;
+    thecl_state_sub_t* event;
 
-    uint32_t exe_eid;
+    thecl_t* exe;
     bool external;
 
     uint32_t stateflag;
@@ -169,11 +213,6 @@ typedef struct {
     char* state_name;
     size_t offset;
 } thecl_spawn_t;
-
-typedef enum {
-    INTERRUPT_SUB,
-    INTERRUPT_STATE
-} thecl_interrupt_type;
 
 typedef struct {
     const field_t* event;
@@ -192,39 +231,6 @@ label_offset(
     const char* name);
 
 /* TODO: Subroutine creation and deletion functions. */
-
-typedef struct {
-    char name[256];
-    list_t instrs;
-} thecl_timeline_t;
-
-typedef struct {
-    unsigned int version;
-    /* TODO: Make local data. */
-    int is_defined;
-
-    uint32_t eid;
-    int id;
-    int type;
-
-    list_t anims;
-
-    size_t const_count;
-    uint32_t* consts;
-
-    size_t var_count;
-    field_t** vars;
-
-    list_t interrupts;
-    list_t spawns;
-
-    list_t states;
-    list_t subs;
-
-    bool no_warn;
-
-    int ins_offset;
-} thecl_t;
 
 typedef struct {
     char* name;
@@ -274,7 +280,7 @@ typedef struct {
     int ecl_cnt;
     int path_cnt;
     char** path_stack;
-    const char* (*instr_format)(unsigned int version, unsigned int id);
+    thecl_sub_t* (*find_state_sub)(thecl_t* ecl, thecl_t* ecl_ext, thecl_state_sub_t* state_sub, thecl_state_sub_type type);
 
     uint16_t state_count;
     size_t spawn_count;

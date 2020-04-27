@@ -263,6 +263,36 @@ c1_find_state(
     return NULL;
 }
 
+static thecl_sub_t*
+c1_find_state_sub(
+    thecl_t* ecl,
+    thecl_t* ecl_ext,
+    thecl_state_sub_t* state_sub,
+    thecl_state_sub_type type)
+{
+    if (state_sub->type == INTERRUPT_STATE) {
+        thecl_state_t* state = c1_find_state(ecl, state_sub->lambda_name);
+        if (state == NULL) {
+            return NULL;
+        }
+        else {
+            switch (type) {
+            case STATE_SUB_CODE: return state->code ? c1_find_state_sub(ecl, ecl_ext, state->code, STATE_SUB_CODE) : NULL;
+            case STATE_SUB_EVENT: return state->event ? c1_find_state_sub(ecl, ecl_ext, state->code, STATE_SUB_EVENT) : NULL;
+            case STATE_SUB_TRANS: return state->trans ? c1_find_state_sub(ecl, ecl_ext, state->code, STATE_SUB_TRANS) : NULL;
+            }
+        }
+    }
+    else if (state_sub->type == INTERRUPT_SUB) {
+        thecl_sub_t* sub = th10_find_sub(ecl, state_sub->lambda_name);
+        if (!sub && ecl_ext) {
+            sub = th10_find_sub(ecl_ext, state_sub->lambda_name);
+        }
+        return sub;
+    }
+    return NULL;
+}
+
 static parser_state_t*
 c1_parse(
     FILE* in,
@@ -285,7 +315,7 @@ c1_parse(
     state->main_ecl = state->ecl;
     state->ecl_stack = malloc(0);
     state->ecl_cnt = 0;
-    state->instr_format = th10_find_format;
+    state->find_state_sub = c1_find_state_sub;
 
     state->path_cnt = 0;
     state->path_stack = NULL;
@@ -640,18 +670,22 @@ c1_write_gool(
     entry_header->offsets[4] = file_tell(out);
 
     list_for_each(&ecl->states, state) {
-        if (!state->code) {
+        thecl_t* ecl_ext = state->exe != ecl ? state->exe : NULL;
+        thecl_sub_t* sub_c = state->code ? c1_find_state_sub(ecl, ecl_ext, state->code, STATE_SUB_CODE) : NULL;
+        thecl_sub_t* sub_e = state->event ? c1_find_state_sub(ecl, ecl_ext, state->event, STATE_SUB_EVENT) : NULL;
+        thecl_sub_t* sub_t = state->trans ? c1_find_state_sub(ecl, ecl_ext, state->trans, STATE_SUB_TRANS) : NULL;
+        if (!sub_c) {
             fprintf(stderr, "%s: warning: state %s has no code block\n", argv0, state->name);
         }
-        if (state->event) {
-            if (state->event->arg_count != 2) {
+        if (sub_e) {
+            if (sub_e->arg_count != 2) {
                 fprintf(stderr, "%s: warning: state %s event block does not have 2 arguments\n", argv0, state->name);
             }
         }
-        state_t gstate = { state->stateflag, state->statusc, gool_pool_force_get_index(ecl, state->exe_eid),
-            state->event == NULL ? 0x3FFFU : state->event->start_offset | (state->event->is_external ? 0x4000 : 0),
-            state->trans == NULL ? 0x3FFFU : state->trans->start_offset | (state->trans->is_external ? 0x4000 : 0),
-            state->code == NULL ? 0x3FFFU : state->code->start_offset | (state->code->is_external ? 0x4000 : 0) };
+        state_t gstate = { state->stateflag, state->statusc, gool_pool_force_get_index(ecl, state->exe->eid),
+            state->event == NULL ? 0x3FFFU : sub_e->start_offset | (sub_e->is_external ? 0x4000 : 0),
+            state->trans == NULL ? 0x3FFFU : sub_t->start_offset | (sub_t->is_external ? 0x4000 : 0),
+            state->code == NULL ? 0x3FFFU : sub_c->start_offset | (sub_c->is_external ? 0x4000 : 0) };
 
         if (!file_write(out, &gstate, sizeof(gstate))) return 0;
     }
@@ -699,7 +733,7 @@ c1_compile(
 
     /* write GOOL EIDs to const pool before anything else */
     list_for_each(&ecl->states, state) {
-        gool_pool_force_get_index(ecl, state->exe_eid);
+        gool_pool_force_get_index(ecl, state->exe->eid);
     }
 
     /* compile all subs */
@@ -1099,7 +1133,7 @@ c2_compile(
 
     /* write GOOL EIDs to const pool before anything else */
     list_for_each(&ecl->states, state) {
-        gool_pool_force_get_index(ecl, state->exe_eid);
+        gool_pool_force_get_index(ecl, state->exe->eid);
     }
 
     /* compile all subs */
