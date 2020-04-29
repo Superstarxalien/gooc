@@ -190,7 +190,7 @@ c1_events[] = {
     { "EventJumpedOn",           0 },
 
     { "EventHit",                3 },
-    { "EventAttacked",           4 },
+    { "EventSpinHit",            4 },
 
     { "EventTriggered",          8 },
 
@@ -286,7 +286,7 @@ c2_events[] = {
     { "EventJumpedOn",           0 },
 
     { "EventHit",                3 },
-    { "EventAttacked",           4 },
+    { "EventSpinHit",            4 },
 
     { "EventTriggered",          8 },
 
@@ -303,6 +303,9 @@ c2_events[] = {
     { "EventLevelEnd",          41 },
 
     { "EventPlayerDamage",      43 },
+
+    { "EventSlideHit",          45 },
+    { "EventSlamHit",           46 },
 
     { NULL, 0 }
 };
