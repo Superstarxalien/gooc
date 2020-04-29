@@ -338,6 +338,7 @@ vol\([0-9]+\.[0-9]+\) {
     if (!cmp) {
         BEGIN(P_BLOCK);
     }
+    g_has_else = false;
 }
 #ifn?lev[\t\n\r ]+[0-9a-zA-Z\_\!]+[\t\n\r ]+ |
 <P_BLOCK>#ifn?lev[\t\n\r ]+[0-9a-zA-Z\_\!]+[\t\n\r ]+ {
@@ -346,6 +347,21 @@ vol\([0-9]+\.[0-9]+\) {
     g_reg_blocks = realloc(g_reg_blocks, sizeof(int) * ++g_reg_block_depth);
     g_reg_blocks[g_reg_block_depth - 1] = !cmp;
     if (!cmp) {
+        BEGIN(P_BLOCK);
+    }
+    g_has_else = false;
+}
+#else |
+<P_BLOCK>#else {
+    if (g_reg_block_depth == 0 || g_has_else) {
+        yyerror(NULL, "invalid #else");
+        yyterminate();
+    }
+    g_has_else = true;
+    if (g_reg_blocks[g_reg_block_depth - 1]) {
+        BEGIN(INITIAL);
+    }
+    else {
         BEGIN(P_BLOCK);
     }
 }

@@ -47,6 +47,7 @@ char* g_region = NULL;
 char g_lev = '0';
 int g_reg_block_depth = 0;
 int* g_reg_blocks = NULL;
+bool g_has_else = false;
 char* g_module_fmt = NULL;
 
 #define PI 3.1415926535897932384626433832795028841971693993751058209749445923078164062
