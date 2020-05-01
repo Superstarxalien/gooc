@@ -129,6 +129,7 @@ static const field_t
 c1_globals[] = {
     { "LEVEL",               0 },
 
+    { "GAMEFLAGS",           4 },
     { "RESPAWNCOUNT",        5 },
     { "FRUITCOUNTER",        6 },
     { "LIFECOUNTER",         7 },
@@ -142,7 +143,7 @@ c1_globals[] = {
 
     { "LIFECOUNT",          24 },
 
-    { "ZONEFLAG",           30 },
+    { "ZONEFLAGS",          30 },
     { "STARTLIVES",         31 },
 
     { "SFXVOL",             34 },
@@ -215,6 +216,7 @@ static const field_t
 c2_globals[] = {
     { "LEVEL",               0 },
 
+    { "GAMEFLAGS",           4 },
     { "RESPAWNCOUNT",        5 },
     { "FRUITCOUNTER",        6 },
     { "LIFECOUNTER",         7 },
@@ -229,7 +231,7 @@ c2_globals[] = {
     { "HEALTH",             25 },
 
     { "BOXCOUNTER",         29 },
-    { "ZONEFLAG",           30 },
+    { "ZONEFLAGS",          30 },
     { "STARTLIVES",         31 },
 
     { "SFXVOL",             34 },
@@ -266,6 +268,8 @@ c2_globals[] = {
     { "SPAWNTRANSX",       102 },
     { "SPAWNTRANSY",       103 },
     { "SPAWNTRANSZ",       104 },
+
+    { "FADECONTROL",       106 },
 
     { "DEATHCOUNT",        108 },
 
@@ -306,6 +310,8 @@ c2_events[] = {
 
     { "EventSlideHit",          45 },
     { "EventSlamHit",           46 },
+
+    { "EventBearStart",         65 },
 
     { NULL, 0 }
 };
