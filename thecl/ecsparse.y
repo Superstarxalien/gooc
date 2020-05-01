@@ -2961,7 +2961,6 @@ expression_optimize(
 
     const expr_t* tmp_expr = expr_get_by_id(state->version, expression->id);
 
-    /* TODO: handle some single-child expressions, such as sin or cos */
     if (tmp_expr->stack_arity != 2 || !tmp_expr->allow_optim) return;
 
     if (   !tmp_expr->is_unary && (
@@ -2980,7 +2979,30 @@ expression_optimize(
         || child_expr_1->value->type != 'S'
         || child_expr_2->value->type != 'S'
       )
-    ) return;
+    ) {
+        /* Partial expression optimization */
+        tmp_expr = expr_get_by_symbol(state->version, ADD);
+        if (tmp_expr->id == expression->id) {
+            tmp_expr = expr_get_by_symbol(state->version, RAND);
+            if ((child_expr_1->id == tmp_expr->id && child_expr_2->type == EXPRESSION_VAL && ((expression_t*)child_expr_1->children.head->data)->type == EXPRESSION_VAL && ((expression_t*)child_expr_1->children.head->data)->value->value.val.S == 0) ||
+            (child_expr_2->id == tmp_expr->id && child_expr_1->type == EXPRESSION_VAL && ((expression_t*)child_expr_2->children.head->data)->type == EXPRESSION_VAL && ((expression_t*)child_expr_2->children.head->data)->value->value.val.S == 0)) {
+                expression_t* rand_expr = child_expr_1->id == tmp_expr->id ? child_expr_1 : child_expr_2;
+                expression_t* numb_expr = child_expr_1->id == tmp_expr->id ? child_expr_2 : child_expr_1;
+                rand_expr = expression_copy(list_tail(&rand_expr->children));
+                numb_expr = expression_copy(numb_expr);
+
+                expression->id = tmp_expr->id;
+                param_free((child_expr_1->id == tmp_expr->id ? child_expr_2 : child_expr_1)->value);
+                expression_free(child_expr_1);
+                expression_free(child_expr_2);
+                list_free_nodes(&expression->children);
+
+                list_append_new(&expression->children, numb_expr);
+                list_append_new(&expression->children, EXPR_2(ADD, expression_copy(numb_expr), rand_expr));
+            }
+        }
+        return;
+    }
 
     thecl_param_t* param = param_new('S');
 
