@@ -343,7 +343,15 @@ vol\([0-9]+\.[0-9]+\) {
 #ifn?lev[\t\n\r ]+[0-9a-zA-Z\_\!]+[\t\n\r ]+ |
 <P_BLOCK>#ifn?lev[\t\n\r ]+[0-9a-zA-Z\_\!]+[\t\n\r ]+ {
     char* lev = strpbrk(yytext + 7, gool_ename_charmap);
-    int cmp = (lev != NULL && lev[0] == g_lev) ^ (yytext[3] == 'n');
+    int cmp = false;
+    if (lev != NULL) {
+        char l = lev++[0];
+        while ((l >= '0' && l <= '9') || (l >= 'a' && l <= 'z') || (l >= 'A' && l <= 'Z') || l == '_' || l == '!') {
+            cmp |= l == g_lev;
+            l = lev++[0];
+        }
+    }
+    cmp ^= yytext[3] == 'n';
     g_reg_blocks = realloc(g_reg_blocks, sizeof(int) * ++g_reg_block_depth);
     g_reg_blocks[g_reg_block_depth - 1] = !cmp;
     if (!cmp) {
