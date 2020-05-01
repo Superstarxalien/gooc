@@ -3129,7 +3129,7 @@ sub_finish(
     if (state->current_sub->is_inline) {
         thecl_instr_t* last_ins = list_tail(&state->current_sub->instrs);
         const expr_t* tmp = expr_get_by_symbol(state->version, GOTO);
-        if (last_ins != NULL && last_ins->id == tmp->id && ((state->version == 1 && ((thecl_param_t*)last_ins->params.tail->data)->value.val.S == 2) || state->version != 1)) {
+        if (last_ins != NULL && last_ins->id == tmp->id && ((thecl_param_t*)last_ins->params.tail->data)->value.val.S == 2) {
             thecl_param_t* label_param = list_head(&last_ins->params);
             if (strcmp(label_param->value.val.z, "inline_end") == 0) {
                 /* Remove useless goto. */
