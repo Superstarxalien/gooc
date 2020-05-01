@@ -557,14 +557,14 @@ c1_instr_serialize(
                         val = c1_make_ref_null(); /* null ref */
                     }
                     else {
-                        val = c1_make_ref_pool(gool_pool_force_make_index(ecl, p)); /* pool ref */
+                        val = c1_make_ref_pool(gool_pool_force_get_index(ecl, p)); /* pool ref */
                     }
                     /* DOES NOT WORK IN-GAME! */
                     //if (!ecl_ext || (ecl_ext && gool_pool_get_index(ecl, p) != -1)) {
-                    //    val = c1_make_ref_pool(gool_pool_force_make_index(ecl, p)); /* pool ref */
+                    //    val = c1_make_ref_pool(gool_pool_force_get_index(ecl, p)); /* pool ref */
                     //}
                     //else {
-                    //    val = c1_make_ref_extpool(gool_pool_force_make_index(ecl_ext, p)); /* pool ref */
+                    //    val = c1_make_ref_extpool(gool_pool_force_get_index(ecl_ext, p)); /* pool ref */
                     //}
                 }
             }
@@ -1059,14 +1059,14 @@ c2_instr_serialize(
                         val = c1_make_ref_null(); /* null ref */
                     }
                     else {
-                        val = c1_make_ref_pool(gool_pool_force_make_index(ecl, p)); /* pool ref */
+                        val = c1_make_ref_pool(gool_pool_force_get_index(ecl, p)); /* pool ref */
                     }
                     /* DOES NOT WORK IN-GAME! */
                     //if (!ecl_ext || (ecl_ext && gool_pool_get_index(ecl, p) != -1)) {
-                    //    val = c1_make_ref_pool(gool_pool_force_make_index(ecl, p)); /* pool ref */
+                    //    val = c1_make_ref_pool(gool_pool_force_get_index(ecl, p)); /* pool ref */
                     //}
                     //else {
-                    //    val = c1_make_ref_extpool(gool_pool_force_make_index(ecl_ext, p)); /* pool ref */
+                    //    val = c1_make_ref_extpool(gool_pool_force_get_index(ecl_ext, p)); /* pool ref */
                     //}
                 }
             }
