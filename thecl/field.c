@@ -294,7 +294,7 @@ c2_events[] = {
 
     { "EventRespawn",           19 },
 
-    { "EventWin",               22 },
+    { "EventWarp",              22 },
 
     { "EventDespawn",           26 },
 
