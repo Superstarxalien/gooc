@@ -2981,8 +2981,7 @@ expression_optimize(
       )
     ) {
         /* Partial expression optimization */
-        tmp_expr = expr_get_by_symbol(state->version, ADD);
-        if (tmp_expr->id == expression->id) {
+        if ((tmp_expr = expr_get_by_symbol(state->version, ADD))->id == expression->id) {
             tmp_expr = expr_get_by_symbol(state->version, RAND);
             if ((child_expr_1->id == tmp_expr->id && child_expr_2->type == EXPRESSION_VAL && ((expression_t*)child_expr_1->children.head->data)->type == EXPRESSION_VAL && ((expression_t*)child_expr_1->children.head->data)->value->value.val.S == 0) ||
             (child_expr_2->id == tmp_expr->id && child_expr_1->type == EXPRESSION_VAL && ((expression_t*)child_expr_2->children.head->data)->type == EXPRESSION_VAL && ((expression_t*)child_expr_2->children.head->data)->value->value.val.S == 0)) {
@@ -2999,6 +2998,23 @@ expression_optimize(
 
                 list_append_new(&expression->children, numb_expr);
                 list_append_new(&expression->children, EXPR_2(ADD, expression_copy(numb_expr), rand_expr));
+                return;
+            }
+        }
+        else if ((tmp_expr = expr_get_by_symbol(state->version, EQUAL))->id == expression->id) {
+            if ((child_expr_1->type == EXPRESSION_VAL && child_expr_1->value->value.val.S == 0) ||
+            (child_expr_2->type == EXPRESSION_VAL && child_expr_2->value->value.val.S == 0)) {
+                expression_t* zero_expr = (child_expr_1->type == EXPRESSION_VAL && child_expr_1->value->value.val.S == 0) ? child_expr_1 : child_expr_2;
+
+                param_free(zero_expr->value);
+                expression_free(zero_expr);
+                list_free_nodes(&expression->children);
+
+                tmp_expr = expr_get_by_symbol(state->version, NOT);
+                expression->id = tmp_expr->id;
+                list_append_new(&expression->children, expression_load_new(state, param_sp_new()));
+                list_append_new(&expression->children, zero_expr == child_expr_1 ? child_expr_2 : child_expr_1);
+                return;
             }
         }
         return;
