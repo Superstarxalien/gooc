@@ -355,6 +355,66 @@ c1_ins_init(
 }
 
 static int
+c1_make_ref_reg(int reg)
+{
+    return 0xE00 | (reg & 0x1FF);
+}
+
+static int
+c1_make_ref_stack(int offset)
+{
+    return 0xB00 | (offset & 0x7F);
+}
+
+static int
+c1_make_ref_ireg(int link, int reg)
+{
+    return 0xC00 | ((link & 0x7) << 6) | (reg & 0x3F);
+}
+
+static int
+c1_make_ref_null(void)
+{
+    return 0xBE0;
+}
+
+static int
+c1_make_ref_sp2(void)
+{
+    return 0xBF0;
+}
+
+static int
+c1_make_ref_special(int s)
+{
+    return s == 1 ? c1_make_ref_sp2() : c1_make_ref_null();
+}
+
+static int
+c1_make_ref_int(int val)
+{
+    return 0x800 | (val & 0x1FF);
+}
+
+static int
+c1_make_ref_frac(int val)
+{
+    return 0xA00 | (val & 0xFF);
+}
+
+static int
+c1_make_ref_pool(int offset)
+{
+    return 0x000 | (offset & 0x3FF);
+}
+
+static int
+c1_make_ref_extpool(int offset)
+{
+    return 0x400 | (offset & 0x3FF);
+}
+
+static int
 c1_instr_serialize(
     thecl_t* ecl,
     thecl_t* ecl_ext,
@@ -470,63 +530,41 @@ c1_instr_serialize(
         if (op == 'R') {
             if (param->stack) {
                 if (param->object_link == 0) {
-                    /* reg ref */
-                    val = 0xE00;
-                    val |= p
-                        & 0x1FF;
+                    val = c1_make_ref_reg(p); /* reg ref */
                 }
                 else if (param->object_link == -1) {
-                    /* stack ref */
-                    val = 0xB00;
-                    val |= p
-                        & 0x7F;
+                    val = c1_make_ref_stack(p); /* stack ref */
                 }
                 else if (param->object_link > 0 && param->object_link <= 7) {
-                    /* ireg ref */
-                    val = 0xC00;
-                    val |= p
-                        & 0x3F;
-                    val |= param->object_link
-                        << 6;
+                    val = c1_make_ref_ireg(param->object_link, p); /* ireg ref */
                 }
                 else if (param->object_link == -2) {
-                    /* sp-double ref OR null ref */
-                    val = 0xBE0;
-                    val |= param->value.val.S
-                        << 4;
+                    val = c1_make_ref_special(param->value.val.S); /* sp-double ref OR null ref */
                 }
                 else if (param->object_link == -3) {
-                    /* pool ref */
-                    val = 0x000;
-                    val |= gool_pool_force_make_index(ecl, p);
+                    val = c1_make_ref_pool(gool_pool_force_make_index(ecl, p)); /* pool ref */
                 }
             }
             else {
                 if (!(p % 0x100) && p >= -256 * 0x100 && p <= 255 * 0x100) {
-                    /* frac ref */
-                    val = 0x800;
-                    val |= (p / 0x100)
-                        & 0x1FF;
+                    val = c1_make_ref_int(p / 0x100); /* int ref */
                 }
                 else if (!(p % 0x10) && p >= -128 * 0x10 && p <= 127 * 0x10) {
-                    /* int ref */
-                    val = 0xA00;
-                    val |= (p / 0x10) & 0xFF;
+                    val = c1_make_ref_frac(p / 0x10); /* frac ref */
                 }
                 else {
-                    /* pool ref */
-                    val = 0x000;
-                    val |= gool_pool_force_get_index(ecl, p);
+                    if (ecl_ext && ecl_ext->purge_data) {
+                        val = c1_make_ref_null(); /* null ref */
+                    }
+                    else {
+                        val = c1_make_ref_pool(gool_pool_force_make_index(ecl, p)); /* pool ref */
+                    }
                     /* DOES NOT WORK IN-GAME! */
                     //if (!ecl_ext || (ecl_ext && gool_pool_get_index(ecl, p) != -1)) {
-                    //    /* pool ref */
-                    //    val = 0x000;
-                    //    val |= gool_pool_force_get_index(ecl, p);
+                    //    val = c1_make_ref_pool(gool_pool_force_make_index(ecl, p)); /* pool ref */
                     //}
                     //else {
-                    //    /* pool ref */
-                    //    val = 0x400;
-                    //    val |= gool_pool_force_get_index(ecl_ext, p);
+                    //    val = c1_make_ref_extpool(gool_pool_force_make_index(ecl_ext, p)); /* pool ref */
                     //}
                 }
             }
@@ -561,8 +599,7 @@ c1_instr_serialize(
         int bits = total_bits;
         int val = 0;
         if (op == 'R') {
-            /* null ref */
-            val = 0xBE0;
+            val = c1_make_ref_null(); /* null ref */
             total_bits += 12;
         }
         else if (op == 'I') {
@@ -995,63 +1032,41 @@ c2_instr_serialize(
         if (op == 'R') {
             if (param->stack) {
                 if (param->object_link == 0) {
-                    /* reg ref */
-                    val = 0xE00;
-                    val |= p
-                        & 0x1FF;
+                    val = c1_make_ref_reg(p); /* reg ref */
                 }
                 else if (param->object_link == -1) {
-                    /* stack ref */
-                    val = 0xB00;
-                    val |= p
-                        & 0x7F;
+                    val = c1_make_ref_stack(p); /* stack ref */
                 }
                 else if (param->object_link > 0 && param->object_link <= 7) {
-                    /* ireg ref */
-                    val = 0xC00;
-                    val |= p
-                        & 0x3F;
-                    val |= param->object_link
-                        << 6;
+                    val = c1_make_ref_ireg(param->object_link, p); /* ireg ref */
                 }
                 else if (param->object_link == -2) {
-                    /* sp-double ref OR null ref */
-                    val = 0xBE0;
-                    val |= param->value.val.S
-                        << 4;
+                    val = c1_make_ref_special(param->value.val.S); /* sp-double ref OR null ref */
                 }
                 else if (param->object_link == -3) {
-                    /* pool ref */
-                    val = 0x000;
-                    val |= gool_pool_force_make_index(ecl, p);
+                    val = c1_make_ref_pool(gool_pool_force_make_index(ecl, p)); /* pool ref */
                 }
             }
             else {
                 if (!(p % 0x100) && p >= -256 * 0x100 && p <= 255 * 0x100) {
-                    /* int ref */
-                    val = 0x800;
-                    val |= (p / 0x100)
-                        & 0x1FF;
+                    val = c1_make_ref_int(p / 0x100); /* int ref */
                 }
                 else if (!(p % 0x10) && p >= -128 * 0x10 && p <= 127 * 0x10) {
-                    /* frac ref */
-                    val = 0xA00;
-                    val |= (p / 0x10) & 0xFF;
+                    val = c1_make_ref_frac(p / 0x10); /* frac ref */
                 }
                 else {
-                    /* pool ref */
-                    val = 0x000;
-                    val |= gool_pool_force_get_index(ecl, p);
+                    if (ecl_ext && ecl_ext->purge_data) {
+                        val = c1_make_ref_null(); /* null ref */
+                    }
+                    else {
+                        val = c1_make_ref_pool(gool_pool_force_make_index(ecl, p)); /* pool ref */
+                    }
                     /* DOES NOT WORK IN-GAME! */
                     //if (!ecl_ext || (ecl_ext && gool_pool_get_index(ecl, p) != -1)) {
-                    //    /* pool ref */
-                    //    val = 0x000;
-                    //    val |= gool_pool_force_get_index(ecl, p);
+                    //    val = c1_make_ref_pool(gool_pool_force_make_index(ecl, p)); /* pool ref */
                     //}
                     //else {
-                    //    /* pool ref */
-                    //    val = 0x400;
-                    //    val |= gool_pool_force_get_index(ecl_ext, p);
+                    //    val = c1_make_ref_extpool(gool_pool_force_make_index(ecl_ext, p)); /* pool ref */
                     //}
                 }
             }
@@ -1086,8 +1101,7 @@ c2_instr_serialize(
         int bits = total_bits;
         int val = 0;
         if (op == 'R') {
-            /* null ref */
-            val = 0xBE0;
+            val = c1_make_ref_null(); /* null ref */
             total_bits += 12;
         }
         else if (op == 'I') {

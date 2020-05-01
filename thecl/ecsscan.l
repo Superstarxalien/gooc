@@ -391,6 +391,21 @@ vol\([0-9]+\.[0-9]+\) {
     }
 }
 <P_BLOCK>([\n\r]|.) ;
+#purge[\t\n\r ]+[0-9a-zA-Z\_\!]+ {
+    if (g_parser_state->ecl != g_parser_state->main_ecl) {
+        if (g_parser_state->ecl->purge_tested) {
+            char buf[6];
+            yyerror(NULL, "#purge already used in module '%s'", gool_to_ename(buf, g_parser_state->ecl->eid));
+        }
+        else {
+            g_parser_state->ecl->purge_data = !strchr(yytext+6, g_lev);
+            g_parser_state->ecl->purge_tested = true;
+        }
+    }
+    else {
+        yyerror(NULL, "#purge cannot be used for main module");
+    }
+}
 
 #([a-zA-Z]+) {
     char* txt = yytext + 1;

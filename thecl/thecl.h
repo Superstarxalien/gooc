@@ -100,8 +100,10 @@ typedef struct {
 
 typedef struct {
     unsigned int version;
-    /* TODO: Make local data. */
+
     int is_defined;
+    bool purge_data;
+    bool purge_tested;
 
     uint32_t eid;
     int id;

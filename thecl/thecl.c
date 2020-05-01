@@ -106,6 +106,8 @@ thecl_new(
     ecl->type = 0;
     ecl->is_defined = 0;
     ecl->ins_offset = 0;
+    ecl->purge_data = false;
+    ecl->purge_tested = false;
     return ecl;
 }
 
