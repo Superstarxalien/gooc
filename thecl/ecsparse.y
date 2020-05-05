@@ -2013,6 +2013,7 @@ ExpressionSubset:
     | "distance" "(" Expression "," Expression "," Expression ")" { $$ = EXPR_4(MISC, $3, $5, $7, expression_val_new(state, 6)); }
     | "objectget" "(" Expression ")"                              { $$ = EXPR_4(MISC, $3, expression_val_new(state, 5), expression_val_new(state, 0), expression_val_new(state, 7)); }
 
+    | "entitygetstate" "(" Expression ")"                         { $$ = EXPR_4(MISC, expression_load_new(state, param_var_new(field_get("id")->offset)), expression_val_new(state, 0), $3, expression_val_new(state, 11)); }
     | "entitygetstate" "(" Expression "," Expression ")"          { $$ = EXPR_4(MISC, $3, expression_val_new(state, 0), $5, expression_val_new(state, 11)); }
 //  | "gamefunc" "(" Expression "," Expression ")"                { if (state->version == 1) $$ = EXPR_4(MISC, $3, expression_val_new(state, 0), $5, expression_val_new(state, 12)); }
     | "getvalideventobj" "(" Expression "," Expression "," Expression ")"   { $$ = EXPR_4(MISC, $3, $5, $7, expression_val_new(state, 13)); }
