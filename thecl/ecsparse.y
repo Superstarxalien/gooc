@@ -515,6 +515,9 @@ Statement:
         }
         free($1);
       }
+    | DIRECTIVE {
+        free($1);
+    }
     | DIRECTIVE_FONT IDENTIFIER ENTRY {
         gool_anim_t* anim = malloc(sizeof(gool_anim_t));
         anim->name = strdup($2);
@@ -987,6 +990,9 @@ ArgumentDeclaration:
 
 State_Instructions:
     %empty
+    | State_Instructions DIRECTIVE {
+        free($2);
+    }
     | State_Instructions "__transargs" {
         if (state->current_state->trans && state->current_state->event)
             yyerror(state, "useless modifier __transargs, trans and event blocks already defined");
@@ -1120,6 +1126,9 @@ Instructions:
     /*| Instructions IDENTIFIER ":" { label_create(state, $2); free($2); }*/
     | Instructions Instruction
     | Instructions Block
+    | Instructions DIRECTIVE {
+        free($2);
+    }
     ;
 
 ParenExpressionList:
