@@ -329,6 +329,9 @@ vol\([0-9]+\.[0-9]+\) {
     if (!cmp) {
         BEGIN(P_BLOCK);
     }
+    g_has_else = false;
+    yylval.string = strdup(yytext + 1);
+    return DIRECTIVE;
 }
 #ifn?ver[\t\n\r ]+[0-9]+[\t\n\r ]+ |
 <P_BLOCK>#ifn?ver[\t\n\r ]+[0-9]+[\t\n\r ]+ {
@@ -339,6 +342,8 @@ vol\([0-9]+\.[0-9]+\) {
         BEGIN(P_BLOCK);
     }
     g_has_else = false;
+    yylval.string = strdup(yytext + 1);
+    return DIRECTIVE;
 }
 #ifn?lev[\t\n\r ]+[0-9a-zA-Z\_\!]+[\t\n\r ]+ |
 <P_BLOCK>#ifn?lev[\t\n\r ]+[0-9a-zA-Z\_\!]+[\t\n\r ]+ {
@@ -358,6 +363,8 @@ vol\([0-9]+\.[0-9]+\) {
         BEGIN(P_BLOCK);
     }
     g_has_else = false;
+    yylval.string = strdup(yytext + 1);
+    return DIRECTIVE;
 }
 #else |
 <P_BLOCK>#else {
@@ -372,6 +379,8 @@ vol\([0-9]+\.[0-9]+\) {
     else {
         BEGIN(P_BLOCK);
     }
+    yylval.string = strdup(yytext + 1);
+    return DIRECTIVE;
 }
 #endif | {
 <P_BLOCK>#endif {
@@ -389,6 +398,8 @@ vol\([0-9]+\.[0-9]+\) {
     else {
         BEGIN(INITIAL);
     }
+    yylval.string = strdup(yytext + 1);
+    return DIRECTIVE;
 }
 <P_BLOCK>([\n\r]|.) ;
 #purge[\t\n\r ]+[0-9a-zA-Z\_\!]+ {
@@ -405,6 +416,8 @@ vol\([0-9]+\.[0-9]+\) {
     else {
         yyerror(NULL, "#purge cannot be used for main module");
     }
+    yylval.string = strdup(yytext + 1);
+    return DIRECTIVE;
 }
 
 #([a-zA-Z]+) {
