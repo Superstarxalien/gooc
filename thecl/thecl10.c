@@ -664,12 +664,11 @@ c1_write_gool(
             if (!file_write(out, &state_id, sizeof(uint16_t))) return 0;
         }
         if (!file_seek(out, pos + interrupt->event->offset * 2)) return 0;
-        uint16_t interrupt_val;
+        uint16_t interrupt_val = 255;
         if (interrupt->type == INTERRUPT_STATE) {
             state = c1_find_state(ecl, interrupt->lambda_name);
             if (state == NULL) {
                 fprintf(stderr, "%s: state for interrupt %s not found: %s\n", argv0, interrupt->event->name, interrupt->lambda_name);
-                interrupt_val = 255;
             }
             else {
                 interrupt_val = state->index;
@@ -681,7 +680,9 @@ c1_write_gool(
         }
         else if (interrupt->type == INTERRUPT_SUB) {
             sub = th10_find_sub(ecl, interrupt->lambda_name);
-            interrupt_val = 0x8000 | sub->start_offset;
+            if (sub) {
+                interrupt_val = 0x8000 | sub->start_offset;
+            }
         }
         if (!file_write(out, &interrupt_val, sizeof(uint16_t))) return 0;
         if (!file_seek(out, pos + header->interrupt_count * 2)) return 0;
