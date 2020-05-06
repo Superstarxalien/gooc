@@ -1330,6 +1330,7 @@ c2_gool_ins[] = {
     { "soundstop",                  28, 0, 0, 0, -1, c1_gool_ins_soundstop_params },
     { "seqplay",                    28, 0, 0, 0, -1, c1_gool_ins_seqplay_params },
     { "movetolist",                 28, 0, 0, 0, -1, c1_gool_ins_movetolist_params },
+    { "gamefunc4",                  28, 0, 0, 0, -1, c1_gool_ins_gamefunc4_params },
     { "setcolor",                   36, 0, 0, 0, -1, c1_gool_ins_setcolor_params },
     { "anim",                       39, 0, 0, 0, -1, c1_gool_ins_anim_params },
     { "nop",                        47, 0, 0, 0, -1, c1_gool_ins_nop_params },
