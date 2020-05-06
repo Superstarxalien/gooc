@@ -339,9 +339,20 @@ thecl_param_t*
 param_val_new(
     int val)
 {
-    thecl_param_t* param_sp = param_new('S');
-    param_sp->value.val.S = val;
-    return param_sp;
+    thecl_param_t* param = param_new('S');
+    param->value.val.S = val;
+    return param;
+}
+
+thecl_param_t*
+param_var_new(
+    char* var)
+{
+    thecl_param_t* param = param_new('S');
+    param->value.val.S = field_get(var)->offset;
+    param->object_link = 0;
+    param->stack = 1;
+    return param;
 }
 
 thecl_label_t*

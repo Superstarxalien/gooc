@@ -42,11 +42,7 @@ c1_gool_ins_playframe_params(
     thecl_param_t* param;
     size_t c = list_count(params);
     if (c == 0) {
-        param = param_new('S');
-        param->stack = 1;
-        param->object_link = 0;
-        param->value.val.S = field_get("animframe")->offset;
-        list_append_new(params, param);
+        list_append_new(params, param_var_new("animframe"));
         list_append_new(params, param_val_new(1));
         list_append_new(params, param_val_new(3));
     }
@@ -74,11 +70,7 @@ c1_gool_ins_anim_params(
             param->value.val.S <<= 8;
         }
 
-        param = param_new('S');
-        param->stack = 1;
-        param->object_link = 0;
-        param->value.val.S = field_get("animseq")->offset;
-        list_prepend_new(params, param);
+        list_prepend_new(params, param_var_new("animseq"));
     }
     else if (c == 2) {
     }
@@ -378,9 +370,7 @@ c1_gool_ins_onexit_params(
     thecl_param_t* param;
     size_t c = list_count(params);
     if (c == 1) {
-        param = param_new('S');
-        param->value.val.S = field_get("hpc")->offset;
-        list_append_new(params, param);
+        list_append_new(params, param_val_new(field_get("hpc")->offset));
     }
     else {
         fprintf(stderr, "%s: onstateexit: wrong number of arguments (expected 1, got %zu)\n", argv0, c);
@@ -397,9 +387,7 @@ c1_gool_ins_settrans_params(
     thecl_param_t* param;
     size_t c = list_count(params);
     if (c == 1) {
-        param = param_new('S');
-        param->value.val.S = field_get("tpc")->offset;
-        list_append_new(params, param);
+        list_append_new(params, param_val_new(field_get("tpc")->offset));
     }
     else {
         fprintf(stderr, "%s: settrans: wrong number of arguments (expected 1, got %zu)\n", argv0, c);
@@ -456,15 +444,8 @@ c1_gool_ins_entitysetspawn_params(
     thecl_param_t* param;
     size_t c = list_count(params);
     if (c == 1) {
-        param = param_new('S');
-        param->value.val.S = field_get("player")->offset;
-        list_prepend_new(params, param);
-
-        param = param_new('S');
-        param->value.val.S = field_get("id")->offset;
-        param->stack = 1;
-        param->object_link = 0;
-        list_prepend_new(params, param);
+        list_prepend_new(params, param_val_new(field_get("player")->offset));
+        list_prepend_new(params, param_var_new("id"));
         list_append_new(params, param_val_new(8));
     }
     else {
@@ -482,17 +463,11 @@ c1_gool_ins_entitysetstate_params(
     thecl_param_t* param;
     size_t c = list_count(params);
     if (c == 1) {
-        param = param_new('S');
-        param->value.val.S = field_get("id")->offset;
-        param->stack = 1;
-        param->object_link = 0;
-        list_prepend_new(params, param);
+        list_prepend_new(params, param_var_new("id"));
         c = 2;
     }
     if (c == 2) {
-        param = param_new('S');
-        param->value.val.S = 5;
-        list_append_to(params, param, params->head);
+        list_append_to(params, param_val_new(5), params->head);
         list_append_new(params, param_val_new(10));
     }
     else {
@@ -537,11 +512,7 @@ c1_gool_ins_calcpath_params(
     thecl_param_t* param;
     size_t c = list_count(params);
     if (c == 0) {
-        param = param_new('S');
-        param->value.val.S = field_get("pathprog")->offset;
-        param->object_link = 0;
-        param->stack = 1;
-        list_append_new(params, param);
+        list_append_new(params, param_var_new("pathprog"));
         list_append_new(params, param_val_new(0));
         list_append_new(params, param_val_new(5));
         list_append_new(params, param_val_new(0));
@@ -795,11 +766,7 @@ c1_gool_ins_calclight_params(
     thecl_param_t* param;
     size_t c = list_count(params);
     if (c == 0) {
-        param = param_new('S');
-        param->value.val.S = field_get("v0")->offset;
-        param->stack = 1;
-        param->object_link = 0;
-        list_append_new(params, param);
+        list_append_new(params, param_var_new("v0"));
         list_append_new(params, param_val_new(5));
         list_append_new(params, param_val_new(4));
         list_append_new(params, param_val_new(6));
@@ -906,11 +873,7 @@ c1_gool_ins_moveto2d_params(
     thecl_param_t* param;
     size_t c = list_count(params);
     if (c == 0) {
-        param = param_new('S');
-        param->value.val.S = field_get("scale")->offset;
-        param->object_link = 0;
-        param->stack = 1;
-        list_append_new(params, param);
+        list_append_new(params, param_var_new("scale"));
         list_append_new(params, param_val_new(0));
         list_append_new(params, param_val_new(0));
         list_append_new(params, param_val_new(1));
@@ -928,11 +891,7 @@ c1_gool_ins_moveto2d_params(
             param->value.val.S /= 3;
         }
 
-        param = param_new('S');
-        param->value.val.S = field_get("scalex")->offset;
-        param->object_link = 0;
-        param->stack = 1;
-        list_prepend_new(params, param);
+        list_prepend_new(params, param_var_new("scale"));
         list_append_new(params, param_val_new(1));
         list_append_new(params, param_val_new(0));
     }
@@ -948,11 +907,6 @@ c1_gool_ins_moveto2d_params(
             param->value.val.S /= 3;
         }
 
-        param = param_new('S');
-        param->value.val.S = field_get("scalex")->offset;
-        param->object_link = 0;
-        param->stack = 1;
-        list_prepend_new(params, param);
         list_append_new(params, param_val_new(1));
         list_append_new(params, param_val_new(0));
     }
@@ -971,11 +925,7 @@ c1_gool_ins_setvel_params(
     thecl_param_t* param;
     size_t c = list_count(params);
     if (c == 0) {
-        param = param_new('S');
-        param->value.val.S = field_get("speed")->offset;
-        param->object_link = 0;
-        param->stack = 1;
-        list_append_new(params, param);
+        list_append_new(params, param_var_new("speed"));
         list_append_new(params, param_val_new(3));
         list_append_new(params, param_val_new(5));
         list_append_new(params, param_val_new(2));
