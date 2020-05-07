@@ -1291,6 +1291,7 @@ c2_gool_ins[] = {
     { "playtext",                   56, 2, 1, 1, -1, c1_gool_ins_playtext_params },
     { "playframe",                  57, 3, 1, 1, -1, c1_gool_ins_playframe_params },
     { "calcpath",                   58, 0, 0, 0, -1, c1_gool_ins_calcpath_params },
+    { "moveto2d",                 0x85, 0, 0, 0, -1, c1_gool_ins_moveto2d_params },
     { "getvert",                    58, 0, 0, 0, -1, c1_gool_ins_getvert_params },
     { "setvel",                     58, 0, 0, 0, -1, c1_gool_ins_setvel_params },
     { "vectransf",                  58, 3, 0, 0, -1, c1_gool_ins_vectransf_params },
