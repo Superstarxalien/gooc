@@ -222,6 +222,7 @@ c2_globals[] = {
     { "LIFECOUNTER",         7 },
 
     { "PAUSEMENU",          12 },
+    { "LIFEICONTRANSX",     13 },
 
     { "DOCTOR",             16 },
 
