@@ -636,7 +636,7 @@ Subroutine_Modifier:
         for (int i=0;i<state->current_sub->arg_count;++i)
             objfield_create(state, state->current_sub->args[i]->name);
         while (state->current_sub->arg_count)
-            arg_delete(state, state->current_sub, state->current_sub->args[0]->name);
+            arg_delete(state, state->current_sub, state->current_sub->args[state->current_sub->arg_count-1]->name);
         state->current_sub->mod_trans = true;
         state->current_sub->is_trans = true;
     }
