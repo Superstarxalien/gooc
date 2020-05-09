@@ -215,6 +215,7 @@ int yydebug = 0;
 %token TRANS "trans"
 %token TRANSARGS "__transargs"
 %token MOD_TRANS "__trans"
+%token MOD_ARGS "__args"
 %token ONCE "once"
 %token NOFIRST "nofirst"
 %token EVENT "event"
@@ -640,6 +641,7 @@ Subroutine_Modifier:
         state->current_sub->mod_trans = true;
         state->current_sub->is_trans = true;
     }
+    | "__args" "(" ArgumentDeclaration ")"
     ;
 
 Subroutine_Body:

@@ -89,6 +89,7 @@
 "inline"   return INLINE;
 "__transargs"      return TRANSARGS;
 "__trans"          return MOD_TRANS;
+"__args"   { if (!g_parser_state->current_state && g_parser_state->current_sub && g_parser_state->current_sub->mod_trans) return MOD_ARGS; else { yylval.string = strdup(yytext); return IDENTIFIER; } }
 
 "goto"     return GOTO;
 "unless"   return UNLESS;
