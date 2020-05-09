@@ -1323,6 +1323,7 @@ c2_gool_ins[] = {
     { "sounddecay",                 66, 0, 0, 0, -1, c1_gool_ins_sounddecay_params },
     { "soundset",                   66, 0, 0, 0, -1, c1_gool_ins_soundset_params },
     { "soundcheck",                 66, 0, 0, 0, -1, c1_gool_ins_soundcheck_params },
+    { "calclight",                  67, 0, 0, 0, -1, c1_gool_ins_calclight_params },
     { "checkzonecollision",         67, 0, 0, 0, -1, c2_gool_ins_checkzonecollision_params },
     { "broadcastevent",             68, 3, 0, 0,  2, c1_gool_ins_sendevent_params },
     { "cascadeevent",               69, 3, 0, 0,  2, c1_gool_ins_sendevent_params },
