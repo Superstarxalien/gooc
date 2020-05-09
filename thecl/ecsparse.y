@@ -1780,7 +1780,7 @@ Instruction:
     | "return" {
         if (state->current_sub->is_inline)
             expression_create_goto(state, GOTO, "inline_end", NULL);
-        else {
+        else {/*
             int pop = 0;
             for (int v=0; v < state->current_sub->var_count; ++v)
                 for (int s=1; s < state->scope_cnt; ++s)
@@ -1791,7 +1791,7 @@ Instruction:
                 snprintf(buf, 512, "@%s_sub_end", state->current_sub->name);
                 expression_create_goto_pop(state, GOTO, buf, NULL, pop);
             }
-            else {
+            else */{
                 const expr_t* expr = expr_get_by_symbol(state->version, RETURN);
                 instr_add(state, state->current_sub, instr_new(state, expr->id, "SSSSS", 0, 0, 0x25, 0, 2));
             }
