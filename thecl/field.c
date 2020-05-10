@@ -321,6 +321,8 @@ c2_events[] = {
 
     { "EventBearStart",         65 },
 
+    { "EventBoxBreak",          72 },
+
     { NULL, 0 }
 };
 
