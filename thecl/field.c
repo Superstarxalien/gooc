@@ -277,6 +277,7 @@ c2_globals[] = {
     { "SAVEDCRYSTALPOOL1", 141 },
     { "SAVEDCRYSTALPOOL2", 142 },
 
+    { "SECTION",           145 },
     { "SECTIONDEATHCOUNT", 146 },
 
     { "LEVELBOXCOUNT",     148 },
