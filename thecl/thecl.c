@@ -355,6 +355,17 @@ param_var_new(
     return param;
 }
 
+thecl_param_t*
+param_null_new(
+    void)
+{
+    thecl_param_t* param = param_new('S');
+    param->value.val.S = 0;
+    param->stack = 1;
+    param->object_link = -2;
+    return param;
+}
+
 thecl_label_t*
 label_find(
     thecl_sub_t* sub,

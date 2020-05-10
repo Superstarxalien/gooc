@@ -1266,6 +1266,26 @@ c2_gool_ins_ins72_params(
     return params;
 }
 
+static list_t*
+c1_gool_ins_killvictims_params(
+    list_t* params,
+    int argc)
+{
+    thecl_param_t* param;
+    size_t c = list_count(params);
+    if (c == 0) {
+        list_append_new(params, param_null_new());
+        list_append_new(params, param_val_new(5));
+        list_append_new(params, param_val_new(18));
+        list_append_new(params, param_val_new(12));
+    }
+    else {
+        fprintf(stderr, "%s: killvictims: wrong number of arguments (expected 0, got %zu)\n", argv0, c);
+        return NULL;
+    }
+    return params;
+}
+
 static const gool_ins_t
 c2_gool_ins[] = {
      /* NAME                        ID VA POP R   L              VALIDATE */
@@ -1281,6 +1301,7 @@ c2_gool_ins[] = {
     { "seqplay",                    28, 0, 0, 0, -1, c1_gool_ins_seqplay_params },
     { "movetolist",                 28, 0, 0, 0, -1, c1_gool_ins_movetolist_params },
     { "gamefunc4",                  28, 0, 0, 0, -1, c1_gool_ins_gamefunc4_params },
+    { "killvictims",                28, 0, 0, 0, -1, c1_gool_ins_killvictims_params },
     { "setcolor",                   36, 0, 0, 0, -1, c1_gool_ins_setcolor_params },
     { "anim",                       39, 0, 0, 0, -1, c1_gool_ins_anim_params },
     { "nop",                        47, 0, 0, 0, -1, c1_gool_ins_nop_params },

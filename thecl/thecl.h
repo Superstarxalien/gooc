@@ -68,6 +68,8 @@ thecl_param_t* param_val_new(
     int val);
 thecl_param_t* param_var_new(
     char* var);
+thecl_param_t* param_null_new(
+    void);
 
 typedef struct thecl_instr_t {
     thecl_instr_type type;
