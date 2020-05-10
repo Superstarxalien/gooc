@@ -199,7 +199,8 @@ c1_events[] = {
 
     { "EventRespawn",           19 },
 
-    { "EventWin",               22 },
+    { "EventBounce",            21 },
+    { "EventWarp",              22 },
 
     { "EventDespawn",           26 },
 
@@ -302,6 +303,7 @@ c2_events[] = {
 
     { "EventRespawn",           19 },
 
+    { "EventBounce",            21 },
     { "EventWarp",              22 },
 
     { "EventDespawn",           26 },
