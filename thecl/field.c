@@ -194,7 +194,8 @@ c1_events[] = {
     { "EventSpinHit",            4 },
 
     { "EventTriggered",          8 },
-
+    { "EventFallKill",           9 },
+    { "EventBoxStackBreak",      9 },
     { "EventHitInvincible",     10 },
 
     { "EventRespawn",           19 },
@@ -298,7 +299,8 @@ c2_events[] = {
     { "EventSpinHit",            4 },
 
     { "EventTriggered",          8 },
-
+    { "EventFallKill",           9 },
+    { "EventBoxStackBreak",      9 },
     { "EventHitInvincible",     10 },
 
     { "EventRespawn",           19 },
