@@ -239,7 +239,7 @@ c2_globals[] = {
 
     { "SFXVOL",             34 },
     { "MUSVOL",             35 },
-
+    { "CHECKPOINTCOUNT",    36 },
     { "CAMTRANSX",          37 },
     { "CAMTRANSY",          38 },
     { "CAMTRANSZ",          39 },
@@ -275,6 +275,8 @@ c2_globals[] = {
     { "FADECONTROL",       106 },
 
     { "DEATHCOUNT",        108 },
+
+    { "BONUSSTATE",        132 },
 
     { "SAVEDCRYSTALPOOL1", 141 },
     { "SAVEDCRYSTALPOOL2", 142 },
