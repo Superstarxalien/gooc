@@ -2012,26 +2012,26 @@ ExpressionSubset:
     | "cos" "(" Expression ")"                                    { $$ = EXPR_2(COS, expression_load_new(state, param_sp_new()), $3); }
     | "fieldval" "(" Expression ")"                               { $$ = EXPR_2(FVAL, expression_load_new(state, param_sp_new()), $3); }
     | "fieldrow" "(" Expression "," Expression ")"                { $$ = EXPR_2(FROW, $3, $5); }
-    | Address "[" Expression "]"                                  { if (state->version == 1) $$ = EXPR_4(MISC, expression_load_new(state, $1), expression_val_new(state, 5), $3, expression_val_new(state, 0));
-                                                                    else if (state->version == 2) $$ = EXPR_2(ARRL, expression_load_new(state, $1), $3);
+    | Address "[" Expression "]"                                  { if (!is_post_c2(state->version)) $$ = EXPR_4(MISC, expression_load_new(state, $1), expression_val_new(state, 5), $3, expression_val_new(state, 0));
+                                                                    else $$ = EXPR_2(ARRL, expression_load_new(state, $1), $3);
                                                                   }
-    | "getval" "(" Expression "," Expression ")"                  { if (state->version == 1) $$ = EXPR_4(MISC, $3, expression_val_new(state, 5), $5, expression_val_new(state, 0)); }
+    | "getval" "(" Expression "," Expression ")"                  { if (!is_post_c2(state->version)) $$ = EXPR_4(MISC, $3, expression_val_new(state, 5), $5, expression_val_new(state, 0)); }
     | "distance" "(" Expression "," Expression ")"                { $$ = EXPR_4(MISC, expression_load_new(state, param_null_new()), $3, $5, expression_val_new(state, 1)); }
     | "atan" "(" Expression "," Expression ")"                    { $$ = EXPR_2(ATAN, $3, $5); }
     | "atan2" "(" Expression "," Expression ")"                   { $$ = EXPR_4(MISC, $5, $3, expression_val_new(state, 0), expression_val_new(state, 2)); }
     | "getfield" "(" Expression "," Expression ")"                { $$ = EXPR_4(MISC, $5, $3, expression_val_new(state, 0), expression_val_new(state, 3)); }
 
-    | "atan2_mirrored" "(" Expression ")"                         { if (state->version == 1) $$ = EXPR_4(MISC, expression_load_new(state, param_null_new()), $3, expression_val_new(state, 0), expression_val_new(state, 5)); }
+    | "atan2_mirrored" "(" Expression ")"                         { if (!is_post_c2(state->version)) $$ = EXPR_4(MISC, expression_load_new(state, param_null_new()), $3, expression_val_new(state, 0), expression_val_new(state, 5)); }
     | "distance" "(" Expression "," Expression "," Expression ")" { $$ = EXPR_4(MISC, $3, $5, $7, expression_val_new(state, 6)); }
     | "objectget" "(" Expression ")"                              { $$ = EXPR_4(MISC, $3, expression_val_new(state, 5), expression_val_new(state, 0), expression_val_new(state, 7)); }
 
     | "entitygetstate" "(" Expression ")"                         { $$ = EXPR_4(MISC, expression_load_new(state, param_var_new(field_get("id")->offset)), expression_val_new(state, 0), $3, expression_val_new(state, 11)); }
     | "entitygetstate" "(" Expression "," Expression ")"          { $$ = EXPR_4(MISC, $3, expression_val_new(state, 0), $5, expression_val_new(state, 11)); }
-//  | "gamefunc" "(" Expression "," Expression ")"                { if (state->version == 1) $$ = EXPR_4(MISC, $3, expression_val_new(state, 0), $5, expression_val_new(state, 12)); }
+//  | "gamefunc" "(" Expression "," Expression ")"                { if (!is_post_c2(state->version)) $$ = EXPR_4(MISC, $3, expression_val_new(state, 0), $5, expression_val_new(state, 12)); }
     | "getvalideventobj" "(" Expression "," Expression "," Expression ")"   { $$ = EXPR_4(MISC, $3, $5, $7, expression_val_new(state, 13)); }
     | "getvalideventobj" "(" Expression "," Expression ")"        { $$ = EXPR_4(MISC, $3, expression_val_new(state, 0), $5, expression_val_new(state, 13)); }
-    | "iscolliding" "(" Expression "," Expression ")"             { if (state->version == 1) $$ = EXPR_4(MISC, $3, $5, expression_val_new(state, 0), expression_val_new(state, 14)); }
-//  | "__unk2" "(" Expression "," Expression ")"                  { if (state->version == 1) $$ = EXPR_4(MISC, $3, expression_val_new(state, 0), $5, expression_val_new(state, 15)); }
+    | "iscolliding" "(" Expression "," Expression ")"             { if (!is_post_c2(state->version)) $$ = EXPR_4(MISC, $3, $5, expression_val_new(state, 0), expression_val_new(state, 14)); }
+//  | "__unk2" "(" Expression "," Expression ")"                  { if (!is_post_c2(state->version)) $$ = EXPR_4(MISC, $3, expression_val_new(state, 0), $5, expression_val_new(state, 15)); }
 
     | "tryload" "(" Expression ")"                                { $$ = EXPR_2(NTRY, $3, expression_val_new(state, 3)); }
     | "ntry5" "(" Expression_List ")" {
@@ -2339,8 +2339,8 @@ instr_add(
     }
     /* branch optimization */
     else if ((instr->id == beqz_expr->id || instr->id == bnez_expr->id) && instr->param_count == 5 &&
-        ((state->version != 1) ||
-        ((state->version == 1) &&
+        (is_post_c2(state->version) ||
+        (!is_post_c2(state->version) &&
         ((thecl_param_t*)instr->params.tail->data)->value.val.S == 0 &&
         ((thecl_param_t*)instr->params.tail->prev->data)->value.val.S != 0))) {
         thecl_instr_t* last_ins = list_tail(&sub->instrs);
@@ -2357,10 +2357,10 @@ instr_add(
                 if (param->value.val.S != 0x1F || !param->stack || param->object_link != 0)
                     goto NO_OPTIM;
 
-                if (state->version == 1) {
+                if (!is_post_c2(state->version)) {
                     param = instr->params.tail->prev->data;
                     param->value.val.S = param->value.val.S == 1 ? 2 : 1;
-                } else if (state->version == 2) {
+                } else {
                     instr->id = instr->id == beqz_expr->id ? bnez_expr->id : beqz_expr->id;
                 }
 
