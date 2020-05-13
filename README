@@ -3,5 +3,5 @@
   This table displays which of the main actions are
 supported for each game.
 
-Action   1 2
-gooc c   y y
+Action   1 2 3
+gooc c   y y n
