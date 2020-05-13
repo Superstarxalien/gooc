@@ -221,6 +221,7 @@ int yydebug = 0;
 %token EVENT "event"
 %token INLINE "inline"
 %token DEFAULT "default"
+%token MIPS "mips"
 %token BRACE_OPEN "{"
 %token BRACE_CLOSE "}"
 %token SQUARE_OPEN "["

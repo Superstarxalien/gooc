@@ -269,6 +269,7 @@ thecl_instr_new(void)
     instr->type = THECL_INSTR_INSTR;
     instr->flags = 0;
     list_init(&instr->params);
+    instr->mips = false;
     return instr;
 }
 
@@ -417,6 +418,16 @@ macro_get(
             return macro;
     }
     return NULL;
+}
+
+bool
+is_post_c2(
+    unsigned int version)
+{
+    switch (version) {
+    case 2: case 3: return true;
+    default: return false;
+    }
 }
 
 static void

@@ -71,6 +71,9 @@ thecl_param_t* param_var_new(
 thecl_param_t* param_null_new(
     void);
 
+bool is_post_c2(
+    unsigned int version);
+
 typedef struct thecl_instr_t {
     thecl_instr_type type;
     char* string;
@@ -79,7 +82,7 @@ typedef struct thecl_instr_t {
     uint8_t id;
     size_t param_count;
     list_t params;
-    int op_type;
+    bool mips;
 
     /* Etc.: */
     unsigned int offset;
@@ -268,7 +271,7 @@ int gool_pool_force_make_index(
 typedef struct {
     int instr_flags; /* Special flags that are copied to instr->flags, used by ecsparse.y */
     unsigned int version;
-    bool has_mips;
+    bool mips_mode;
     list_t expressions;
     list_t addresses;
     list_t block_stack;
