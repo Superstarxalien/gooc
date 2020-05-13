@@ -277,6 +277,9 @@ c2_globals[] = {
     { "DEATHCOUNT",        108 },
 
     { "BONUSSTATE",        132 },
+    { "BONUSFRUITCOUNTER", 133 },
+    { "BONUSLIFECOUNTER",  134 },
+    { "BONUSBOXCOUNTER",   135 },
 
     { "SAVEDCRYSTALPOOL1", 141 },
     { "SAVEDCRYSTALPOOL2", 142 },
