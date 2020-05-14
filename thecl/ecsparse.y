@@ -1152,7 +1152,19 @@ Block:
     | CodeBlock
     | OnceBlock
     | SaveBlock
+    | MipsBlock
     ;
+
+MipsBlock:
+    "mips" {
+        if (state->mips_mode) {
+            yyerror(state, "invalid mips block");
+            exit(2);
+        }
+        state->mips_mode = true;
+    } CodeBlock {
+        state->mips_mode = false;
+    }
 
 SaveBlock:
     "save" "(" Address_List ")" {
@@ -1781,6 +1793,7 @@ Instruction:
     | BreakStatement
     | ContinueStatement
     | "return" {
+        state->scope_stack[state->scope_cnt-1].returned = true;
         if (state->current_sub->is_inline)
             expression_create_goto(state, GOTO, "inline_end", NULL);
         else {/*
@@ -2285,7 +2298,7 @@ instr_add(
     thecl_sub_t* sub,
     thecl_instr_t* instr)
 {
-    if (state->ignore_block) {
+    if (state->ignore_block || state->scope_stack[state->scope_cnt-1].returned) {
         thecl_instr_free(instr);
         return;
     }
@@ -3136,6 +3149,7 @@ sub_begin(
     parser_state_t* state,
     char* name)
 {
+    scope_begin(state); /* first scope used only for the automatic return instruction */
     scope_begin(state);
 
     thecl_sub_t* sub = malloc(sizeof(thecl_sub_t));
@@ -3205,6 +3219,7 @@ sub_finish(
         }
         state->ecl->ins_offset += state->current_sub->offset;
     }
+    scope_finish(state, false);
 
     state->current_sub = NULL;
 }
@@ -3214,8 +3229,10 @@ scope_begin(
     parser_state_t* state
 ) {
     ++state->scope_cnt;
-    state->scope_stack = realloc(state->scope_stack, sizeof(int)*state->scope_cnt);
-    state->scope_stack[state->scope_cnt - 1] = state->scope_id++;
+    state->scope_stack = realloc(state->scope_stack, sizeof(thecl_scope_t)*state->scope_cnt);
+    state->scope_stack[state->scope_cnt - 1].id = state->scope_id++;
+    state->scope_stack[state->scope_cnt - 1].mips = state->mips_mode;
+    state->scope_stack[state->scope_cnt - 1].returned = false;
     state->block_bound = 1;
 }
 
@@ -3229,7 +3246,7 @@ scope_finish(
     /* pop GOOL stack variables */
     int pop = 0;
     for (int v=0; v < state->current_sub->var_count; ++v)
-        if (state->current_sub->vars[v]->scope == state->scope_stack[state->scope_cnt]) {
+        if (state->current_sub->vars[v]->scope == state->scope_stack[state->scope_cnt].id) {
             state->current_sub->vars[v]->is_unused = true;
             ++pop;
         }
@@ -3238,7 +3255,10 @@ scope_finish(
         instr_add(state, state->current_sub, instr_new(state, expr->id, "SSSSS", 0, pop, 0x25, 0, 0));
     }
 
-    state->scope_stack = realloc(state->scope_stack, sizeof(int)*state->scope_cnt);
+    if (!state->scope_stack[state->scope_cnt].returned) {
+        state->scope_stack[state->scope_cnt-1].mips = state->scope_stack[state->scope_cnt].mips;
+    }
+    state->scope_stack = realloc(state->scope_stack, sizeof(thecl_scope_t)*state->scope_cnt);
     state->block_bound = 1;
 }
 
@@ -3387,7 +3407,7 @@ var_create(
     var->stack = var_get_new_stack(state, sub);
     var->is_unused = false;
     var->is_written = false;
-    var->scope = state->scope_stack[state->scope_cnt - 1];
+    var->scope = state->scope_stack[state->scope_cnt - 1].id;
 
     ++sub->var_count;
     sub->vars = realloc(sub->vars, sub->var_count * sizeof(thecl_variable_t*));
@@ -3437,7 +3457,7 @@ var_accessible(
     thecl_variable_t* var)
 {
     for (int scope_state=0; scope_state<state->scope_cnt; ++scope_state) {
-        if (state->scope_stack[scope_state] == var->scope)
+        if (state->scope_stack[scope_state].id == var->scope)
             return true;
     }
     return false;

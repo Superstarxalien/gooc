@@ -5,8 +5,8 @@ flex_target(EcsScan ecsscan.l ${CMAKE_CURRENT_BINARY_DIR}/ecsscan.c)
 include_directories(${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_BINARY_DIR})
 add_executable(gooc
   ${BISON_EcsParse_OUTPUT_SOURCE} ${FLEX_EcsScan_OUTPUTS}
-  expr.c thecl.c path.c thecl10.c field.c gool_ins.c
-  expr.h thecl.h path.h gool_ins.h c1_gool.h c2_gool.h field.h)
+  expr.c thecl.c path.c thecl10.c field.c gool_ins.c gmips.c
+  expr.h thecl.h path.h gool_ins.h c1_gool.h c2_gool.h field.h gmips.h)
 if(WIN32)
     set(ADDITIONAL_LIBRARIES "")
 else()

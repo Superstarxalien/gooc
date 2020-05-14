@@ -36,6 +36,7 @@
 #include "value.h"
 #include "util.h"
 #include "field.h"
+#include "gmips.h"
 
 extern const char* gool_ename_charmap;
 extern const int gool_null_eid;
@@ -269,13 +270,19 @@ int gool_pool_force_make_index(
     uint32_t val);
 
 typedef struct {
+    int id;
+    bool mips;
+    bool returned;
+} thecl_scope_t;
+
+typedef struct {
     int instr_flags; /* Special flags that are copied to instr->flags, used by ecsparse.y */
     unsigned int version;
     bool mips_mode;
     list_t expressions;
     list_t addresses;
     list_t block_stack;
-    int* scope_stack;
+    thecl_scope_t* scope_stack;
     int scope_cnt;
     int scope_id;
     thecl_sub_t* current_sub;
