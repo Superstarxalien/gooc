@@ -356,7 +356,6 @@ int yydebug = 0;
 %left ADD SUBTRACT
 %left MULTIPLY DIVIDE MODULO
 %precedence NOT B_NOT
-%precedence ABS
 
 %expect 0
 %%
@@ -1155,6 +1154,7 @@ MipsBlock:
             yyerror(state, "invalid mips block");
             exit(2);
         }
+		state->stack_adjust = 0;
         state->mips_mode = true;
     } CodeBlock {
         state->mips_mode = false;

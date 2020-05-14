@@ -288,6 +288,7 @@ typedef struct {
     int instr_flags; /* Special flags that are copied to instr->flags, used by ecsparse.y */
     unsigned int version;
     bool mips_mode;
+    int stack_adjust;
     list_t expressions;
     list_t addresses;
     list_t block_stack;
