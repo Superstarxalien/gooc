@@ -46,13 +46,7 @@
 #include "gool_ins.h"
 #include "c1_gool.h"
 #include "c2_gool.h"
-
-typedef struct {
-    char* text;
-} string_t;
-
-static list_t* string_list_add(list_t* list, char* text);
-static void string_list_free(list_t* list);
+#include "gmips.h"
 
 static thecl_instr_t* instr_new(parser_state_t* state, uint8_t id, const char* format, ...);
 static thecl_instr_t* instr_new_list(parser_state_t* state, uint8_t id, list_t* list);
@@ -2206,30 +2200,6 @@ Literal_Int:
     | "+" INTEGER { $$ = +$2; }
     ;
 %%
-
-static list_t*
-string_list_add(
-    list_t* list,
-    char* text)
-{
-    string_t* s = malloc(sizeof(string_t));
-    s->text = text;
-    list_append_new(list, s);
-    return list;
-}
-
-static void
-string_list_free(
-    list_t* list)
-{
-    string_t* s;
-    list_for_each(list, s) {
-        free(s->text);
-        free(s);
-    }
-    list_free_nodes(list);
-    free(list);
-}
 
 static thecl_instr_t*
 instr_init(
