@@ -53,6 +53,7 @@ PACK_BEGIN
             uint32_t rs:5;
             uint32_t opcode:6;
         } r;
+        int ins;
     };
 PACK_END
 } PACK_ATTRIBUTE mips_ins_t;
@@ -83,5 +84,6 @@ typedef struct {
 } mips_reg_block_t;
 
 mips_reg_block_t* mips_reg_block_new(void);
+mips_ins_fmt_t* mips_find_format(const char* name);
 
 #endif

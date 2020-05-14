@@ -3231,7 +3231,7 @@ scope_begin(
     ++state->scope_cnt;
     state->scope_stack = realloc(state->scope_stack, sizeof(thecl_scope_t)*state->scope_cnt);
     state->scope_stack[state->scope_cnt - 1].id = state->scope_id++;
-    state->scope_stack[state->scope_cnt - 1].mips = state->mips_mode;
+    state->scope_stack[state->scope_cnt - 1].mips = state->scope_stack[state->scope_cnt - 2].mips;
     state->scope_stack[state->scope_cnt - 1].returned = false;
     state->block_bound = 1;
 }

@@ -58,7 +58,8 @@ mips_instructions[] = {
     { "and",   'R', "36", "0", "rd", "rt", "rs", "0" },
     { "or",    'R', "37", "0", "rd", "rt", "rs", "0" },
     { "xor",   'R', "38", "0", "rd", "rt", "rs", "0" },
-    { "nor",   'R', "39", "0", "rd", "rt", "rs", "0" }
+    { "nor",   'R', "39", "0", "rd", "rt", "rs", "0" },
+    { NULL,    0, NULL, NULL, NULL, NULL, NULL, NULL }
 };
 
 mips_reg_block_t*
@@ -124,4 +125,17 @@ reg_get_expr(mips_reg_t* reg)
         return reg->saved_expr;
     }
     else return NULL;
+}
+
+mips_ins_fmt_t*
+mips_find_format(const char* name)
+{
+    const mips_ins_fmt_t* format = mips_instructions;
+    while (format->name) {
+        if (!strcmp(format->name, name)) {
+            return format;
+        }
+        ++format;
+    }
+    return NULL;
 }

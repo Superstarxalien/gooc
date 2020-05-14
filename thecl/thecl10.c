@@ -926,6 +926,19 @@ c2_instr_serialize(
     thecl_instr_t* instr,
     bool ignore_error)
 {
+    if (instr->mips) {
+        if (instr->label_name) {
+            thecl_label_t* label = label_find(sub, instr->label_name);
+            if (label) {
+                instr->ins.i.imm = label->offset - (instr->offset + 1);
+            }
+            else {
+                fprintf(stderr, "%s:c2_instr_serialize: in sub %s: label not found '%s'", argv0, sub->name, instr->label_name);
+            }
+        }
+        return instr->ins.ins;
+    }
+
     const thecl_param_t* param;
 
     const char* format = th10_find_format(ecl->version, instr->id);

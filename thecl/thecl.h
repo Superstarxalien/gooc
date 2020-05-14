@@ -80,10 +80,19 @@ typedef struct thecl_instr_t {
     char* string;
 
     /* THECL_INSTR_INSTR: */
-    uint8_t id;
-    size_t param_count;
-    list_t params;
     bool mips;
+    union {
+        struct {
+            uint8_t id;
+            size_t param_count;
+            list_t params;
+        };
+        struct {
+            char* label_name;
+            mips_ins_t ins;
+        };
+    };
+
 
     /* Etc.: */
     unsigned int offset;
