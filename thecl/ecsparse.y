@@ -3255,8 +3255,8 @@ scope_finish(
         instr_add(state, state->current_sub, instr_new(state, expr->id, "SSSSS", 0, pop, 0x25, 0, 0));
     }
 
-    if (!state->scope_stack[state->scope_cnt].returned) {
-        state->scope_stack[state->scope_cnt-1].mips = state->scope_stack[state->scope_cnt].mips;
+    if (state->scope_cnt >= 1 && !state->scope_stack[state->scope_cnt].returned && !state->scope_stack[state->scope_cnt].mips && state->scope_stack[state->scope_cnt-1].mips) {
+        /* TODO: start MIPS mode */
     }
     state->scope_stack = realloc(state->scope_stack, sizeof(thecl_scope_t)*state->scope_cnt);
     state->block_bound = 1;
