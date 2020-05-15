@@ -29,6 +29,7 @@
 #include <config.h>
 #include <stdlib.h>
 #include <string.h>
+#include "program.h"
 #include "thecl.h"
 #include "ecsparse.h"
 #include "gmips.h"
@@ -52,13 +53,27 @@ mips_registers[] = {
 static const mips_ins_fmt_t
 mips_instructions[] = {
     { "nop",   'R', "0",  "0", "0",  "0",  "0",  "0" },
-    { "jr",    'R', "9",  "0", "rd", "0",  "rs", "0" },
+    { "jr",    'R', "8",  "0", "0",  "0",  "rs", "0" },
+    { "jalr",  'R', "9",  "0", "rd", "0",  "rs", "0" },
     { "addu",  'R', "33", "0", "rd", "rt", "rs", "0" },
     { "subu",  'R', "35", "0", "rd", "rt", "rs", "0" },
     { "and",   'R', "36", "0", "rd", "rt", "rs", "0" },
     { "or",    'R', "37", "0", "rd", "rt", "rs", "0" },
     { "xor",   'R', "38", "0", "rd", "rt", "rs", "0" },
     { "nor",   'R', "39", "0", "rd", "rt", "rs", "0" },
+
+    { "lb",    'I', "imm", "rt", "rs", "32", NULL, NULL },
+    { "lh",    'I', "imm", "rt", "rs", "33", NULL, NULL },
+    { "lwl",   'I', "imm", "rt", "rs", "34", NULL, NULL },
+    { "lw",    'I', "imm", "rt", "rs", "35", NULL, NULL },
+    { "lbu",   'I', "imm", "rt", "rs", "36", NULL, NULL },
+    { "lhu",   'I', "imm", "rt", "rs", "37", NULL, NULL },
+    { "lwr",   'I', "imm", "rt", "rs", "38", NULL, NULL },
+    { "sb",    'I', "imm", "rt", "rs", "40", NULL, NULL },
+    { "sh",    'I', "imm", "rt", "rs", "41", NULL, NULL },
+    { "swl",   'I', "imm", "rt", "rs", "42", NULL, NULL },
+    { "sw",    'I', "imm", "rt", "rs", "43", NULL, NULL },
+    { "swr",   'I', "imm", "rt", "rs", "46", NULL, NULL },
     { NULL,    0, NULL, NULL, NULL, NULL, NULL, NULL }
 };
 
@@ -93,14 +108,55 @@ mips_reg_block_new(void)
 }
 
 mips_reg_t*
-get_usable_reg(mips_reg_block_t* block)
+get_reg(mips_reg_block_t* block, const char* name)
 {
     for (int i=0; i<32; ++i) {
-        if (block->regs[i].status == MREG_STATUS_FREE || block->regs[i].status == MREG_STATUS_USED) {
+        if (!strcmp(name, block->regs[i].name)) {
             return &block->regs[i];
         }
     }
     return NULL;
+}
+
+mips_reg_t*
+get_usable_reg(mips_reg_block_t* block)
+{
+    for (int i=0; i<32; ++i) {
+        if (block->regs[i].status == MREG_STATUS_FREE) {
+            return &block->regs[i];
+        }
+    }
+    for (int i=0; i<32; ++i) {
+        if (block->regs[i].status == MREG_STATUS_USED) {
+            return &block->regs[i];
+        }
+    }
+    return NULL;
+}
+
+void
+free_reg(mips_reg_t* reg)
+{
+    if (reg->status == MREG_STATUS_IN_USE || reg->status == MREG_STATUS_USED) {
+        reg->status = MREG_STATUS_FREE;
+        if (reg->saved_expr) {
+            expression_free(reg->saved_expr);
+        }
+        if (reg->saved_param) {
+            param_free(reg->saved_param);
+        }
+    }
+}
+
+void
+clean_regs(mips_reg_block_t* block)
+{
+    for (int i = 0; i < 32; ++i) {
+        if (block->regs[i].status == MREG_STATUS_IN_USE) {
+            block->regs[i].status = MREG_STATUS_USED;
+        }
+        free_reg(&block->regs[i]);
+    }
 }
 
 thecl_param_t*
@@ -138,4 +194,59 @@ mips_find_format(const char* name)
         ++format;
     }
     return NULL;
+}
+
+static int
+mips_ins_getval(
+    const char* op,
+    int imm,
+    int shamt,
+    int rd,
+    int rt,
+    int rs,
+    int addr)
+{
+    if (!strcmp(op, "imm")) return imm;
+    else if (!strcmp(op, "shamt")) return shamt;
+    else if (!strcmp(op, "rd")) return rd;
+    else if (!strcmp(op, "rt")) return rt;
+    else if (!strcmp(op, "rs")) return rs;
+    else if (!strcmp(op, "addr")) return addr;
+    else return atoi(op);
+}
+
+int
+mips_instr_init(
+    const char* name,
+    int imm,
+    int shamt,
+    int rd,
+    int rt,
+    int rs,
+    int addr)
+{
+    const mips_ins_fmt_t* fmt = mips_find_format(name);
+    mips_ins_t ins;
+    ins.ins = 0;
+    switch (fmt->fmt) {
+    case 'R':
+        ins.r.funct = mips_ins_getval(fmt->ops[0], imm, shamt, rd, rt, rs, addr);
+        ins.r.shamt = mips_ins_getval(fmt->ops[1], imm, shamt, rd, rt, rs, addr);
+        ins.r.rd = mips_ins_getval(fmt->ops[2], imm, shamt, rd, rt, rs, addr);
+        ins.r.rt = mips_ins_getval(fmt->ops[3], imm, shamt, rd, rt, rs, addr);
+        ins.r.rs = mips_ins_getval(fmt->ops[4], imm, shamt, rd, rt, rs, addr);
+        ins.r.opcode = mips_ins_getval(fmt->ops[5], imm, shamt, rd, rt, rs, addr);
+        break;
+    case 'I':
+        ins.i.imm = mips_ins_getval(fmt->ops[0], imm, shamt, rd, rt, rs, addr);
+        ins.i.rt = mips_ins_getval(fmt->ops[1], imm, shamt, rd, rt, rs, addr);
+        ins.i.rs = mips_ins_getval(fmt->ops[2], imm, shamt, rd, rt, rs, addr);
+        ins.i.opcode = mips_ins_getval(fmt->ops[3], imm, shamt, rd, rt, rs, addr);
+        break;
+    case 'J': break;
+    default:
+        fprintf(stdout, "%s:mips_instr_init: error: invalid mips instruction type %c", argv0, fmt->fmt);
+        exit(2);
+    }
+    return ins.ins;
 }

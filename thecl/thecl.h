@@ -72,6 +72,9 @@ thecl_param_t* param_var_new(
 thecl_param_t* param_null_new(
     void);
 
+int get_obj_proc_offset(
+    unsigned int version);
+
 bool is_post_c2(
     unsigned int version);
 
@@ -289,6 +292,8 @@ typedef struct {
     unsigned int version;
     bool mips_mode;
     int stack_adjust;
+    mips_reg_block_t* reg_block;
+    mips_reg_t* top_reg;
     list_t expressions;
     list_t addresses;
     list_t block_stack;

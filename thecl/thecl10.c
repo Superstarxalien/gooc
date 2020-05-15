@@ -322,6 +322,8 @@ c1_parse(
     path_add(state, filename);
 
     state->mips_mode = false;
+    state->stack_adjust = 0;
+    state->reg_block = mips_reg_block_new();
     state->declared_tempfields = false;
     state->state_count = 0;
     state->spawn_count = 0;
@@ -343,6 +345,7 @@ c1_parse(
         free(macro);
     }
     list_free_nodes(&state->expr_macros);
+    free(state->reg_block);
 
     return state;
 }

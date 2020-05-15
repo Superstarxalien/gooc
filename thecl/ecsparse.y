@@ -50,6 +50,18 @@
 
 static thecl_instr_t* instr_new(parser_state_t* state, uint8_t id, const char* format, ...);
 static thecl_instr_t* instr_new_list(parser_state_t* state, uint8_t id, list_t* list);
+static thecl_instr_t* mips_instr_new(parser_state_t* state, const char* name, int imm, int shamt, int rd, int rt, int rs, int addr);
+#define MIPS_INSTR_ALU_R(name, rd, rt, rs) \
+    mips_instr_new(state, name, 0, 0, rd, rt, rs, 0)
+#define MIPS_INSTR_JR(rs) \
+    mips_instr_new(state, "jr", 0, 0, 0, 0, rs, 0)
+#define MIPS_INSTR_JALR(rd, rs) \
+    mips_instr_new(state, "jalr", 0, 0, rd, 0, rs, 0)
+#define MIPS_INSTR_I(name, imm, rt, rs) \
+    mips_instr_new(state, name, imm, 0, 0, rt, rs, 0)
+#define MIPS_INSTR_NOP() \
+    mips_instr_new(state, "nop", 0, 0, 0, 0, 0, 0)
+static void mips_instr_new_load(parser_state_t* state, mips_reg_t* reg, thecl_param_t* value);
 static void instr_add(parser_state_t* state, thecl_sub_t* sub, thecl_instr_t* instr);
 static void instr_del(parser_state_t* state, thecl_sub_t* sub, thecl_instr_t* instr);
 static void instr_prepend(thecl_sub_t* sub, thecl_instr_t* instr);
@@ -129,6 +141,8 @@ static int var_stack(parser_state_t* state, thecl_sub_t* sub, const char* name);
 static int arg_exists(parser_state_t* state, thecl_sub_t* sub, const char* name);
 /* Returns 1 if a variable of a given name exists, and 0 if it doesn't. */
 static int var_exists(parser_state_t* state, thecl_sub_t* sub, const char* name);
+/* Compiles an assignment operation on a given variable */
+static void var_assign(parser_state_t* state, thecl_param_t* param, expression_t* expr);
 /* Compiles a shorthand assignment operation on a given variable */
 static void var_shorthand_assign(parser_state_t* state, thecl_param_t* param, expression_t* expr, int EXPR);
 /* Stores a new label in the current subroutine pointing to the current offset. */
@@ -1154,7 +1168,7 @@ MipsBlock:
             yyerror(state, "invalid mips block");
             exit(2);
         }
-		state->stack_adjust = 0;
+        state->stack_adjust = 0;
         state->mips_mode = true;
     } CodeBlock {
         state->mips_mode = false;
@@ -1815,54 +1829,28 @@ Assignment:
             yyerror(state, "invalid address: %s", $1->value.val.z);
             return 0;
         }
-        const expr_t* expr = expr_get_by_id(state->version, $3->id);
-        thecl_param_t* src_param = expr != NULL && expr->is_unary ? ((expression_t*)$3->children.head->data)->value : NULL;
-        if (($1->stack == 1 && src_param && src_param->value.val.S == 0x1F && src_param->stack == 1 && src_param->object_link == 0)) {
-            src_param->value.val.S = $1->value.val.S;
-            src_param->object_link = $1->object_link;
-            if ($1->object_link == -1 && $1->value.val.S >= 3) {
-                state->current_sub->vars[$1->value.val.S - 3]->is_written = true;
-            }
-            else if ($1->object_link == -1 && $1->value.val.S < 0) {
-                state->current_sub->args[-$1->value.val.S - 1]->is_written = true;
-            }
-            param_free($1);
+        if (state->mips_mode) {
             expression_output(state, $3);
-            expression_free($3);
-            break;
-        }
-        else if (expr && expr->symbol == MOVC
-        && ((expression_t*)$3->children.tail->data)->value->value.val.S == 0x1F
-        && $1->stack == 1 && $1->object_link == 0 && $1->value.val.S >= 0 && $1->value.val.S <= 0x3F) {
-            ((expression_t*)$3->children.tail->data)->value->value.val.S = $1->value.val.S;
-            param_free($1);
-            expression_output(state, $3);
-            expression_free($3);
-            break;
-        }
-
-        if ($3->type == EXPRESSION_VAL && ($1->stack == 1 || ($1->stack == 2 && !expr->is_unary))) {
-            src_param = $3->value;
-        } else {
-            expression_output(state, $3);
-            src_param = param_sp_new();
-        }
-        expression_free($3);
-        if ($1->stack == 1) {
-            expr = expr_get_by_symbol(state->version, src_param->stack == 3 ? PASSIGN : ASSIGN);
-
-            instr_add(state, state->current_sub, instr_new(state, expr->id, "pp", $1, src_param));
-
-            if ($1->object_link == -1 && $1->value.val.S >= 3) {
-                state->current_sub->vars[$1->value.val.S - 3]->is_written = true;
+            if ($1->stack == 1) { /* object field, stack, spec */
+                if ($1->object_link == 0) { /* object field */
+                    instr_add(state, state->current_sub, MIPS_INSTR_I("sw", $1->value.val.S * 4 + get_obj_proc_offset(state->version), state->top_reg->index, get_reg(state->reg_block, "s0")->index));
+                    instr_add(state, state->current_sub, MIPS_INSTR_NOP()); /* DELAY SLOT */
+                }
+                else if ($1->object_link >= 1 && $1->object_link <= 7) { /* linked object field */
+                    mips_reg_t* link_reg = get_usable_reg(state->reg_block);
+                    if (link_reg) {
+                        instr_add(state, state->current_sub, MIPS_INSTR_I("lw", $1->object_link * 4 + get_obj_proc_offset(state->version), link_reg->index, get_reg(state->reg_block, "s0")->index));
+                        instr_add(state, state->current_sub, MIPS_INSTR_NOP()); /* DELAY SLOT */
+                        instr_add(state, state->current_sub, MIPS_INSTR_I("sw", $1->value.val.S * 4 + get_obj_proc_offset(state->version), state->top_reg->index, link_reg->index));
+                        instr_add(state, state->current_sub, MIPS_INSTR_NOP()); /* DELAY SLOT */
+                        link_reg->status = MREG_STATUS_USED;
+                    }
+                }
             }
-            else if ($1->object_link == -1 && $1->value.val.S < 0) {
-                state->current_sub->args[-$1->value.val.S - 1]->is_written = true;
-            }
-        } else if ($1->stack == 2) { /* WGL */
-            expr = expr_get_by_symbol(state->version, GASSIGN);
-
-            instr_add(state, state->current_sub, instr_new(state, expr->id, "Sp", $1->value.val.S, src_param));
+            clean_regs(state->reg_block);
+        }
+        else {
+            var_assign(state, $1, $3);
         }
       }
     | Address "+=" Expression { var_shorthand_assign(state, $1, $3, ADD); }
@@ -2211,6 +2199,24 @@ instr_init(
 }
 
 static thecl_instr_t*
+mips_instr_new(
+    parser_state_t* state,
+    const char* name,
+    int imm,
+    int shamt,
+    int rd,
+    int rt,
+    int rs,
+    int addr)
+{
+    thecl_instr_t* instr = instr_init(state);
+    instr->mips = true;
+    instr->ins.ins = mips_instr_init(name, imm, shamt, rd, rt, rs, addr);
+
+    return instr;
+}
+
+static thecl_instr_t*
 instr_new(
     parser_state_t* state,
     uint8_t id,
@@ -2263,6 +2269,23 @@ instr_new_list(
 }
 
 static void
+instr_start_mips(
+    parser_state_t* state,
+    thecl_sub_t* sub)
+{
+    instr_add(state, sub, instr_new(state, 73, ""));
+}
+
+static void
+instr_end_mips(
+    parser_state_t* state,
+    thecl_sub_t* sub)
+{
+    instr_add(state, sub, MIPS_INSTR_JALR(get_reg(state->reg_block, "s5")->index, get_reg(state->reg_block, "ra")->index));
+    instr_add(state, sub, MIPS_INSTR_NOP());
+}
+
+static void
 instr_add(
     parser_state_t* state,
     thecl_sub_t* sub,
@@ -2271,6 +2294,19 @@ instr_add(
     if (state->ignore_block || state->scope_stack[state->scope_cnt-1].returned) {
         thecl_instr_free(instr);
         return;
+    }
+    if (instr->mips != state->scope_stack[state->scope_cnt - 1].mips) {
+        if (instr->mips) {
+            instr_start_mips(state, sub);
+            state->scope_stack[state->scope_cnt - 1].mips = true;
+        }
+        else {
+            instr_end_mips(state, sub);
+            state->scope_stack[state->scope_cnt - 1].mips = false;
+        }
+    }
+    if (instr->mips) {
+        goto NO_OPTIM;
     }
     const expr_t* load_expr = expr_get_by_symbol(state->version, LOAD);
     const expr_t* ptr_expr = expr_get_by_symbol(state->version, PLOAD);
@@ -2855,6 +2891,83 @@ expression_create_goto_pop(
 }
 
 static void
+mips_instr_new_load(
+    parser_state_t* state,
+    mips_reg_t* reg,
+    thecl_param_t* param)
+{
+    if (param->stack == 0) { /* literal */
+        if (param->value.val.S > 0x7FFF || param->value.val.S < -0x8000) {
+            instr_add(state, state->current_sub, MIPS_INSTR_I("lui", param->value.val.S >> 16 & 0xFFFF, reg->index, 0));
+            instr_add(state, state->current_sub, MIPS_INSTR_I("ori", param->value.val.S & 0xFFFF, reg->index, reg->index));
+        }
+        else {
+            instr_add(state, state->current_sub, MIPS_INSTR_I("ori", param->value.val.S & 0xFFFF, reg->index, 0));
+        }
+    }
+    else if (param->stack == 1) { /* object field, stack, spec */
+        if (param->object_link == 0) { /* object field */
+            instr_add(state, state->current_sub, MIPS_INSTR_I("lw", param->value.val.S * 4 + get_obj_proc_offset(state->version), reg->index, get_reg(state->reg_block, "s0")->index));
+            instr_add(state, state->current_sub, MIPS_INSTR_NOP()); /* DELAY SLOT */
+        }
+        else if (param->object_link >= 1 && param->object_link <= 7) { /* linked object field */
+            mips_reg_t* link_reg = get_usable_reg(state->reg_block);
+            if (!link_reg) link_reg = reg;
+            instr_add(state, state->current_sub, MIPS_INSTR_I("lw", param->object_link * 4 + get_obj_proc_offset(state->version), link_reg->index, get_reg(state->reg_block, "s0")->index));
+            instr_add(state, state->current_sub, MIPS_INSTR_NOP()); /* DELAY SLOT */
+            instr_add(state, state->current_sub, MIPS_INSTR_I("lw", param->value.val.S * 4 + get_obj_proc_offset(state->version), reg->index, link_reg->index));
+            instr_add(state, state->current_sub, MIPS_INSTR_NOP()); /* DELAY SLOT */
+            if (link_reg != reg) {
+                link_reg->status = MREG_STATUS_USED;
+            }
+        }
+    }
+}
+
+static void
+expression_output_mips(
+    parser_state_t* state,
+    expression_t* expr)
+{
+    if (expr->type == EXPRESSION_VAL) {
+        mips_reg_t* reg = get_usable_reg(state->reg_block);
+        if (reg) {
+            reg->status = MREG_STATUS_IN_USE;
+            reg->saved_expr = expression_copy(expr);
+            reg->saved_param = param_copy(expr->value);
+        }
+        else {
+            yyerror(state, "oops, no available registers for mips mode");
+            exit(2);
+        }
+        mips_instr_new_load(state, reg, expr->value);
+        state->top_reg = reg;
+    }
+    else if (expr->type == EXPRESSION_OP) {
+        mips_reg_t* ret, *op1, *op2;
+        switch (expr_get_by_id(state->version, expr->id)->symbol) {
+            case ADD:
+                expression_output_mips(state, list_head(&expr->children));
+                op1 = state->top_reg;
+                expression_output_mips(state, expr->children.head->next->data);
+                op2 = state->top_reg;
+                ret = get_usable_reg(state->reg_block);
+                if (ret) {
+                    ret->status = MREG_STATUS_IN_USE;
+                    ret->saved_expr = expression_copy(expr);
+                }
+                instr_add(state, state->current_sub, MIPS_INSTR_ALU_R("addu", ret->index, op1->index, op2->index));
+                op1->status = MREG_STATUS_USED;
+                op2->status = MREG_STATUS_USED;
+                state->top_reg = ret;
+                break;
+            default:
+                yyerror(NULL, "unsupported mips expression");
+        }
+    }
+}
+
+static void
 expression_output(
     parser_state_t* state,
     expression_t* expr)
@@ -2862,6 +2975,11 @@ expression_output(
     if (expr->type != EXPRESSION_TERNARY && expr_get_by_id(state->version, expr->id)->symbol < 0) {
         yyerror(state, "error, cannot output non-compileable expression %d", expr->id);
         exit(2);
+    }
+
+    if (state->mips_mode) {
+        expression_output_mips(state, expr);
+        return;
     }
 
     if (expr->type == EXPRESSION_VAL) {
@@ -3201,7 +3319,7 @@ scope_begin(
     ++state->scope_cnt;
     state->scope_stack = realloc(state->scope_stack, sizeof(thecl_scope_t)*state->scope_cnt);
     state->scope_stack[state->scope_cnt - 1].id = state->scope_id++;
-    state->scope_stack[state->scope_cnt - 1].mips = state->scope_stack[state->scope_cnt - 2].mips;
+    state->scope_stack[state->scope_cnt - 1].mips = state->scope_cnt > 1 ? state->scope_stack[state->scope_cnt - 2].mips : false;
     state->scope_stack[state->scope_cnt - 1].returned = false;
     state->block_bound = 1;
 }
@@ -3211,6 +3329,16 @@ scope_finish(
     parser_state_t* state,
     bool pop_vars
 ) {
+    if (state->scope_cnt > 1 && !state->scope_stack[state->scope_cnt-1].returned) {
+        if (state->scope_stack[state->scope_cnt-2].mips && !state->scope_stack[state->scope_cnt-1].mips) {
+            instr_start_mips(state, state->current_sub);
+        }
+        else if (!state->scope_stack[state->scope_cnt-2].mips && state->scope_stack[state->scope_cnt-1].mips) {
+            instr_end_mips(state, state->current_sub);
+        }
+        state->scope_stack[state->scope_cnt-1].mips = state->scope_stack[state->scope_cnt-1].mips;
+    }
+
     --state->scope_cnt;
 
     /* pop GOOL stack variables */
@@ -3225,9 +3353,6 @@ scope_finish(
         instr_add(state, state->current_sub, instr_new(state, expr->id, "SSSSS", 0, pop, 0x25, 0, 0));
     }
 
-    if (state->scope_cnt >= 1 && !state->scope_stack[state->scope_cnt].returned && !state->scope_stack[state->scope_cnt].mips && state->scope_stack[state->scope_cnt-1].mips) {
-        /* TODO: start MIPS mode */
-    }
     state->scope_stack = realloc(state->scope_stack, sizeof(thecl_scope_t)*state->scope_cnt);
     state->block_bound = 1;
 }
@@ -3508,6 +3633,63 @@ var_exists(
     if (sub == NULL) return 0; /* we are outside of sub scope, no point in searching for variables */
 
     return var_get(state, sub, name) != NULL;
+}
+
+static void
+var_assign(
+    parser_state_t* state,
+    thecl_param_t* param,
+    expression_t* expr_assign)
+{
+    const expr_t* expr = expr_get_by_id(state->version, expr_assign->id);
+    thecl_param_t* src_param = expr != NULL && expr->is_unary ? ((expression_t*)expr_assign->children.head->data)->value : NULL;
+    if ((param->stack == 1 && src_param && src_param->value.val.S == 0x1F && src_param->stack == 1 && src_param->object_link == 0)) {
+        src_param->value.val.S = param->value.val.S;
+        src_param->object_link = param->object_link;
+        if (param->object_link == -1 && param->value.val.S >= 3) {
+            state->current_sub->vars[param->value.val.S - 3]->is_written = true;
+        }
+        else if (param->object_link == -1 && param->value.val.S < 0) {
+            state->current_sub->args[-param->value.val.S - 1]->is_written = true;
+        }
+        param_free(param);
+        expression_output(state, expr_assign);
+        expression_free(expr_assign);
+        return;
+    }
+    else if (expr && expr->symbol == MOVC
+    && ((expression_t*)expr_assign->children.tail->data)->value->value.val.S == 0x1F
+    && param->stack == 1 && param->object_link == 0 && param->value.val.S >= 0 && param->value.val.S <= 0x3F) {
+        ((expression_t*)expr_assign->children.tail->data)->value->value.val.S = param->value.val.S;
+        param_free(param);
+        expression_output(state, expr_assign);
+        expression_free(expr_assign);
+        return;
+    }
+
+    if (expr_assign->type == EXPRESSION_VAL && (param->stack == 1 || (param->stack == 2 && !expr->is_unary))) {
+        src_param = expr_assign->value;
+    } else {
+        expression_output(state, expr_assign);
+        src_param = param_sp_new();
+    }
+    expression_free(expr_assign);
+    if (param->stack == 1) {
+        expr = expr_get_by_symbol(state->version, src_param->stack == 3 ? PASSIGN : ASSIGN);
+
+        instr_add(state, state->current_sub, instr_new(state, expr->id, "pp", param, src_param));
+
+        if (param->object_link == -1 && param->value.val.S >= 3) {
+            state->current_sub->vars[param->value.val.S - 3]->is_written = true;
+        }
+        else if (param->object_link == -1 && param->value.val.S < 0) {
+            state->current_sub->args[-param->value.val.S - 1]->is_written = true;
+        }
+    } else if (param->stack == 2) { /* WGL */
+        expr = expr_get_by_symbol(state->version, GASSIGN);
+
+        instr_add(state, state->current_sub, instr_new(state, expr->id, "Sp", param->value.val.S, src_param));
+    }
 }
 
 static void

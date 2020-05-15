@@ -420,6 +420,13 @@ macro_get(
     return NULL;
 }
 
+int
+get_obj_proc_offset(
+    unsigned int version)
+{
+    return is_post_c2(version) ? 0x40 : 0x60;
+}
+
 bool
 is_post_c2(
     unsigned int version)

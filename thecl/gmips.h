@@ -68,7 +68,8 @@ typedef enum {
     MREG_STATUS_RESERVED,
     MREG_STATUS_IN_USE,
     MREG_STATUS_FREE,
-    MREG_STATUS_USED
+    MREG_STATUS_USED,
+    MREG_STATUS_WAITING
 } mips_reg_status;
 
 typedef struct {
@@ -84,6 +85,13 @@ typedef struct {
 } mips_reg_block_t;
 
 mips_reg_block_t* mips_reg_block_new(void);
+mips_reg_t* get_reg(mips_reg_block_t* block, const char* name);
+mips_reg_t* get_usable_reg(mips_reg_block_t* block);
+void free_reg(mips_reg_t* reg);
+void clean_regs(mips_reg_block_t* block);
+struct thecl_param_t* reg_get_param(mips_reg_t* reg);
+struct expression_t* reg_get_expr(mips_reg_t* reg);
 mips_ins_fmt_t* mips_find_format(const char* name);
+int mips_instr_init(const char* name, int imm, int shamt, int rd, int rt, int rs, int addr);
 
 #endif
