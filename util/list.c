@@ -214,3 +214,17 @@ list_count(
     }
     return count;
 }
+
+void
+list_del_head(
+    list_t* list)
+{
+    list_del(list, list->head);
+}
+
+void
+list_del_tail(
+    list_t* list)
+{
+    list_del(list, list->tail);
+}

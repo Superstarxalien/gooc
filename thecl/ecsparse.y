@@ -383,7 +383,7 @@ Statement:
         sub_begin(state, $3);
         state->current_sub->is_inline = true;
         if (state->ecl != state->main_ecl) {
-            list_del(&state->ecl->subs, state->ecl->subs.tail);
+            list_del_tail(&state->ecl->subs);
             list_append_new(&state->main_ecl->subs, state->current_sub);
         }
         free($3);
@@ -1181,7 +1181,7 @@ SaveBlock:
         free($3);
     } CodeBlock {
         int m = list_tail(&state->addresses);
-        list_del(&state->addresses, state->addresses.tail);
+        list_del_tail(&state->addresses);
 
         const expr_t* local_expr = expr_get_by_symbol(state->version, ASSIGN);
         const expr_t* global_expr = expr_get_by_symbol(state->version, GASSIGN);
@@ -1194,7 +1194,7 @@ SaveBlock:
             else {
                 instr_add(state, state->current_sub, instr_new(state, local_expr->id, "pp", param_copy(param), param_sp_new()));
             }
-            list_del(&state->addresses, state->addresses.tail);
+            list_del_tail(&state->addresses);
         }
     }
 
@@ -2311,7 +2311,7 @@ instr_add(
             while (last_ins->id == instr->id && last_ins->param_count < 2 && instr->param_count > 0) {
                 ++last_ins->param_count;
                 list_append_new(&last_ins->params, list_head(&instr->params));
-                list_del(&instr->params, instr->params.head);
+                list_del_head(&instr->params);
                 if (--instr->param_count == 0) {
                     thecl_instr_free(instr);
                     instr->offset = sub->offset;
@@ -2352,7 +2352,7 @@ instr_add(
                 if (param->value.val.S <= 0x3F && param->value.val.S >= 0 && param->stack == 1 && param->object_link == 0) {
                     thecl_param_t* reg_param = instr->params.head->next->next->data;
                     reg_param->value.val.S = param->value.val.S;
-                    list_del(&sub->instrs, sub->instrs.tail);
+                    list_del_tail(&sub->instrs);
                     thecl_instr_free(last_ins);
                     --sub->offset;
                 }
@@ -2360,7 +2360,7 @@ instr_add(
                     expr = expr_get_by_symbol(state->version, LOAD);
                     last_ins->id = expr->id;
                     param = list_head(&last_ins->params);
-                    list_del(&last_ins->params, last_ins->params.head);
+                    list_del_head(&last_ins->params);
                     param_free(param);
                 }
             } else { /* optimize if literal conditions */
@@ -2368,7 +2368,7 @@ instr_add(
                 if (last_ins->id == expr->id && last_ins->param_count > 0) {
                     thecl_param_t* param = list_tail(&last_ins->params);
                     if (!param->stack) {
-                        list_del(&last_ins->params, last_ins->params.tail);
+                        list_del_tail(&last_ins->params);
                         thecl_param_t* branch_type_param = (thecl_param_t*)instr->params.tail->prev->data;
                         int branch_type = state->version == 2 ? instr->id - bra_expr->id - 1 : branch_type_param->value.val.S - 1;
                         if (--last_ins->param_count == 0) {
@@ -2539,7 +2539,7 @@ instr_create_inline_call(
             if (param->is_expression_param) {
                 expression_output(state, state->expressions.head->data);
                 expression_free(state->expressions.head->data);
-                list_del(&state->expressions, state->expressions.head);
+                list_del_head(&state->expressions);
             }
 
             strcpy(buf, name);
@@ -2900,8 +2900,8 @@ expression_output(
         if (expression->has_double_param && lc == 3) {
             param_free(param_list->tail->data);
             param_free(param_list->tail->prev->data);
-            list_del(param_list, param_list->tail);
-            list_del(param_list, param_list->tail);
+            list_del_tail(param_list);
+            list_del_tail(param_list);
             list_append_new(param_list, param_sp2_new());
         }
 
@@ -3168,7 +3168,7 @@ sub_finish(
             thecl_param_t* label_param = list_head(&last_ins->params);
             if (strcmp(label_param->value.val.z, "inline_end") == 0) {
                 /* Remove useless goto. */
-                list_del(&state->current_sub->instrs, state->current_sub->instrs.tail);
+                list_del_tail(&state->current_sub->instrs);
                 --state->current_sub->offset;
                 thecl_instr_free(last_ins);
             }

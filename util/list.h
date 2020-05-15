@@ -72,6 +72,12 @@ void list_append_to(list_t* list, void* data, list_node_t* node);
 /* Removes and frees the node from the list.
  * Does not free the data. */
 void list_del(list_t* list, list_node_t* node);
+/* Deletes the first node on the list.
+ * Does not free the data. */
+void list_del_head(list_t* list);
+/* Deletes the last node on the list.
+ * Does not free the data. */
+void list_del_tail(list_t* list);
 /* Frees each node in the list.
  * Resets the list.
  * Does not free the data or the list. */
