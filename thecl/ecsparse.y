@@ -2372,7 +2372,7 @@ instr_add(
                         thecl_param_t* branch_type_param = (thecl_param_t*)instr->params.tail->prev->data;
                         int branch_type = state->version == 2 ? instr->id - bra_expr->id - 1 : branch_type_param->value.val.S - 1;
                         if (--last_ins->param_count == 0) {
-                            list_del(&sub->instrs, sub->instrs.tail);
+                            list_del_tail(&sub->instrs);
                             thecl_instr_free(last_ins);
                             --sub->offset;
                         }
