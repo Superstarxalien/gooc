@@ -55,12 +55,21 @@ mips_instructions[] = {
     { "nop",   'R', "0",  "0", "0",  "0",  "0",  "0" },
     { "jr",    'R', "8",  "0", "0",  "0",  "rs", "0" },
     { "jalr",  'R', "9",  "0", "rd", "0",  "rs", "0" },
+
     { "addu",  'R', "33", "0", "rd", "rt", "rs", "0" },
     { "subu",  'R', "35", "0", "rd", "rt", "rs", "0" },
     { "and",   'R', "36", "0", "rd", "rt", "rs", "0" },
     { "or",    'R', "37", "0", "rd", "rt", "rs", "0" },
     { "xor",   'R', "38", "0", "rd", "rt", "rs", "0" },
     { "nor",   'R', "39", "0", "rd", "rt", "rs", "0" },
+
+    { "addiu", 'I', "imm", "rt", "rs",  "9", NULL, NULL },
+    { "slti",  'I', "imm", "rt", "rs", "10", NULL, NULL },
+    { "sltiu", 'I', "imm", "rt", "rs", "11", NULL, NULL },
+    { "andi",  'I', "imm", "rt", "rs", "12", NULL, NULL },
+    { "ori",   'I', "imm", "rt", "rs", "13", NULL, NULL },
+    { "xori",  'I', "imm", "rt", "rs", "14", NULL, NULL },
+    { "lui",   'I', "imm", "rt", "0",  "15", NULL, NULL },
 
     { "lb",    'I', "imm", "rt", "rs", "32", NULL, NULL },
     { "lh",    'I', "imm", "rt", "rs", "33", NULL, NULL },
