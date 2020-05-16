@@ -63,6 +63,7 @@ static thecl_instr_t* mips_instr_new(parser_state_t* state, const char* name, in
     mips_instr_new(state, "nop", 0, 0, 0, 0, 0, 0)
 static void mips_instr_new_load(parser_state_t* state, mips_reg_t* reg, thecl_param_t* value);
 static void instr_add(parser_state_t* state, thecl_sub_t* sub, thecl_instr_t* instr);
+static void instr_add_delay_slot(parser_state_t* state, thecl_sub_t* sub, thecl_instr_t* instr);
 static void instr_del(parser_state_t* state, thecl_sub_t* sub, thecl_instr_t* instr);
 static void instr_prepend(thecl_sub_t* sub, thecl_instr_t* instr);
 /* Returns true if the created call was inline. */
@@ -1833,16 +1834,13 @@ Assignment:
             expression_output(state, $3);
             if ($1->stack == 1) { /* object field, stack, spec */
                 if ($1->object_link == 0) { /* object field */
-                    instr_add(state, state->current_sub, MIPS_INSTR_I("sw", $1->value.val.S * 4 + get_obj_proc_offset(state->version), state->top_reg->index, get_reg(state->reg_block, "s0")->index));
-                    instr_add(state, state->current_sub, MIPS_INSTR_NOP()); /* DELAY SLOT */
+                    instr_add_delay_slot(state, state->current_sub, MIPS_INSTR_I("sw", $1->value.val.S * 4 + get_obj_proc_offset(state->version), state->top_reg->index, get_reg(state->reg_block, "s0")->index));
                 }
                 else if ($1->object_link >= 1 && $1->object_link <= 7) { /* linked object field */
                     mips_reg_t* link_reg = get_usable_reg(state->reg_block);
                     if (link_reg) {
-                        instr_add(state, state->current_sub, MIPS_INSTR_I("lw", $1->object_link * 4 + get_obj_proc_offset(state->version), link_reg->index, get_reg(state->reg_block, "s0")->index));
-                        instr_add(state, state->current_sub, MIPS_INSTR_NOP()); /* DELAY SLOT */
-                        instr_add(state, state->current_sub, MIPS_INSTR_I("sw", $1->value.val.S * 4 + get_obj_proc_offset(state->version), state->top_reg->index, link_reg->index));
-                        instr_add(state, state->current_sub, MIPS_INSTR_NOP()); /* DELAY SLOT */
+                        instr_add_delay_slot(state, state->current_sub, MIPS_INSTR_I("lw", $1->object_link * 4 + get_obj_proc_offset(state->version), link_reg->index, get_reg(state->reg_block, "s0")->index));
+                        instr_add_delay_slot(state, state->current_sub, MIPS_INSTR_I("sw", $1->value.val.S * 4 + get_obj_proc_offset(state->version), state->top_reg->index, link_reg->index));
                         link_reg->status = MREG_STATUS_USED;
                     }
                 }
@@ -2211,7 +2209,11 @@ mips_instr_new(
 {
     thecl_instr_t* instr = instr_init(state);
     instr->mips = true;
+    instr->label_name = NULL;
     instr->ins.ins = mips_instr_init(name, imm, shamt, rd, rt, rs, addr);
+    uint64_t regs = mips_instr_getregs(name, &instr->ins);
+    instr->reg_used = regs & 0xFFFFFFFF;
+    instr->reg_stalled = regs >> 32 & 0xFFFFFFFF;
 
     return instr;
 }
@@ -2286,6 +2288,27 @@ instr_end_mips(
 }
 
 static void
+instr_return_mips(
+    parser_state_t* state,
+    thecl_sub_t* sub)
+{
+    instr_add(state, sub, MIPS_INSTR_JR(get_reg(state->reg_block, "ra")->index));
+    instr_add(state, sub, MIPS_INSTR_I("ori", 0, get_reg(state->reg_block, "s5")->index, 0));
+}
+
+static void
+instr_add_delay_slot(
+    parser_state_t* state,
+    thecl_sub_t* sub,
+    thecl_instr_t* instr)
+{
+    instr_add(state, sub, instr);
+    instr_add(state, state->current_sub, MIPS_INSTR_NOP()); /* DELAY SLOT */
+    state->scope_stack[state->scope_cnt - 1].delay_slot = sub->instrs.tail;
+    state->scope_stack[state->scope_cnt - 1].delay_owner = instr;
+}
+
+static void
 instr_add(
     parser_state_t* state,
     thecl_sub_t* sub,
@@ -2306,6 +2329,28 @@ instr_add(
         }
     }
     if (instr->mips) {
+        if (instr->ins.ins != 0) {
+            if (state->scope_cnt >= 1) {
+                thecl_scope_t* scope = &state->scope_stack[state->scope_cnt-1];
+                if (scope->delay_slot && scope->delay_owner && (scope->delay_owner->reg_stalled & instr->reg_used) == 0) {
+                    thecl_instr_t* slot_ins = scope->delay_slot->data;
+                    for (int i=0; i<32; ++i) {
+                        if ((1 << i) & instr->reg_used && slot_ins->offset < state->reg_block->regs[i].last_used) {
+                            slot_ins = NULL;
+                            break;
+                        }
+                    }
+                    if (slot_ins) {
+                        instr->offset = slot_ins->offset;
+                        thecl_instr_free(slot_ins);
+                        scope->delay_slot->data = instr;
+                        scope->delay_slot = NULL;
+                        scope->delay_owner = NULL;
+                        return;
+                    }
+                }
+            }
+        }
         goto NO_OPTIM;
     }
     const expr_t* load_expr = expr_get_by_symbol(state->version, LOAD);
@@ -2432,6 +2477,13 @@ instr_add(
     list_append_new(&sub->instrs, instr);
     instr->offset = sub->offset;
     ++sub->offset;
+    if (instr->mips) {
+        for (int i=0; i<32; ++i) {
+            if (instr->reg_used & (1 << i)) {
+                state->reg_block->regs[i].last_used = instr->offset;
+            }
+        }
+    }
 }
 
 static void
@@ -2907,16 +2959,13 @@ mips_instr_new_load(
     }
     else if (param->stack == 1) { /* object field, stack, spec */
         if (param->object_link == 0) { /* object field */
-            instr_add(state, state->current_sub, MIPS_INSTR_I("lw", param->value.val.S * 4 + get_obj_proc_offset(state->version), reg->index, get_reg(state->reg_block, "s0")->index));
-            instr_add(state, state->current_sub, MIPS_INSTR_NOP()); /* DELAY SLOT */
+            instr_add_delay_slot(state, state->current_sub, MIPS_INSTR_I("lw", param->value.val.S * 4 + get_obj_proc_offset(state->version), reg->index, get_reg(state->reg_block, "s0")->index));
         }
         else if (param->object_link >= 1 && param->object_link <= 7) { /* linked object field */
             mips_reg_t* link_reg = get_usable_reg(state->reg_block);
             if (!link_reg) link_reg = reg;
-            instr_add(state, state->current_sub, MIPS_INSTR_I("lw", param->object_link * 4 + get_obj_proc_offset(state->version), link_reg->index, get_reg(state->reg_block, "s0")->index));
-            instr_add(state, state->current_sub, MIPS_INSTR_NOP()); /* DELAY SLOT */
-            instr_add(state, state->current_sub, MIPS_INSTR_I("lw", param->value.val.S * 4 + get_obj_proc_offset(state->version), reg->index, link_reg->index));
-            instr_add(state, state->current_sub, MIPS_INSTR_NOP()); /* DELAY SLOT */
+            instr_add_delay_slot(state, state->current_sub, MIPS_INSTR_I("lw", param->object_link * 4 + get_obj_proc_offset(state->version), link_reg->index, get_reg(state->reg_block, "s0")->index));
+            instr_add_delay_slot(state, state->current_sub, MIPS_INSTR_I("lw", param->value.val.S * 4 + get_obj_proc_offset(state->version), reg->index, link_reg->index));
             if (link_reg != reg) {
                 link_reg->status = MREG_STATUS_USED;
             }
@@ -3316,11 +3365,15 @@ static void
 scope_begin(
     parser_state_t* state
 ) {
+    if (state->scope_cnt >= 1) {
+        state->scope_stack[state->scope_cnt-1].delay_slot = NULL;
+    }
+    state->scope_stack = realloc(state->scope_stack, sizeof(thecl_scope_t)*(state->scope_cnt+1));
+    state->scope_stack[state->scope_cnt].id = state->scope_id++;
+    state->scope_stack[state->scope_cnt].mips = state->scope_cnt >= 1 ? state->scope_stack[state->scope_cnt - 1].mips : false;
+    state->scope_stack[state->scope_cnt].returned = false;
+    state->scope_stack[state->scope_cnt].delay_slot = NULL;
     ++state->scope_cnt;
-    state->scope_stack = realloc(state->scope_stack, sizeof(thecl_scope_t)*state->scope_cnt);
-    state->scope_stack[state->scope_cnt - 1].id = state->scope_id++;
-    state->scope_stack[state->scope_cnt - 1].mips = state->scope_cnt > 1 ? state->scope_stack[state->scope_cnt - 2].mips : false;
-    state->scope_stack[state->scope_cnt - 1].returned = false;
     state->block_bound = 1;
 }
 

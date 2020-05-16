@@ -84,17 +84,13 @@ typedef struct thecl_instr_t {
 
     /* THECL_INSTR_INSTR: */
     bool mips;
-    union {
-        struct {
-            uint8_t id;
-            size_t param_count;
-            list_t params;
-        };
-        struct {
-            char* label_name;
-            mips_ins_t ins;
-        };
-    };
+    uint8_t id;
+    size_t param_count;
+    list_t params;
+    char* label_name;
+    mips_ins_t ins;
+    uint32_t reg_used;
+    uint32_t reg_stalled;
 
 
     /* Etc.: */
@@ -285,6 +281,8 @@ typedef struct {
     int id;
     bool mips;
     bool returned;
+    list_node_t* delay_slot;
+    thecl_instr_t* delay_owner;
 } thecl_scope_t;
 
 typedef struct {

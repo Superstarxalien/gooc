@@ -76,6 +76,7 @@ typedef struct {
     int index;
     const char* name;
     mips_reg_status status;
+    int last_used;
     struct thecl_param_t* saved_param;
     struct expression_t* saved_expr;
 } mips_reg_t;
@@ -93,5 +94,6 @@ struct thecl_param_t* reg_get_param(mips_reg_t* reg);
 struct expression_t* reg_get_expr(mips_reg_t* reg);
 mips_ins_fmt_t* mips_find_format(const char* name);
 int mips_instr_init(const char* name, int imm, int shamt, int rd, int rt, int rs, int addr);
+uint64_t mips_instr_getregs(const char* name, mips_ins_t* ins);
 
 #endif

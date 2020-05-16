@@ -86,6 +86,7 @@ mips_reg_block_new(void)
         new_block->regs[i].name = mips_registers[i];
         new_block->regs[i].saved_expr = NULL;
         new_block->regs[i].saved_param = NULL;
+        new_block->regs[i].last_used = 0;
         new_block->regs[i].status = MREG_STATUS_FREE;
     }
     new_block->regs[0].status = MREG_STATUS_RESERVED; /* zr */
@@ -196,25 +197,6 @@ mips_find_format(const char* name)
     return NULL;
 }
 
-static int
-mips_ins_getval(
-    const char* op,
-    int imm,
-    int shamt,
-    int rd,
-    int rt,
-    int rs,
-    int addr)
-{
-    if (!strcmp(op, "imm")) return imm;
-    else if (!strcmp(op, "shamt")) return shamt;
-    else if (!strcmp(op, "rd")) return rd;
-    else if (!strcmp(op, "rt")) return rt;
-    else if (!strcmp(op, "rs")) return rs;
-    else if (!strcmp(op, "addr")) return addr;
-    else return atoi(op);
-}
-
 int
 mips_instr_init(
     const char* name,
@@ -226,27 +208,67 @@ mips_instr_init(
     int addr)
 {
     const mips_ins_fmt_t* fmt = mips_find_format(name);
-    mips_ins_t ins;
-    ins.ins = 0;
-    switch (fmt->fmt) {
-    case 'R':
-        ins.r.funct = mips_ins_getval(fmt->ops[0], imm, shamt, rd, rt, rs, addr);
-        ins.r.shamt = mips_ins_getval(fmt->ops[1], imm, shamt, rd, rt, rs, addr);
-        ins.r.rd = mips_ins_getval(fmt->ops[2], imm, shamt, rd, rt, rs, addr);
-        ins.r.rt = mips_ins_getval(fmt->ops[3], imm, shamt, rd, rt, rs, addr);
-        ins.r.rs = mips_ins_getval(fmt->ops[4], imm, shamt, rd, rt, rs, addr);
-        ins.r.opcode = mips_ins_getval(fmt->ops[5], imm, shamt, rd, rt, rs, addr);
-        break;
-    case 'I':
-        ins.i.imm = mips_ins_getval(fmt->ops[0], imm, shamt, rd, rt, rs, addr);
-        ins.i.rt = mips_ins_getval(fmt->ops[1], imm, shamt, rd, rt, rs, addr);
-        ins.i.rs = mips_ins_getval(fmt->ops[2], imm, shamt, rd, rt, rs, addr);
-        ins.i.opcode = mips_ins_getval(fmt->ops[3], imm, shamt, rd, rt, rs, addr);
-        break;
-    case 'J': break;
-    default:
-        fprintf(stdout, "%s:mips_instr_init: error: invalid mips instruction type %c", argv0, fmt->fmt);
-        exit(2);
+    if (fmt) {
+        mips_ins_t ins;
+        ins.ins = 0;
+        switch (fmt->fmt) {
+        case 'R':
+            ins.r.funct = atoi(fmt->ops[0]);
+            ins.r.shamt = !strcmp(fmt->ops[1], "shamt") ? shamt : atoi(fmt->ops[1]);
+            ins.r.rd = !strcmp(fmt->ops[2], "rd") ? rd : atoi(fmt->ops[2]);
+            ins.r.rt = !strcmp(fmt->ops[3], "rt") ? rt : atoi(fmt->ops[3]);
+            ins.r.rs = !strcmp(fmt->ops[4], "rs") ? rs : atoi(fmt->ops[4]);
+            ins.r.opcode = atoi(fmt->ops[5]);
+            break;
+        case 'I':
+            ins.i.imm = !strcmp(fmt->ops[0], "imm") ? imm : atoi(fmt->ops[0]);
+            ins.i.rt = !strcmp(fmt->ops[1], "rt") ? rt : atoi(fmt->ops[1]);
+            ins.i.rs = !strcmp(fmt->ops[2], "rs") ? rs : atoi(fmt->ops[2]);
+            ins.i.opcode = atoi(fmt->ops[3]);
+            break;
+        case 'J':
+            ins.j.addr = !strcmp(fmt->ops[0], "addr") ? addr : atoi(fmt->ops[0]);
+            ins.j.opcode = atoi(fmt->ops[1]);
+            break;
+        default:
+            fprintf(stdout, "%s:mips_instr_init: error: invalid mips instruction type %c", argv0, fmt->fmt);
+            exit(2);
+        }
+        return ins.ins;
     }
-    return ins.ins;
+    else {
+        fprintf(stdout, "%s:mips_instr_init: mips instruction not foun: %s", argv0, name);
+    }
+}
+
+uint64_t
+mips_instr_getregs(const char* name, mips_ins_t *ins)
+{
+    const mips_ins_fmt_t* fmt = mips_find_format(name);
+    uint64_t reg = 0;
+    if (fmt) {
+        switch (fmt->fmt) {
+        case 'R':
+            if (!strcmp(fmt->ops[2], "rd")) reg |= 1 << ins->r.rd;
+            if (!strcmp(fmt->ops[3], "rt")) reg |= 1 << ins->r.rt;
+            if (!strcmp(fmt->ops[4], "rs")) reg |= 1 << ins->r.rs;
+            break;
+        case 'I':
+            if (!strcmp(fmt->ops[1], "rt")) reg |= 1 << ins->i.rt;
+            if (!strcmp(fmt->ops[2], "rs")) reg |= 1 << ins->i.rs;
+            break;
+        case 'J':
+            break;
+        default:
+            fprintf(stdout, "%s:mips_instr_init: error: invalid mips instruction type %c", argv0, fmt->fmt);
+            exit(2);
+        }
+        if ((ins->i.opcode >= 32 && ins->i.opcode <= 38) || (ins->i.opcode >= 40 && ins->i.opcode <= 46)) {
+            if (!strcmp(fmt->ops[1], "rt")) reg |= 0x100000000 << ins->i.rt;
+        }
+    }
+    else {
+        fprintf(stdout, "%s:mips_instr_init: mips instruction not foun: %s", argv0, name);
+    }
+    return reg;
 }
