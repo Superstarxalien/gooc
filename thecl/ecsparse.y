@@ -62,6 +62,7 @@ static thecl_instr_t* mips_instr_new(parser_state_t* state, const char* name, in
 #define MIPS_INSTR_NOP() \
     mips_instr_new(state, "nop", 0, 0, 0, 0, 0, 0)
 static void mips_instr_new_load(parser_state_t* state, mips_reg_t* reg, thecl_param_t* value);
+static void mips_instr_new_store(parser_state_t* state, thecl_param_t* value);
 static void instr_add(parser_state_t* state, thecl_sub_t* sub, thecl_instr_t* instr);
 static void instr_add_delay_slot(parser_state_t* state, thecl_sub_t* sub, thecl_instr_t* instr);
 static void instr_del(parser_state_t* state, thecl_sub_t* sub, thecl_instr_t* instr);
@@ -1834,20 +1835,7 @@ Assignment:
         }
         if (state->mips_mode) {
             expression_output(state, $3);
-            if ($1->stack == 1) { /* object field, stack, spec */
-                if ($1->object_link == 0) { /* object field */
-                    instr_add_delay_slot(state, state->current_sub, MIPS_INSTR_I("sw", $1->value.val.S * 4 + get_obj_proc_offset(state->version), state->top_reg->index, get_reg(state->reg_block, "s0")->index));
-                }
-                else if ($1->object_link >= 1 && $1->object_link <= 7) { /* linked object field */
-                    mips_reg_t* link_reg = get_usable_reg(state->reg_block);
-                    if (link_reg) {
-                        instr_add_delay_slot(state, state->current_sub, MIPS_INSTR_I("lw", $1->object_link * 4 + get_obj_proc_offset(state->version), link_reg->index, get_reg(state->reg_block, "s0")->index));
-                        instr_add_delay_slot(state, state->current_sub, MIPS_INSTR_I("sw", $1->value.val.S * 4 + get_obj_proc_offset(state->version), state->top_reg->index, link_reg->index));
-                        link_reg->status = MREG_STATUS_USED;
-                    }
-                }
-            }
-            clean_regs(state->reg_block);
+            mips_instr_new_store(state, $1)
             if ($1->stack == 1) {
                 if ($1->object_link == -1 && $1->value.val.S >= 3) {
                     state->current_sub->vars[$1->value.val.S - 3]->is_written = true;
@@ -3763,20 +3751,7 @@ var_shorthand_assign(
         }
     }
     if (state->mips_mode) {
-        if (param->stack == 1) { /* object field, stack, spec */
-            if (param->object_link == 0) { /* object field */
-                instr_add_delay_slot(state, state->current_sub, MIPS_INSTR_I("sw", param->value.val.S * 4 + get_obj_proc_offset(state->version), state->top_reg->index, get_reg(state->reg_block, "s0")->index));
-            }
-            else if (param->object_link >= 1 && param->object_link <= 7) { /* linked object field */
-                mips_reg_t* link_reg = get_usable_reg(state->reg_block);
-                if (link_reg) {
-                    instr_add_delay_slot(state, state->current_sub, MIPS_INSTR_I("lw", param->object_link * 4 + get_obj_proc_offset(state->version), link_reg->index, get_reg(state->reg_block, "s0")->index));
-                    instr_add_delay_slot(state, state->current_sub, MIPS_INSTR_I("sw", param->value.val.S * 4 + get_obj_proc_offset(state->version), state->top_reg->index, link_reg->index));
-                    link_reg->status = MREG_STATUS_USED;
-                }
-            }
-        }
-        clean_regs(state->reg_block);
+        mips_instr_new_store(state, param);
     }
     else {
         if (param->stack == 1) {
@@ -3789,6 +3764,27 @@ var_shorthand_assign(
             instr_add(state, state->current_sub, instr_new(state, expr->id, "Sp", param->value.val.S, param_sp_new()));
         }
     }
+}
+
+static void
+mips_instr_new_store(
+    parser_state_t* state,
+    thecl_param_t* value)
+{
+    if (value->stack == 1) { /* object field, stack, spec */
+        if (value->object_link == 0) { /* object field */
+            instr_add_delay_slot(state, state->current_sub, MIPS_INSTR_I("sw", value->value.val.S * 4 + get_obj_proc_offset(state->version), state->top_reg->index, get_reg(state->reg_block, "s0")->index));
+        }
+        else if (value->object_link >= 1 && value->object_link <= 7) { /* linked object field */
+            mips_reg_t* link_reg = get_usable_reg(state->reg_block);
+            if (link_reg) {
+                instr_add_delay_slot(state, state->current_sub, MIPS_INSTR_I("lw", value->object_link * 4 + get_obj_proc_offset(state->version), link_reg->index, get_reg(state->reg_block, "s0")->index));
+                instr_add_delay_slot(state, state->current_sub, MIPS_INSTR_I("sw", value->value.val.S * 4 + get_obj_proc_offset(state->version), state->top_reg->index, link_reg->index));
+                link_reg->status = MREG_STATUS_USED;
+            }
+        }
+    }
+    clean_regs(state->reg_block);
 }
 
 static void
@@ -3978,26 +3974,52 @@ expression_mips_make(
     parser_state_t* state,
     expression_t* expr)
 {
-    mips_reg_t* ret, *op1, *op2;
+    mips_reg_t* ret = NULL, *op1, *op2;
+    expression_t* val_expr, *var_expr, *child_expr1, *child_expr2, *child_expr3;
+    int i = 0;
+    list_for_each(&expr->children, val_expr) {
+        ++i;
+        if (i == 1) {
+            child_expr1 = val_expr;
+        }
+        else if (i == 2) {
+            child_expr2 = val_expr;
+        }
+        else if (i == 3) {
+            child_expr3 = val_expr;
+        }
+    }
     switch (expr_get_by_id(state->version, expr->id)->symbol) {
         case ADD:
-            expression_output_mips(state, list_head(&expr->children));
-            op1 = state->top_reg;
-            expression_output_mips(state, expr->children.head->next->data);
-            op2 = state->top_reg;
-            ret = get_usable_reg(state->reg_block);
-            if (ret) {
-                ret->status = MREG_STATUS_IN_USE;
-                ret->saved_expr = expression_copy(expr);
+            if (child_expr1->type == EXPRESSION_VAL && child_expr1->value->stack == 0 && child_expr1->value->value.val.S >= -0x8000 && child_expr1->value->value.val.S <= 0x7FFF) { val_expr = child_expr1; var_expr = child_expr2; }
+            else if (child_expr2->type == EXPRESSION_VAL && child_expr2->value->stack == 0 && child_expr2->value->value.val.S >= -0x8000 && child_expr2->value->value.val.S <= 0x7FFF) { val_expr = child_expr2; var_expr = child_expr1; }
+            if (val_expr) {
+                expression_output_mips(state, var_expr); op1 = state->top_reg;
+                ret = get_usable_reg(state->reg_block);
+                if (ret) {
+                    ret->status = MREG_STATUS_IN_USE;
+                    ret->saved_expr = expression_copy(expr);
+                }
+                instr_add(state, state->current_sub, MIPS_INSTR_I("addiu", val_expr->value->value.val.S, ret->index, op1->index));
+                op1->status = MREG_STATUS_USED;
             }
-            instr_add(state, state->current_sub, MIPS_INSTR_ALU_R("addu", ret->index, op1->index, op2->index));
-            op1->status = MREG_STATUS_USED;
-            op2->status = MREG_STATUS_USED;
-            state->top_reg = ret;
+            else {
+                expression_output_mips(state, child_expr1); op1 = state->top_reg;
+                expression_output_mips(state, child_expr2); op2 = state->top_reg;
+                ret = get_usable_reg(state->reg_block);
+                if (ret) {
+                    ret->status = MREG_STATUS_IN_USE;
+                    ret->saved_expr = expression_copy(expr);
+                }
+                instr_add(state, state->current_sub, MIPS_INSTR_ALU_R("addu", ret->index, op1->index, op2->index));
+                op1->status = MREG_STATUS_USED;
+                op2->status = MREG_STATUS_USED;
+            }
             break;
         default:
             yyerror(NULL, "unsupported mips expression");
     }
+    state->top_reg = ret;
 }
 
 void
