@@ -225,6 +225,7 @@ int yydebug = 0;
 %token CODE "code"
 %token TRANS "trans"
 %token TRANSARGS "__transargs"
+%token MOD_MIPS "__mips"
 %token MOD_TRANS "__trans"
 %token MOD_ARGS "__args"
 %token ONCE "once"
@@ -653,6 +654,10 @@ Subroutine_Modifier:
         state->current_sub->is_trans = true;
     }
     | "__args" "(" ArgumentDeclaration ")"
+    | "__mips" {
+        state->stack_adjust = 0;
+        state->mips_mode = true;
+    }
     ;
 
 Subroutine_Body:
@@ -3438,6 +3443,7 @@ sub_finish(
     scope_finish(state, false);
 
     state->current_sub = NULL;
+    state->mips_mode = false;
 }
 
 static void

@@ -89,6 +89,7 @@
 "inline"   return INLINE;
 "mips"     return MIPS;
 "__transargs"      return TRANSARGS;
+"__mips"           return MOD_MIPS;
 "__trans"          return MOD_TRANS;
 "__args"   { if (!g_parser_state->current_state && g_parser_state->current_sub && g_parser_state->current_sub->mod_trans) return MOD_ARGS; else { yylval.string = strdup(yytext); return IDENTIFIER; } }
 
