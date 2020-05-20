@@ -2285,6 +2285,11 @@ instr_start_mips(
     thecl_sub_t* sub)
 {
     instr_add(state, sub, instr_new(state, 73, ""));
+    void* data;
+    list_for_each(&state->delay_slots, data) {
+        free(data);
+    }
+    list_free_nodes(&state->delay_slots);
 }
 
 static void
@@ -2295,6 +2300,11 @@ instr_end_mips(
     mips_stack_adjust(state, sub);
     instr_add(state, sub, MIPS_INSTR_JALR(get_reg(state->reg_block, "s5")->index, get_reg(state->reg_block, "ra")->index));
     instr_add(state, sub, MIPS_INSTR_NOP());
+    void* data;
+    list_for_each(&state->delay_slots, data) {
+        free(data);
+    }
+    list_free_nodes(&state->delay_slots);
 }
 
 static void
@@ -2305,6 +2315,11 @@ instr_return_mips(
     mips_stack_adjust(state, sub);
     instr_add(state, sub, MIPS_INSTR_JR(get_reg(state->reg_block, "ra")->index));
     instr_add(state, sub, MIPS_INSTR_I("ori", 0, get_reg(state->reg_block, "s5")->index, 0));
+    void* data;
+    list_for_each(&state->delay_slots, data) {
+        free(data);
+    }
+    list_free_nodes(&state->delay_slots);
 }
 
 static void
@@ -2316,8 +2331,10 @@ instr_add_delay_slot(
     instr_add(state, sub, instr);
     if (instr->offset == sub->offset - 1) {
         instr_add(state, state->current_sub, MIPS_INSTR_NOP()); /* DELAY SLOT */
-        state->scope_stack[state->scope_cnt - 1].delay_slot = sub->instrs.tail;
-        state->scope_stack[state->scope_cnt - 1].delay_owner = instr;
+        gooc_delay_slot_t* delay_slot = calloc(1, sizeof(gooc_delay_slot_t));
+        delay_slot->slot = sub->instrs.tail;
+        delay_slot->owner = instr;
+        list_append_new(&state->delay_slots, delay_slot);
     }
 }
 
@@ -2343,10 +2360,11 @@ instr_add(
     }
     if (instr->mips) {
         if (instr->ins.ins != 0) {
-            if (state->scope_cnt >= 1) {
-                thecl_scope_t* scope = &state->scope_stack[state->scope_cnt-1];
-                if (scope->delay_slot && scope->delay_owner && (scope->delay_owner->reg_stalled & instr->reg_used) == 0) {
-                    thecl_instr_t* slot_ins = scope->delay_slot->data;
+            list_node_t* node;
+            list_for_each_node(&state->delay_slots, node) {
+                gooc_delay_slot_t* delay_slot = node->data;
+                if (!mips_instr_is_branch(&instr->ins) && delay_slot && (delay_slot->owner->reg_stalled & instr->reg_used) == 0) {
+                    thecl_instr_t* slot_ins = delay_slot->slot->data;
                     for (int i=0; i<32; ++i) {
                         if ((1 << i) & instr->reg_used && slot_ins->offset < state->reg_block->regs[i].last_used) {
                             slot_ins = NULL;
@@ -2356,9 +2374,14 @@ instr_add(
                     if (slot_ins) {
                         instr->offset = slot_ins->offset;
                         thecl_instr_free(slot_ins);
-                        scope->delay_slot->data = instr;
-                        scope->delay_slot = NULL;
-                        scope->delay_owner = NULL;
+                        delay_slot->slot->data = instr;
+                        free(delay_slot);
+                        list_del(&state->delay_slots, node);
+                        for (int i=0; i<32; ++i) {
+                            if (instr->reg_used & (1 << i)) {
+                                state->reg_block->regs[i].last_used = instr->offset;
+                            }
+                        }
                         return;
                     }
                 }
@@ -3391,14 +3414,16 @@ static void
 scope_begin(
     parser_state_t* state
 ) {
-    if (state->scope_cnt >= 1) {
-        state->scope_stack[state->scope_cnt-1].delay_slot = NULL;
+    void* data;
+    list_for_each(&state->delay_slots, data) {
+        free(data);
     }
+    list_free_nodes(&state->delay_slots);
+
     state->scope_stack = realloc(state->scope_stack, sizeof(thecl_scope_t)*(state->scope_cnt+1));
     state->scope_stack[state->scope_cnt].id = state->scope_id++;
     state->scope_stack[state->scope_cnt].mips = state->scope_cnt >= 1 ? state->scope_stack[state->scope_cnt - 1].mips : false;
     state->scope_stack[state->scope_cnt].returned = false;
-    state->scope_stack[state->scope_cnt].delay_slot = NULL;
     ++state->scope_cnt;
     state->block_bound = 1;
 }
@@ -3411,6 +3436,12 @@ scope_finish(
     if (state->scope_cnt > 1 && !state->scope_stack[state->scope_cnt-1].returned) {
         state->scope_stack[state->scope_cnt-2].mips = state->scope_stack[state->scope_cnt-1].mips;
     }
+
+    void* data;
+    list_for_each(&state->delay_slots, data) {
+        free(data);
+    }
+    list_free_nodes(&state->delay_slots);
 
     --state->scope_cnt;
 

@@ -95,5 +95,6 @@ struct expression_t* reg_get_expr(mips_reg_t* reg);
 mips_ins_fmt_t* mips_find_format(const char* name);
 int mips_instr_init(const char* name, int imm, int shamt, int rd, int rt, int rs, int addr);
 uint64_t mips_instr_getregs(const char* name, mips_ins_t* ins);
+int mips_instr_is_branch(mips_ins_t* ins);
 
 #endif

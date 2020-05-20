@@ -278,11 +278,14 @@ int gool_pool_force_make_index(
     uint32_t val);
 
 typedef struct {
+    list_node_t* slot;
+    thecl_instr_t* owner;
+} gooc_delay_slot_t;
+
+typedef struct {
     int id;
     bool mips;
     bool returned;
-    list_node_t* delay_slot;
-    thecl_instr_t* delay_owner;
 } thecl_scope_t;
 
 typedef struct {
@@ -292,6 +295,7 @@ typedef struct {
     int stack_adjust;
     mips_reg_block_t* reg_block;
     mips_reg_t* top_reg;
+    list_t delay_slots;
     list_t expressions;
     list_t addresses;
     list_t block_stack;

@@ -281,3 +281,21 @@ mips_instr_getregs(const char* name, mips_ins_t *ins)
     }
     return reg;
 }
+
+int
+mips_instr_is_branch(mips_ins_t* ins)
+{
+    return (ins->r.opcode == 0 && ins->r.funct == 8)
+        || (ins->r.opcode == 0 && ins->r.funct == 9)
+        || (ins->i.opcode == 1 && ins->i.rt == 0)
+        || (ins->i.opcode == 1 && ins->i.rt == 1)
+        || (ins->i.opcode == 1 && ins->i.rt == 16)
+        || (ins->i.opcode == 1 && ins->i.rt == 17)
+        || (ins->j.opcode == 2)
+        || (ins->j.opcode == 3)
+        || (ins->i.opcode == 4)
+        || (ins->i.opcode == 5)
+        || (ins->i.opcode == 6 && ins->i.rt == 0)
+        || (ins->i.opcode == 7 && ins->i.rt == 0)
+        ;
+}
