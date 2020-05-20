@@ -258,13 +258,13 @@ mips_instr_getregs(const char* name, mips_ins_t *ins)
     if (fmt) {
         switch (fmt->fmt) {
         case 'R':
-            if (!strcmp(fmt->ops[2], "rd")) reg |= 1 << ins->r.rd;
-            if (!strcmp(fmt->ops[3], "rt")) reg |= 1 << ins->r.rt;
-            if (!strcmp(fmt->ops[4], "rs")) reg |= 1 << ins->r.rs;
+            if (!strcmp(fmt->ops[2], "rd")) reg |= 1ULL << ins->r.rd;
+            if (!strcmp(fmt->ops[3], "rt")) reg |= 1ULL << ins->r.rt;
+            if (!strcmp(fmt->ops[4], "rs")) reg |= 1ULL << ins->r.rs;
             break;
         case 'I':
-            if (!strcmp(fmt->ops[1], "rt")) reg |= 1 << ins->i.rt;
-            if (!strcmp(fmt->ops[2], "rs")) reg |= 1 << ins->i.rs;
+            if (!strcmp(fmt->ops[1], "rt")) reg |= 1ULL << ins->i.rt;
+            if (!strcmp(fmt->ops[2], "rs")) reg |= 1ULL << ins->i.rs;
             break;
         case 'J':
             break;
