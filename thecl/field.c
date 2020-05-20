@@ -80,6 +80,7 @@ gool_fields[] = {
     { "eventaccepted",  37 },
     { "objectspawned",  37 },
     { "v0",             38 },
+    { "broadcastcaught",38 },
     { "frametime",      39 },
     { "statetime",      40 },
     { "stalltime",      41 },
