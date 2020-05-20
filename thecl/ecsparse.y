@@ -1835,7 +1835,7 @@ Assignment:
         }
         if (state->mips_mode) {
             expression_output(state, $3);
-            mips_instr_new_store(state, $1)
+            mips_instr_new_store(state, $1);
             if ($1->stack == 1) {
                 if ($1->object_link == -1 && $1->value.val.S >= 3) {
                     state->current_sub->vars[$1->value.val.S - 3]->is_written = true;
