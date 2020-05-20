@@ -61,7 +61,6 @@ static thecl_instr_t* mips_instr_new(parser_state_t* state, const char* name, in
     mips_instr_new(state, name, imm, 0, 0, rt, rs, 0)
 #define MIPS_INSTR_NOP() \
     mips_instr_new(state, "nop", 0, 0, 0, 0, 0, 0)
-static void mips_instr_new_load(parser_state_t* state, mips_reg_t* reg, thecl_param_t* value);
 static void mips_instr_new_store(parser_state_t* state, thecl_param_t* value);
 static void instr_add(parser_state_t* state, thecl_sub_t* sub, thecl_instr_t* instr);
 static void instr_add_delay_slot(parser_state_t* state, thecl_sub_t* sub, thecl_instr_t* instr);
@@ -2269,6 +2268,18 @@ instr_new_list(
 }
 
 static void
+mips_stack_adjust(
+    parser_state_t* state,
+    thecl_sub_t* sub)
+{
+    if (state->stack_adjust != 0) {
+        instr_add(state, state->current_sub, MIPS_INSTR_I("addiu", state->stack_adjust, get_reg(state->reg_block, "s6")->index, get_reg(state->reg_block, "s6")->index));
+        instr_add(state, state->current_sub, MIPS_INSTR_I("sw", field_get("sp")->offset * 4 + get_obj_proc_offset(state->version), get_reg(state->reg_block, "s6")->index, get_reg(state->reg_block, "s0")->index));
+        state->stack_adjust = 0;
+    }
+}
+
+static void
 instr_start_mips(
     parser_state_t* state,
     thecl_sub_t* sub)
@@ -2281,6 +2292,7 @@ instr_end_mips(
     parser_state_t* state,
     thecl_sub_t* sub)
 {
+    mips_stack_adjust(state, sub);
     instr_add(state, sub, MIPS_INSTR_JALR(get_reg(state->reg_block, "s5")->index, get_reg(state->reg_block, "ra")->index));
     instr_add(state, sub, MIPS_INSTR_NOP());
 }
@@ -2290,6 +2302,7 @@ instr_return_mips(
     parser_state_t* state,
     thecl_sub_t* sub)
 {
+    mips_stack_adjust(state, sub);
     instr_add(state, sub, MIPS_INSTR_JR(get_reg(state->reg_block, "ra")->index));
     instr_add(state, sub, MIPS_INSTR_I("ori", 0, get_reg(state->reg_block, "s5")->index, 0));
 }
@@ -2798,6 +2811,26 @@ instr_create_call(
     return false;
 }
 
+static mips_reg_t*
+request_reg(
+    parser_state_t* state,
+    expression_t* expr)
+{
+    mips_reg_t* reg = get_usable_reg(state->reg_block);
+    if (reg) {
+        reg->status = MREG_STATUS_IN_USE;
+        if (expr) {
+            reg->saved_expr = expression_copy(expr);
+            reg->saved_param = expr->type == EXPRESSION_VAL ? param_copy(expr->value) : NULL;
+        }
+    }
+    else {
+        yyerror(state, "oops, no available registers for mips mode");
+        exit(2);
+    }
+    return reg;
+}
+
 static expression_t*
 expression_load_new(
     const parser_state_t* state,
@@ -2943,12 +2976,16 @@ expression_create_goto_pop(
 }
 
 static void
-mips_instr_new_load(
+expression_mips_load(
     parser_state_t* state,
-    mips_reg_t* reg,
-    thecl_param_t* param)
+    expression_t* expr)
 {
-    if (param->stack == 0) { /* literal */
+    thecl_param_t* param = expr->value;
+    mips_reg_t* reg = NULL;
+    if (!((param->stack == 1 && !(param->object_link >= -1 && param->object_link <= 7)) || param->stack == 3)) {
+        reg = request_reg(state, expr);
+    }
+    if (param->stack == 0) { /* number */
         if (param->value.val.S > 0x7FFF || param->value.val.S < -0x8000) {
             instr_add(state, state->current_sub, MIPS_INSTR_I("lui", param->value.val.S >> 16 & 0xFFFF, reg->index, 0));
             instr_add(state, state->current_sub, MIPS_INSTR_I("ori", param->value.val.S & 0xFFFF, reg->index, reg->index));
@@ -2957,7 +2994,7 @@ mips_instr_new_load(
             instr_add(state, state->current_sub, MIPS_INSTR_I("ori", param->value.val.S & 0xFFFF, reg->index, 0));
         }
     }
-    else if (param->stack == 1) { /* object field, stack, spec */
+    else if (param->stack == 1) { /* object field, stack */
         if (param->object_link == 0) { /* object field */
             instr_add_delay_slot(state, state->current_sub, MIPS_INSTR_I("lw", param->value.val.S * 4 + get_obj_proc_offset(state->version), reg->index, get_reg(state->reg_block, "s0")->index));
         }
@@ -2970,7 +3007,21 @@ mips_instr_new_load(
                 link_reg->status = MREG_STATUS_USED;
             }
         }
+        else if (param->object_link == -1) { /* stack */
+            instr_add_delay_slot(state, state->current_sub, MIPS_INSTR_I("lw", param->value.val.S * 4, reg->index, get_reg(state->reg_block, "s7")->index));
+        }
+        else { /* other */
+            instr_add(state, state->current_sub, instr_new(state, expr->id, "p", expr->value));
+        }
     }
+    else if (param->stack == 2) { /* global */
+        instr_add_delay_slot(state, state->current_sub, MIPS_INSTR_I("lw", 0x58, reg->index, get_reg(state->reg_block, "s8")->index));
+        instr_add_delay_slot(state, state->current_sub, MIPS_INSTR_I("lw", (param->value.val.S >> 8) * 4, reg->index, reg->index));
+    }
+    else if (param->stack == 3) { /* pointer */
+        instr_add(state, state->current_sub, instr_new(state, expr->id, "p", expr->value));
+    }
+    state->top_reg = reg;
 }
 
 static void
@@ -2979,18 +3030,7 @@ expression_output_mips(
     expression_t* expr)
 {
     if (expr->type == EXPRESSION_VAL) {
-        mips_reg_t* reg = get_usable_reg(state->reg_block);
-        if (reg) {
-            reg->status = MREG_STATUS_IN_USE;
-            reg->saved_expr = expression_copy(expr);
-            reg->saved_param = param_copy(expr->value);
-        }
-        else {
-            yyerror(state, "oops, no available registers for mips mode");
-            exit(2);
-        }
-        mips_instr_new_load(state, reg, expr->value);
-        state->top_reg = reg;
+        expression_mips_load(state, expr);
     }
     else if (expr->type == EXPRESSION_OP) {
         expression_mips_make(state, expr);
@@ -3545,8 +3585,13 @@ var_create(
         ++sub->stack;
 
     if (push) {
-        const expr_t* expr = expr_get_by_symbol(state->version, LOAD);
-        instr_add(state, sub, instr_new(state, expr->id, "S", 0));
+        if (state->mips_mode) {
+            state->stack_adjust += 4;
+        }
+        else {
+            const expr_t* expr = expr_get_by_symbol(state->version, LOAD);
+            instr_add(state, sub, instr_new(state, expr->id, "S", 0));
+        }
     }
 
     return var;
@@ -3562,18 +3607,22 @@ var_create_assign(
     thecl_variable_t* var = var_create(state, sub, name, false);
     var->is_written = true;
 
-    thecl_param_t* param;
-    if (expr->type == EXPRESSION_VAL) {
-        param = expr->value;
-    } else {
+    if (state->mips_mode) {
+        thecl_param_t* param = param_new('S');
+        param->stack = 1;
+        param->value.val.S = var->stack;
         expression_output(state, expr);
-        param = NULL;
+        mips_instr_new_store(state, param);
     }
-    expression_free(expr);
-
-    if (param != NULL) { /* if param is NULL, then an expression was pushed to stack, which is enough */
-        const expr_t* expr_load = expr_get_by_symbol(state->version, param->stack == 3 ? PLOAD : LOAD);
-        instr_add(state, state->current_sub, instr_new(state, expr_load->id, "p", param));
+    else {
+        if (expr->type == EXPRESSION_VAL) {
+            thecl_param_t* param = expr->value;
+            const expr_t* expr_load = expr_get_by_symbol(state->version, param->stack == 3 ? PLOAD : LOAD);
+            instr_add(state, state->current_sub, instr_new(state, expr_load->id, "p", param));
+        } else {
+            expression_output(state, expr);
+        }
+        expression_free(expr);
     }
 
     return var;
@@ -3771,7 +3820,7 @@ mips_instr_new_store(
     parser_state_t* state,
     thecl_param_t* value)
 {
-    if (value->stack == 1) { /* object field, stack, spec */
+    if (value->stack == 1) { /* object field, stack */
         if (value->object_link == 0) { /* object field */
             instr_add_delay_slot(state, state->current_sub, MIPS_INSTR_I("sw", value->value.val.S * 4 + get_obj_proc_offset(state->version), state->top_reg->index, get_reg(state->reg_block, "s0")->index));
         }
@@ -3782,6 +3831,23 @@ mips_instr_new_store(
                 instr_add_delay_slot(state, state->current_sub, MIPS_INSTR_I("sw", value->value.val.S * 4 + get_obj_proc_offset(state->version), state->top_reg->index, link_reg->index));
                 link_reg->status = MREG_STATUS_USED;
             }
+            else {
+                exit(2);
+            }
+        }
+        else if (value->object_link == -1) { /* stack */
+            instr_add_delay_slot(state, state->current_sub, MIPS_INSTR_I("sw", value->value.val.S * 4, state->top_reg->index, get_reg(state->reg_block, "s7")->index));
+        }
+    }
+    else if (value->stack == 2) { /* global */
+        mips_reg_t* reg = get_usable_reg(state->reg_block);
+        if (reg) {
+            instr_add_delay_slot(state, state->current_sub, MIPS_INSTR_I("lw", 0x58, reg->index, get_reg(state->reg_block, "s8")->index));
+            instr_add_delay_slot(state, state->current_sub, MIPS_INSTR_I("lw", (value->value.val.S >> 8) * 4, state->top_reg->index, reg->index));
+            reg->status = MREG_STATUS_USED;
+        }
+        else {
+            exit(2);
         }
     }
     clean_regs(state->reg_block);
@@ -3994,23 +4060,30 @@ expression_mips_make(
             if (child_expr1->type == EXPRESSION_VAL && child_expr1->value->stack == 0 && child_expr1->value->value.val.S >= -0x8000 && child_expr1->value->value.val.S <= 0x7FFF) { val_expr = child_expr1; var_expr = child_expr2; }
             else if (child_expr2->type == EXPRESSION_VAL && child_expr2->value->stack == 0 && child_expr2->value->value.val.S >= -0x8000 && child_expr2->value->value.val.S <= 0x7FFF) { val_expr = child_expr2; var_expr = child_expr1; }
             if (val_expr) {
-                expression_output_mips(state, var_expr); op1 = state->top_reg;
-                ret = get_usable_reg(state->reg_block);
-                if (ret) {
-                    ret->status = MREG_STATUS_IN_USE;
-                    ret->saved_expr = expression_copy(expr);
+                expression_output(state, var_expr); op1 = state->top_reg;
+                if (op1 == NULL) { /* result is on the stack */
+                    op1 = request_reg(state, NULL);
+                    instr_add_delay_slot(state, state->current_sub, MIPS_INSTR_I("lw", -4, op1->index, get_reg(state->reg_block, "s6")->index));
+                    state->stack_adjust -= 4;
                 }
+                ret = request_reg(state, expr);
                 instr_add(state, state->current_sub, MIPS_INSTR_I("addiu", val_expr->value->value.val.S, ret->index, op1->index));
                 op1->status = MREG_STATUS_USED;
             }
             else {
-                expression_output_mips(state, child_expr1); op1 = state->top_reg;
-                expression_output_mips(state, child_expr2); op2 = state->top_reg;
-                ret = get_usable_reg(state->reg_block);
-                if (ret) {
-                    ret->status = MREG_STATUS_IN_USE;
-                    ret->saved_expr = expression_copy(expr);
+                expression_output(state, child_expr1); op1 = state->top_reg;
+                expression_output(state, child_expr2); op2 = state->top_reg;
+                if (op2 == NULL) { /* result is on the stack */
+                    op2 = request_reg(state, NULL);
+                    instr_add_delay_slot(state, state->current_sub, MIPS_INSTR_I("lw", -4, op2->index, get_reg(state->reg_block, "s6")->index));
+                    state->stack_adjust -= 4;
                 }
+                if (op1 == NULL) { /* result is on the stack */
+                    op1 = request_reg(state, NULL);
+                    instr_add_delay_slot(state, state->current_sub, MIPS_INSTR_I("lw", -4, op1->index, get_reg(state->reg_block, "s6")->index));
+                    state->stack_adjust -= 4;
+                }
+                ret = request_reg(state, expr);
                 instr_add(state, state->current_sub, MIPS_INSTR_ALU_R("addu", ret->index, op1->index, op2->index));
                 op1->status = MREG_STATUS_USED;
                 op2->status = MREG_STATUS_USED;
