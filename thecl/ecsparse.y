@@ -2360,6 +2360,7 @@ instr_add(
     }
     if (instr->mips) {
         if (instr->ins.ins != 0) {
+            bool ret = false;
             list_node_t* node;
             list_for_each_node(&state->delay_slots, node) {
                 gooc_delay_slot_t* delay_slot = node->data;
@@ -2376,16 +2377,43 @@ instr_add(
                         instr->offset = slot_ins->offset;
                         thecl_instr_free(slot_ins);
                         delay_slot->slot->data = instr;
-                        free(delay_slot);
                         list_del(&state->delay_slots, node);
-                        for (int i=0; i<32; ++i) {
-                            if (instr->reg_used & (1 << i)) {
-                                state->reg_block->regs[i].last_used = instr->offset;
-                            }
-                        }
-                        return;
+                        free(delay_slot);
+                        ret = true;
+                        break;
                     }
                 }
+            }
+            if (!mips_instr_is_branch(&instr->ins) && instr->reg_stalled) {
+                thecl_instr_t* prev_ins = NULL;
+                if (ret && instr->offset == sub->offset - 1) {
+                    prev_ins = sub->instrs.tail->prev->data;
+                }
+                else if (!ret) {
+                    prev_ins = list_tail(&sub->instrs);
+                }
+                if (prev_ins && prev_ins->mips && prev_ins->ins.ins != 0 && (prev_ins->reg_used & instr->reg_used) == 0) { /* swap with previous instruction */
+                    if (!ret) { /* did not fill a delay slot */
+                        list_prepend_new(&sub->instrs, instr, sub->instrs.tail);
+                        instr->offset = prev_ins->offset;
+                        prev_ins->offset = sub->offset++;
+                    }
+                    else { /* already replacing an existing instruction */
+                        sub->instrs.tail->prev->data = instr;
+                        sub->instrs.tail->data = prev_ins;
+                        instr->offset = sub->offset - 2;
+                        prev_ins->offset = sub->offset - 1;
+                    }
+                    ret = true;
+                }
+            }
+            if (ret) {
+                for (int i=0; i<32; ++i) {
+                    if (instr->reg_used & (1 << i)) {
+                        state->reg_block->regs[i].last_used = instr->offset;
+                    }
+                }
+                return;
             }
         }
         goto NO_OPTIM;
@@ -2512,8 +2540,7 @@ instr_add(
     }
     NO_OPTIM:;
     list_append_new(&sub->instrs, instr);
-    instr->offset = sub->offset;
-    ++sub->offset;
+    instr->offset = sub->offset++;
     if (instr->mips) {
         for (int i=0; i<32; ++i) {
             if (instr->reg_used & (1 << i)) {
