@@ -92,8 +92,8 @@ gool_fields[] = {
     { "groundy",        47 },
     { "stateflag",      48 },
     { "speed",          49 },
-    { "mode",           50 },
-    { "field_51",       51 },
+    { "invincible",     50 },
+    { "invincibletime", 51 },
     { "groundtime",     52 },
     { "groundvel",      53 },
     { "zindex",         54 },
@@ -225,13 +225,17 @@ c2_globals[] = {
 
     { "PAUSEMENU",          12 },
     { "LIFEICONTRANSX",     13 },
+    { "ITEMDISPLAY",        14 },
 
     { "DOCTOR",             16 },
 
     { "GAMEPROGRESS",       20 },
 
+    { "BONUSDEATHTIME",     22 },
+
     { "LIFECOUNT",          24 },
     { "HEALTH",             25 },
+    { "FRUITCOUNT",         26 },
 
     { "BOXCOUNTER",         29 },
     { "ZONEFLAGS",          30 },
@@ -275,6 +279,9 @@ c2_globals[] = {
     { "FADECONTROL",       106 },
 
     { "DEATHCOUNT",        108 },
+
+    { "ANALOGAMT",         124 },
+    { "ANALOGDIR",         125 },
 
     { "BONUSSTATE",        132 },
     { "BONUSFRUITCOUNTER", 133 },
