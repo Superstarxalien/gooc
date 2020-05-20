@@ -2274,7 +2274,7 @@ mips_stack_adjust(
 {
     if (state->stack_adjust != 0) {
         instr_add(state, state->current_sub, MIPS_INSTR_I("addiu", state->stack_adjust, get_reg(state->reg_block, "s6")->index, get_reg(state->reg_block, "s6")->index));
-        instr_add(state, state->current_sub, MIPS_INSTR_I("sw", field_get("sp")->offset * 4 + get_obj_proc_offset(state->version), get_reg(state->reg_block, "s6")->index, get_reg(state->reg_block, "s0")->index));
+        instr_add_delay_slot(state, state->current_sub, MIPS_INSTR_I("sw", field_get("sp")->offset * 4 + get_obj_proc_offset(state->version), get_reg(state->reg_block, "s6")->index, get_reg(state->reg_block, "s0")->index));
         state->stack_adjust = 0;
     }
 }
@@ -2363,8 +2363,9 @@ instr_add(
             list_node_t* node;
             list_for_each_node(&state->delay_slots, node) {
                 gooc_delay_slot_t* delay_slot = node->data;
-                if (!mips_instr_is_branch(&instr->ins) && delay_slot && (delay_slot->owner->reg_stalled & instr->reg_used) == 0) {
+                if (delay_slot && (delay_slot->owner->reg_stalled & instr->reg_used) == 0) {
                     thecl_instr_t* slot_ins = delay_slot->slot->data;
+                    if (slot_ins->offset != sub->offset-1 && mips_instr_is_branch(&instr->ins)) continue;
                     for (int i=0; i<32; ++i) {
                         if ((1 << i) & instr->reg_used && slot_ins->offset < state->reg_block->regs[i].last_used) {
                             slot_ins = NULL;
