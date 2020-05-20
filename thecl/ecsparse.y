@@ -3820,6 +3820,11 @@ mips_instr_new_store(
     parser_state_t* state,
     thecl_param_t* value)
 {
+    if (state->top_reg == NULL) {
+        state->top_reg = request_reg(state, value);
+        instr_add_delay_slot(state, state->current_sub, MIPS_INSTR_I("lw", -4, state->top_reg->index, get_reg(state->reg_block, "s6")->index));
+        state->stack_adjust -= 4;
+    }
     if (value->stack == 1) { /* object field, stack */
         if (value->object_link == 0) { /* object field */
             instr_add_delay_slot(state, state->current_sub, MIPS_INSTR_I("sw", value->value.val.S * 4 + get_obj_proc_offset(state->version), state->top_reg->index, get_reg(state->reg_block, "s0")->index));
@@ -4090,7 +4095,54 @@ expression_mips_make(
             }
             break;
         default:
-            yyerror(NULL, "unsupported mips expression");
+            {
+            i = state->stack_adjust;
+            const expr_t* expression = expr_get_by_id(state->version, expr->id);
+            int c = 0, lc = list_count(&expr->children);
+            list_t* param_list = list_new();
+
+            expression_t* child_expr;
+            list_node_t* child_node;
+            list_node_t* child_next;
+            list_for_each_node_safe(&expr->children, child_node, child_next) {
+                ++c;
+                child_expr = child_node->data;
+                if (child_expr->type == EXPRESSION_VAL && child_expr->value->stack != 3 && (!expression->has_double_param || (expression->has_double_param && lc <= 2) || (expression->has_double_param && lc > 2 && c == 1))) {
+                    list_append_new(param_list, child_expr->value);
+                }
+                else {
+                    expression_output(state, child_expr);
+                    if (state->top_reg) {
+                        instr_add_delay_slot(state, state->current_sub, MIPS_INSTR_I("sw", state->stack_adjust - i, state->top_reg->index, get_reg(state->reg_block, "s6")->index));
+                        state->stack_adjust += 4;
+                    }
+                    else {
+                        i = state->stack_adjust;
+                    }
+                    if (child_expr->type == EXPRESSION_VAL && child_expr->value->stack == 3) {
+                        list_del(&expr->children, child_node);
+                        expression_free(child_expr);
+                        if (c <= expression->stack_arity) {
+                            list_append_new(param_list, param_sp_new());
+                        }
+                    }
+                    else {
+                        list_append_new(param_list, param_sp_new());
+                    }
+                }
+            }
+
+            if (expression->has_double_param && lc == 3) {
+                param_free(param_list->tail->data);
+                param_free(param_list->tail->prev->data);
+                list_del_tail(param_list);
+                list_del_tail(param_list);
+                list_append_new(param_list, param_sp2_new());
+            }
+
+            instr_add(state, state->current_sub, instr_new_list(state, expr->id, param_list));
+            }
+            break;
     }
     state->top_reg = ret;
 }
