@@ -3390,19 +3390,21 @@ sub_finish(
     else {
         int bb = state->block_bound;
         bool m = state->scope_stack[state->scope_cnt-1].mips;
+        bool r = state->scope_stack[state->scope_cnt-1].returned;
         char buf[512];
         snprintf(buf, 512, "@%s_sub_end", state->current_sub->name);
         label_create(state, buf);
         scope_finish(state, true);
-        thecl_instr_t* last_ins = state->version == 1 ? NULL : list_tail(&state->current_sub->instrs);
         const expr_t* expr = expr_get_by_symbol(state->version, RETURN);
-        if (bb || (!m && (!last_ins || (last_ins && last_ins->id != expr->id)))) {
-            instr_add(state, state->current_sub, instr_new(state, expr->id, "SSSSS", 0, 0, 0x25, 0, 2));
+        if (bb || !r) {
+            if (!m) {
+                instr_add(state, state->current_sub, instr_new(state, expr->id, "SSSSS", 0, 0, 0x25, 0, 2));
+            }
+            else {
+                instr_return_mips(state, state->current_sub);
+            }
         }
-        else if (bb || m) {
-            instr_return_mips(state, state->current_sub);
-            state->scope_stack[state->scope_cnt].returned = true;
-        }
+        state->scope_stack[state->scope_cnt].returned = true;
         state->ecl->ins_offset += state->current_sub->offset;
     }
     scope_finish(state, false);
