@@ -2134,12 +2134,6 @@ Address:
         free($1);
         free($3);
       }
-    | NIL {
-        $$ = param_new('S');
-        $$->stack = 1;
-        $$->value.val.S = 0;
-        $$->object_link = -2;
-    }
     ;
 
 Integer:
@@ -2151,6 +2145,12 @@ Integer:
         $$ = param_new('S');
         $$->value.val.S = $1;
       }
+    | NIL {
+        $$ = param_new('S');
+        $$->stack = 1;
+        $$->value.val.S = 0;
+        $$->object_link = -2;
+    }
     ;
 
 Entry:
