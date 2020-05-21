@@ -93,8 +93,6 @@ static expression_t *expression_copy(expression_t *expr);
 static void expression_create_goto(parser_state_t *state, int type, char *labelstr, expression_t* cond);
 static void expression_create_goto_pop(parser_state_t *state, int type, char *labelstr, expression_t* cond, int pop);
 
-static void expression_mips_make(parser_state_t* state, expression_t* expr);
-
 /* Bison things. */
 void yyerror(const parser_state_t*, const char*, ...);
 int yylex(void);
@@ -3090,6 +3088,113 @@ expression_mips_load(
 }
 
 static void
+expression_mips_operation(
+    parser_state_t* state,
+    expression_t* expr)
+{
+    mips_reg_t* ret = NULL, *op1, *op2;
+    expression_t* val_expr, *var_expr, *child_expr1, *child_expr2, *child_expr3;
+    int i = 0;
+    list_for_each(&expr->children, val_expr) {
+        ++i;
+        if (i == 1) {
+            child_expr1 = val_expr;
+        }
+        else if (i == 2) {
+            child_expr2 = val_expr;
+        }
+        else if (i == 3) {
+            child_expr3 = val_expr;
+        }
+    }
+    switch (expr_get_by_id(state->version, expr->id)->symbol) {
+        case ADD:
+            if (child_expr1->type == EXPRESSION_VAL && child_expr1->value->stack == 0 && child_expr1->value->value.val.S >= -0x8000 && child_expr1->value->value.val.S <= 0x7FFF) { val_expr = child_expr1; var_expr = child_expr2; }
+            else if (child_expr2->type == EXPRESSION_VAL && child_expr2->value->stack == 0 && child_expr2->value->value.val.S >= -0x8000 && child_expr2->value->value.val.S <= 0x7FFF) { val_expr = child_expr2; var_expr = child_expr1; }
+            if (val_expr) {
+                expression_output(state, var_expr); op1 = state->top_reg;
+                if (op1 == NULL) { /* result is on the stack */
+                    op1 = request_reg(state, NULL);
+                    instr_add_delay_slot(state, state->current_sub, MIPS_INSTR_I("lw", -4, op1->index, get_reg(state->reg_block, "s6")->index));
+                    state->stack_adjust -= 4;
+                }
+                ret = request_reg(state, expr);
+                instr_add(state, state->current_sub, MIPS_INSTR_I("addiu", val_expr->value->value.val.S, ret->index, op1->index));
+                op1->status = MREG_STATUS_USED;
+            }
+            else {
+                expression_output(state, child_expr1); op1 = state->top_reg;
+                expression_output(state, child_expr2); op2 = state->top_reg;
+                if (op2 == NULL) { /* result is on the stack */
+                    op2 = request_reg(state, NULL);
+                    instr_add_delay_slot(state, state->current_sub, MIPS_INSTR_I("lw", -4, op2->index, get_reg(state->reg_block, "s6")->index));
+                    state->stack_adjust -= 4;
+                }
+                if (op1 == NULL) { /* result is on the stack */
+                    op1 = request_reg(state, NULL);
+                    instr_add_delay_slot(state, state->current_sub, MIPS_INSTR_I("lw", -4, op1->index, get_reg(state->reg_block, "s6")->index));
+                    state->stack_adjust -= 4;
+                }
+                ret = request_reg(state, expr);
+                instr_add(state, state->current_sub, MIPS_INSTR_ALU_R("addu", ret->index, op1->index, op2->index));
+                op1->status = MREG_STATUS_USED;
+                op2->status = MREG_STATUS_USED;
+            }
+            break;
+        default:
+            {
+            i = state->stack_adjust;
+            const expr_t* expression = expr_get_by_id(state->version, expr->id);
+            int c = 0, lc = list_count(&expr->children);
+            list_t* param_list = list_new();
+
+            expression_t* child_expr;
+            list_node_t* child_node;
+            list_node_t* child_next;
+            list_for_each_node_safe(&expr->children, child_node, child_next) {
+                ++c;
+                child_expr = child_node->data;
+                if (child_expr->type == EXPRESSION_VAL && child_expr->value->stack != 3 && (!expression->has_double_param || (expression->has_double_param && lc <= 2) || (expression->has_double_param && lc > 2 && c == 1))) {
+                    list_append_new(param_list, child_expr->value);
+                }
+                else {
+                    expression_output(state, child_expr);
+                    if (state->top_reg) {
+                        instr_add_delay_slot(state, state->current_sub, MIPS_INSTR_I("sw", state->stack_adjust - i, state->top_reg->index, get_reg(state->reg_block, "s6")->index));
+                        state->stack_adjust += 4;
+                    }
+                    else {
+                        i = state->stack_adjust;
+                    }
+                    if (child_expr->type == EXPRESSION_VAL && child_expr->value->stack == 3) {
+                        list_del(&expr->children, child_node);
+                        expression_free(child_expr);
+                        if (c <= expression->stack_arity) {
+                            list_append_new(param_list, param_sp_new());
+                        }
+                    }
+                    else {
+                        list_append_new(param_list, param_sp_new());
+                    }
+                }
+            }
+
+            if (expression->has_double_param && lc == 3) {
+                param_free(param_list->tail->data);
+                param_free(param_list->tail->prev->data);
+                list_del_tail(param_list);
+                list_del_tail(param_list);
+                list_append_new(param_list, param_sp2_new());
+            }
+
+            instr_add(state, state->current_sub, instr_new_list(state, expr->id, param_list));
+            }
+            break;
+    }
+    state->top_reg = ret;
+}
+
+static void
 expression_output_mips(
     parser_state_t* state,
     expression_t* expr)
@@ -3098,7 +3203,7 @@ expression_output_mips(
         expression_mips_load(state, expr);
     }
     else if (expr->type == EXPRESSION_OP) {
-        expression_mips_make(state, expr);
+        expression_mips_operation(state, expr);
     }
 }
 
@@ -4114,113 +4219,6 @@ param_var_new(
     param_sp->object_link = 0;
     param_sp->value.val.S = val;
     return param_sp;
-}
-
-static void
-expression_mips_make(
-    parser_state_t* state,
-    expression_t* expr)
-{
-    mips_reg_t* ret = NULL, *op1, *op2;
-    expression_t* val_expr, *var_expr, *child_expr1, *child_expr2, *child_expr3;
-    int i = 0;
-    list_for_each(&expr->children, val_expr) {
-        ++i;
-        if (i == 1) {
-            child_expr1 = val_expr;
-        }
-        else if (i == 2) {
-            child_expr2 = val_expr;
-        }
-        else if (i == 3) {
-            child_expr3 = val_expr;
-        }
-    }
-    switch (expr_get_by_id(state->version, expr->id)->symbol) {
-        case ADD:
-            if (child_expr1->type == EXPRESSION_VAL && child_expr1->value->stack == 0 && child_expr1->value->value.val.S >= -0x8000 && child_expr1->value->value.val.S <= 0x7FFF) { val_expr = child_expr1; var_expr = child_expr2; }
-            else if (child_expr2->type == EXPRESSION_VAL && child_expr2->value->stack == 0 && child_expr2->value->value.val.S >= -0x8000 && child_expr2->value->value.val.S <= 0x7FFF) { val_expr = child_expr2; var_expr = child_expr1; }
-            if (val_expr) {
-                expression_output(state, var_expr); op1 = state->top_reg;
-                if (op1 == NULL) { /* result is on the stack */
-                    op1 = request_reg(state, NULL);
-                    instr_add_delay_slot(state, state->current_sub, MIPS_INSTR_I("lw", -4, op1->index, get_reg(state->reg_block, "s6")->index));
-                    state->stack_adjust -= 4;
-                }
-                ret = request_reg(state, expr);
-                instr_add(state, state->current_sub, MIPS_INSTR_I("addiu", val_expr->value->value.val.S, ret->index, op1->index));
-                op1->status = MREG_STATUS_USED;
-            }
-            else {
-                expression_output(state, child_expr1); op1 = state->top_reg;
-                expression_output(state, child_expr2); op2 = state->top_reg;
-                if (op2 == NULL) { /* result is on the stack */
-                    op2 = request_reg(state, NULL);
-                    instr_add_delay_slot(state, state->current_sub, MIPS_INSTR_I("lw", -4, op2->index, get_reg(state->reg_block, "s6")->index));
-                    state->stack_adjust -= 4;
-                }
-                if (op1 == NULL) { /* result is on the stack */
-                    op1 = request_reg(state, NULL);
-                    instr_add_delay_slot(state, state->current_sub, MIPS_INSTR_I("lw", -4, op1->index, get_reg(state->reg_block, "s6")->index));
-                    state->stack_adjust -= 4;
-                }
-                ret = request_reg(state, expr);
-                instr_add(state, state->current_sub, MIPS_INSTR_ALU_R("addu", ret->index, op1->index, op2->index));
-                op1->status = MREG_STATUS_USED;
-                op2->status = MREG_STATUS_USED;
-            }
-            break;
-        default:
-            {
-            i = state->stack_adjust;
-            const expr_t* expression = expr_get_by_id(state->version, expr->id);
-            int c = 0, lc = list_count(&expr->children);
-            list_t* param_list = list_new();
-
-            expression_t* child_expr;
-            list_node_t* child_node;
-            list_node_t* child_next;
-            list_for_each_node_safe(&expr->children, child_node, child_next) {
-                ++c;
-                child_expr = child_node->data;
-                if (child_expr->type == EXPRESSION_VAL && child_expr->value->stack != 3 && (!expression->has_double_param || (expression->has_double_param && lc <= 2) || (expression->has_double_param && lc > 2 && c == 1))) {
-                    list_append_new(param_list, child_expr->value);
-                }
-                else {
-                    expression_output(state, child_expr);
-                    if (state->top_reg) {
-                        instr_add_delay_slot(state, state->current_sub, MIPS_INSTR_I("sw", state->stack_adjust - i, state->top_reg->index, get_reg(state->reg_block, "s6")->index));
-                        state->stack_adjust += 4;
-                    }
-                    else {
-                        i = state->stack_adjust;
-                    }
-                    if (child_expr->type == EXPRESSION_VAL && child_expr->value->stack == 3) {
-                        list_del(&expr->children, child_node);
-                        expression_free(child_expr);
-                        if (c <= expression->stack_arity) {
-                            list_append_new(param_list, param_sp_new());
-                        }
-                    }
-                    else {
-                        list_append_new(param_list, param_sp_new());
-                    }
-                }
-            }
-
-            if (expression->has_double_param && lc == 3) {
-                param_free(param_list->tail->data);
-                param_free(param_list->tail->prev->data);
-                list_del_tail(param_list);
-                list_del_tail(param_list);
-                list_append_new(param_list, param_sp2_new());
-            }
-
-            instr_add(state, state->current_sub, instr_new_list(state, expr->id, param_list));
-            }
-            break;
-    }
-    state->top_reg = ret;
 }
 
 void
