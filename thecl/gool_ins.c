@@ -249,23 +249,30 @@ c1_gool_ins_sendevent_params(
     thecl_param_t* param;
     size_t c = list_count(params);
     if (c == 2) {
-        param = param_new('S');
-        param->value.val.S = 0;
-        list_prepend_to(params, param, params->tail);
-
-        param = param_new('S');
-        param->value.val.S = 0;
-        list_prepend_to(params, param, params->tail);
-    }
-    else if (c == 3) {
-        thecl_param_t* receiver = params->head->next->data;
-        list_del(params, params->head->next);
-        list_append_new(params, param_val_new(argc));
-
-        list_append_new(params, receiver);
+        list_prepend_to(params, param_val_new(0), params->tail);
+        list_prepend_to(params, param_val_new(argc), params->tail);
     }
     else {
-        fprintf(stderr, "%s: sendevent: wrong number of arguments (expected at least 3, got %zu)\n", argv0, c);
+        fprintf(stderr, "%s: sendevent: wrong number of arguments (expected at least 2, got %zu)\n", argv0, c);
+        return NULL;
+    }
+    return params;
+}
+
+static list_t*
+c1_gool_ins_sendeventif_params(
+    list_t* params,
+    int argc)
+{
+    thecl_param_t* param;
+    size_t c = list_count(params);
+    if (c == 3) {
+        list_prepend_to(params, param_val_new(argc), params->tail);
+        list_append_new(params, params->head->next->data);
+        list_del(params, params->head->next);
+    }
+    else {
+        fprintf(stderr, "%s: sendeventif: wrong number of arguments (expected at least 3, got %zu)\n", argv0, c);
         return NULL;
     }
     return params;
@@ -1090,7 +1097,8 @@ c1_gool_ins[] = {
     { "setvel",                   0x85, 0, 0, 0, -1, c1_gool_ins_setvel_params },
     { "vectransf",                0x85, 3, 0, 0, -1, c1_gool_ins_vectransf_params },
     { "vectransf2",               0x85, 3, 0, 0, -1, c1_gool_ins_vectransf2_params },
-    { "sendevent",                0x87, 3, 0, 0,  2, c1_gool_ins_sendevent_params },
+    { "sendevent",                0x87, 2, 0, 0, -1, c1_gool_ins_sendevent_params },
+    { "sendeventif",              0x87, 3, 0, 0,  2, c1_gool_ins_sendeventif_params },
     { "rejectevent",              0x88, 0, 0, 0, -1, c1_gool_ins_eventstatus_params },
     { "acceptevent",              0x89, 0, 0, 0, -1, c1_gool_ins_eventstatus_params },
     { "rejecteventandreturn",     0x88, 0, 0, 0, -1, c1_gool_ins_eventstatusreturn_params },
@@ -1118,8 +1126,10 @@ c1_gool_ins[] = {
     { "soundset",                 0x8D, 0, 0, 0, -1, c1_gool_ins_soundset_params },
     { "soundcheck",               0x8D, 0, 0, 0, -1, c1_gool_ins_soundcheck_params },
     { "calclight",                0x8E, 0, 0, 0, -1, c1_gool_ins_calclight_params },
-    { "broadcastevent",           0x8F, 3, 0, 0,  2, c1_gool_ins_sendevent_params },
-    { "cascadeevent",             0x90, 3, 0, 0,  2, c1_gool_ins_sendevent_params },
+    { "broadcastevent",           0x8F, 2, 0, 0, -1, c1_gool_ins_sendevent_params },
+    { "broadcasteventif",         0x8F, 3, 0, 0,  2, c1_gool_ins_sendeventif_params },
+    { "cascadeevent",             0x90, 2, 0, 0, -1, c1_gool_ins_sendevent_params },
+    { "cascadeeventif",           0x90, 3, 0, 0,  2, c1_gool_ins_sendeventif_params },
     { "spawn2",                   0x91, 3, 0, 0, -1, c1_gool_ins_spawn_params },
     { NULL, 0, 0, 0, 0, 0, NULL }
 };
@@ -1317,7 +1327,8 @@ c2_gool_ins[] = {
     { "setvel",                     58, 0, 0, 0, -1, c1_gool_ins_setvel_params },
     { "vectransf",                  58, 3, 0, 0, -1, c1_gool_ins_vectransf_params },
     { "vectransf2",                 58, 3, 0, 0, -1, c1_gool_ins_vectransf2_params },
-    { "sendevent",                  60, 3, 0, 0,  2, c1_gool_ins_sendevent_params },
+    { "sendevent",                  60, 2, 0, 0, -1, c1_gool_ins_sendevent_params },
+    { "sendeventif",                60, 3, 0, 0,  2, c1_gool_ins_sendeventif_params },
     { "rejectevent",                61, 0, 0, 0, -1, c1_gool_ins_eventstatus_params },
     { "acceptevent",                62, 0, 0, 0, -1, c1_gool_ins_eventstatus_params },
     { "rejecteventandreturn",       61, 0, 0, 0, -1, c1_gool_ins_eventstatusreturn_params },
@@ -1346,8 +1357,10 @@ c2_gool_ins[] = {
     { "soundcheck",                 66, 0, 0, 0, -1, c1_gool_ins_soundcheck_params },
     { "calclight",                  67, 0, 0, 0, -1, c1_gool_ins_calclight_params },
     { "checkzonecollision",         67, 0, 0, 0, -1, c2_gool_ins_checkzonecollision_params },
-    { "broadcastevent",             68, 3, 0, 0,  2, c1_gool_ins_sendevent_params },
-    { "cascadeevent",               69, 3, 0, 0,  2, c1_gool_ins_sendevent_params },
+    { "broadcastevent",             68, 2, 0, 0, -1, c1_gool_ins_sendevent_params },
+    { "broadcasteventif",           68, 3, 0, 0,  2, c1_gool_ins_sendeventif_params },
+    { "cascadeevent",               69, 2, 0, 0, -1, c1_gool_ins_sendevent_params },
+    { "cascadeeventif",             69, 3, 0, 0,  2, c1_gool_ins_sendeventif_params },
     { "spawn2",                     70, 3, 0, 0, -1, c1_gool_ins_spawn_params },
     { "call",                       71, 1, 0, 0, -1, c2_gool_ins_call_params },
     { "ins46",                      46, 0, 0, 0, -1, c2_gool_ins_ins46_params },
