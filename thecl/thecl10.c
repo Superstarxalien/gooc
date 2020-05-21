@@ -324,6 +324,7 @@ c1_parse(
 
     state->mips_mode = false;
     state->stack_adjust = 0;
+    state->top_reg = NULL;
     state->reg_block = mips_reg_block_new();
     state->declared_tempfields = false;
     state->state_count = 0;

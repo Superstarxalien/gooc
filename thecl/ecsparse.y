@@ -50,6 +50,7 @@
 
 static thecl_instr_t* instr_new(parser_state_t* state, uint8_t id, const char* format, ...);
 static thecl_instr_t* instr_new_list(parser_state_t* state, uint8_t id, list_t* list);
+static void mips_stack_adjust(parser_state_t* state, thecl_sub_t* sub);
 static thecl_instr_t* mips_instr_new(parser_state_t* state, const char* name, int imm, int shamt, int rd, int rt, int rs, int addr);
 #define MIPS_INSTR_ALU_R(name, rd, rt, rs) \
     mips_instr_new(state, name, 0, 0, rd, rt, rs, 0)
@@ -1670,6 +1671,10 @@ Instruction:
                         if (param->is_expression_param && param != late_param) {
                             expression_t* expression = expr_node->data;
                             expression_output(state, expression);
+                            if (state->top_reg) {
+                                instr_add_delay_slot(state, state->current_sub, MIPS_INSTR_I("sw", state->stack_adjust, state->top_reg->index, get_reg(state->reg_block, "s6")->index));
+                                state->stack_adjust += 4;
+                            }
                             expression_free(expression);
                             if (gool_ins->reverse_args) {
                                 expr_node = expr_node->next;
@@ -1694,6 +1699,10 @@ Instruction:
                     else if (param->is_expression_param) {
                         expression_t* expression = expr_node->data;
                         expression_output(state, expression);
+                        if (state->top_reg) {
+                            instr_add_delay_slot(state, state->current_sub, MIPS_INSTR_I("sw", state->stack_adjust, state->top_reg->index, get_reg(state->reg_block, "s6")->index));
+                            state->stack_adjust += 4;
+                        }
                         expression_free(expression);
                         if (gool_ins->reverse_args) {
                             expr_node = expr_node->next;
@@ -1708,6 +1717,10 @@ Instruction:
                         if (param->is_expression_param) {
                             expression_t* expression = expr_node->data;
                             expression_output(state, expression);
+                            if (state->top_reg) {
+                                instr_add_delay_slot(state, state->current_sub, MIPS_INSTR_I("sw", state->stack_adjust, state->top_reg->index, get_reg(state->reg_block, "s6")->index));
+                                state->stack_adjust += 4;
+                            }
                             expression_free(expression);
                             if (gool_ins->reverse_args) {
                                 expr_node = expr_node->next;
@@ -1724,6 +1737,10 @@ Instruction:
                     if ((late_expr && late_expr->type != EXPRESSION_VAL) || (late_param->stack == 1 && late_param->object_link != 0) || (late_param->stack == 0 && late_param->object_link != -1) || (late_param->stack != 0 && late_param->stack != 1) || late_param->value.val.S < 0 || late_param->value.val.S > 0x3F) {
                         if (late_expr) {
                             expression_output(state, late_expr);
+                            if (state->top_reg) {
+                                instr_add_delay_slot(state, state->current_sub, MIPS_INSTR_I("sw", state->stack_adjust, state->top_reg->index, get_reg(state->reg_block, "s6")->index));
+                                state->stack_adjust += 4;
+                            }
                             expression_free(late_expr);
                         }
                         late_param->stack = 1;
@@ -1736,8 +1753,13 @@ Instruction:
 
                 if (gool_ins->pop_args) {
                     if (argc = list_count(arg_list)) {
-                        const expr_t* expr = expr_get_by_symbol(state->version, GOTO);
-                        instr_add(state, state->current_sub, instr_new(state, expr->id, "SSSSS", 0, argc, 0x25, 0, 0));
+                        if (state->mips_mode) {
+                            state->stack_adjust -= argc * 4;
+                            mips_stack_adjust(state, state->current_sub);
+                        }
+                        else {
+                            instr_add(state, state->current_sub, instr_new(state, expr_get_by_symbol(state->version, GOTO)->id, "SSSSS", 0, argc, 0x25, 0, 0));
+                        }
                     }
                 }
 
@@ -1751,6 +1773,10 @@ Instruction:
                 expression_t* expression;
                 list_for_each(&state->expressions, expression) {
                     expression_output(state, expression);
+                    if (state->top_reg) {
+                        instr_add_delay_slot(state, state->current_sub, MIPS_INSTR_I("sw", state->stack_adjust, state->top_reg->index, get_reg(state->reg_block, "s6")->index));
+                        state->stack_adjust += 4;
+                    }
                     expression_free(expression);
                 }
                 list_free_nodes(&state->expressions);
@@ -1768,6 +1794,10 @@ Instruction:
                     if (param && (param->stack != 1 || param->object_link != 0 || param->value.val.S < 0 || param->value.val.S > 0x3F)) {
                         expression_t* expression = expression_load_new(state, param_copy(param));
                         expression_output(state, expression);
+                        if (state->top_reg) {
+                            instr_add_delay_slot(state, state->current_sub, MIPS_INSTR_I("sw", state->stack_adjust, state->top_reg->index, get_reg(state->reg_block, "s6")->index));
+                            state->stack_adjust += 4;
+                        }
                         expression_free(expression);
                         param->stack = 1;
                         param->object_link = 0;
@@ -2855,6 +2885,10 @@ instr_create_call(
                     }
                 } else if (current_expr->type == EXPRESSION_OP || current_expr->type == EXPRESSION_GLOBAL) {
                     expression_output(state, current_expr);
+                    if (state->top_reg) {
+                        instr_add_delay_slot(state, state->current_sub, MIPS_INSTR_I("sw", state->stack_adjust, state->top_reg->index, get_reg(state->reg_block, "s6")->index));
+                        state->stack_adjust += 4;
+                    }
                     list_del(&state->expressions, last_node);
                     expression_free(current_expr);
                 }
@@ -3217,6 +3251,7 @@ expression_output(
         expression_output_mips(state, expr);
         return;
     }
+    state->top_reg = NULL;
 
     if (expr->type == EXPRESSION_VAL) {
         instr_add(state, state->current_sub, instr_new(state, expr->id, "p", expr->value));
