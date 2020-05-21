@@ -3136,7 +3136,7 @@ expression_mips_operation(
                     state->stack_adjust -= 4;
                 }
                 ret = request_reg(state, expr);
-                instr_add(state, state->current_sub, MIPS_INSTR_ALU_R("addu", ret->index, op1->index, op2->index));
+                instr_add(state, state->current_sub, MIPS_INSTR_ALU_R("addu", ret->index, op2->index, op1->index));
                 op1->status = MREG_STATUS_USED;
                 op2->status = MREG_STATUS_USED;
             }
