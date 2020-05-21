@@ -248,6 +248,7 @@ mips_instr_init(
     else {
         fprintf(stdout, "%s:mips_instr_init: mips instruction not foun: %s", argv0, name);
     }
+    return 0;
 }
 
 uint64_t
