@@ -638,18 +638,6 @@ Statement:
     | GlobalVarDeclaration
     ;
 
-Global_Subroutine_Modifiers:
-    %empty
-    | Global_Subroutine_Modifiers Global_Subroutine_Modifier
-    ;
-
-Global_Subroutine_Modifier:
-      "__mips" {
-        state->stack_adjust = 0;
-        state->mips_mode = true;
-    }
-    ;
-
 Subroutine_Modifiers:
     %empty
     | Subroutine_Modifiers Subroutine_Modifier
@@ -666,7 +654,10 @@ Subroutine_Modifier:
         state->current_sub->is_trans = true;
     }
     | "__args" "(" ArgumentDeclaration ")"
-    | Global_Subroutine_Modifier
+    | "__mips" {
+        state->stack_adjust = 0;
+        state->mips_mode = true;
+    }
     ;
 
 Subroutine_Body:
@@ -1081,7 +1072,7 @@ State_Instructions:
             }
         }
       }
-      Global_Subroutine_Modifiers Subroutine_Body {
+      Subroutine_Body {
         if (state->current_state->trans_args) {
             thecl_sub_t* sub_code = state->find_state_sub(state->main_ecl, state->ecl != state->main_ecl ? state->ecl : NULL, state->current_state->code, STATE_SUB_CODE);
             for (int a=sub_code->arg_count-1; a >= 0; --a) {
@@ -1103,7 +1094,7 @@ State_Instructions:
         state->current_state->code->lambda_name = strdup(buf);
         state->current_state->code->type = INTERRUPT_SUB;
       }
-      "(" ArgumentDeclaration ")" Global_Subroutine_Modifiers Subroutine_Body {
+      "(" ArgumentDeclaration ")" Subroutine_Body {
         sub_finish(state);
       }
     | State_Instructions "event" {
@@ -1132,7 +1123,7 @@ State_Instructions:
             }
         }
       }
-      "(" ArgumentDeclaration ")" Global_Subroutine_Modifiers Subroutine_Body {
+      "(" ArgumentDeclaration ")" Subroutine_Body {
         if (state->current_state->trans_args) {
             thecl_sub_t* sub_code = state->find_state_sub(state->main_ecl, state->ecl != state->main_ecl ? state->ecl : NULL, state->current_state->code, STATE_SUB_CODE);
             for (int a=sub_code->arg_count-1; a >= 0; --a) {
@@ -2299,9 +2290,9 @@ instr_start_mips(
     thecl_sub_t* sub)
 {
     instr_add(state, sub, instr_new(state, 73, ""));
-    gooc_delay_slot_t* slot;
-    list_for_each(&state->delay_slots, slot) {
-        free(slot);
+    void* data;
+    list_for_each(&state->delay_slots, data) {
+        free(data);
     }
     list_free_nodes(&state->delay_slots);
 }
@@ -2314,9 +2305,9 @@ instr_end_mips(
     mips_stack_adjust(state, sub);
     instr_add(state, sub, MIPS_INSTR_JALR(get_reg(state->reg_block, "s5")->index, get_reg(state->reg_block, "ra")->index));
     instr_add(state, sub, MIPS_INSTR_NOP());
-    gooc_delay_slot_t* slot;
-    list_for_each(&state->delay_slots, slot) {
-        free(slot);
+    void* data;
+    list_for_each(&state->delay_slots, data) {
+        free(data);
     }
     list_free_nodes(&state->delay_slots);
 }
@@ -2329,9 +2320,9 @@ instr_return_mips(
     mips_stack_adjust(state, sub);
     instr_add(state, sub, MIPS_INSTR_JR(get_reg(state->reg_block, "ra")->index));
     instr_add(state, sub, MIPS_INSTR_I("ori", 0, get_reg(state->reg_block, "s5")->index, 0));
-    gooc_delay_slot_t* slot;
-    list_for_each(&state->delay_slots, slot) {
-        free(slot);
+    void* data;
+    list_for_each(&state->delay_slots, data) {
+        free(data);
     }
     list_free_nodes(&state->delay_slots);
 }
@@ -3459,9 +3450,9 @@ static void
 scope_begin(
     parser_state_t* state
 ) {
-    gooc_delay_slot_t* slot;
-    list_for_each(&state->delay_slots, slot) {
-        free(slot);
+    void* data;
+    list_for_each(&state->delay_slots, data) {
+        free(data);
     }
     list_free_nodes(&state->delay_slots);
 
@@ -3482,9 +3473,9 @@ scope_finish(
         state->scope_stack[state->scope_cnt-2].mips = state->scope_stack[state->scope_cnt-1].mips;
     }
 
-    gooc_delay_slot_t* slot;
-    list_for_each(&state->delay_slots, slot) {
-        free(slot);
+    void* data;
+    list_for_each(&state->delay_slots, data) {
+        free(data);
     }
     list_free_nodes(&state->delay_slots);
 
