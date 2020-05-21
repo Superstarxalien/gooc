@@ -3551,7 +3551,7 @@ sub_finish(
                 instr_return_mips(state, state->current_sub);
             }
         }
-        state->scope_stack[state->scope_cnt].returned = true;
+        state->scope_stack[state->scope_cnt-1].returned = true;
         state->ecl->ins_offset += state->current_sub->offset;
     }
     scope_finish(state, false);
