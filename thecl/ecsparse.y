@@ -2391,8 +2391,8 @@ instr_add(
                         instr->offset = slot_ins->offset;
                         thecl_instr_free(slot_ins);
                         delay_slot->slot->data = instr;
-                        list_del(&state->delay_slots, node);
                         free(delay_slot);
+                        list_del(&state->delay_slots, node);
                         ret = true;
                         break;
                     }
