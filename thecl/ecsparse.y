@@ -3143,7 +3143,6 @@ expression_mips_operation(
             break;
         default:
             {
-            i = state->stack_adjust;
             const expr_t* expression = expr_get_by_id(state->version, expr->id);
             int c = 0, lc = list_count(&expr->children);
             list_t* param_list = list_new();
@@ -3160,11 +3159,8 @@ expression_mips_operation(
                 else {
                     expression_output(state, child_expr);
                     if (state->top_reg) {
-                        instr_add_delay_slot(state, state->current_sub, MIPS_INSTR_I("sw", state->stack_adjust - i, state->top_reg->index, get_reg(state->reg_block, "s6")->index));
+                        instr_add_delay_slot(state, state->current_sub, MIPS_INSTR_I("sw", state->stack_adjust, state->top_reg->index, get_reg(state->reg_block, "s6")->index));
                         state->stack_adjust += 4;
-                    }
-                    else {
-                        i = state->stack_adjust;
                     }
                     if (child_expr->type == EXPRESSION_VAL && child_expr->value->stack == 3) {
                         list_del(&expr->children, child_node);
