@@ -3883,6 +3883,7 @@ var_create_assign(
         param->value.val.S = var->stack;
         expression_output(state, expr);
         mips_instr_new_store(state, param);
+		state->stack_adjust += 4;
     }
     else {
         if (expr->type == EXPRESSION_VAL) {
