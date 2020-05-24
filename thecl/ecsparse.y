@@ -3208,6 +3208,32 @@ expression_mips_operation(
                 op2->status = MREG_STATUS_USED;
             }
             break;
+        case XOR:
+            if (child_expr1->type == EXPRESSION_VAL && child_expr1->value->stack == 0 && child_expr1->value->value.val.S >= -0x8000 && child_expr1->value->value.val.S <= 0x7FFF) { val_expr = child_expr1; var_expr = child_expr2; }
+            else if (child_expr2->type == EXPRESSION_VAL && child_expr2->value->stack == 0 && child_expr2->value->value.val.S >= -0x8000 && child_expr2->value->value.val.S <= 0x7FFF) { val_expr = child_expr2; var_expr = child_expr1; }
+            if (val_expr) {
+                expression_output(state, var_expr); op1 = state->top_reg;
+                CheckRegStack(op1);
+                ret = request_reg(state, expr);
+                if (val_expr->value->value.val.S == 0) {
+                    instr_add(state, state->current_sub, MIPS_INSTR_MOVE(ret->index, op1->index));
+                }
+                else {
+                    instr_add(state, state->current_sub, MIPS_INSTR_I("xori", val_expr->value->value.val.S, ret->index, op1->index));
+                }
+                op1->status = MREG_STATUS_USED;
+            }
+            else {
+                expression_output(state, child_expr1); op1 = state->top_reg;
+                expression_output(state, child_expr2); op2 = state->top_reg;
+                CheckRegStack(op2);
+                CheckRegStack(op1);
+                ret = request_reg(state, expr);
+                instr_add(state, state->current_sub, MIPS_INSTR_ALU_R("xor", ret->index, op2->index, op1->index));
+                op1->status = MREG_STATUS_USED;
+                op2->status = MREG_STATUS_USED;
+            }
+            break;
         default:
             {
             const expr_t* expression = expr_get_by_id(state->version, expr->id);
