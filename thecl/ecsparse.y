@@ -3092,7 +3092,10 @@ expression_mips_load(
         reg = request_reg(state, expr);
     }
     if (param->stack == 0) { /* number */
-        if (param->value.val.S > 0x7FFF || param->value.val.S < -0x8000) {
+        if (param->value.val.S == 0) {
+            instr_add(state, state->current_sub, MIPS_INSTR_ALU_R("addu", reg->index, 0, 0));
+        }
+        else if (param->value.val.S > 0x7FFF || param->value.val.S < -0x8000) {
             instr_add(state, state->current_sub, MIPS_INSTR_I("lui", param->value.val.S >> 16 & 0xFFFF, reg->index, 0));
             instr_add(state, state->current_sub, MIPS_INSTR_I("ori", param->value.val.S & 0xFFFF, reg->index, reg->index));
         }
@@ -3882,8 +3885,8 @@ var_create_assign(
         param->stack = 1;
         param->value.val.S = var->stack;
         expression_output(state, expr);
+        state->stack_adjust += 4;
         mips_instr_new_store(state, param);
-		state->stack_adjust += 4;
     }
     else {
         if (expr->type == EXPRESSION_VAL) {
