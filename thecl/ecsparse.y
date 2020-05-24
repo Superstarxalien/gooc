@@ -3161,8 +3161,8 @@ expression_mips_operation(
                 ret = request_reg(state, expr);
                 instr_add(state, state->current_sub, MIPS_INSTR_MOVE(ret->index, 0));
             }
-            if (val_expr) {
                 expression_output(state, var_expr); op1 = state->top_reg;
+            else if (val_expr) {
                 CheckRegStack(op1);
                 ret = request_reg(state, expr);
                 if (val_expr->value->value.val.S == 0) {
