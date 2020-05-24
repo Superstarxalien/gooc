@@ -62,6 +62,8 @@ static thecl_instr_t* mips_instr_new(parser_state_t* state, const char* name, in
     mips_instr_new(state, name, imm, 0, 0, rt, rs, 0)
 #define MIPS_INSTR_NOP() \
     mips_instr_new(state, "nop", 0, 0, 0, 0, 0, 0)
+#define MIPS_INSTR_MOVE(rd, rt) \
+    mips_instr_new(state, "addu", 0, 0, rd, rt, 0, 0)
 static void mips_instr_new_store(parser_state_t* state, thecl_param_t* value);
 static void instr_add(parser_state_t* state, thecl_sub_t* sub, thecl_instr_t* instr);
 static void instr_add_delay_slot(parser_state_t* state, thecl_sub_t* sub, thecl_instr_t* instr);
@@ -94,6 +96,13 @@ static expression_t *expression_copy(expression_t *expr);
 static void expression_create_goto(parser_state_t *state, int type, char *labelstr, expression_t* cond);
 static void expression_create_goto_pop(parser_state_t *state, int type, char *labelstr, expression_t* cond, int pop);
 
+/* expression_output mips result is on the stack */
+#define CheckRegStack(OP) \
+    if (OP == NULL) { \
+        OP = request_reg(state, NULL); \
+        instr_add_delay_slot(state, state->current_sub, MIPS_INSTR_I("lw", state->stack_adjust - 4, OP->index, get_reg(state->reg_block, "s6")->index)); \
+        state->stack_adjust -= 4; \
+    }
 /* Bison things. */
 void yyerror(const parser_state_t*, const char*, ...);
 int yylex(void);
@@ -3147,30 +3156,54 @@ expression_mips_operation(
             else if (child_expr2->type == EXPRESSION_VAL && child_expr2->value->stack == 0 && child_expr2->value->value.val.S >= -0x8000 && child_expr2->value->value.val.S <= 0x7FFF) { val_expr = child_expr2; var_expr = child_expr1; }
             if (val_expr) {
                 expression_output(state, var_expr); op1 = state->top_reg;
-                if (op1 == NULL) { /* result is on the stack */
-                    op1 = request_reg(state, NULL);
-                    instr_add_delay_slot(state, state->current_sub, MIPS_INSTR_I("lw", -4, op1->index, get_reg(state->reg_block, "s6")->index));
-                    state->stack_adjust -= 4;
-                }
+                CheckRegStack(op1);
                 ret = request_reg(state, expr);
-                instr_add(state, state->current_sub, MIPS_INSTR_I("addiu", val_expr->value->value.val.S, ret->index, op1->index));
+                if (val_expr->value->value.val.S == 0) {
+                    instr_add(state, state->current_sub, MIPS_INSTR_MOVE(ret->index, op1->index));
+                }
+                else {
+                    instr_add(state, state->current_sub, MIPS_INSTR_I("addiu", val_expr->value->value.val.S, ret->index, op1->index));
+                }
                 op1->status = MREG_STATUS_USED;
             }
             else {
                 expression_output(state, child_expr1); op1 = state->top_reg;
                 expression_output(state, child_expr2); op2 = state->top_reg;
-                if (op2 == NULL) { /* result is on the stack */
-                    op2 = request_reg(state, NULL);
-                    instr_add_delay_slot(state, state->current_sub, MIPS_INSTR_I("lw", -4, op2->index, get_reg(state->reg_block, "s6")->index));
-                    state->stack_adjust -= 4;
-                }
-                if (op1 == NULL) { /* result is on the stack */
-                    op1 = request_reg(state, NULL);
-                    instr_add_delay_slot(state, state->current_sub, MIPS_INSTR_I("lw", -4, op1->index, get_reg(state->reg_block, "s6")->index));
-                    state->stack_adjust -= 4;
-                }
+                CheckRegStack(op2);
+                CheckRegStack(op1);
                 ret = request_reg(state, expr);
                 instr_add(state, state->current_sub, MIPS_INSTR_ALU_R("addu", ret->index, op2->index, op1->index));
+                op1->status = MREG_STATUS_USED;
+                op2->status = MREG_STATUS_USED;
+            }
+            break;
+        case SUBTRACT:
+            if (child_expr1->type == EXPRESSION_VAL && child_expr1->value->stack == 0 && child_expr1->value->value.val.S == 0) {
+                expression_output(state, child_expr2); op1 = state->top_reg;
+                CheckRegStack(op1);
+                ret = request_reg(state, expr);
+                instr_add(state, state->current_sub, MIPS_INSTR_ALU_R("subu", ret->index, op1->index, 0));
+                op1->status = MREG_STATUS_USED;
+            }
+            else if (child_expr2->type == EXPRESSION_VAL && child_expr2->value->stack == 0 && child_expr2->value->value.val.S >= -0x7FFF && child_expr2->value->value.val.S <= 0x8000) {
+                expression_output(state, child_expr2); op1 = state->top_reg;
+                CheckRegStack(op1);
+                ret = request_reg(state, expr);
+                if (child_expr2->value->value.val.S == 0) {
+                    instr_add(state, state->current_sub, MIPS_INSTR_MOVE(ret->index, op1->index));
+                }
+                else {
+                    instr_add(state, state->current_sub, MIPS_INSTR_I("addiu", -child_expr2->value->value.val.S, ret->index, op1->index));
+                }
+                op1->status = MREG_STATUS_USED;
+            }
+            else {
+                expression_output(state, child_expr1); op1 = state->top_reg;
+                expression_output(state, child_expr2); op2 = state->top_reg;
+                CheckRegStack(op2);
+                CheckRegStack(op1);
+                ret = request_reg(state, expr);
+                instr_add(state, state->current_sub, MIPS_INSTR_ALU_R("subu", ret->index, op2->index, op1->index));
                 op1->status = MREG_STATUS_USED;
                 op2->status = MREG_STATUS_USED;
             }
