@@ -3220,13 +3220,22 @@ expression_mips_operation(
             }
             break;
         case XOR:
+        case OR:
+        case AND:
+        case B_OR:
+            const char* oprname, *opiname;
+            switch (expr_get_by_id(state->version, expr->id)->symbol) {
+                case XOR: oprname = "xor"; opiname = "xori"; break;
+                case OR: case B_OR: oprname = "or"; opiname = "ori"; break;
+                case AND: oprname = "and"; opiname = "andi"; break;
+            }
             if (child_expr1->type == EXPRESSION_VAL && child_expr1->value->stack == 0 && child_expr1->value->value.val.S >= -0x8000 && child_expr1->value->value.val.S <= 0x7FFF) { val_expr = child_expr1; var_expr = child_expr2; }
             else if (child_expr2->type == EXPRESSION_VAL && child_expr2->value->stack == 0 && child_expr2->value->value.val.S >= -0x8000 && child_expr2->value->value.val.S <= 0x7FFF) { val_expr = child_expr2; var_expr = child_expr1; }
             if (val_expr && !(var_expr->type == EXPRESSION_VAL && var_expr->value->stack == 0 && var_expr->value->value.val.S == 0)) {
                 OutputExprToReg(var_expr, op1);
                 CheckRegStack(op1);
                 ret = request_reg(state, expr);
-                instr_add(state, state->current_sub, MIPS_INSTR_I("xori", val_expr->value->value.val.S, ret->index, op1->index));
+                instr_add(state, state->current_sub, MIPS_INSTR_I(opiname, val_expr->value->value.val.S, ret->index, op1->index));
                 SetUsedReg(op1);
             }
             else {
@@ -3235,7 +3244,7 @@ expression_mips_operation(
                 CheckRegStack(op2);
                 CheckRegStack(op1);
                 ret = request_reg(state, expr);
-                instr_add(state, state->current_sub, MIPS_INSTR_ALU_R("xor", ret->index, op2->index, op1->index));
+                instr_add(state, state->current_sub, MIPS_INSTR_ALU_R(oprname, ret->index, op2->index, op1->index));
                 SetUsedReg(op1);
                 SetUsedReg(op2);
             }
