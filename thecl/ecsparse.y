@@ -3246,6 +3246,7 @@ expression_mips_operation(
             break;
         default:
             {
+            if (!state->scope_stack[state->scope_cnt - 1].mips) mips_stack_adjust(state, state->current_sub);
             const expr_t* expression = expr_get_by_id(state->version, expr->id);
             int c = 0, lc = list_count(&expr->children);
             list_t* param_list = list_new();
