@@ -2427,6 +2427,10 @@ instr_add(
             }
             if (((ret && instr->offset == sub->offset - 1) || !ret) && instr->reg_used & state->stalled_regs) {
                 instr_add(state, state->current_sub, MIPS_INSTR_NOP()); /* DELAY SLOT */
+                gooc_delay_slot_t* delay_slot = calloc(1, sizeof(gooc_delay_slot_t));
+                delay_slot->slot = sub->instrs.tail;
+                delay_slot->owner = instr;
+                list_append_new(&state->delay_slots, delay_slot);
             }
             if (state->stalled_regs) state->stalled_regs = 0;
             if (!mips_instr_is_branch(&instr->ins) && instr->reg_stalled) {
@@ -3679,6 +3683,23 @@ scope_finish(
     parser_state_t* state,
     bool pop_vars
 ) {
+    /* pop GOOL stack variables */
+    int pop = 0;
+    for (int v=0; v < state->current_sub->var_count; ++v)
+        if (state->current_sub->vars[v]->scope == state->scope_stack[state->scope_cnt-1].id) {
+            state->current_sub->vars[v]->is_unused = true;
+            ++pop;
+        }
+    if (pop > 0 && pop_vars) {
+        if (state->mips_mode) {
+            state->stack_adjust -= pop * 4;
+            mips_stack_adjust(state, state->current_sub);
+        }
+        else {
+            instr_add(state, state->current_sub, instr_new(state, expr_get_by_symbol(state->version, GOTO)->id, "SSSSS", 0, pop, 0x25, 0, 0));
+        }
+    }
+
     if (state->scope_cnt > 1 && !state->scope_stack[state->scope_cnt-1].returned) {
         state->scope_stack[state->scope_cnt-2].mips = state->scope_stack[state->scope_cnt-1].mips;
     }
@@ -3689,21 +3710,7 @@ scope_finish(
     }
     list_free_nodes(&state->delay_slots);
 
-    --state->scope_cnt;
-
-    /* pop GOOL stack variables */
-    int pop = 0;
-    for (int v=0; v < state->current_sub->var_count; ++v)
-        if (state->current_sub->vars[v]->scope == state->scope_stack[state->scope_cnt].id) {
-            state->current_sub->vars[v]->is_unused = true;
-            ++pop;
-        }
-    if (pop > 0 && pop_vars) {
-        const expr_t* expr = expr_get_by_symbol(state->version, GOTO);
-        instr_add(state, state->current_sub, instr_new(state, expr->id, "SSSSS", 0, pop, 0x25, 0, 0));
-    }
-
-    state->scope_stack = realloc(state->scope_stack, sizeof(thecl_scope_t)*state->scope_cnt);
+    state->scope_stack = realloc(state->scope_stack, sizeof(thecl_scope_t)*--state->scope_cnt);
     state->block_bound = 1;
 }
 
