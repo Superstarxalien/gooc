@@ -92,12 +92,8 @@ typedef struct thecl_instr_t {
     uint32_t reg_used;
     uint32_t reg_stalled;
 
-
     /* Etc.: */
     unsigned int offset;
-
-    /* Used by ecsparse.y, not present anywhere in the compiled ECL files. */
-    unsigned int flags;
 } thecl_instr_t;
 
 thecl_instr_t* thecl_instr_new(
@@ -289,12 +285,12 @@ typedef struct {
 } thecl_scope_t;
 
 typedef struct {
-    int instr_flags; /* Special flags that are copied to instr->flags, used by ecsparse.y */
     unsigned int version;
     bool mips_mode;
     int stack_adjust;
     mips_reg_block_t* reg_block;
     mips_reg_t* top_reg;
+    uint32_t stalled_regs;
     list_t delay_slots;
     list_t expressions;
     list_t addresses;

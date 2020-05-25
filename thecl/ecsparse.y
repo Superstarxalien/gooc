@@ -1887,21 +1887,7 @@ Assignment:
             yyerror(state, "invalid address: %s", $1->value.val.z);
             return 0;
         }
-        if (state->mips_mode) {
-            expression_output(state, $3);
-            mips_instr_new_store(state, $1);
-            if ($1->stack == 1) {
-                if ($1->object_link == -1 && $1->value.val.S >= 3) {
-                    state->current_sub->vars[$1->value.val.S - 3]->is_written = true;
-                }
-                else if ($1->object_link == -1 && $1->value.val.S < 0) {
-                    state->current_sub->args[-$1->value.val.S - 1]->is_written = true;
-                }
-            }
-        }
-        else {
-            var_assign(state, $1, $3);
-        }
+        var_assign(state, $1, $3);
       }
     | Address "+=" Expression { var_shorthand_assign(state, $1, $3, ADD); }
     | Address "-=" Expression { var_shorthand_assign(state, $1, $3, SUBTRACT); }
@@ -2244,7 +2230,6 @@ instr_init(
     parser_state_t* state)
 {
     thecl_instr_t* instr = thecl_instr_new();
-    instr->flags = state->instr_flags;
     return instr;
 }
 
@@ -2340,6 +2325,7 @@ instr_start_mips(
     thecl_sub_t* sub)
 {
     instr_add(state, sub, instr_new(state, 73, ""));
+    state->stalled_regs = 0;
     gooc_delay_slot_t* slot;
     list_for_each(&state->delay_slots, slot) {
         free(slot);
@@ -2439,6 +2425,10 @@ instr_add(
                     }
                 }
             }
+            if (((ret && instr->offset == sub->offset - 1) || !ret) && instr->reg_used & state->stalled_regs) {
+                instr_add(state, state->current_sub, MIPS_INSTR_NOP()); /* DELAY SLOT */
+            }
+            if (state->stalled_regs) state->stalled_regs = 0;
             if (!mips_instr_is_branch(&instr->ins) && instr->reg_stalled) {
                 thecl_instr_t* prev_ins = NULL;
                 if (ret && instr->offset == sub->offset - 1) {
@@ -2458,6 +2448,7 @@ instr_add(
                         sub->instrs.tail->data = prev_ins;
                         instr->offset = sub->offset - 2;
                         prev_ins->offset = sub->offset - 1;
+                        state->stalled_regs = prev_ins->reg_stalled;
                     }
                     ret = true;
                 }
@@ -3870,14 +3861,12 @@ var_create(
     if (var->stack == sub->stack) /* Only increment the stack if the variable uses a new offset. */
         ++sub->stack;
 
-    if (push) {
-        if (state->mips_mode) {
-            state->stack_adjust += 4;
-        }
-        else {
-            const expr_t* expr = expr_get_by_symbol(state->version, LOAD);
-            instr_add(state, sub, instr_new(state, expr->id, "S", 0));
-        }
+    if (state->mips_mode) {
+        state->stack_adjust += 4;
+    }
+    else if (push) {
+        const expr_t* expr = expr_get_by_symbol(state->version, LOAD);
+        instr_add(state, sub, instr_new(state, expr->id, "S", 0));
     }
 
     return var;
@@ -3897,9 +3886,8 @@ var_create_assign(
         thecl_param_t* param = param_new('S');
         param->stack = 1;
         param->value.val.S = var->stack;
-        expression_output(state, expr);
-        state->stack_adjust += 4;
-        mips_instr_new_store(state, param);
+        param->object_link = -1;
+        var_assign(state, param, expr);
     }
     else {
         if (expr->type == EXPRESSION_VAL) {
@@ -4011,8 +3999,8 @@ var_assign(
     expression_t* expr_assign)
 {
     const expr_t* expr = expr_get_by_id(state->version, expr_assign->id);
-    thecl_param_t* src_param = expr != NULL && expr->is_unary ? ((expression_t*)expr_assign->children.head->data)->value : NULL;
-    if ((param->stack == 1 && src_param && src_param->value.val.S == 0x1F && src_param->stack == 1 && src_param->object_link == 0)) {
+    thecl_param_t* src_param = expr != NULL && expr->is_unary ? ((expression_t*)list_head(&expr_assign->children))->value : NULL;
+    if (param->stack == 1 && src_param && src_param->value.val.S == 0x1F && src_param->stack == 1 && src_param->object_link == 0) {
         src_param->value.val.S = param->value.val.S;
         src_param->object_link = param->object_link;
         if (param->object_link == -1 && param->value.val.S >= 3) {
@@ -4036,28 +4024,41 @@ var_assign(
         return;
     }
 
-    if (expr_assign->type == EXPRESSION_VAL && (param->stack == 1 || (param->stack == 2 && !expr->is_unary))) {
-        src_param = expr_assign->value;
-    } else {
+    if (state->mips_mode) {
         expression_output(state, expr_assign);
-        src_param = param_sp_new();
-    }
-    expression_free(expr_assign);
-    if (param->stack == 1) {
-        expr = expr_get_by_symbol(state->version, src_param->stack == 3 ? PASSIGN : ASSIGN);
-
-        instr_add(state, state->current_sub, instr_new(state, expr->id, "pp", param, src_param));
-
+        expression_free(expr_assign);
+        mips_instr_new_store(state, param);
         if (param->object_link == -1 && param->value.val.S >= 3) {
             state->current_sub->vars[param->value.val.S - 3]->is_written = true;
         }
         else if (param->object_link == -1 && param->value.val.S < 0) {
             state->current_sub->args[-param->value.val.S - 1]->is_written = true;
         }
-    } else if (param->stack == 2) { /* WGL */
-        expr = expr_get_by_symbol(state->version, GASSIGN);
+    }
+    else {
+        if (expr_assign->type == EXPRESSION_VAL && (param->stack == 1 || (param->stack == 2 && !expr->is_unary))) {
+            src_param = expr_assign->value;
+        } else {
+            expression_output(state, expr_assign);
+            src_param = param_sp_new();
+        }
+        expression_free(expr_assign);
+        if (param->stack == 1) {
+            expr = expr_get_by_symbol(state->version, src_param->stack == 3 ? PASSIGN : ASSIGN);
 
-        instr_add(state, state->current_sub, instr_new(state, expr->id, "Sp", param->value.val.S, src_param));
+            instr_add(state, state->current_sub, instr_new(state, expr->id, "pp", param, src_param));
+
+            if (param->object_link == -1 && param->value.val.S >= 3) {
+                state->current_sub->vars[param->value.val.S - 3]->is_written = true;
+            }
+            else if (param->object_link == -1 && param->value.val.S < 0) {
+                state->current_sub->args[-param->value.val.S - 1]->is_written = true;
+            }
+        } else if (param->stack == 2) { /* WGL */
+            expr = expr_get_by_symbol(state->version, GASSIGN);
+
+            instr_add(state, state->current_sub, instr_new(state, expr->id, "Sp", param->value.val.S, src_param));
+        }
     }
 }
 

@@ -267,7 +267,6 @@ thecl_instr_new(void)
 {
     thecl_instr_t* instr = calloc(1, sizeof(thecl_instr_t));
     instr->type = THECL_INSTR_INSTR;
-    instr->flags = 0;
     list_init(&instr->params);
     instr->mips = false;
     return instr;
