@@ -2443,7 +2443,7 @@ instr_add(
                 }
                 if (prev_ins && prev_ins->mips && prev_ins->ins.ins != 0 && (prev_ins->reg_used & instr->reg_used) == 0) { /* swap with previous instruction */
                     if (!ret) { /* did not fill a delay slot */
-                        list_prepend_new(&sub->instrs, instr, sub->instrs.tail);
+                        list_prepend_to(&sub->instrs, instr, sub->instrs.tail);
                         instr->offset = prev_ins->offset;
                         prev_ins->offset = sub->offset++;
                     }
