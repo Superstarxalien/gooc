@@ -3244,6 +3244,13 @@ expression_mips_operation(
                 SetUsedReg(op2);
             }
             break;
+        case NOT:
+            OutputExprToReg(child_expr2, op1);
+            CheckRegStack(op1);
+            ret = request_reg(state, expr);
+            instr_add(state, state->current_sub, MIPS_INSTR_I("sltiu", 1, ret->index, op1->index));
+            SetUsedReg(op1);
+            break;
         default:
             {
             if (!state->scope_stack[state->scope_cnt - 1].mips) mips_stack_adjust(state, state->current_sub);
