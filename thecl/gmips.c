@@ -90,6 +90,7 @@ mips_reg_block_t*
 mips_reg_block_new(void)
 {
     mips_reg_block_t* new_block = calloc(1, sizeof(mips_reg_block_t));
+    new_block->reg_index = 0;
     for (int i=0; i<32; ++i) {
         new_block->regs[i].index = i;
         new_block->regs[i].name = mips_registers[i];
@@ -131,14 +132,14 @@ get_reg(mips_reg_block_t* block, const char* name)
 mips_reg_t*
 get_usable_reg(mips_reg_block_t* block)
 {
-    for (int i=0; i<32; ++i) {
-        if (block->regs[i].status == MREG_STATUS_FREE) {
-            return &block->regs[i];
+    for (int i=0; i<32; block->reg_index = ++block->reg_index % 32, ++i) {
+        if (block->regs[block->reg_index].status == MREG_STATUS_FREE) {
+            return &block->regs[block->reg_index];
         }
     }
-    for (int i=0; i<32; ++i) {
-        if (block->regs[i].status == MREG_STATUS_USED) {
-            return &block->regs[i];
+    for (int i=0; i<32; block->reg_index = ++block->reg_index % 32, ++i) {
+        if (block->regs[block->reg_index].status == MREG_STATUS_USED) {
+            return &block->regs[block->reg_index];
         }
     }
     return NULL;
@@ -162,11 +163,9 @@ void
 clean_regs(mips_reg_block_t* block)
 {
     for (int i = 0; i < 32; ++i) {
-        if (block->regs[i].status == MREG_STATUS_IN_USE) {
-            block->regs[i].status = MREG_STATUS_USED;
-        }
         free_reg(&block->regs[i]);
     }
+    block->reg_index = 0;
 }
 
 thecl_param_t*
