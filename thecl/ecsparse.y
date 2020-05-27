@@ -2442,7 +2442,6 @@ instr_add(
                     gooc_delay_slot_t* delay_slot = node->data;
                     if (delay_slot && (delay_slot->owner->reg_stalled & instr->reg_used) == 0) {
                         thecl_instr_t* slot_ins = delay_slot->slot->data;
-                        if (slot_ins->offset != sub->offset-1) continue;
                         for (int i=0; i<32; ++i) {
                             if ((1 << i) & instr->reg_used && slot_ins->offset < state->reg_block->regs[i].last_used) {
                                 slot_ins = NULL;
@@ -2462,7 +2461,7 @@ instr_add(
                 }
             }
             bool delayed = false;
-            if (((ret && instr->offset == sub->offset - 1) || !ret) && sub->last_ins->mips && (instr->reg_used & sub->last_ins->reg_stalled || (mips_instr_is_branch(&instr->ins) && mips_instr_is_branch(&sub->last_ins->ins)))) {
+            if (sub->last_ins && sub->last_ins->mips && sub->last_ins->offset == sub->offset - 1 && (instr->reg_used & sub->last_ins->reg_stalled || (mips_instr_is_branch(&instr->ins) && mips_instr_is_branch(&sub->last_ins->ins)))) {
                 instr_add(state, state->current_sub, MIPS_INSTR_NOP()); /* DELAY SLOT */
                 gooc_delay_slot_t* delay_slot = calloc(1, sizeof(gooc_delay_slot_t));
                 delay_slot->slot = sub->instrs.tail;
