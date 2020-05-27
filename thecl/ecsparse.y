@@ -3092,6 +3092,7 @@ expression_create_goto_pop(
                 instr_add_delay_slot(state, state->current_sub, MIPS_INSTR_I("lw", -4, state->top_reg->index, get_reg(state->reg_block, "s6")->index));
                 state->stack_adjust -= 4;
             }
+            state->top_reg->status = MREG_STATUS_USED;
         }
         switch (type) {
             case IF: instr_add(state, state->current_sub, MIPS_INSTR_BNEZ(strdup(labelstr), state->top_reg->index)); break;
