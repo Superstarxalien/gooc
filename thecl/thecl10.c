@@ -579,13 +579,8 @@ c1_instr_serialize(
             const char* next_format;
             uint32_t b = strtol(format + i, &next_format, 10);
             i = next_format - format;
-
             val = p;
-
-            int s = 32 - b;
-            int sm = s-1;
-            val &= 0xFFFFFFFFU >> s;
-            if (p != ((val << s) >> s) && p != ((val << sm) >> sm) && !ignore_error) {
+            if (((int64_t)p < -(1LL << b) || (int64_t)p > (1LL << b) - 1) && !ignore_error) {
                 fprintf(stderr, "%s:c1_instr_serialize: in sub %s: parameter out of bounds for instruction %d (%u bits)\n", argv0, sub->name, instr->id, b);
             }
             total_bits += b;
@@ -1095,13 +1090,8 @@ c2_instr_serialize(
             const char* next_format;
             uint32_t b = strtol(format + i, &next_format, 10);
             i = next_format - format;
-
             val = p;
-
-            int s = 32 - b;
-            int sm = s-1;
-            val &= 0xFFFFFFFFU >> s;
-            if (p != ((val << s) >> s) && p != ((val << sm) >> sm) && !ignore_error) {
+            if (((int64_t)p < -(1LL << b) || (int64_t)p > (1LL << b) - 1) && !ignore_error) {
                 fprintf(stderr, "%s:c2_instr_serialize: in sub %s: parameter out of bounds for instruction %d (%u bits)\n", argv0, sub->name, instr->id, b);
             }
             total_bits += b;
