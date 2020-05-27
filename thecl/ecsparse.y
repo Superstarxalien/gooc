@@ -666,9 +666,14 @@ Global_Subroutine_Modifiers:
 
 Global_Subroutine_Modifier:
       "__mips" {
-        state->stack_adjust = 0;
-        state->mips_mode = true;
-        state->scope_stack[0].mips = true;
+        if (is_post_c2(state->version)) {
+            state->stack_adjust = 0;
+            state->mips_mode = true;
+            state->scope_stack[0].mips = true;
+        }
+        else {
+            yyerror(state, "mips mode is not supported for this game");
+        }
     }
     ;
 
@@ -1203,12 +1208,17 @@ Block:
 
 MipsBlock:
     "mips" {
-        if (state->mips_mode) {
-            yyerror(state, "invalid mips block");
-            exit(2);
+        if (is_post_c2(state->version)) {
+            if (state->mips_mode) {
+                yyerror(state, "invalid mips block");
+                exit(2);
+            }
+            state->stack_adjust = 0;
+            state->mips_mode = true;
         }
-        state->stack_adjust = 0;
-        state->mips_mode = true;
+        else {
+            yyerror(state, "mips mode is not supported for this game");
+        }
     } CodeBlock {
         state->mips_mode = false;
     }
