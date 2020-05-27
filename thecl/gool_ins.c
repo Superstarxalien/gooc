@@ -267,9 +267,9 @@ c1_gool_ins_sendeventif_params(
     thecl_param_t* param;
     size_t c = list_count(params);
     if (c == 3) {
-        list_prepend_to(params, param_val_new(argc), params->tail);
         list_append_new(params, params->head->next->data);
         list_del(params, params->head->next);
+        list_prepend_to(params, param_val_new(argc), params->tail);
     }
     else {
         fprintf(stderr, "%s: sendeventif: wrong number of arguments (expected at least 3, got %zu)\n", argv0, c);
