@@ -293,8 +293,6 @@ thecl_instr_free(thecl_instr_t* instr)
     }
     list_free_nodes(&instr->params);
 
-    if (instr->label_name) free(instr->label_name);
-
     free(instr);
 }
 

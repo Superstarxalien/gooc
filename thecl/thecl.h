@@ -87,7 +87,6 @@ typedef struct thecl_instr_t {
     uint8_t id;
     size_t param_count;
     list_t params;
-    char* label_name;
     mips_ins_t ins;
     uint32_t reg_used;
     uint32_t reg_stalled;
@@ -175,6 +174,9 @@ typedef struct {
 
     uint16_t offset;
     uint16_t start_offset;
+
+    thecl_instr_t* last_ins;
+    bool mips_dirty;
 
     bool is_trans;
     bool has_once;
@@ -290,7 +292,6 @@ typedef struct {
     int stack_adjust;
     mips_reg_block_t* reg_block;
     mips_reg_t* top_reg;
-    uint32_t stalled_regs;
     list_t delay_slots;
     list_t expressions;
     list_t addresses;

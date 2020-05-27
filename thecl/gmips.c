@@ -63,6 +63,11 @@ mips_instructions[] = {
     { "xor",   'R', "38", "0", "rd", "rt", "rs", "0" },
     { "nor",   'R', "39", "0", "rd", "rt", "rs", "0" },
 
+    { "beq",   'I', "imm", "rt", "rs",  "4", NULL, NULL },
+    { "bne",   'I', "imm", "rt", "rs",  "5", NULL, NULL },
+    { "blez",  'I', "imm", "rt", "rs",  "6", NULL, NULL },
+    { "bgtz",  'I', "imm", "rt", "rs",  "7", NULL, NULL },
+
     { "addiu", 'I', "imm", "rt", "rs",  "9", NULL, NULL },
     { "slti",  'I', "imm", "rt", "rs", "10", NULL, NULL },
     { "sltiu", 'I', "imm", "rt", "rs", "11", NULL, NULL },

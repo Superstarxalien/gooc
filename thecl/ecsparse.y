@@ -52,6 +52,7 @@ static thecl_instr_t* instr_new(parser_state_t* state, uint8_t id, const char* f
 static thecl_instr_t* instr_new_list(parser_state_t* state, uint8_t id, list_t* list);
 static void mips_stack_adjust(parser_state_t* state, thecl_sub_t* sub);
 static thecl_instr_t* mips_instr_new(parser_state_t* state, const char* name, int imm, int shamt, int rd, int rt, int rs, int addr);
+static thecl_instr_t* mips_instr_branch_new(parser_state_t* state, const char* name, int rt, int rs, const char* label);
 #define MIPS_INSTR_ALU_R(name, rd, rt, rs) \
     mips_instr_new(state, name, 0, 0, rd, rt, rs, 0)
 #define MIPS_INSTR_JR(rs) \
@@ -60,6 +61,14 @@ static thecl_instr_t* mips_instr_new(parser_state_t* state, const char* name, in
     mips_instr_new(state, "jalr", 0, 0, rd, 0, rs, 0)
 #define MIPS_INSTR_I(name, imm, rt, rs) \
     mips_instr_new(state, name, imm, 0, 0, rt, rs, 0)
+#define MIPS_INSTR_BEQ(label, rt, rs) \
+    mips_instr_branch_new(state, "beq", rt, rs, label)
+#define MIPS_INSTR_BNE(label, rt, rs) \
+    mips_instr_branch_new(state, "bne", rt, rs, label)
+#define MIPS_INSTR_BEQZ(label, rs) \
+    MIPS_INSTR_BEQ(label, 0, rs)
+#define MIPS_INSTR_BNEZ(label, rs) \
+    MIPS_INSTR_BNE(label, 0, rs)
 #define MIPS_INSTR_NOP() \
     mips_instr_new(state, "nop", 0, 0, 0, 0, 0, 0)
 #define MIPS_INSTR_MOVE(rd, rt) \
@@ -659,6 +668,7 @@ Global_Subroutine_Modifier:
       "__mips" {
         state->stack_adjust = 0;
         state->mips_mode = true;
+        state->scope_stack[0].mips = true;
     }
     ;
 
@@ -2230,6 +2240,7 @@ instr_init(
     parser_state_t* state)
 {
     thecl_instr_t* instr = thecl_instr_new();
+    instr->string = NULL;
     return instr;
 }
 
@@ -2246,11 +2257,24 @@ mips_instr_new(
 {
     thecl_instr_t* instr = instr_init(state);
     instr->mips = true;
-    instr->label_name = NULL;
     instr->ins.ins = mips_instr_init(name, imm, shamt, rd, rt, rs, addr);
     uint64_t regs = mips_instr_getregs(name, &instr->ins);
     instr->reg_used = regs & 0xFFFFFFFF;
     instr->reg_stalled = regs >> 32 & 0xFFFFFFFF;
+
+    return instr;
+}
+
+static thecl_instr_t*
+mips_instr_branch_new(
+    parser_state_t* state,
+    const char* name,
+    int rt,
+    int rs,
+    const char* label)
+{
+    thecl_instr_t* instr = mips_instr_new(state, name, 0, 0, 0, rt, rs, 0);
+    instr->string = label;
 
     return instr;
 }
@@ -2325,7 +2349,6 @@ instr_start_mips(
     thecl_sub_t* sub)
 {
     instr_add(state, sub, instr_new(state, 73, ""));
-    state->stalled_regs = 0;
     gooc_delay_slot_t* slot;
     list_for_each(&state->delay_slots, slot) {
         free(slot);
@@ -2385,77 +2408,72 @@ instr_add(
     thecl_sub_t* sub,
     thecl_instr_t* instr)
 {
-    if (state->ignore_block || state->scope_stack[state->scope_cnt-1].returned) {
+    if (state->ignore_block || (state->scope_cnt > 0 && state->scope_stack[state->scope_cnt-1].returned)) {
         thecl_instr_free(instr);
         return;
     }
-    if (instr->mips != state->scope_stack[state->scope_cnt - 1].mips) {
+    if (!sub->mips_dirty && state->scope_cnt > 0 && (instr->mips != state->scope_stack[state->scope_cnt-1].mips || instr->mips && sub->offset == 0)) {
+        sub->mips_dirty = true;
+        state->scope_stack[state->scope_cnt-1].mips = instr->mips;
         if (instr->mips) {
             instr_start_mips(state, sub);
-            state->scope_stack[state->scope_cnt - 1].mips = true;
         }
         else {
             instr_end_mips(state, sub);
-            state->scope_stack[state->scope_cnt - 1].mips = false;
         }
+        sub->mips_dirty = false;
     }
     if (instr->mips) {
         if (instr->ins.ins != 0) {
             bool ret = false;
-            list_node_t* node;
-            list_for_each_node(&state->delay_slots, node) {
-                gooc_delay_slot_t* delay_slot = node->data;
-                if (delay_slot && (delay_slot->owner->reg_stalled & instr->reg_used) == 0) {
-                    thecl_instr_t* slot_ins = delay_slot->slot->data;
-                    if (slot_ins->offset != sub->offset-1 && mips_instr_is_branch(&instr->ins)) continue;
-                    for (int i=0; i<32; ++i) {
-                        if ((1 << i) & instr->reg_used && slot_ins->offset < state->reg_block->regs[i].last_used) {
-                            slot_ins = NULL;
+            if (!mips_instr_is_branch(&instr->ins)) {
+                list_node_t* node;
+                list_for_each_node(&state->delay_slots, node) {
+                    gooc_delay_slot_t* delay_slot = node->data;
+                    if (delay_slot && (delay_slot->owner->reg_stalled & instr->reg_used) == 0) {
+                        thecl_instr_t* slot_ins = delay_slot->slot->data;
+                        if (slot_ins->offset != sub->offset-1) continue;
+                        for (int i=0; i<32; ++i) {
+                            if ((1 << i) & instr->reg_used && slot_ins->offset < state->reg_block->regs[i].last_used) {
+                                slot_ins = NULL;
+                                break;
+                            }
+                        }
+                        if (slot_ins) {
+                            instr->offset = slot_ins->offset;
+                            thecl_instr_free(slot_ins);
+                            delay_slot->slot->data = instr;
+                            free(delay_slot);
+                            list_del(&state->delay_slots, node);
+                            ret = true;
                             break;
                         }
                     }
-                    if (slot_ins) {
-                        instr->offset = slot_ins->offset;
-                        thecl_instr_free(slot_ins);
-                        delay_slot->slot->data = instr;
-                        free(delay_slot);
-                        list_del(&state->delay_slots, node);
-                        ret = true;
-                        break;
-                    }
                 }
             }
-            if (((ret && instr->offset == sub->offset - 1) || !ret) && instr->reg_used & state->stalled_regs) {
+            bool delayed = false;
+            if (((ret && instr->offset == sub->offset - 1) || !ret) && sub->last_ins->mips && (instr->reg_used & sub->last_ins->reg_stalled || (mips_instr_is_branch(&instr->ins) && mips_instr_is_branch(&sub->last_ins->ins)))) {
                 instr_add(state, state->current_sub, MIPS_INSTR_NOP()); /* DELAY SLOT */
                 gooc_delay_slot_t* delay_slot = calloc(1, sizeof(gooc_delay_slot_t));
                 delay_slot->slot = sub->instrs.tail;
                 delay_slot->owner = instr;
                 list_append_new(&state->delay_slots, delay_slot);
+                delayed = true;
             }
-            if (state->stalled_regs) state->stalled_regs = 0;
-            if (!mips_instr_is_branch(&instr->ins) && instr->reg_stalled) {
-                thecl_instr_t* prev_ins = NULL;
-                if (ret && instr->offset == sub->offset - 1) {
-                    prev_ins = sub->instrs.tail->prev->data;
+            if (!mips_instr_is_branch(&instr->ins) && instr->reg_stalled && sub->last_ins && sub->last_ins->mips && sub->last_ins->ins.ins != 0 && !mips_instr_is_branch(&sub->last_ins->ins) && (sub->last_ins->reg_used & instr->reg_used) == 0) { /* swap with previous instruction */
+                if (!ret) { /* did not fill a delay slot */
+                    list_prepend_to(&sub->instrs, instr, sub->instrs.tail);
+                    instr->offset = sub->last_ins->offset;
+                    sub->last_ins->offset = sub->offset++;
                 }
-                else if (!ret) {
-                    prev_ins = list_tail(&sub->instrs);
+                else { /* already replacing an existing instruction */
+                    sub->instrs.tail->prev->data = instr;
+                    sub->instrs.tail->data = sub->last_ins;
+                    instr->offset = sub->offset - 2;
+                    sub->last_ins->offset = sub->offset - 1;
                 }
-                if (prev_ins && prev_ins->mips && prev_ins->ins.ins != 0 && (prev_ins->reg_used & instr->reg_used) == 0) { /* swap with previous instruction */
-                    if (!ret) { /* did not fill a delay slot */
-                        list_prepend_to(&sub->instrs, instr, sub->instrs.tail);
-                        instr->offset = prev_ins->offset;
-                        prev_ins->offset = sub->offset++;
-                    }
-                    else { /* already replacing an existing instruction */
-                        sub->instrs.tail->prev->data = instr;
-                        sub->instrs.tail->data = prev_ins;
-                        instr->offset = sub->offset - 2;
-                        prev_ins->offset = sub->offset - 1;
-                        state->stalled_regs = prev_ins->reg_stalled;
-                    }
-                    ret = true;
-                }
+                sub->last_ins = instr;
+                ret = true;
             }
             if (ret) {
                 for (int i=0; i<32; ++i) {
@@ -2496,17 +2514,16 @@ instr_add(
                 return;
             }
         }
-        thecl_instr_t* last_ins = list_tail(&sub->instrs);
-        if (last_ins != NULL) {
+        if (sub->last_ins != NULL) {
             thecl_label_t* tmp_label;
             list_for_each(&sub->labels, tmp_label) {
                 if (tmp_label->offset == sub->offset)
                     goto NO_OPTIM;
             }
 
-            while (last_ins->id == instr->id && last_ins->param_count < 2 && instr->param_count > 0) {
-                ++last_ins->param_count;
-                list_append_new(&last_ins->params, list_head(&instr->params));
+            while (sub->last_ins->id == instr->id && sub->last_ins->param_count < 2 && instr->param_count > 0) {
+                ++sub->last_ins->param_count;
+                list_append_new(&sub->last_ins->params, list_head(&instr->params));
                 list_del_head(&instr->params);
                 if (--instr->param_count == 0) {
                     thecl_instr_free(instr);
@@ -2522,8 +2539,7 @@ instr_add(
         (!is_post_c2(state->version) &&
         ((thecl_param_t*)instr->params.tail->data)->value.val.S == 0 &&
         ((thecl_param_t*)instr->params.tail->prev->data)->value.val.S != 0))) {
-        thecl_instr_t* last_ins = list_tail(&sub->instrs);
-        if (last_ins != NULL) {
+        if (sub->last_ins != NULL) {
             thecl_label_t* tmp_label;
             list_for_each(&sub->labels, tmp_label) {
                 if (tmp_label->offset == sub->offset)
@@ -2531,8 +2547,8 @@ instr_add(
             }
 
             const expr_t* expr = expr_get_by_symbol(state->version, NOT);
-            if (last_ins->id == expr->id && last_ins->param_count == 2) {
-                thecl_param_t* param = list_head(&last_ins->params);
+            if (sub->last_ins->id == expr->id && sub->last_ins->param_count == 2) {
+                thecl_param_t* param = list_head(&sub->last_ins->params);
                 if (param->value.val.S != 0x1F || !param->stack || param->object_link != 0)
                     goto NO_OPTIM;
 
@@ -2543,33 +2559,33 @@ instr_add(
                     instr->id = instr->id == beqz_expr->id ? bnez_expr->id : beqz_expr->id;
                 }
 
-                param = list_tail(&last_ins->params);
+                param = list_tail(&sub->last_ins->params);
 
                 if (param->value.val.S <= 0x3F && param->value.val.S >= 0 && param->stack == 1 && param->object_link == 0) {
                     thecl_param_t* reg_param = instr->params.head->next->next->data;
                     reg_param->value.val.S = param->value.val.S;
                     list_del_tail(&sub->instrs);
-                    thecl_instr_free(last_ins);
+                    thecl_instr_free(sub->last_ins);
                     --sub->offset;
                 }
                 else {
                     expr = expr_get_by_symbol(state->version, LOAD);
-                    last_ins->id = expr->id;
-                    param = list_head(&last_ins->params);
-                    list_del_head(&last_ins->params);
+                    sub->last_ins->id = expr->id;
+                    param = list_head(&sub->last_ins->params);
+                    list_del_head(&sub->last_ins->params);
                     param_free(param);
                 }
             } else { /* optimize if literal conditions */
                 expr = expr_get_by_symbol(state->version, LOAD);
-                if (last_ins->id == expr->id && last_ins->param_count > 0) {
-                    thecl_param_t* param = list_tail(&last_ins->params);
+                if (sub->last_ins->id == expr->id && sub->last_ins->param_count > 0) {
+                    thecl_param_t* param = list_tail(&sub->last_ins->params);
                     if (!param->stack) {
-                        list_del_tail(&last_ins->params);
+                        list_del_tail(&sub->last_ins->params);
                         thecl_param_t* branch_type_param = (thecl_param_t*)instr->params.tail->prev->data;
                         int branch_type = state->version == 2 ? instr->id - bra_expr->id - 1 : branch_type_param->value.val.S - 1;
-                        if (--last_ins->param_count == 0) {
+                        if (--sub->last_ins->param_count == 0) {
                             list_del_tail(&sub->instrs);
-                            thecl_instr_free(last_ins);
+                            thecl_instr_free(sub->last_ins);
                             --sub->offset;
                         }
                         if (!!param->value.val.S == branch_type) { /* will never branch */
@@ -2591,6 +2607,7 @@ instr_add(
     NO_OPTIM:;
     list_append_new(&sub->instrs, instr);
     instr->offset = sub->offset++;
+    sub->last_ins = instr;
     if (instr->mips) {
         for (int i=0; i<32; ++i) {
             if (instr->reg_used & (1 << i)) {
@@ -2800,7 +2817,7 @@ instr_create_inline_call(
                     }
                 }
             } else if (param->stack && param->object_link == 0 && param->value.val.S == 0x1F) {
-                thecl_instr_t* last_ins = list_tail(&state->current_sub->instrs);
+                thecl_instr_t* last_ins = state->current_sub->last_ins;
                 const expr_t* last_expr = last_ins ? expr_get_by_id(state->version, last_ins->id) : NULL;
                 if (last_expr && last_expr->allow_optim) {
                     thecl_param_t* p1 = last_ins->params.head->data;
@@ -3057,27 +3074,43 @@ expression_create_goto_pop(
     expression_t* cond,
     int pop)
 {
-    const expr_t* expr = expr_get_by_symbol(state->version, type);
-    thecl_param_t *p1 = param_new('o');
-    p1->value.type = 'z';
-    p1->value.val.z = strdup(labelstr);
-    thecl_param_t *pcond;
-    if (type == GOTO || cond == NULL) {
-        pcond = param_new('S');
-        pcond->stack = 1;
-        pcond->object_link = 0;
-        pcond->value.val.S = field_get("misc")->offset;
+    if (state->mips_mode) {
+        if (type != GOTO) {
+            expression_output(state, cond);
+            if (state->top_reg == NULL) {
+                state->top_reg = request_reg(state, cond);
+                instr_add_delay_slot(state, state->current_sub, MIPS_INSTR_I("lw", -4, state->top_reg->index, get_reg(state->reg_block, "s6")->index));
+                state->stack_adjust -= 4;
+            }
+        }
+        switch (type) {
+            case IF: instr_add(state, state->current_sub, MIPS_INSTR_BNEZ(strdup(labelstr), state->top_reg->index)); break;
+            case UNLESS: instr_add(state, state->current_sub, MIPS_INSTR_BEQZ(strdup(labelstr), state->top_reg->index)); break;
+            case GOTO: default: instr_add(state, state->current_sub, MIPS_INSTR_BEQZ(strdup(labelstr), 0)); break;
+        }
     }
     else {
-        if (cond->type != EXPRESSION_VAL || cond->value->stack != 1 || cond->value->object_link != 0 || cond->value->value.val.S < 0 || cond->value->value.val.S > 0x3F) {
-            expression_output(state, cond);
-            pcond = param_sp_new();
+        thecl_param_t *p1 = param_new('o');
+        p1->value.type = 'z';
+        p1->value.val.z = strdup(labelstr);
+        thecl_param_t *pcond;
+        if (type == GOTO || cond == NULL) {
+            pcond = param_new('S');
+            pcond->stack = 1;
+            pcond->object_link = 0;
+            pcond->value.val.S = field_get("misc")->offset;
         }
         else {
-            pcond = cond->value;
+            if (cond->type != EXPRESSION_VAL || cond->value->stack != 1 || cond->value->object_link != 0 || cond->value->value.val.S < 0 || cond->value->value.val.S > 0x3F) {
+                expression_output(state, cond);
+                pcond = param_sp_new();
+            }
+            else {
+                pcond = cond->value;
+            }
         }
+        instr_add(state, state->current_sub, instr_new(state, expr_get_by_symbol(state->version, type)->id, "pSpSS", p1, pop, pcond, state->version == 1 ? (type == GOTO ? 0 : (type == IF ? 1 : (type == UNLESS ? 2 : 3))) : 0, 0));
     }
-    instr_add(state, state->current_sub, instr_new(state, expr->id, "pSpSS", p1, pop, pcond, state->version == 1 ? (type == GOTO ? 0 : (type == IF ? 1 : (type == UNLESS ? 2 : 3))) : 0, 0));
 }
 
 static void
@@ -3585,7 +3618,6 @@ sub_begin(
     parser_state_t* state,
     char* name)
 {
-    scope_begin(state); /* first scope used only for the automatic return instruction */
     scope_begin(state);
 
     thecl_sub_t* sub = malloc(sizeof(thecl_sub_t));
@@ -3607,6 +3639,8 @@ sub_begin(
     sub->self_reference = false;
     sub->mod_trans = false;
     sub->is_external = state->main_ecl != state->ecl;
+    sub->last_ins = NULL;
+    sub->mips_dirty = false;
     list_init(&sub->labels);
 
     list_append_new(&state->ecl->subs, sub);
@@ -3628,7 +3662,7 @@ sub_finish(
     }
 
     if (state->current_sub->is_inline) {
-        thecl_instr_t* last_ins = list_tail(&state->current_sub->instrs);
+        thecl_instr_t* last_ins = state->current_sub->last_ins;
         const expr_t* tmp = expr_get_by_symbol(state->version, GOTO);
         if (last_ins != NULL && last_ins->id == tmp->id && ((thecl_param_t*)last_ins->params.tail->data)->value.val.S == 2) {
             thecl_param_t* label_param = list_head(&last_ins->params);
@@ -3659,10 +3693,8 @@ sub_finish(
                 instr_return_mips(state, state->current_sub);
             }
         }
-        state->scope_stack[state->scope_cnt-1].returned = true;
         state->ecl->ins_offset += state->current_sub->offset;
     }
-    scope_finish(state, false);
 
     state->current_sub = NULL;
     state->mips_mode = false;
@@ -3680,7 +3712,7 @@ scope_begin(
 
     state->scope_stack = realloc(state->scope_stack, sizeof(thecl_scope_t)*(state->scope_cnt+1));
     state->scope_stack[state->scope_cnt].id = state->scope_id++;
-    state->scope_stack[state->scope_cnt].mips = state->scope_cnt >= 1 ? state->scope_stack[state->scope_cnt - 1].mips : false;
+    state->scope_stack[state->scope_cnt].mips = state->scope_cnt >= 1 ? state->scope_stack[state->scope_cnt - 1].mips : state->mips_mode;
     state->scope_stack[state->scope_cnt].returned = false;
     ++state->scope_cnt;
     state->block_bound = 1;
@@ -3708,8 +3740,13 @@ scope_finish(
         }
     }
 
-    if (state->scope_cnt > 1 && !state->scope_stack[state->scope_cnt-1].returned) {
-        state->scope_stack[state->scope_cnt-2].mips = state->scope_stack[state->scope_cnt-1].mips;
+    if (state->scope_cnt > 1 && !state->scope_stack[state->scope_cnt-1].returned && state->scope_stack[state->scope_cnt-2].mips != state->scope_stack[state->scope_cnt-1].mips) {
+        if (state->scope_stack[state->scope_cnt-2].mips) {
+            instr_start_mips(state, state->current_sub);
+        }
+        else {
+            instr_end_mips(state, state->current_sub);
+        }
     }
 
     gooc_delay_slot_t* slot;

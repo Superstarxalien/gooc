@@ -932,13 +932,13 @@ c2_instr_serialize(
     bool ignore_error)
 {
     if (instr->mips) {
-        if (instr->label_name) {
-            thecl_label_t* label = label_find(sub, instr->label_name);
+        if (instr->string) {
+            thecl_label_t* label = label_find(sub, instr->string);
             if (label) {
                 instr->ins.i.imm = label->offset - (instr->offset + 1);
             }
             else {
-                fprintf(stderr, "%s:c2_instr_serialize: in sub %s: label not found '%s'", argv0, sub->name, instr->label_name);
+                fprintf(stderr, "%s:c2_instr_serialize: in sub %s: label not found '%s'", argv0, sub->name, instr->string);
             }
         }
         return instr->ins.ins;
