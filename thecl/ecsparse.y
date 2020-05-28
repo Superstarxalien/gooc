@@ -2354,16 +2354,44 @@ mips_stack_adjust(
 }
 
 static void
+kill_delay_slots(
+    parser_state_t* state,
+    thecl_sub_t* sub)
+{
+    gooc_delay_slot_t* slot;
+    list_for_each(&state->delay_slots, slot) {
+        if (slot->optional && sub) {
+            thecl_instr_t* ins = slot->slot->data;
+            for (int i=0; i<32; ++i) {
+                if (state->reg_block->regs[i].last_used >= ins->offset) {
+                    --state->reg_block->regs[i].last_used;
+                }
+            }
+            instr_del(state, sub, ins);
+        }
+        free(slot);
+    }
+    list_free_nodes(&state->delay_slots);
+}
+
+static gooc_delay_slot_t*
+make_delay_slot(
+    list_node_t* slot,
+    thecl_instr_t* owner)
+{
+    gooc_delay_slot_t* delay_slot = calloc(1, sizeof(gooc_delay_slot_t));
+    delay_slot->slot = slot;
+    delay_slot->owner = owner;
+    delay_slot->optional = false;
+}
+
+static void
 instr_start_mips(
     parser_state_t* state,
     thecl_sub_t* sub)
 {
+    kill_delay_slots(state, sub);
     instr_add(state, sub, instr_new(state, 73, ""));
-    gooc_delay_slot_t* slot;
-    list_for_each(&state->delay_slots, slot) {
-        free(slot);
-    }
-    list_free_nodes(&state->delay_slots);
 }
 
 static void
@@ -2374,11 +2402,8 @@ instr_end_mips(
     mips_stack_adjust(state, sub);
     instr_add(state, sub, MIPS_INSTR_JALR(get_reg(state->reg_block, "s5")->index, get_reg(state->reg_block, "ra")->index));
     instr_add(state, sub, MIPS_INSTR_NOP());
-    gooc_delay_slot_t* slot;
-    list_for_each(&state->delay_slots, slot) {
-        free(slot);
-    }
-    list_free_nodes(&state->delay_slots);
+    clean_regs(state->reg_block);
+    kill_delay_slots(state, sub);
 }
 
 static void
@@ -2389,11 +2414,8 @@ instr_return_mips(
     mips_stack_adjust(state, sub);
     instr_add(state, sub, MIPS_INSTR_JR(get_reg(state->reg_block, "ra")->index));
     instr_add(state, sub, MIPS_INSTR_I("ori", 0, get_reg(state->reg_block, "s5")->index, 0));
-    gooc_delay_slot_t* slot;
-    list_for_each(&state->delay_slots, slot) {
-        free(slot);
-    }
-    list_free_nodes(&state->delay_slots);
+    clean_regs(state->reg_block);
+    kill_delay_slots(state, sub);
 }
 
 static void
@@ -2405,10 +2427,7 @@ instr_add_delay_slot(
     instr_add(state, sub, instr);
     if (instr->offset == sub->offset - 1) {
         instr_add(state, state->current_sub, MIPS_INSTR_NOP()); /* DELAY SLOT */
-        gooc_delay_slot_t* delay_slot = calloc(1, sizeof(gooc_delay_slot_t));
-        delay_slot->slot = sub->instrs.tail;
-        delay_slot->owner = instr;
-        list_append_new(&state->delay_slots, delay_slot);
+        list_append_new(&state->delay_slots, make_delay_slot(sub->instrs.tail, instr));
     }
 }
 
@@ -2452,8 +2471,19 @@ instr_add(
                             instr->offset = slot_ins->offset;
                             thecl_instr_free(slot_ins);
                             delay_slot->slot->data = instr;
-                            free(delay_slot);
+                            if (delay_slot->optional && instr->reg_stalled) {
+                                list_node_t* alu_node, *alu_next;
+                                list_for_each_node_safe(&state->delay_slots, alu_node, alu_next) {
+                                    gooc_delay_slot_t* alu_slot = alu_node->data;
+                                    if (alu_slot->optional && alu_slot->slot_id == delay_slot->slot_id) {
+                                        instr_del(state, sub, alu_slot->slot->data);
+                                        list_del(&state->delay_slots, alu_node);
+                                        free(alu_slot);
+                                    }
+                                }
+                            }
                             list_del(&state->delay_slots, node);
+                            free(delay_slot);
                             ret = true;
                             break;
                         }
@@ -2461,12 +2491,9 @@ instr_add(
                 }
             }
             bool delayed = false;
-            if (sub->last_ins && sub->last_ins->mips && sub->last_ins->offset == sub->offset - 1 && (instr->reg_used & sub->last_ins->reg_stalled || (mips_instr_is_branch(&instr->ins) && mips_instr_is_branch(&sub->last_ins->ins)))) {
+            if (sub->last_ins && sub->last_ins->mips && list_tail(&sub->instrs) == sub->last_ins && (instr->reg_used & sub->last_ins->reg_stalled || (mips_instr_is_branch(&instr->ins) && mips_instr_is_branch(&sub->last_ins->ins)))) {
                 instr_add(state, state->current_sub, MIPS_INSTR_NOP()); /* DELAY SLOT */
-                gooc_delay_slot_t* delay_slot = calloc(1, sizeof(gooc_delay_slot_t));
-                delay_slot->slot = sub->instrs.tail;
-                delay_slot->owner = instr;
-                list_append_new(&state->delay_slots, delay_slot);
+                list_append_new(&state->delay_slots, make_delay_slot(sub->instrs.tail, instr));
                 delayed = true;
             }
             if (!mips_instr_is_branch(&instr->ins) && instr->reg_stalled && sub->last_ins && sub->last_ins->mips && sub->last_ins->ins.ins != 0 && !mips_instr_is_branch(&sub->last_ins->ins) && (sub->last_ins->reg_used & instr->reg_used) == 0) { /* swap with previous instruction */
@@ -2476,15 +2503,19 @@ instr_add(
                     sub->last_ins->offset = sub->offset++;
                 }
                 else { /* already replacing an existing instruction */
-                    sub->instrs.tail->prev->data = instr;
-                    sub->instrs.tail->data = sub->last_ins;
-                    instr->offset = sub->offset - 2;
-                    sub->last_ins->offset = sub->offset - 1;
+                    thecl_instr_t *temp = calloc(1, sizeof(thecl_instr_t*));
+                    memcpy(temp, sub->last_ins, sizeof(thecl_instr_t*));
+                    memmove(sub->last_ins, instr, sizeof(thecl_instr_t*));
+                    memmove(instr, temp, sizeof(thecl_instr_t*));
+                    free(temp);
+                    int temp_off = sub->last_ins->offset;
+                    sub->last_ins->offset = instr->offset;
+                    instr->offset = temp_off;
                 }
-                sub->last_ins = instr;
                 ret = true;
             }
             if (ret) {
+                sub->last_ins = instr;
                 for (int i=0; i<32; ++i) {
                     if (instr->reg_used & (1 << i)) {
                         state->reg_block->regs[i].last_used = instr->offset;
@@ -2632,7 +2663,7 @@ instr_del(
     thecl_sub_t* sub,
     thecl_instr_t* instr)
 {
-    int found = 0;
+    bool found = false;
     list_node_t* node, *next;
     list_for_each_node_safe(&sub->instrs, node, next) {
         if (node->data == instr) {
@@ -2643,8 +2674,11 @@ instr_del(
                     --label->offset;
                 }
             }
+            if (instr == sub->last_ins) {
+                sub->last_ins = list_tail(&sub->instrs);
+            }
             --sub->offset;
-            found = 1;
+            found = true;
         }
         else if (found) {
             thecl_instr_t* this_inst = node->data;
@@ -3696,10 +3730,16 @@ sub_finish(
         scope_finish(state, true);
         const expr_t* expr = expr_get_by_symbol(state->version, RETURN);
         if (bb || !r) {
-            if (!m) {
+            if (!state->mips_mode) {
+                if (m) {
+                    instr_end_mips(state, state->current_sub);
+                }
                 instr_add(state, state->current_sub, instr_new(state, expr->id, "SSSSS", 0, 0, 0x25, 0, 2));
             }
             else {
+                if (!m) {
+                    instr_start_mips(state, state->current_sub);
+                }
                 instr_return_mips(state, state->current_sub);
             }
         }
@@ -3714,11 +3754,7 @@ static void
 scope_begin(
     parser_state_t* state
 ) {
-    gooc_delay_slot_t* slot;
-    list_for_each(&state->delay_slots, slot) {
-        free(slot);
-    }
-    list_free_nodes(&state->delay_slots);
+    kill_delay_slots(state, state->current_sub);
 
     state->scope_stack = realloc(state->scope_stack, sizeof(thecl_scope_t)*(state->scope_cnt+1));
     state->scope_stack[state->scope_cnt].id = state->scope_id++;
@@ -3759,11 +3795,7 @@ scope_finish(
         }
     }
 
-    gooc_delay_slot_t* slot;
-    list_for_each(&state->delay_slots, slot) {
-        free(slot);
-    }
-    list_free_nodes(&state->delay_slots);
+    kill_delay_slots(state, state->current_sub);
 
     state->scope_stack = realloc(state->scope_stack, sizeof(thecl_scope_t)*--state->scope_cnt);
     state->block_bound = 1;
@@ -4205,7 +4237,6 @@ mips_instr_new_store(
             exit(2);
         }
     }
-    clean_regs(state->reg_block);
 }
 
 static void

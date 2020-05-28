@@ -278,6 +278,8 @@ int gool_pool_force_make_index(
 typedef struct {
     list_node_t* slot;
     thecl_instr_t* owner;
+    bool optional;
+    int slot_id;
 } gooc_delay_slot_t;
 
 typedef struct {
