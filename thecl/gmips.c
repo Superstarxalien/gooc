@@ -47,7 +47,8 @@ mips_registers[] = {
     "gp",
     "sp",
     "s8",
-    "ra"
+    "ra",
+    "lo", "hi"
 };
 
 static const mips_ins_fmt_t
@@ -101,7 +102,7 @@ mips_reg_block_new(void)
 {
     mips_reg_block_t* new_block = calloc(1, sizeof(mips_reg_block_t));
     new_block->reg_index = 0;
-    for (int i=0; i<32; ++i) {
+    for (int i=0; i<34; ++i) {
         new_block->regs[i].index = i;
         new_block->regs[i].name = mips_registers[i];
         new_block->regs[i].saved_expr = NULL;
@@ -131,7 +132,7 @@ mips_reg_block_new(void)
 mips_reg_t*
 get_reg(mips_reg_block_t* block, const char* name)
 {
-    for (int i=0; i<32; ++i) {
+    for (int i=0; i<34; ++i) {
         if (!strcmp(name, block->regs[i].name)) {
             return &block->regs[i];
         }

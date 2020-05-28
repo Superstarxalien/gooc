@@ -82,7 +82,7 @@ typedef struct {
 } mips_reg_t;
 
 typedef struct {
-    mips_reg_t regs[32];
+    mips_reg_t regs[34];
     int reg_index;
 } mips_reg_block_t;
 

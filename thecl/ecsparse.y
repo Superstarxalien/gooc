@@ -55,6 +55,14 @@ static thecl_instr_t* mips_instr_new(parser_state_t* state, const char* name, in
 static thecl_instr_t* mips_instr_branch_new(parser_state_t* state, const char* name, int rt, int rs, const char* label);
 #define MIPS_INSTR_ALU_R(name, rd, rt, rs) \
     mips_instr_new(state, name, 0, 0, rd, rt, rs, 0)
+#define MIPS_INSTR_MULT(rt, rs) \
+    mips_instr_new(state, "mult", 0, 0, 0, rt, rs, 0)
+#define MIPS_INSTR_DIV(rt, rs) \
+    mips_instr_new(state, "div", 0, 0, 0, rt, rs, 0)
+#define MIPS_INSTR_MFLO(rd) \
+    mips_instr_new(state, "mflo", 0, 0, rd, 0, 0, 0)
+#define MIPS_INSTR_MFHI(rd) \
+    mips_instr_new(state, "mfhi", 0, 0, rd, 0, 0, 0)
 #define MIPS_INSTR_JR(rs) \
     mips_instr_new(state, "jr", 0, 0, 0, 0, rs, 0)
 #define MIPS_INSTR_JALR(rd, rs) \
@@ -106,12 +114,6 @@ static void expression_create_goto(parser_state_t *state, int type, char *labels
 static void expression_create_goto_pop(parser_state_t *state, int type, char *labelstr, expression_t* cond, int pop);
 
 /* macros for expression_mips_operation */
-#define CheckRegStack(OP) \
-    if (OP == NULL) { \
-        OP = request_reg(state, NULL); \
-        instr_add_delay_slot(state, state->current_sub, MIPS_INSTR_I("lw", state->stack_adjust - 4, OP->index, get_reg(state->reg_block, "s6")->index)); \
-        state->stack_adjust -= 4; \
-    }
 #define OutputExprToReg(EXPR, OP) \
     if (EXPR->type == EXPRESSION_VAL && EXPR->value->stack == 0 && EXPR->value->value.val.S == 0) OP = get_reg(state->reg_block, "zr"); else { expression_output(state, EXPR); OP = state->top_reg; }
 #define SetUsedReg(OP) \
@@ -2402,7 +2404,6 @@ instr_end_mips(
     mips_stack_adjust(state, sub);
     instr_add(state, sub, MIPS_INSTR_JALR(get_reg(state->reg_block, "s5")->index, get_reg(state->reg_block, "ra")->index));
     instr_add(state, sub, MIPS_INSTR_NOP());
-    clean_regs(state->reg_block);
     kill_delay_slots(state, sub);
 }
 
@@ -2996,6 +2997,29 @@ request_reg(
     return reg;
 }
 
+static void
+verify_reg_load(
+    parser_state_t* state,
+    mips_reg_t** reg_loc,
+    expression_t* expr)
+{
+    mips_reg_t* reg = *reg_loc;
+    if (reg == NULL) {
+        reg = request_reg(state, expr);
+        instr_add_delay_slot(state, state->current_sub, MIPS_INSTR_I("lw", -4, reg->index, get_reg(state->reg_block, "s6")->index));
+        state->stack_adjust -= 4;
+    }
+    else if (!strcmp(reg->name, "lo")) {
+        reg = request_reg(state, expr);
+        instr_add(state, state->current_sub, MIPS_INSTR_MFLO(reg->index));
+    }
+    else if (!strcmp(reg->name, "hi")) {
+        reg = request_reg(state, expr);
+        instr_add(state, state->current_sub, MIPS_INSTR_MFHI(reg->index));
+    }
+    *reg_loc = reg;
+}
+
 static expression_t*
 expression_load_new(
     const parser_state_t* state,
@@ -3120,11 +3144,7 @@ expression_create_goto_pop(
     if (state->mips_mode) {
         if (type != GOTO) {
             expression_output(state, cond);
-            if (state->top_reg == NULL) {
-                state->top_reg = request_reg(state, cond);
-                instr_add_delay_slot(state, state->current_sub, MIPS_INSTR_I("lw", -4, state->top_reg->index, get_reg(state->reg_block, "s6")->index));
-                state->stack_adjust -= 4;
-            }
+            verify_reg_load(state, &state->top_reg, cond);
             state->top_reg->status = MREG_STATUS_USED;
         }
         switch (type) {
@@ -3239,7 +3259,7 @@ expression_mips_operation(
             }
             else if (val_expr) {
                 OutputExprToReg(var_expr, op1);
-                CheckRegStack(op1);
+                verify_reg_load(state, &op1, var_expr);
                 ret = request_reg(state, expr);
                 if (val_expr->value->value.val.S == 0) {
                     instr_add(state, state->current_sub, MIPS_INSTR_MOVE(ret->index, op1->index));
@@ -3252,8 +3272,8 @@ expression_mips_operation(
             else {
                 OutputExprToReg(child_expr1, op1);
                 OutputExprToReg(child_expr2, op2);
-                CheckRegStack(op2);
-                CheckRegStack(op1);
+                verify_reg_load(state, &op2, child_expr2);
+                verify_reg_load(state, &op1, child_expr1);
                 ret = request_reg(state, expr);
                 instr_add(state, state->current_sub, MIPS_INSTR_ALU_R("addu", ret->index, op2->index, op1->index));
                 SetUsedReg(op1);
@@ -3263,14 +3283,14 @@ expression_mips_operation(
         case SUBTRACT:
             if (child_expr1->type == EXPRESSION_VAL && child_expr1->value->stack == 0 && child_expr1->value->value.val.S == 0) {
                 OutputExprToReg(child_expr2, op2);
-                CheckRegStack(op2);
+                verify_reg_load(state, &op2, child_expr2);
                 ret = request_reg(state, expr);
                 instr_add(state, state->current_sub, MIPS_INSTR_ALU_R("subu", ret->index, op2->index, 0));
                 SetUsedReg(op2);
             }
             else if (child_expr2->type == EXPRESSION_VAL && child_expr2->value->stack == 0 && child_expr2->value->value.val.S >= -0x7FFF && child_expr2->value->value.val.S <= 0x8000) {
                 OutputExprToReg(child_expr2, op1);
-                CheckRegStack(op1);
+                verify_reg_load(state, &op1, child_expr2);
                 ret = request_reg(state, expr);
                 if (child_expr2->value->value.val.S == 0) {
                     instr_add(state, state->current_sub, MIPS_INSTR_MOVE(ret->index, op1->index));
@@ -3283,8 +3303,8 @@ expression_mips_operation(
             else {
                 OutputExprToReg(child_expr1, op1);
                 OutputExprToReg(child_expr2, op2);
-                CheckRegStack(op2);
-                CheckRegStack(op1);
+                verify_reg_load(state, &op2, child_expr2);
+                verify_reg_load(state, &op1, child_expr1);
                 ret = request_reg(state, expr);
                 instr_add(state, state->current_sub, MIPS_INSTR_ALU_R("subu", ret->index, op2->index, op1->index));
                 SetUsedReg(op1);
@@ -3305,7 +3325,7 @@ expression_mips_operation(
             else if (child_expr2->type == EXPRESSION_VAL && child_expr2->value->stack == 0 && child_expr2->value->value.val.S >= -0x8000 && child_expr2->value->value.val.S <= 0x7FFF) { val_expr = child_expr2; var_expr = child_expr1; }
             if (val_expr && !(var_expr->type == EXPRESSION_VAL && var_expr->value->stack == 0 && var_expr->value->value.val.S == 0)) {
                 OutputExprToReg(var_expr, op1);
-                CheckRegStack(op1);
+                verify_reg_load(state, &op1, var_expr);
                 ret = request_reg(state, expr);
                 instr_add(state, state->current_sub, MIPS_INSTR_I(opiname, val_expr->value->value.val.S, ret->index, op1->index));
                 SetUsedReg(op1);
@@ -3313,8 +3333,8 @@ expression_mips_operation(
             else {
                 OutputExprToReg(child_expr1, op1);
                 OutputExprToReg(child_expr2, op2);
-                CheckRegStack(op2);
-                CheckRegStack(op1);
+                verify_reg_load(state, &op2, child_expr2);
+                verify_reg_load(state, &op1, child_expr1);
                 ret = request_reg(state, expr);
                 instr_add(state, state->current_sub, MIPS_INSTR_ALU_R(oprname, ret->index, op2->index, op1->index));
                 SetUsedReg(op1);
@@ -3323,10 +3343,20 @@ expression_mips_operation(
             break;
         case NOT:
             OutputExprToReg(child_expr2, op1);
-            CheckRegStack(op1);
+            verify_reg_load(state, &op1, child_expr2);
             ret = request_reg(state, expr);
             instr_add(state, state->current_sub, MIPS_INSTR_I("sltiu", 1, ret->index, op1->index));
             SetUsedReg(op1);
+            break;
+        case MULTIPLY:
+            OutputExprToReg(child_expr1, op1);
+            OutputExprToReg(child_expr2, op2);
+            verify_reg_load(state, &op2, child_expr2);
+            verify_reg_load(state, &op1, child_expr1);
+            ret = get_reg(state->reg_block, "lo");
+            instr_add(state, state->current_sub, MIPS_INSTR_MULT(op2->index, op1->index));
+            SetUsedReg(op1);
+            SetUsedReg(op2);
             break;
         default:
             {
@@ -3755,6 +3785,7 @@ scope_begin(
     parser_state_t* state
 ) {
     kill_delay_slots(state, state->current_sub);
+    clean_regs(state->reg_block);
 
     state->scope_stack = realloc(state->scope_stack, sizeof(thecl_scope_t)*(state->scope_cnt+1));
     state->scope_stack[state->scope_cnt].id = state->scope_id++;
@@ -3796,6 +3827,7 @@ scope_finish(
     }
 
     kill_delay_slots(state, state->current_sub);
+    clean_regs(state->reg_block);
 
     state->scope_stack = realloc(state->scope_stack, sizeof(thecl_scope_t)*--state->scope_cnt);
     state->block_bound = 1;
@@ -4202,11 +4234,7 @@ mips_instr_new_store(
     parser_state_t* state,
     thecl_param_t* value)
 {
-    if (state->top_reg == NULL) {
-        state->top_reg = request_reg(state, value);
-        instr_add_delay_slot(state, state->current_sub, MIPS_INSTR_I("lw", -4, state->top_reg->index, get_reg(state->reg_block, "s6")->index));
-        state->stack_adjust -= 4;
-    }
+    verify_reg_load(state, &state->top_reg, NULL);
     if (value->stack == 1) { /* object field, stack */
         if (value->object_link == 0) { /* object field */
             instr_add_delay_slot(state, state->current_sub, MIPS_INSTR_I("sw", value->value.val.S * 4 + get_obj_proc_offset(state->version), state->top_reg->index, get_reg(state->reg_block, "s0")->index));
