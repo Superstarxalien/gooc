@@ -295,6 +295,7 @@ typedef struct {
     mips_reg_block_t* reg_block;
     mips_reg_t* top_reg;
     list_t delay_slots;
+    bool force_mips; /* Fuck this. */
     list_t expressions;
     list_t addresses;
     list_t block_stack;

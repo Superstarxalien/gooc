@@ -675,7 +675,7 @@ Global_Subroutine_Modifier:
         if (is_post_c2(state->version)) {
             state->stack_adjust = 0;
             state->mips_mode = true;
-            state->scope_stack[0].mips = true;
+            state->force_mips = true;
         }
         else {
             yyerror(state, "mips mode is not supported for this game");
@@ -2463,7 +2463,7 @@ instr_add(
         thecl_instr_free(instr);
         return;
     }
-    if (!sub->mips_dirty && state->scope_cnt > 0 && (instr->mips != state->scope_stack[state->scope_cnt-1].mips || instr->mips && sub->offset == 0)) {
+    if (!sub->mips_dirty && ((state->scope_cnt > 0 && instr->mips != state->scope_stack[state->scope_cnt-1].mips) || (instr->mips && state->force_mips))) {
         sub->mips_dirty = true;
         state->scope_stack[state->scope_cnt-1].mips = instr->mips;
         if (instr->mips) {
@@ -2472,6 +2472,7 @@ instr_add(
         else {
             instr_end_mips(state, sub);
         }
+        if (state->force_mips) state->force_mips = false;
         sub->mips_dirty = false;
     }
     if (instr->mips) {

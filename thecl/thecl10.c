@@ -323,6 +323,7 @@ c1_parse(
     path_add(state, filename);
 
     state->mips_mode = false;
+    state->force_mips = false;
     state->stack_adjust = 0;
     state->top_reg = NULL;
     state->reg_block = mips_reg_block_new();
