@@ -175,7 +175,7 @@ free_reg(mips_reg_t* reg)
 void
 clean_regs(mips_reg_block_t* block)
 {
-    for (int i = 0; i < 32; ++i) {
+    for (int i = 0; i < 34; ++i) {
         free_reg(&block->regs[i]);
     }
     block->reg_index = 0;
