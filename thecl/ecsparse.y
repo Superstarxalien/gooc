@@ -2493,9 +2493,9 @@ instr_add(
                 list_node_t* node;
                 list_for_each_node(&state->delay_slots, node) {
                     gooc_delay_slot_t* delay_slot = node->data;
-                    if (delay_slot->optional && mips_instr_is_hilo(&instr->ins)) continue;
+                    thecl_instr_t* slot_ins = delay_slot->slot->data;
+                    if ((delay_slot->optional || slot_ins->offset <= sub->multdiv_offset) && mips_instr_is_hilo(&instr->ins)) continue;
                     if (delay_slot && (delay_slot->owner->reg_stalled & instr->reg_used) == 0) {
-                        thecl_instr_t* slot_ins = delay_slot->slot->data;
                         for (int i=0; i<32; ++i) {
                             if ((1 << i) & instr->reg_used && slot_ins->offset < state->reg_block->regs[i].last_used) {
                                 slot_ins = NULL;
@@ -2540,18 +2540,19 @@ instr_add(
                     list_prepend_to(&sub->instrs, instr, sub->instrs.tail);
                     instr->offset = sub->last_ins->offset;
                     sub->last_ins->offset = sub->offset++;
+                    ret = true;
                 }
-                else { /* already replacing an existing instruction */
+                else if (instr->offset == sub->offset - 1) { /* already replacing an existing instruction? */
                     thecl_instr_t *temp = calloc(1, sizeof(thecl_instr_t*));
                     memcpy(temp, sub->last_ins, sizeof(thecl_instr_t*));
-                    memmove(sub->last_ins, instr, sizeof(thecl_instr_t*));
-                    memmove(instr, temp, sizeof(thecl_instr_t*));
+                    memcpy(sub->last_ins, instr, sizeof(thecl_instr_t*));
+                    memcpy(instr, temp, sizeof(thecl_instr_t*));
                     free(temp);
                     int temp_off = sub->last_ins->offset;
                     sub->last_ins->offset = instr->offset;
                     instr->offset = temp_off;
+                    ret = true;
                 }
-                ret = true;
             }
             if (ret) {
                 sub->last_ins = instr;
@@ -3385,6 +3386,7 @@ expression_mips_operation(
             verify_reg_load(state, &op1, child_expr1);
             ret = request_reg(state, expr);
             instr_add(state, state->current_sub, MIPS_INSTR_MULT(op2->index, op1->index));
+            state->current_sub->multdiv_offset = state->current_sub->last_ins->offset;
             make_optional_delay_slots(state, 13, state->current_sub->last_ins);
             instr_add(state, state->current_sub, MIPS_INSTR_MFLO(ret->index));
             SetUsedReg(op1);
@@ -3397,6 +3399,7 @@ expression_mips_operation(
             verify_reg_load(state, &op1, child_expr1);
             ret = request_reg(state, expr);
             instr_add(state, state->current_sub, MIPS_INSTR_DIV(op2->index, op1->index));
+            state->current_sub->multdiv_offset = state->current_sub->last_ins->offset;
             make_optional_delay_slots(state, 36, state->current_sub->last_ins);
             instr_add(state, state->current_sub, MIPS_INSTR_MFLO(ret->index));
             SetUsedReg(op1);
@@ -3409,6 +3412,7 @@ expression_mips_operation(
             verify_reg_load(state, &op1, child_expr1);
             ret = request_reg(state, expr);
             instr_add(state, state->current_sub, MIPS_INSTR_DIV(op2->index, op1->index));
+            state->current_sub->multdiv_offset = state->current_sub->last_ins->offset;
             make_optional_delay_slots(state, 36, state->current_sub->last_ins);
             instr_add(state, state->current_sub, MIPS_INSTR_MFHI(ret->index));
             SetUsedReg(op1);

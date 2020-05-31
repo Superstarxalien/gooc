@@ -177,6 +177,7 @@ typedef struct {
 
     thecl_instr_t* last_ins;
     bool mips_dirty;
+    int multdiv_offset;
 
     bool is_trans;
     bool has_once;
