@@ -2506,14 +2506,17 @@ instr_add(
                             thecl_instr_free(slot_ins);
                             delay_slot->slot->data = instr;
                             if (delay_slot->optional && instr->reg_stalled) {
+                                int i = 1;
                                 list_node_t* alu_node, *alu_next;
                                 list_for_each_node_safe(&state->delay_slots, alu_node, alu_next) {
                                     if (node == alu_node) continue;
+                                    if (i >= 6) break;
                                     gooc_delay_slot_t* alu_slot = alu_node->data;
                                     if (alu_slot->optional && alu_slot->slot_id == delay_slot->slot_id) {
                                         instr_del(state, sub, alu_slot->slot->data);
                                         list_del(&state->delay_slots, alu_node);
                                         free(alu_slot);
+                                        i += 1;
                                     }
                                 }
                             }
@@ -3381,7 +3384,7 @@ expression_mips_operation(
             verify_reg_load(state, &op1, child_expr1);
             ret = request_reg(state, expr);
             instr_add(state, state->current_sub, MIPS_INSTR_MULT(op2->index, op1->index));
-            make_optional_delay_slots(state, 6, state->current_sub->last_ins);
+            make_optional_delay_slots(state, 13, state->current_sub->last_ins);
             instr_add(state, state->current_sub, MIPS_INSTR_MFLO(ret->index));
             SetUsedReg(op1);
             SetUsedReg(op2);
