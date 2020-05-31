@@ -3389,6 +3389,30 @@ expression_mips_operation(
             SetUsedReg(op1);
             SetUsedReg(op2);
             break;
+        case DIVIDE:
+            OutputExprToReg(child_expr1, op1);
+            OutputExprToReg(child_expr2, op2);
+            verify_reg_load(state, &op2, child_expr2);
+            verify_reg_load(state, &op1, child_expr1);
+            ret = request_reg(state, expr);
+            instr_add(state, state->current_sub, MIPS_INSTR_DIV(op2->index, op1->index));
+            make_optional_delay_slots(state, 36, state->current_sub->last_ins);
+            instr_add(state, state->current_sub, MIPS_INSTR_MFLO(ret->index));
+            SetUsedReg(op1);
+            SetUsedReg(op2);
+            break;
+        case MODULO:
+            OutputExprToReg(child_expr1, op1);
+            OutputExprToReg(child_expr2, op2);
+            verify_reg_load(state, &op2, child_expr2);
+            verify_reg_load(state, &op1, child_expr1);
+            ret = request_reg(state, expr);
+            instr_add(state, state->current_sub, MIPS_INSTR_DIV(op2->index, op1->index));
+            make_optional_delay_slots(state, 36, state->current_sub->last_ins);
+            instr_add(state, state->current_sub, MIPS_INSTR_MFHI(ret->index));
+            SetUsedReg(op1);
+            SetUsedReg(op2);
+            break;
         default:
             {
             /* a normal GOOL instruction will destroy the registers
