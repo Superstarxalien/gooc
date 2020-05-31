@@ -63,6 +63,10 @@ static thecl_instr_t* mips_instr_branch_new(parser_state_t* state, const char* n
     mips_instr_new(state, "mflo", 0, 0, rd, 0, 0, 0)
 #define MIPS_INSTR_MFHI(rd) \
     mips_instr_new(state, "mfhi", 0, 0, rd, 0, 0, 0)
+#define MIPS_INSTR_MTLO(rs) \
+    mips_instr_new(state, "mtlo", 0, 0, 0, 0, rs, 0)
+#define MIPS_INSTR_MTHI(rs) \
+    mips_instr_new(state, "mthi", 0, 0, 0, 0, rs, 0)
 #define MIPS_INSTR_JR(rs) \
     mips_instr_new(state, "jr", 0, 0, 0, 0, rs, 0)
 #define MIPS_INSTR_JALR(rd, rs) \
@@ -2388,6 +2392,22 @@ make_delay_slot(
 }
 
 static void
+make_optional_delay_slots(
+    parser_state_t* state,
+    int count,
+    thecl_instr_t* owner)
+{
+    for (int i=0; i<count; ++i) {
+        instr_add(state, state->current_sub, MIPS_INSTR_NOP()); /* DELAY SLOT */
+        gooc_delay_slot_t* delay_slot = calloc(1, sizeof(gooc_delay_slot_t));
+        delay_slot->slot = state->current_sub->instrs.tail;
+        delay_slot->owner = owner;
+        delay_slot->optional = true;
+        list_append_new(&state->delay_slots, delay_slot);
+    }
+}
+
+static void
 instr_start_mips(
     parser_state_t* state,
     thecl_sub_t* sub)
@@ -2405,6 +2425,7 @@ instr_end_mips(
     instr_add(state, sub, MIPS_INSTR_JALR(get_reg(state->reg_block, "s5")->index, get_reg(state->reg_block, "ra")->index));
     instr_add(state, sub, MIPS_INSTR_NOP());
     kill_delay_slots(state, sub);
+    clean_regs(state->reg_block);
 }
 
 static void
@@ -2457,9 +2478,21 @@ instr_add(
         if (instr->ins.ins != 0) {
             bool ret = false;
             if (!mips_instr_is_branch(&instr->ins)) {
+                if (mips_instr_is_multdiv(&instr->ins)) {
+                    list_node_t* alu_node, *alu_next;
+                    list_for_each_node_safe(&state->delay_slots, alu_node, alu_next) {
+                        gooc_delay_slot_t* alu_slot = alu_node->data;
+                        if (alu_slot->optional) {
+                            instr_del(state, sub, alu_slot->slot->data);
+                            list_del(&state->delay_slots, alu_node);
+                            free(alu_slot);
+                        }
+                    }
+                }
                 list_node_t* node;
                 list_for_each_node(&state->delay_slots, node) {
                     gooc_delay_slot_t* delay_slot = node->data;
+                    if (delay_slot->optional && mips_instr_is_hilo(&instr->ins)) continue;
                     if (delay_slot && (delay_slot->owner->reg_stalled & instr->reg_used) == 0) {
                         thecl_instr_t* slot_ins = delay_slot->slot->data;
                         for (int i=0; i<32; ++i) {
@@ -2475,6 +2508,7 @@ instr_add(
                             if (delay_slot->optional && instr->reg_stalled) {
                                 list_node_t* alu_node, *alu_next;
                                 list_for_each_node_safe(&state->delay_slots, alu_node, alu_next) {
+                                    if (node == alu_node) continue;
                                     gooc_delay_slot_t* alu_slot = alu_node->data;
                                     if (alu_slot->optional && alu_slot->slot_id == delay_slot->slot_id) {
                                         instr_del(state, sub, alu_slot->slot->data);
@@ -3009,14 +3043,6 @@ verify_reg_load(
         instr_add_delay_slot(state, state->current_sub, MIPS_INSTR_I("lw", -4, reg->index, get_reg(state->reg_block, "s6")->index));
         state->stack_adjust -= 4;
     }
-    else if (!strcmp(reg->name, "lo")) {
-        reg = request_reg(state, expr);
-        instr_add(state, state->current_sub, MIPS_INSTR_MFLO(reg->index));
-    }
-    else if (!strcmp(reg->name, "hi")) {
-        reg = request_reg(state, expr);
-        instr_add(state, state->current_sub, MIPS_INSTR_MFHI(reg->index));
-    }
     *reg_loc = reg;
 }
 
@@ -3353,13 +3379,42 @@ expression_mips_operation(
             OutputExprToReg(child_expr2, op2);
             verify_reg_load(state, &op2, child_expr2);
             verify_reg_load(state, &op1, child_expr1);
-            ret = get_reg(state->reg_block, "lo");
+            ret = request_reg(state, expr);
             instr_add(state, state->current_sub, MIPS_INSTR_MULT(op2->index, op1->index));
+            make_optional_delay_slots(state, 6, state->current_sub->last_ins);
+            instr_add(state, state->current_sub, MIPS_INSTR_MFLO(ret->index));
             SetUsedReg(op1);
             SetUsedReg(op2);
             break;
         default:
             {
+            /* a normal GOOL instruction will destroy the registers
+             * s5, v0, v1, a0 and a1 for sure, not to mention any
+             * other register used by any functions called from it */
+            list_t* saved_regs = list_new();
+            mips_reg_t* temp_reg;
+            for (int i=0; i<34; ++i) {
+                if (state->reg_block->regs[i].status == MREG_STATUS_IN_USE) {
+                    state->reg_block->regs[i].status = MREG_STATUS_RESERVED;
+                    list_prepend_new(saved_regs, &state->reg_block->regs[i]);
+                    if (i<32) {
+                        instr_add_delay_slot(state, state->current_sub, MIPS_INSTR_I("sw", state->stack_adjust, state->reg_block->regs[i].index, get_reg(state->reg_block, "s6")->index));
+                    }
+                    else {
+                        temp_reg = request_reg(state, NULL);
+                        if (i == get_reg(state->reg_block, "lo")->index) {
+                            instr_add(state, state->current_sub, MIPS_INSTR_MFLO(temp_reg->index));
+                        }
+                        else if (i == get_reg(state->reg_block, "hi")->index) {
+                            instr_add(state, state->current_sub, MIPS_INSTR_MFHI(temp_reg->index));
+                        }
+                        instr_add_delay_slot(state, state->current_sub, MIPS_INSTR_I("sw", state->stack_adjust, temp_reg->index, get_reg(state->reg_block, "s6")->index));
+                        free_reg(temp_reg);
+                    }
+                    state->stack_adjust += 4;
+                }
+            }
+            
             if (!state->scope_stack[state->scope_cnt - 1].mips) mips_stack_adjust(state, state->current_sub);
             const expr_t* expression = expr_get_by_id(state->version, expr->id);
             int c = 0, lc = list_count(&expr->children);
@@ -3402,6 +3457,28 @@ expression_mips_operation(
             }
 
             instr_add(state, state->current_sub, instr_new_list(state, expr->id, param_list));
+            
+            mips_reg_t* saved_reg;
+            list_for_each(saved_regs, saved_reg) {
+                saved_reg->status = MREG_STATUS_IN_USE;
+                state->stack_adjust -= 4;
+                if (i<32) {
+                    instr_add_delay_slot(state, state->current_sub, MIPS_INSTR_I("lw", state->stack_adjust-4, saved_reg->index, get_reg(state->reg_block, "s6")->index));
+                }
+                else {
+                    mips_reg_t* temp_reg = request_reg(state, NULL);
+                    instr_add_delay_slot(state, state->current_sub, MIPS_INSTR_I("lw", state->stack_adjust-4, temp_reg->index, get_reg(state->reg_block, "s6")->index));
+                    if (i == get_reg(state->reg_block, "lo")->index) {
+                        instr_add(state, state->current_sub, MIPS_INSTR_MTLO(temp_reg->index));
+                    }
+                    else if (i == get_reg(state->reg_block, "hi")->index) {
+                        instr_add(state, state->current_sub, MIPS_INSTR_MTHI(temp_reg->index));
+                    }
+                    free_reg(temp_reg);
+                }
+            }
+            list_free_nodes(saved_regs);
+            free(saved_regs);
             }
             break;
     }
@@ -3785,7 +3862,6 @@ scope_begin(
     parser_state_t* state
 ) {
     kill_delay_slots(state, state->current_sub);
-    clean_regs(state->reg_block);
 
     state->scope_stack = realloc(state->scope_stack, sizeof(thecl_scope_t)*(state->scope_cnt+1));
     state->scope_stack[state->scope_cnt].id = state->scope_id++;
@@ -3827,7 +3903,6 @@ scope_finish(
     }
 
     kill_delay_slots(state, state->current_sub);
-    clean_regs(state->reg_block);
 
     state->scope_stack = realloc(state->scope_stack, sizeof(thecl_scope_t)*--state->scope_cnt);
     state->block_bound = 1;

@@ -58,7 +58,9 @@ mips_instructions[] = {
     { "jalr",  'R', "9",  "0", "rd", "0",  "rs", "0" },
 
     { "mfhi",  'R', "16", "0", "rd", "0", "0", "0" },
+    { "mthi",  'R', "17", "0", "rd", "0", "0", "0" },
     { "mflo",  'R', "18", "0", "rd", "0", "0", "0" },
+    { "mtlo",  'R', "19", "0", "rd", "0", "0", "0" },
     { "mult",  'R', "24", "0", "0", "rt", "rs", "0" },
     { "div",   'R', "26", "0", "0", "rt", "rs", "0" },
 
@@ -308,5 +310,21 @@ mips_instr_is_branch(mips_ins_t* ins)
         || (ins->i.opcode == 5)
         || (ins->i.opcode == 6 && ins->i.rt == 0)
         || (ins->i.opcode == 7 && ins->i.rt == 0)
+        ;
+}
+
+int
+mips_instr_is_hilo(mips_ins_t* ins)
+{
+    return (ins->r.opcode == 0 && ins->r.funct == 16)
+        || (ins->r.opcode == 0 && ins->r.funct == 18)
+        ;
+}
+
+int
+mips_instr_is_multdiv(mips_ins_t* ins)
+{
+    return (ins->r.opcode == 0 && ins->r.funct == 24)
+        || (ins->r.opcode == 0 && ins->r.funct == 26)
         ;
 }
