@@ -176,6 +176,7 @@ typedef struct {
     uint16_t start_offset;
 
     thecl_instr_t* last_ins;
+    thecl_instr_t* secondlast_ins;
     bool mips_dirty;
     int multdiv_offset;
 

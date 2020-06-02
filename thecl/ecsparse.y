@@ -2414,6 +2414,8 @@ instr_start_mips(
 {
     kill_delay_slots(state, sub);
     instr_add(state, sub, instr_new(state, 73, ""));
+    sub->last_ins = NULL;
+    sub->secondlast_ins = NULL;
 }
 
 static void
@@ -2426,6 +2428,8 @@ instr_end_mips(
     instr_add(state, sub, MIPS_INSTR_NOP());
     kill_delay_slots(state, sub);
     clean_regs(state->reg_block);
+    sub->last_ins = NULL;
+    sub->secondlast_ins = NULL;
 }
 
 static void
@@ -2436,8 +2440,10 @@ instr_return_mips(
     mips_stack_adjust(state, sub);
     instr_add(state, sub, MIPS_INSTR_JR(get_reg(state->reg_block, "ra")->index));
     instr_add(state, sub, MIPS_INSTR_I("ori", 0, get_reg(state->reg_block, "s5")->index, 0));
-    clean_regs(state->reg_block);
     kill_delay_slots(state, sub);
+    clean_regs(state->reg_block);
+    sub->last_ins = NULL;
+    sub->secondlast_ins = NULL;
 }
 
 static void
@@ -3030,7 +3036,7 @@ request_reg(
         }
     }
     else {
-        yyerror(state, "oops, no available registers for mips mode");
+        yyerror(state, "no available registers for mips mode");
         exit(2);
     }
     return reg;
@@ -3845,6 +3851,7 @@ sub_begin(
     sub->mod_trans = false;
     sub->is_external = state->main_ecl != state->ecl;
     sub->last_ins = NULL;
+    sub->secondlast_ins = NULL;
     sub->mips_dirty = false;
     list_init(&sub->labels);
 
@@ -4376,6 +4383,7 @@ mips_instr_new_store(
                 link_reg->status = MREG_STATUS_USED;
             }
             else {
+                yyerror(state, "no available registers for mips mode");
                 exit(2);
             }
         }
@@ -4391,9 +4399,11 @@ mips_instr_new_store(
             reg->status = MREG_STATUS_USED;
         }
         else {
+            yyerror(state, "no available registers for mips mode");
             exit(2);
         }
     }
+    SetUsedReg(state->top_reg);
 }
 
 static void
