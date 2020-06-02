@@ -99,5 +99,6 @@ uint64_t mips_instr_getregs(const char* name, mips_ins_t* ins);
 int mips_instr_is_branch(mips_ins_t* ins);
 int mips_instr_is_hilo(mips_ins_t* ins);
 int mips_instr_is_multdiv(mips_ins_t* ins);
+int mips_instr_is_store(mips_ins_t* ins);
 
 #endif

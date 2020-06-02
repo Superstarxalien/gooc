@@ -286,7 +286,6 @@ typedef struct {
 
 typedef struct {
     int id;
-    int start;
     bool mips;
     bool returned;
 } thecl_scope_t;
@@ -326,6 +325,7 @@ typedef struct {
 
     int ignore_block;
     int block_bound;
+    int scope_bound;
 } parser_state_t;
 
 extern parser_state_t* g_parser_state;

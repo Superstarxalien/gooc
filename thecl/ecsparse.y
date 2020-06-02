@@ -2419,6 +2419,7 @@ instr_start_mips(
     instr_add(state, sub, instr_new(state, 73, ""));
     sub->last_ins = NULL;
     sub->secondlast_ins = NULL;
+    state->scope_bound = sub->offset;
 }
 
 static void
@@ -2487,6 +2488,7 @@ instr_add(
     if (instr->mips) {
         if (instr->ins.ins != 0) {
             bool ret = false;
+            thecl_instr_t* last_ins;
             if (!mips_instr_is_branch(&instr->ins)) {
                 if (mips_instr_is_multdiv(&instr->ins)) {
                     list_node_t* alu_node, *alu_next;
@@ -2537,27 +2539,36 @@ instr_add(
                         }
                     }
                 }
-                if (instr->reg_stalled && sub->last_ins && sub->last_ins->mips && sub->last_ins->ins.ins != 0 && !mips_instr_is_branch(&sub->last_ins->ins) && (sub->last_ins->reg_used & instr->reg_used) == 0) { /* swap with previous instruction */
-                    if (!ret) { /* did not fill a delay slot */
-                        list_prepend_to(&sub->instrs, instr, sub->instrs.tail);
-                        instr->offset = sub->last_ins->offset;
-                        sub->last_ins->offset = sub->offset++;
-                        ret = true;
+                if (!ret && instr->reg_stalled && sub->last_ins && sub->last_ins->mips && sub->last_ins->ins.ins != 0 && (sub->last_ins->reg_used & instr->reg_used) == 0) { /* swap with previous instruction */
+                    list_prepend_to(&sub->instrs, instr, sub->instrs.tail);
+                    instr->offset = sub->last_ins->offset;
+                    sub->last_ins->offset = sub->offset++;
+                    ret = true;
+                }
+                else if (sub->offset > state->scope_bound && ret && instr->reg_stalled) {
+                    list_node_t *instr_node = NULL;
+                    list_for_each_node(&sub->instrs, node) {
+                        if (node->data == instr) {
+                            instr_node = node;
+                            break;
+                        }
                     }
-                    else if (instr->offset == sub->offset - 1) { /* already replacing an existing instruction? */
-                        thecl_instr_t *temp = calloc(1, sizeof(thecl_instr_t*));
-                        memcpy(temp, sub->last_ins, sizeof(thecl_instr_t*));
-                        memcpy(sub->last_ins, instr, sizeof(thecl_instr_t*));
-                        memcpy(instr, temp, sizeof(thecl_instr_t*));
-                        free(temp);
-                        int temp_off = sub->last_ins->offset;
-                        sub->last_ins->offset = instr->offset;
-                        instr->offset = temp_off;
-                        ret = true;
+                    if (instr_node && instr_node->prev) {
+                        list_node_t *last_node = instr_node->prev;
+                        last_ins = last_node->data;
+                        if (last_ins && last_ins->mips && last_ins->ins.ins != 0 && !mips_instr_is_branch(&last_ins->ins) && (last_ins->reg_used & instr->reg_used) == 0) {
+                            last_node->data = instr;
+                            instr_node->data = last_ins;
+                            int temp_off = last_ins->offset;
+                            last_ins->offset = instr->offset;
+                            instr->offset = temp_off;
+                            ret = true;
+                        }
                     }
                 }
             }
-            if (!ret && sub->last_ins && sub->last_ins->mips && list_tail(&sub->instrs) == sub->last_ins && (instr->reg_used & sub->last_ins->reg_stalled || (mips_instr_is_branch(&instr->ins) && mips_instr_is_branch(&sub->last_ins->ins)))) {
+            last_ins = list_tail(&sub->instrs);
+            if (!ret && last_ins && last_ins->mips && (instr->reg_used & last_ins->reg_stalled || ((mips_instr_is_branch(&instr->ins) || mips_instr_is_store(&instr->ins)) && mips_instr_is_branch(&last_ins->ins)))) {
                 instr_add(state, state->current_sub, MIPS_INSTR_NOP()); /* DELAY SLOT */
                 list_append_new(&state->delay_slots, make_delay_slot(sub->instrs.tail, instr));
             }
@@ -3857,6 +3868,7 @@ sub_begin(
     list_append_new(&state->ecl->subs, sub);
 
     state->current_sub = sub;
+    state->scope_bound = 0;
 
     scope_begin(state);
 }
@@ -3929,7 +3941,6 @@ scope_begin(
     state->scope_stack[state->scope_cnt].id = state->scope_id++;
     state->scope_stack[state->scope_cnt].mips = state->scope_cnt >= 1 ? state->scope_stack[state->scope_cnt - 1].mips : state->mips_mode;
     state->scope_stack[state->scope_cnt].returned = false;
-    state->scope_stack[state->scope_cnt].start = state->current_sub->offset;
     ++state->scope_cnt;
     state->block_bound = 1;
 }
@@ -3966,6 +3977,8 @@ scope_finish(
     }
 
     kill_delay_slots(state, state->current_sub);
+
+    state->scope_bound = state->current_sub->offset;
 
     state->scope_stack = realloc(state->scope_stack, sizeof(thecl_scope_t)*--state->scope_cnt);
     state->block_bound = 1;

@@ -328,3 +328,10 @@ mips_instr_is_multdiv(mips_ins_t* ins)
         || (ins->r.opcode == 0 && ins->r.funct == 26)
         ;
 }
+
+int
+mips_instr_is_store(mips_ins_t* ins)
+{
+    return (ins->i.opcode >= 40 && ins->i.opcode <= 46)
+        ;
+}
