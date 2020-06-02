@@ -68,6 +68,7 @@ global_expressions[] = {
     { NOT,       18, 2, 0, 1, 1 }, /* !s0 */
     { NEARSEEK,  19, 3, 1, 0, 0 }, /* nearseek(s0, s1, s2) */
     { LSHIFT,    21, 2, 0, 1, 0 }, /* s1 << s0 */
+    { RSHIFT,    -1, 2, 0, 1, 0 }, /* s1 >> s0 */
     { B_NOT,     23, 2, 0, 1, 1 }, /* ~s0 */
     { ABS,       25, 2, 0, 1, 1 }, /* abs(s0) */
     { PAD,       26, 5, 0, 0, 0 }, /* pad(s0, s1, s2, s3, s4) */

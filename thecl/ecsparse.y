@@ -1923,7 +1923,7 @@ Assignment:
     | Address "|=" Expression { var_shorthand_assign(state, $1, $3, B_OR); }
     | Address "&=" Expression { var_shorthand_assign(state, $1, $3, B_AND); }
     | Address "<<=" Expression { var_shorthand_assign(state, $1, $3, LSHIFT); }
-    | Address ">>=" Expression { var_shorthand_assign(state, $1, EXPR_2(SUBTRACT, expression_val_new(state, 0), $3), LSHIFT); }
+    | Address ">>=" Expression { var_shorthand_assign(state, $1, $3, RSHIFT); }
     | Address "\\=" Expression { var_shorthand_assign(state, $1, $3, TEST); }
     ;
 
@@ -2025,7 +2025,7 @@ ExpressionSubset:
     | Expression "|"   Expression { $$ = EXPR_2(B_OR,     $1, $3); }
     | Expression "&"   Expression { $$ = EXPR_2(B_AND,    $1, $3); }
     | Expression "<<"  Expression { $$ = EXPR_2(LSHIFT,   $1, $3); }
-    | Expression ">>"  Expression { $$ = EXPR_2(LSHIFT,   $1, EXPR_2(SUBTRACT, expression_val_new(state, 0), $3)); }
+    | Expression ">>"  Expression { $$ = EXPR_2(RSHIFT,   $1, $3); }
     | Expression "\\"  Expression { $$ = EXPR_2(TEST,     $1, $3); }
     | Expression "!="  Expression {
         $$ = EXPR_2(INEQUAL,  $1, $3);
@@ -3575,7 +3575,7 @@ expression_output(
     parser_state_t* state,
     expression_t* expr)
 {
-    if (expr->type != EXPRESSION_TERNARY && expr_get_by_id(state->version, expr->id)->symbol < 0) {
+    if (expr->type != EXPRESSION_TERNARY && expr_get_by_id(state->version, expr->id)->id < -1) {
         yyerror(state, "error, cannot output non-compileable expression %d", expr->id);
         exit(2);
     }
@@ -3593,6 +3593,15 @@ expression_output(
     } else if (expr->type == EXPRESSION_OP) {
         const expr_t* expression = expr_get_by_id(state->version, expr->id);
         int c = 0, lc = list_count(&expr->children);
+
+        if (expression->symbol == RSHIFT && lc == 2) { /* special case handling, as GOOL does not have a native >> operation */
+            expression_t* shamt = list_tail(&expr->children);
+            list_del_tail(&expr->children);
+            list_append_new(&expr->children, EXPR_2(SUBTRACT, expression_val_new(state, 0), expression_copy(shamt)));
+            expression_free(shamt);
+            expr->id = expr_get_by_symbol(state->version, LSHIFT)->id;
+        }
+
         list_t* param_list = list_new();
 
         expression_t* child_expr;
@@ -3783,6 +3792,7 @@ math_preprocess(
         case B_OR:     return val1 | val2;
         case B_AND:    return val1 & val2;
         case LSHIFT:   return val2 >= 0 ? val1 << val2 : val1 >> -val2;
+        case RSHIFT:   return val2 >= 0 ? val1 >> val2 : val1 << -val2;
         case TEST:     return (val1 & val2) == val2;
         case NOT:      return !val2;
         case B_NOT:    return ~val2;
