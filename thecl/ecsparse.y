@@ -411,7 +411,7 @@ Statements:
     ;
 
 Statement:
-      "sub" IDENTIFIER {
+      "sub" IDENTIFIER Pre_Subroutine_Modifiers {
         sub_begin(state, $2);
         state->current_sub->is_inline = false;
         free($2);
@@ -665,12 +665,12 @@ Statement:
     | GlobalVarDeclaration
     ;
 
-Global_Subroutine_Modifiers:
+Pre_Subroutine_Modifiers:
     %empty
-    | Global_Subroutine_Modifiers Global_Subroutine_Modifier
+    | Pre_Subroutine_Modifiers Pre_Subroutine_Modifier
     ;
 
-Global_Subroutine_Modifier:
+Pre_Subroutine_Modifier:
       "__mips" {
         if (is_post_c2(state->version)) {
             state->stack_adjust = 0;
@@ -699,7 +699,6 @@ Subroutine_Modifier:
         state->current_sub->is_trans = true;
     }
     | "__args" "(" ArgumentDeclaration ")"
-    | Global_Subroutine_Modifier
     ;
 
 Subroutine_Body:
@@ -1087,7 +1086,7 @@ State_Instructions:
     } State_Subroutine_Identifier {
         state->current_state_sub = NULL;
     }
-    | State_Instructions "trans" {
+    | State_Instructions "trans" Pre_Subroutine_Modifiers {
         if (state->current_state->trans) {
             yyerror(state, "duplicate trans block in state: %s", state->current_state->name);
             exit(2);
@@ -1114,7 +1113,7 @@ State_Instructions:
             }
         }
       }
-      Global_Subroutine_Modifiers Subroutine_Body {
+      Subroutine_Body {
         if (state->current_state->trans_args) {
             thecl_sub_t* sub_code = state->find_state_sub(state->main_ecl, state->ecl != state->main_ecl ? state->ecl : NULL, state->current_state->code, STATE_SUB_CODE);
             for (int a=sub_code->arg_count-1; a >= 0; --a) {
@@ -1123,7 +1122,7 @@ State_Instructions:
         }
         sub_finish(state);
       }
-    | State_Instructions "code" {
+    | State_Instructions "code" Pre_Subroutine_Modifiers {
         if (state->current_state->code) {
             yyerror(state, "duplicate code block in state: %s", state->current_state->name);
             exit(2);
@@ -1136,10 +1135,10 @@ State_Instructions:
         state->current_state->code->lambda_name = strdup(buf);
         state->current_state->code->type = INTERRUPT_SUB;
       }
-      "(" ArgumentDeclaration ")" Global_Subroutine_Modifiers Subroutine_Body {
+      "(" ArgumentDeclaration ")" Subroutine_Body {
         sub_finish(state);
       }
-    | State_Instructions "event" {
+    | State_Instructions "event" Pre_Subroutine_Modifiers {
         if (state->current_state->event) {
             yyerror(state, "duplicate event block in state: %s", state->current_state->name);
             exit(2);
@@ -1165,7 +1164,7 @@ State_Instructions:
             }
         }
       }
-      "(" ArgumentDeclaration ")" Global_Subroutine_Modifiers Subroutine_Body {
+      "(" ArgumentDeclaration ")" Subroutine_Body {
         if (state->current_state->trans_args) {
             thecl_sub_t* sub_code = state->find_state_sub(state->main_ecl, state->ecl != state->main_ecl ? state->ecl : NULL, state->current_state->code, STATE_SUB_CODE);
             for (int a=sub_code->arg_count-1; a >= 0; --a) {
