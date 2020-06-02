@@ -2364,15 +2364,19 @@ kill_delay_slots(
     parser_state_t* state,
     thecl_sub_t* sub)
 {
+    thecl_instr_t* last_ins = sub ? list_tail(&sub->instrs) : NULL;
     gooc_delay_slot_t* slot;
     list_for_each(&state->delay_slots, slot) {
+        thecl_instr_t* ins = slot->slot->data;
         if (slot->optional && sub) {
-            thecl_instr_t* ins = slot->slot->data;
             for (int i=0; i<32; ++i) {
                 if (state->reg_block->regs[i].last_used >= ins->offset) {
                     --state->reg_block->regs[i].last_used;
                 }
             }
+            instr_del(state, sub, ins);
+        }
+        else if (last_ins == ins) {
             instr_del(state, sub, ins);
         }
         free(slot);
@@ -2424,9 +2428,9 @@ instr_end_mips(
     thecl_sub_t* sub)
 {
     mips_stack_adjust(state, sub);
+    kill_delay_slots(state, sub);
     instr_add(state, sub, MIPS_INSTR_JALR(get_reg(state->reg_block, "s5")->index, get_reg(state->reg_block, "ra")->index));
     instr_add(state, sub, MIPS_INSTR_NOP());
-    kill_delay_slots(state, sub);
     clean_regs(state->reg_block);
     sub->last_ins = NULL;
     sub->secondlast_ins = NULL;
@@ -2438,9 +2442,9 @@ instr_return_mips(
     thecl_sub_t* sub)
 {
     mips_stack_adjust(state, sub);
+    kill_delay_slots(state, sub);
     instr_add(state, sub, MIPS_INSTR_JR(get_reg(state->reg_block, "ra")->index));
     instr_add(state, sub, MIPS_INSTR_I("ori", 0, get_reg(state->reg_block, "s5")->index, 0));
-    kill_delay_slots(state, sub);
     clean_regs(state->reg_block);
     sub->last_ins = NULL;
     sub->secondlast_ins = NULL;
@@ -3827,8 +3831,6 @@ sub_begin(
     parser_state_t* state,
     char* name)
 {
-    scope_begin(state);
-
     thecl_sub_t* sub = malloc(sizeof(thecl_sub_t));
 
     sub->name = strdup(name);
@@ -3856,6 +3858,8 @@ sub_begin(
     list_append_new(&state->ecl->subs, sub);
 
     state->current_sub = sub;
+
+    scope_begin(state);
 }
 
 static void
