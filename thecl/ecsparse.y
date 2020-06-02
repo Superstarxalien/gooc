@@ -3379,6 +3379,28 @@ expression_mips_operation(
             instr_add(state, state->current_sub, MIPS_INSTR_I("sltiu", 1, ret->index, op1->index));
             SetUsedReg(op1);
             break;
+        case EQUAL:
+            if (child_expr1->type == EXPRESSION_VAL && child_expr1->value->stack == 0 && child_expr1->value->value.val.S >= -0x8000 && child_expr1->value->value.val.S <= 0x7FFF) { val_expr = child_expr1; var_expr = child_expr2; }
+            else if (child_expr2->type == EXPRESSION_VAL && child_expr2->value->stack == 0 && child_expr2->value->value.val.S >= -0x8000 && child_expr2->value->value.val.S <= 0x7FFF) { val_expr = child_expr2; var_expr = child_expr1; }
+            if (val_expr && !(var_expr->type == EXPRESSION_VAL && var_expr->value->stack == 0 && var_expr->value->value.val.S == 0)) {
+                OutputExprToReg(var_expr, op1);
+                verify_reg_load(state, &op1, var_expr);
+                ret = request_reg(state, expr);
+                instr_add(state, state->current_sub, MIPS_INSTR_I("xori", val_expr->value->value.val.S, ret->index, op1->index));
+                SetUsedReg(op1);
+            }
+            else {
+                OutputExprToReg(child_expr1, op1);
+                OutputExprToReg(child_expr2, op2);
+                verify_reg_load(state, &op2, child_expr2);
+                verify_reg_load(state, &op1, child_expr1);
+                ret = request_reg(state, expr);
+                instr_add(state, state->current_sub, MIPS_INSTR_ALU_R("xor", ret->index, op2->index, op1->index));
+                SetUsedReg(op1);
+                SetUsedReg(op2);
+            }
+            instr_add(state, state->current_sub, MIPS_INSTR_I("sltiu", 1, ret->index, ret->index));
+            break;
         case MULTIPLY:
             OutputExprToReg(child_expr1, op1);
             OutputExprToReg(child_expr2, op2);
@@ -3446,7 +3468,7 @@ expression_mips_operation(
                     state->stack_adjust += 4;
                 }
             }
-            
+
             if (!state->scope_stack[state->scope_cnt - 1].mips) mips_stack_adjust(state, state->current_sub);
             const expr_t* expression = expr_get_by_id(state->version, expr->id);
             int c = 0, lc = list_count(&expr->children);
@@ -3489,7 +3511,7 @@ expression_mips_operation(
             }
 
             instr_add(state, state->current_sub, instr_new_list(state, expr->id, param_list));
-            
+
             mips_reg_t* saved_reg;
             list_for_each(saved_regs, saved_reg) {
                 saved_reg->status = MREG_STATUS_IN_USE;
