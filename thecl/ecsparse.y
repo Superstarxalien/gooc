@@ -2534,31 +2534,29 @@ instr_add(
                         }
                     }
                 }
+                if (instr->reg_stalled && sub->last_ins && sub->last_ins->mips && sub->last_ins->ins.ins != 0 && !mips_instr_is_branch(&sub->last_ins->ins) && (sub->last_ins->reg_used & instr->reg_used) == 0) { /* swap with previous instruction */
+                    if (!ret) { /* did not fill a delay slot */
+                        list_prepend_to(&sub->instrs, instr, sub->instrs.tail);
+                        instr->offset = sub->last_ins->offset;
+                        sub->last_ins->offset = sub->offset++;
+                        ret = true;
+                    }
+                    else if (instr->offset == sub->offset - 1) { /* already replacing an existing instruction? */
+                        thecl_instr_t *temp = calloc(1, sizeof(thecl_instr_t*));
+                        memcpy(temp, sub->last_ins, sizeof(thecl_instr_t*));
+                        memcpy(sub->last_ins, instr, sizeof(thecl_instr_t*));
+                        memcpy(instr, temp, sizeof(thecl_instr_t*));
+                        free(temp);
+                        int temp_off = sub->last_ins->offset;
+                        sub->last_ins->offset = instr->offset;
+                        instr->offset = temp_off;
+                        ret = true;
+                    }
+                }
             }
-            bool delayed = false;
-            if (sub->last_ins && sub->last_ins->mips && list_tail(&sub->instrs) == sub->last_ins && (instr->reg_used & sub->last_ins->reg_stalled || (mips_instr_is_branch(&instr->ins) && mips_instr_is_branch(&sub->last_ins->ins)))) {
+            if (!ret && sub->last_ins && sub->last_ins->mips && list_tail(&sub->instrs) == sub->last_ins && (instr->reg_used & sub->last_ins->reg_stalled || (mips_instr_is_branch(&instr->ins) && mips_instr_is_branch(&sub->last_ins->ins)))) {
                 instr_add(state, state->current_sub, MIPS_INSTR_NOP()); /* DELAY SLOT */
                 list_append_new(&state->delay_slots, make_delay_slot(sub->instrs.tail, instr));
-                delayed = true;
-            }
-            if (!mips_instr_is_branch(&instr->ins) && instr->reg_stalled && sub->last_ins && sub->last_ins->mips && sub->last_ins->ins.ins != 0 && !mips_instr_is_branch(&sub->last_ins->ins) && (sub->last_ins->reg_used & instr->reg_used) == 0) { /* swap with previous instruction */
-                if (!ret) { /* did not fill a delay slot */
-                    list_prepend_to(&sub->instrs, instr, sub->instrs.tail);
-                    instr->offset = sub->last_ins->offset;
-                    sub->last_ins->offset = sub->offset++;
-                    ret = true;
-                }
-                else if (instr->offset == sub->offset - 1) { /* already replacing an existing instruction? */
-                    thecl_instr_t *temp = calloc(1, sizeof(thecl_instr_t*));
-                    memcpy(temp, sub->last_ins, sizeof(thecl_instr_t*));
-                    memcpy(sub->last_ins, instr, sizeof(thecl_instr_t*));
-                    memcpy(instr, temp, sizeof(thecl_instr_t*));
-                    free(temp);
-                    int temp_off = sub->last_ins->offset;
-                    sub->last_ins->offset = instr->offset;
-                    instr->offset = temp_off;
-                    ret = true;
-                }
             }
             if (ret) {
                 sub->last_ins = instr;
@@ -3928,6 +3926,7 @@ scope_begin(
     state->scope_stack[state->scope_cnt].id = state->scope_id++;
     state->scope_stack[state->scope_cnt].mips = state->scope_cnt >= 1 ? state->scope_stack[state->scope_cnt - 1].mips : state->mips_mode;
     state->scope_stack[state->scope_cnt].returned = false;
+    state->scope_stack[state->scope_cnt].start = state->current_sub->offset;
     ++state->scope_cnt;
     state->block_bound = 1;
 }

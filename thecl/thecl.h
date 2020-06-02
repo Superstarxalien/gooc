@@ -286,6 +286,7 @@ typedef struct {
 
 typedef struct {
     int id;
+    int start;
     bool mips;
     bool returned;
 } thecl_scope_t;
