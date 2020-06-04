@@ -2489,58 +2489,59 @@ instr_add(
     }
     if (instr->mips) {
         if (instr->ins.ins != 0) {
-            bool ret = false;
-            thecl_instr_t* last_ins;
-            if (!mips_instr_is_branch(&instr->ins)) {
-                if (mips_instr_is_multdiv(&instr->ins)) {
-                    list_node_t* alu_node, *alu_next;
-                    list_for_each_node_safe(&state->delay_slots, alu_node, alu_next) {
-                        gooc_delay_slot_t* alu_slot = alu_node->data;
-                        if (alu_slot->optional) {
-                            instr_del(state, sub, alu_slot->slot->data);
-                            list_del(&state->delay_slots, alu_node);
-                            free(alu_slot);
-                        }
+            if (mips_instr_is_multdiv(&instr->ins)) {
+                list_node_t* alu_node, *alu_next;
+                list_for_each_node_safe(&state->delay_slots, alu_node, alu_next) {
+                    gooc_delay_slot_t* alu_slot = alu_node->data;
+                    if (alu_slot->optional) {
+                        instr_del(state, sub, alu_slot->slot->data);
+                        list_del(&state->delay_slots, alu_node);
+                        free(alu_slot);
                     }
                 }
-                list_node_t* node;
-                list_for_each_node(&state->delay_slots, node) {
-                    gooc_delay_slot_t* delay_slot = node->data;
-                    thecl_instr_t* slot_ins = delay_slot->slot->data;
-                    if ((delay_slot->optional || slot_ins->offset <= sub->multdiv_offset) && mips_instr_is_hilo(&instr->ins)) continue;
-                    if (delay_slot && (delay_slot->owner->reg_stalled & instr->reg_used) == 0) {
-                        for (int i=0; i<32; ++i) {
-                            if ((1 << i) & instr->reg_used && slot_ins->offset < state->reg_block->regs[i].last_used) {
-                                slot_ins = NULL;
-                                break;
-                            }
-                        }
-                        if (slot_ins) {
-                            instr->offset = slot_ins->offset;
-                            thecl_instr_free(slot_ins);
-                            delay_slot->slot->data = instr;
-                            if (delay_slot->optional && instr->reg_stalled) {
-                                int i = 1;
-                                list_node_t* alu_node, *alu_next;
-                                list_for_each_node_safe(&state->delay_slots, alu_node, alu_next) {
-                                    if (node == alu_node) continue;
-                                    if (i >= 6) break;
-                                    gooc_delay_slot_t* alu_slot = alu_node->data;
-                                    if (alu_slot->optional && alu_slot->slot_id == delay_slot->slot_id) {
-                                        instr_del(state, sub, alu_slot->slot->data);
-                                        list_del(&state->delay_slots, alu_node);
-                                        free(alu_slot);
-                                        i += 1;
-                                    }
-                                }
-                            }
-                            list_del(&state->delay_slots, node);
-                            free(delay_slot);
-                            ret = true;
+            }
+            bool ret = false;
+            thecl_instr_t* tail_ins = list_tail(&sub->instrs);
+            list_node_t* node;
+            list_for_each_node(&state->delay_slots, node) {
+                gooc_delay_slot_t* delay_slot = node->data;
+                thecl_instr_t* slot_ins = delay_slot->slot->data;
+                if (slot_ins != tail_ins && mips_instr_is_branch(&instr->ins)) continue;
+                if ((delay_slot->optional || slot_ins->offset <= sub->multdiv_offset) && mips_instr_is_hilo(&instr->ins)) continue;
+                if (delay_slot && (delay_slot->owner->reg_stalled & instr->reg_used) == 0) {
+                    for (int i=0; i<32; ++i) {
+                        if ((1 << i) & instr->reg_used && slot_ins->offset < state->reg_block->regs[i].last_used) {
+                            slot_ins = NULL;
                             break;
                         }
                     }
+                    if (slot_ins) {
+                        instr->offset = slot_ins->offset;
+                        thecl_instr_free(slot_ins);
+                        delay_slot->slot->data = instr;
+                        if (delay_slot->optional && instr->reg_stalled) {
+                            int i = 1;
+                            list_node_t* alu_node, *alu_next;
+                            list_for_each_node_safe(&state->delay_slots, alu_node, alu_next) {
+                                if (node == alu_node) continue;
+                                if (i >= 6) break;
+                                gooc_delay_slot_t* alu_slot = alu_node->data;
+                                if (alu_slot->optional && alu_slot->slot_id == delay_slot->slot_id) {
+                                    instr_del(state, sub, alu_slot->slot->data);
+                                    list_del(&state->delay_slots, alu_node);
+                                    free(alu_slot);
+                                    i += 1;
+                                }
+                            }
+                        }
+                        list_del(&state->delay_slots, node);
+                        free(delay_slot);
+                        ret = true;
+                        break;
+                    }
                 }
+            }
+            if (!mips_instr_is_branch(&instr->ins)) {
                 if (!ret && instr->reg_stalled && sub->last_ins && sub->last_ins->mips && sub->last_ins->ins.ins != 0 && (sub->last_ins->reg_used & instr->reg_used) == 0) { /* swap with previous instruction */
                     list_prepend_to(&sub->instrs, instr, sub->instrs.tail);
                     instr->offset = sub->last_ins->offset;
@@ -2557,7 +2558,7 @@ instr_add(
                     }
                     if (instr_node && instr_node->prev) {
                         list_node_t *last_node = instr_node->prev;
-                        last_ins = last_node->data;
+                        thecl_instr_t* last_ins = last_node->data;
                         if (last_ins && last_ins->mips && last_ins->ins.ins != 0 && !mips_instr_is_branch(&last_ins->ins) && (last_ins->reg_used & instr->reg_used) == 0) {
                             last_node->data = instr;
                             instr_node->data = last_ins;
@@ -2569,8 +2570,7 @@ instr_add(
                     }
                 }
             }
-            last_ins = list_tail(&sub->instrs);
-            if (!ret && last_ins && last_ins->mips && (instr->reg_used & last_ins->reg_stalled || ((mips_instr_is_branch(&instr->ins) || mips_instr_is_store(&instr->ins)) && mips_instr_is_branch(&last_ins->ins)))) {
+            if (!ret && tail_ins && tail_ins->mips && (instr->reg_used & tail_ins->reg_stalled || ((mips_instr_is_branch(&instr->ins) || mips_instr_is_store(&instr->ins)) && mips_instr_is_branch(&tail_ins->ins)))) {
                 instr_add(state, state->current_sub, MIPS_INSTR_NOP()); /* DELAY SLOT */
                 list_append_new(&state->delay_slots, make_delay_slot(sub->instrs.tail, instr));
             }
@@ -3393,8 +3393,8 @@ expression_mips_operation(
             ret = request_reg(state, expr);
             char buf[512];
             snprintf(buf, 512, "@!%s_MipsOp_AND_%X_%X", state->current_sub->name, child_expr1, child_expr2);
-            instr_add(state, state->current_sub, MIPS_INSTR_MOVE(ret->index, op1->index));
             instr_add(state, state->current_sub, MIPS_INSTR_BEQZ(strdup(buf), op1->index));
+            instr_add(state, state->current_sub, MIPS_INSTR_MOVE(ret->index, op1->index));
             instr_add(state, state->current_sub, MIPS_INSTR_MOVE(ret->index, op2->index));
             label_create(state, buf);
             SetUsedReg(op1);
