@@ -2543,35 +2543,6 @@ instr_add(
                     }
                 }
             }
-            if (!mips_instr_is_branch(&instr->ins)) {
-                if (!ret && instr->reg_stalled && tail_ins && tail_ins->mips && tail_ins->ins.ins != 0 && (tail_ins->reg_used & instr->reg_stalled) == 0) { /* swap with previous instruction */
-                    list_prepend_to(&sub->instrs, instr, sub->instrs.tail);
-                    instr->offset = tail_ins->offset;
-                    tail_ins->offset = sub->offset++;
-                    ret = true;
-                }
-                else if (sub->offset > state->scope_bound && ret && instr->reg_stalled) {
-                    list_node_t *instr_node = NULL;
-                    list_for_each_node(&sub->instrs, node) {
-                        if (node->data == instr) {
-                            instr_node = node;
-                            break;
-                        }
-                    }
-                    if (instr_node && instr_node->prev) {
-                        list_node_t *last_node = instr_node->prev;
-                        thecl_instr_t* last_ins = last_node->data;
-                        if (last_ins && last_ins->mips && last_ins->ins.ins != 0 && !mips_instr_is_branch(&last_ins->ins) && (last_ins->reg_used & instr->reg_stalled) == 0) {
-                            last_node->data = instr;
-                            instr_node->data = last_ins;
-                            int temp_off = last_ins->offset;
-                            last_ins->offset = instr->offset;
-                            instr->offset = temp_off;
-                            ret = true;
-                        }
-                    }
-                }
-            }
             if (!ret && tail_ins && tail_ins->mips && (instr->reg_used & tail_ins->reg_stalled || ((mips_instr_is_branch(&instr->ins) || mips_instr_is_store(&instr->ins)) && mips_instr_is_branch(&tail_ins->ins)))) {
                 instr_add(state, state->current_sub, MIPS_INSTR_NOP()); /* DELAY SLOT */
                 list_append_new(&state->delay_slots, make_delay_slot(sub->instrs.tail, instr));
