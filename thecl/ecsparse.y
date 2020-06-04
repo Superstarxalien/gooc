@@ -2544,7 +2544,7 @@ instr_add(
                 }
             }
             if (!mips_instr_is_branch(&instr->ins)) {
-                if (!ret && instr->reg_stalled && tail_ins && tail_ins->mips && tail_ins->ins.ins != 0 && (tail_ins->reg_used & instr->reg_used) == 0) { /* swap with previous instruction */
+                if (!ret && instr->reg_stalled && tail_ins && tail_ins->mips && tail_ins->ins.ins != 0 && (tail_ins->reg_used & instr->reg_stalled) == 0) { /* swap with previous instruction */
                     list_prepend_to(&sub->instrs, instr, sub->instrs.tail);
                     instr->offset = tail_ins->offset;
                     tail_ins->offset = sub->offset++;
