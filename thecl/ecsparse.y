@@ -1730,8 +1730,19 @@ Instruction:
                             instr_add(state, state->current_sub, instr_new(state, expr->id, "p", param));
                         }
                         else {
-                            const expr_t* expr = expr_get_by_symbol(state->version, LOAD);
-                            instr_add(state, state->current_sub, instr_new(state, expr->id, "p", param));
+                            if (state->mips_mode) {
+                                expression_t* expression = expression_load_new(state, param_copy(param));
+                                expression_output(state, expression);
+                                if (state->top_reg) {
+                                    instr_add_delay_slot(state, state->current_sub, MIPS_INSTR_I("sw", state->stack_adjust, state->top_reg->index, get_reg(state->reg_block, "s6")->index));
+                                    state->stack_adjust += 4;
+                                }
+                                expression_free(expression);
+                            }
+                            else {
+                                const expr_t* expr = expr_get_by_symbol(state->version, LOAD);
+                                instr_add(state, state->current_sub, instr_new(state, expr->id, "p", param));
+                            }
                         }
                     }
                     else if (param->is_expression_param) {
@@ -2392,7 +2403,7 @@ make_delay_slot(
     delay_slot->slot = slot;
     delay_slot->owner = owner;
     delay_slot->optional = false;
-	return delay_slot;
+    return delay_slot;
 }
 
 static void
