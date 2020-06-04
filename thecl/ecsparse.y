@@ -3355,13 +3355,13 @@ expression_mips_operation(
             break;
         case XOR:
         case OR:
-        case AND:
+        case B_AND:
         case B_OR:
             const char* oprname, *opiname;
             switch (symbol) {
                 case XOR: oprname = "xor"; opiname = "xori"; break;
                 case OR: case B_OR: oprname = "or"; opiname = "ori"; break;
-                case AND: oprname = "and"; opiname = "andi"; break;
+                case B_AND: oprname = "and"; opiname = "andi"; break;
             }
             if (child_expr1->type == EXPRESSION_VAL && child_expr1->value->stack == 0 && child_expr1->value->value.val.S >= -0x8000 && child_expr1->value->value.val.S <= 0x7FFF) { val_expr = child_expr1; var_expr = child_expr2; }
             else if (child_expr2->type == EXPRESSION_VAL && child_expr2->value->stack == 0 && child_expr2->value->value.val.S >= -0x8000 && child_expr2->value->value.val.S <= 0x7FFF) { val_expr = child_expr2; var_expr = child_expr1; }
@@ -3382,6 +3382,21 @@ expression_mips_operation(
                 SetUsedReg(op1);
                 SetUsedReg(op2);
             }
+            break;
+        case AND:
+            OutputExprToReg(child_expr1, op1);
+            OutputExprToReg(child_expr2, op2);
+            verify_reg_load(state, &op2, child_expr2);
+            verify_reg_load(state, &op1, child_expr1);
+            ret = request_reg(state, expr);
+            char buf[512];
+            snprintf(buf, 512, "@!%s_MipsOp_AND_%X_%X", state->current_sub->name, child_expr1, child_expr2);
+            instr_add(state, state->current_sub, MIPS_INSTR_MOVE(ret->index, op1->index));
+            instr_add(state, state->current_sub, MIPS_INSTR_BEQZ(strdup(buf), op1->index));
+            instr_add(state, state->current_sub, MIPS_INSTR_MOVE(ret->index, op2->index));
+            label_create(state, buf);
+            SetUsedReg(op1);
+            SetUsedReg(op2);
             break;
         case NOT:
             OutputExprToReg(child_expr2, op1);
