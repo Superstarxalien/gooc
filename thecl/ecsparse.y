@@ -2432,6 +2432,7 @@ instr_end_mips(
     mips_stack_adjust(state, sub);
     kill_delay_slots(state, sub);
     instr_add(state, sub, MIPS_INSTR_JALR(get_reg(state->reg_block, "s5")->index, get_reg(state->reg_block, "ra")->index));
+    kill_delay_slots(state, sub);
     instr_add(state, sub, MIPS_INSTR_NOP());
     clean_regs(state->reg_block);
     sub->last_ins = NULL;
@@ -2446,6 +2447,7 @@ instr_return_mips(
     mips_stack_adjust(state, sub);
     kill_delay_slots(state, sub);
     instr_add(state, sub, MIPS_INSTR_JR(get_reg(state->reg_block, "ra")->index));
+    kill_delay_slots(state, sub);
     instr_add(state, sub, MIPS_INSTR_I("ori", 0, get_reg(state->reg_block, "s5")->index, 0));
     clean_regs(state->reg_block);
     sub->last_ins = NULL;
