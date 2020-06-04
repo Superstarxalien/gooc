@@ -53,6 +53,8 @@ static thecl_instr_t* instr_new_list(parser_state_t* state, uint8_t id, list_t* 
 static void mips_stack_adjust(parser_state_t* state, thecl_sub_t* sub);
 static thecl_instr_t* mips_instr_new(parser_state_t* state, const char* name, int imm, int shamt, int rd, int rt, int rs, int addr);
 static thecl_instr_t* mips_instr_branch_new(parser_state_t* state, const char* name, int rt, int rs, const char* label);
+#define MIPS_INSTR_SHIFT(name, shamt, rd, rt) \
+    mips_instr_new(state, name, 0, shamt, rd, rt, 0, 0)
 #define MIPS_INSTR_ALU_R(name, rd, rt, rs) \
     mips_instr_new(state, name, 0, 0, rd, rt, rs, 0)
 #define MIPS_INSTR_MULT(rt, rs) \
@@ -3404,6 +3406,30 @@ expression_mips_operation(
             ret = request_reg(state, expr);
             instr_add(state, state->current_sub, MIPS_INSTR_I("sltiu", 1, ret->index, op1->index));
             SetUsedReg(op1);
+            break;
+        case LSHIFT:
+        case RSHIFT:
+            if (child_expr2->type == EXPRESSION_VAL && child_expr2->value->stack == 0 && child_expr2->value->value.val.S < 0) {
+                if (symbol == LSHIFT) symbol = RSHIFT; else symbol = LSHIFT;
+                child_expr2->value->value.val.S = -child_expr2->value->value.val.S;
+            }
+            if (child_expr2->type == EXPRESSION_VAL && child_expr2->value->stack == 0) {
+                OutputExprToReg(child_expr1, op1);
+                verify_reg_load(state, &op1, child_expr1);
+                ret = request_reg(state, expr);
+                instr_add(state, state->current_sub, MIPS_INSTR_SHIFT(symbol == LSHIFT ? "sll" : "sra", child_expr2->value->value.val.S & 0x1F, ret->index, op1->index));
+                SetUsedReg(op1);
+            }
+            else {
+                OutputExprToReg(child_expr1, op1);
+                OutputExprToReg(child_expr2, op2);
+                verify_reg_load(state, &op2, child_expr2);
+                verify_reg_load(state, &op1, child_expr1);
+                ret = request_reg(state, expr);
+                instr_add(state, state->current_sub, MIPS_INSTR_ALU_R(symbol == LSHIFT ? "sllv" : "srav", ret->index, op1->index, op2->index));
+                SetUsedReg(op1);
+                SetUsedReg(op2);
+            }
             break;
         case EQUAL:
             if (child_expr1->type == EXPRESSION_VAL && child_expr1->value->stack == 0 && child_expr1->value->value.val.S >= -0x8000 && child_expr1->value->value.val.S <= 0x7FFF) { val_expr = child_expr1; var_expr = child_expr2; }
