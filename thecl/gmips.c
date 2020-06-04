@@ -210,7 +210,7 @@ reg_get_expr(mips_reg_t* reg)
     else return NULL;
 }
 
-mips_ins_fmt_t*
+const mips_ins_fmt_t*
 mips_find_format(const char* name)
 {
     const mips_ins_fmt_t* format = mips_instructions;
