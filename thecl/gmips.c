@@ -70,6 +70,7 @@ mips_instructions[] = {
     { "or",    'R', "37", "0", "rd", "rt", "rs", "0" },
     { "xor",   'R', "38", "0", "rd", "rt", "rs", "0" },
     { "nor",   'R', "39", "0", "rd", "rt", "rs", "0" },
+    { "slt",   'R', "42", "0", "rd", "rt", "rs", "0" },
 
     { "beq",   'I', "imm", "rt", "rs",  "4", NULL, NULL },
     { "bne",   'I', "imm", "rt", "rs",  "5", NULL, NULL },

@@ -3298,24 +3298,17 @@ expression_mips_operation(
             child_expr3 = val_expr;
         }
     }
-    switch (expr_get_by_id(state->version, expr->id)->symbol) {
+    val_expr = NULL;
+    int symbol = expr_get_by_id(state->version, expr->id)->symbol;
+    switch (symbol) {
         case ADD:
             if (child_expr1->type == EXPRESSION_VAL && child_expr1->value->stack == 0 && child_expr1->value->value.val.S >= -0x8000 && child_expr1->value->value.val.S <= 0x7FFF) { val_expr = child_expr1; var_expr = child_expr2; }
             else if (child_expr2->type == EXPRESSION_VAL && child_expr2->value->stack == 0 && child_expr2->value->value.val.S >= -0x8000 && child_expr2->value->value.val.S <= 0x7FFF) { val_expr = child_expr2; var_expr = child_expr1; }
-            if (val_expr && var_expr && var_expr->type == EXPRESSION_VAL && var_expr->value->stack == 0 && var_expr->value->value.val.S == 0) {
-                ret = request_reg(state, expr);
-                instr_add(state, state->current_sub, MIPS_INSTR_MOVE(ret->index, 0));
-            }
-            else if (val_expr) {
+            if (val_expr && !(var_expr->type == EXPRESSION_VAL && var_expr->value->stack == 0 && var_expr->value->value.val.S == 0)) {
                 OutputExprToReg(var_expr, op1);
                 verify_reg_load(state, &op1, var_expr);
                 ret = request_reg(state, expr);
-                if (val_expr->value->value.val.S == 0) {
-                    instr_add(state, state->current_sub, MIPS_INSTR_MOVE(ret->index, op1->index));
-                }
-                else {
-                    instr_add(state, state->current_sub, MIPS_INSTR_I("addiu", val_expr->value->value.val.S, ret->index, op1->index));
-                }
+                instr_add(state, state->current_sub, MIPS_INSTR_I("addiu", val_expr->value->value.val.S, ret->index, op1->index));
                 SetUsedReg(op1);
             }
             else {
@@ -3365,7 +3358,7 @@ expression_mips_operation(
         case AND:
         case B_OR:
             const char* oprname, *opiname;
-            switch (expr_get_by_id(state->version, expr->id)->symbol) {
+            switch (symbol) {
                 case XOR: oprname = "xor"; opiname = "xori"; break;
                 case OR: case B_OR: oprname = "or"; opiname = "ori"; break;
                 case AND: oprname = "and"; opiname = "andi"; break;
@@ -3418,6 +3411,76 @@ expression_mips_operation(
                 SetUsedReg(op2);
             }
             instr_add(state, state->current_sub, MIPS_INSTR_I("sltiu", 1, ret->index, ret->index));
+            break;
+        case LT:
+        case GT:
+        case GTEQ:
+            if (symbol == GT) {
+                val_expr = child_expr1;
+                child_expr1 = child_expr2;
+                child_expr2 = val_expr;
+                val_expr = NULL;
+            }
+            if (child_expr1->type == EXPRESSION_VAL && child_expr1->value->stack == 0 && child_expr1->value->value.val.S >= -0x7FFF && child_expr1->value->value.val.S <= 0x8000) { val_expr = child_expr1; var_expr = child_expr2; }
+            else if (child_expr2->type == EXPRESSION_VAL && child_expr2->value->stack == 0 && child_expr2->value->value.val.S >= -0x8000 && child_expr2->value->value.val.S <= 0x7FFF) { val_expr = child_expr2; var_expr = child_expr1; }
+            if (val_expr == child_expr1 && !(var_expr->type == EXPRESSION_VAL && var_expr->value->stack == 0 && var_expr->value->value.val.S == 0)) { /* imm < b --> -b < -imm */
+                OutputExprToReg(var_expr, op2);
+                verify_reg_load(state, &op2, var_expr);
+                ret = request_reg(state, expr);
+                instr_add(state, state->current_sub, MIPS_INSTR_ALU_R("subu", ret->index, op2->index, 0));
+                instr_add(state, state->current_sub, MIPS_INSTR_I("slti", -val_expr->value->value.val.S, ret->index, ret->index));
+                SetUsedReg(op2);
+            }
+            else if (val_expr == child_expr2 && !(var_expr->type == EXPRESSION_VAL && var_expr->value->stack == 0 && var_expr->value->value.val.S == 0)) { /* a < imm */
+                OutputExprToReg(var_expr, op1);
+                verify_reg_load(state, &op1, var_expr);
+                ret = request_reg(state, expr);
+                instr_add(state, state->current_sub, MIPS_INSTR_I("slti", val_expr->value->value.val.S, ret->index, op1->index));
+                SetUsedReg(op1);
+            }
+            else {
+                OutputExprToReg(child_expr1, op1);
+                OutputExprToReg(child_expr2, op2);
+                verify_reg_load(state, &op2, child_expr2);
+                verify_reg_load(state, &op1, child_expr1);
+                ret = request_reg(state, expr);
+                instr_add(state, state->current_sub, MIPS_INSTR_ALU_R("slt", ret->index, op2->index, op1->index));
+                SetUsedReg(op1);
+                SetUsedReg(op2);
+            }
+            if (symbol == GTEQ) {
+                instr_add(state, state->current_sub, MIPS_INSTR_ALU_R("sltiu", 1, ret->index, ret->index));
+            }
+            break;
+        case LTEQ:
+            if (child_expr1->type == EXPRESSION_VAL && child_expr1->value->stack == 0 && child_expr1->value->value.val.S >= -0x7FFF && child_expr1->value->value.val.S <= 0x8000) { val_expr = child_expr1; var_expr = child_expr2; }
+            else if (child_expr2->type == EXPRESSION_VAL && child_expr2->value->stack == 0 && child_expr2->value->value.val.S >= -0x8001 && child_expr2->value->value.val.S <= 0x7FFE) { val_expr = child_expr2; var_expr = child_expr1; }
+            if (val_expr == child_expr1 && !(var_expr->type == EXPRESSION_VAL && var_expr->value->stack == 0 && var_expr->value->value.val.S == 0)) { /* imm <= b --> imm < b+1 --> imm-1 < b --> -b < -(imm-1) */
+                OutputExprToReg(var_expr, op2);
+                verify_reg_load(state, &op2, var_expr);
+                ret = request_reg(state, expr);
+                instr_add(state, state->current_sub, MIPS_INSTR_ALU_R("subu", ret->index, op2->index, 0));
+                instr_add(state, state->current_sub, MIPS_INSTR_I("slti", -(val_expr->value->value.val.S-1), ret->index, ret->index));
+                SetUsedReg(op2);
+            }
+            else if (val_expr == child_expr2 && !(var_expr->type == EXPRESSION_VAL && var_expr->value->stack == 0 && var_expr->value->value.val.S == 0)) { /* a <= imm --> a < imm+1*/
+                OutputExprToReg(var_expr, op1);
+                verify_reg_load(state, &op1, var_expr);
+                ret = request_reg(state, expr);
+                instr_add(state, state->current_sub, MIPS_INSTR_I("slti", val_expr->value->value.val.S+1, ret->index, op1->index));
+                SetUsedReg(op1);
+            }
+            else {
+                OutputExprToReg(child_expr1, op1);
+                OutputExprToReg(child_expr2, op2);
+                verify_reg_load(state, &op2, child_expr2);
+                verify_reg_load(state, &op1, child_expr1);
+                ret = request_reg(state, expr);
+                instr_add(state, state->current_sub, MIPS_INSTR_ALU_R("addiu", 1, ret->index, op2->index));
+                instr_add(state, state->current_sub, MIPS_INSTR_ALU_R("slt", ret->index, ret->index, op1->index));
+                SetUsedReg(op1);
+                SetUsedReg(op2);
+            }
             break;
         case MULTIPLY:
             OutputExprToReg(child_expr1, op1);
