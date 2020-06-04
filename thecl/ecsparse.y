@@ -3018,7 +3018,7 @@ request_reg(
         reg->status = MREG_STATUS_IN_USE;
         if (expr) {
             reg->saved_expr = expression_copy(expr);
-            reg->saved_param = expr->type == EXPRESSION_VAL ? param_copy(expr->value) : NULL;
+            reg->saved_param = expr->type == EXPRESSION_VAL ? expr->value : NULL;
         }
     }
     else {

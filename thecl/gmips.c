@@ -167,13 +167,16 @@ void
 free_reg(mips_reg_t* reg)
 {
     if (reg->status == MREG_STATUS_IN_USE || reg->status == MREG_STATUS_USED) {
-        reg->status = MREG_STATUS_FREE;
+        reg->status = MREG_STATUS_FREEING;
         if (reg->saved_expr) {
             expression_free(reg->saved_expr);
+            reg->saved_expr = NULL;
         }
         if (reg->saved_param) {
             param_free(reg->saved_param);
+            reg->saved_param = NULL;
         }
+        reg->status = MREG_STATUS_FREE;
     }
 }
 
