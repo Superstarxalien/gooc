@@ -188,8 +188,6 @@ static thecl_param_t* param_sp_new(void);
 static thecl_param_t* param_null_new(void);
 /* Creates a new param equivalent to a GOOL double stack pop operand */
 static thecl_param_t* param_sp2_new(void);
-/* Creates a new self->variable param with the specified value */
-static thecl_param_t* param_var_new(int val);
 
 /* Returns the result of a math operation */
 static int math_preprocess(parser_state_t* state, int symbol, int val1, int val2);
@@ -1274,8 +1272,8 @@ OnceBlock:
     } CodeBlock {
         const expr_t* expr = expr_get_by_symbol(state->version, ASSIGN);
 
-        thecl_param_t* p1 = param_var_new(field_get("tpc")->offset);
-        thecl_param_t* p2 = param_var_new(field_get("pc")->offset);
+        thecl_param_t* p1 = param_var_new("tpc");
+        thecl_param_t* p2 = param_var_new("pc");
 
         instr_add(state, state->current_sub, instr_new(state, expr->id, "pp", p1, p2));
     }
@@ -1283,9 +1281,9 @@ OnceBlock:
         state->current_sub->has_nofirst = true;
 
         instr_add(state, state->current_sub, instr_new(state, expr_get_by_symbol(state->version, ADD)->id, "pp",
-        param_var_new(field_get("pc")->offset), param_val_new(4*2)));
+        param_var_new("pc"), param_val_new(4*2)));
         instr_add(state, state->current_sub, instr_new(state, expr_get_by_symbol(state->version, ASSIGN)->id, "pp",
-        param_var_new(field_get("tpc")->offset), param_sp_new()));
+        param_var_new("tpc"), param_sp_new()));
 
         char labelstr[256];
         snprintf(labelstr, 256, "nofirst_%i_%i", yylloc.first_line, yylloc.first_column);
@@ -2083,7 +2081,7 @@ ExpressionSubset:
     | "distance" "(" Expression "," Expression "," Expression ")" { $$ = EXPR_4(MISC, $3, $5, $7, expression_val_new(state, 6)); }
     | "objectget" "(" Expression ")"                              { $$ = EXPR_4(MISC, $3, expression_val_new(state, 5), expression_val_new(state, 0), expression_val_new(state, 7)); }
 
-    | "entitygetstate" "(" Expression ")"                         { $$ = EXPR_4(MISC, expression_load_new(state, param_var_new(field_get("id")->offset)), expression_val_new(state, 0), $3, expression_val_new(state, 11)); }
+    | "entitygetstate" "(" Expression ")"                         { $$ = EXPR_4(MISC, expression_load_new(state, param_var_new("id")), expression_val_new(state, 0), $3, expression_val_new(state, 11)); }
     | "entitygetstate" "(" Expression "," Expression ")"          { $$ = EXPR_4(MISC, $3, expression_val_new(state, 0), $5, expression_val_new(state, 11)); }
 //  | "gamefunc" "(" Expression "," Expression ")"                { if (!is_post_c2(state->version)) $$ = EXPR_4(MISC, $3, expression_val_new(state, 0), $5, expression_val_new(state, 12)); }
     | "getvalideventobj" "(" Expression "," Expression "," Expression ")"   { $$ = EXPR_4(MISC, $3, $5, $7, expression_val_new(state, 13)); }
@@ -4676,17 +4674,6 @@ param_sp2_new(void)
     param_sp->stack = 1;
     param_sp->object_link = -2;
     param_sp->value.val.S = 1;
-    return param_sp;
-}
-
-static thecl_param_t*
-param_var_new(
-    int val)
-{
-    thecl_param_t* param_sp = param_new('S');
-    param_sp->stack = 1;
-    param_sp->object_link = 0;
-    param_sp->value.val.S = val;
     return param_sp;
 }
 
