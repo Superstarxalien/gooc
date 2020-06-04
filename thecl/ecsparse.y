@@ -2392,6 +2392,7 @@ make_delay_slot(
     delay_slot->slot = slot;
     delay_slot->owner = owner;
     delay_slot->optional = false;
+	return delay_slot;
 }
 
 static void
@@ -3257,7 +3258,7 @@ expression_mips_operation(
     expression_t* expr)
 {
     mips_reg_t* ret = NULL, *op1, *op2;
-    expression_t* val_expr, *var_expr, *child_expr1, *child_expr2, *child_expr3;
+    expression_t* val_expr, *var_expr = NULL, *child_expr1 = NULL, *child_expr2 = NULL, *child_expr3 = NULL;
     int i = 0;
     list_for_each(&expr->children, val_expr) {
         ++i;
@@ -3330,7 +3331,7 @@ expression_mips_operation(
         case OR:
         case B_AND:
         case B_OR:
-            const char* oprname, *opiname;
+            const char* oprname = NULL, *opiname = NULL;
             switch (symbol) {
                 case XOR: oprname = "xor"; opiname = "xori"; break;
                 case OR: case B_OR: oprname = "or"; opiname = "ori"; break;
@@ -3745,8 +3746,8 @@ expression_optimize(
     if (expression->type != EXPRESSION_OP) return;
 
     int child_cnt = 0;
-    expression_t* child_expr_1;
-    expression_t* child_expr_2;
+    expression_t* child_expr_1 = NULL;
+    expression_t* child_expr_2 = NULL;
     expression_t* child_expr;
     list_for_each(&expression->children, child_expr) {
         if (child_expr->type == EXPRESSION_OP) {
