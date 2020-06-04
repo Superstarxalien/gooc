@@ -2542,10 +2542,10 @@ instr_add(
                 }
             }
             if (!mips_instr_is_branch(&instr->ins)) {
-                if (!ret && instr->reg_stalled && sub->last_ins && sub->last_ins->mips && sub->last_ins->ins.ins != 0 && (sub->last_ins->reg_used & instr->reg_used) == 0) { /* swap with previous instruction */
+                if (!ret && instr->reg_stalled && tail_ins && tail_ins->mips && tail_ins->ins.ins != 0 && (tail_ins->reg_used & instr->reg_used) == 0) { /* swap with previous instruction */
                     list_prepend_to(&sub->instrs, instr, sub->instrs.tail);
-                    instr->offset = sub->last_ins->offset;
-                    sub->last_ins->offset = sub->offset++;
+                    instr->offset = tail_ins->offset;
+                    tail_ins->offset = sub->offset++;
                     ret = true;
                 }
                 else if (sub->offset > state->scope_bound && ret && instr->reg_stalled) {
@@ -2559,7 +2559,7 @@ instr_add(
                     if (instr_node && instr_node->prev) {
                         list_node_t *last_node = instr_node->prev;
                         thecl_instr_t* last_ins = last_node->data;
-                        if (last_ins && last_ins->mips && last_ins->ins.ins != 0 && !mips_instr_is_branch(&last_ins->ins) && (last_ins->reg_used & instr->reg_used) == 0) {
+                        if (last_ins && last_ins->mips && last_ins->ins.ins != 0 && !mips_instr_is_branch(&last_ins->ins) && (last_ins->reg_used & instr->reg_stalled) == 0) {
                             last_node->data = instr;
                             instr_node->data = last_ins;
                             int temp_off = last_ins->offset;
@@ -3393,9 +3393,9 @@ expression_mips_operation(
             ret = request_reg(state, expr);
             char buf[512];
             snprintf(buf, 512, "@!%s_MipsOp_AND_%X_%X", state->current_sub->name, child_expr1, child_expr2);
-            instr_add(state, state->current_sub, MIPS_INSTR_BEQZ(strdup(buf), op1->index));
-            instr_add(state, state->current_sub, MIPS_INSTR_MOVE(ret->index, op1->index));
+            instr_add(state, state->current_sub, MIPS_INSTR_BEQZ(strdup(buf), op2->index));
             instr_add(state, state->current_sub, MIPS_INSTR_MOVE(ret->index, op2->index));
+            instr_add(state, state->current_sub, MIPS_INSTR_MOVE(ret->index, op1->index));
             label_create(state, buf);
             SetUsedReg(op1);
             SetUsedReg(op2);
