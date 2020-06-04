@@ -3363,7 +3363,7 @@ expression_mips_operation(
             verify_reg_load(state, &op1, child_expr1);
             ret = request_reg(state, expr);
             char buf[512];
-            snprintf(buf, 512, "@!%s_MipsOp_AND_%X_%X", state->current_sub->name, child_expr1, child_expr2);
+            snprintf(buf, 512, "@!%s_MipsOp_AND_%p_%p", state->current_sub->name, child_expr1, child_expr2);
             instr_add(state, state->current_sub, MIPS_INSTR_BEQZ(strdup(buf), op2->index));
             instr_add(state, state->current_sub, MIPS_INSTR_MOVE(ret->index, op2->index));
             instr_add(state, state->current_sub, MIPS_INSTR_MOVE(ret->index, op1->index));
