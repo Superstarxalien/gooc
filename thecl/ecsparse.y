@@ -3222,33 +3222,38 @@ expression_mips_load(
     if (!((param->stack == 1 && !(param->object_link >= -1 && param->object_link <= 7)) || param->stack == 3)) {
         reg = request_reg(state, expr);
     }
+    int val = param->value.val.S;
     if (param->stack == 0) { /* number */
-        if (param->value.val.S == 0) {
+        if (val == 0) {
             instr_add(state, state->current_sub, MIPS_INSTR_ALU_R("addu", reg->index, 0, 0));
         }
-        else if (param->value.val.S > 0x7FFF || param->value.val.S < -0x8000) {
-            instr_add(state, state->current_sub, MIPS_INSTR_I("lui", param->value.val.S >> 16 & 0xFFFF, reg->index, 0));
-            instr_add(state, state->current_sub, MIPS_INSTR_I("ori", param->value.val.S & 0xFFFF, reg->index, reg->index));
+        else if (val >= -0x8000 && val <= 0x7FFF) {
+            instr_add(state, state->current_sub, MIPS_INSTR_I("ori", val & 0xFFFF, reg->index, 0));
+        }
+        else if (val > 0x7FFF && val < 0x10000) {
+            instr_add(state, state->current_sub, MIPS_INSTR_I("ori", val & 0xFFFF, reg->index, 0));
+            instr_add(state, state->current_sub, MIPS_INSTR_I("andi", 0xFFFF, reg->index, reg->index));
         }
         else {
-            instr_add(state, state->current_sub, MIPS_INSTR_I("ori", param->value.val.S & 0xFFFF, reg->index, 0));
+            instr_add(state, state->current_sub, MIPS_INSTR_I("lui", val >> 16 & 0xFFFF, reg->index, 0));
+            instr_add(state, state->current_sub, MIPS_INSTR_I("ori", val & 0xFFFF, reg->index, reg->index));
         }
     }
     else if (param->stack == 1) { /* object field, stack */
         if (param->object_link == 0) { /* object field */
-            instr_add_delay_slot(state, state->current_sub, MIPS_INSTR_I("lw", param->value.val.S * 4 + get_obj_proc_offset(state->version), reg->index, get_reg(state->reg_block, "s0")->index));
+            instr_add_delay_slot(state, state->current_sub, MIPS_INSTR_I("lw", val * 4 + get_obj_proc_offset(state->version), reg->index, get_reg(state->reg_block, "s0")->index));
         }
         else if (param->object_link >= 1 && param->object_link <= 7) { /* linked object field */
             mips_reg_t* link_reg = get_usable_reg(state->reg_block);
             if (!link_reg) link_reg = reg;
             instr_add_delay_slot(state, state->current_sub, MIPS_INSTR_I("lw", param->object_link * 4 + get_obj_proc_offset(state->version), link_reg->index, get_reg(state->reg_block, "s0")->index));
-            instr_add_delay_slot(state, state->current_sub, MIPS_INSTR_I("lw", param->value.val.S * 4 + get_obj_proc_offset(state->version), reg->index, link_reg->index));
+            instr_add_delay_slot(state, state->current_sub, MIPS_INSTR_I("lw", val * 4 + get_obj_proc_offset(state->version), reg->index, link_reg->index));
             if (link_reg != reg) {
                 link_reg->status = MREG_STATUS_USED;
             }
         }
         else if (param->object_link == -1) { /* stack */
-            instr_add_delay_slot(state, state->current_sub, MIPS_INSTR_I("lw", param->value.val.S * 4, reg->index, get_reg(state->reg_block, "s7")->index));
+            instr_add_delay_slot(state, state->current_sub, MIPS_INSTR_I("lw", val * 4, reg->index, get_reg(state->reg_block, "s7")->index));
         }
         else { /* other */
             instr_add(state, state->current_sub, instr_new(state, expr->id, "p", expr->value));
@@ -3256,7 +3261,7 @@ expression_mips_load(
     }
     else if (param->stack == 2) { /* global */
         instr_add_delay_slot(state, state->current_sub, MIPS_INSTR_I("lw", 0x58, reg->index, get_reg(state->reg_block, "s8")->index));
-        instr_add_delay_slot(state, state->current_sub, MIPS_INSTR_I("lw", (param->value.val.S >> 8) * 4, reg->index, reg->index));
+        instr_add_delay_slot(state, state->current_sub, MIPS_INSTR_I("lw", (val >> 8) * 4, reg->index, reg->index));
     }
     else if (param->stack == 3) { /* pointer */
         instr_add(state, state->current_sub, instr_new(state, expr->id, "p", expr->value));
