@@ -3176,6 +3176,7 @@ expression_create_goto_pop(
     int pop)
 {
     if (state->mips_mode) {
+        mips_stack_adjust(state, state->current_sub);
         if (type != GOTO) {
             expression_output(state, cond);
             verify_reg_load(state, &state->top_reg, cond);
