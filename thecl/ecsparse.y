@@ -1731,7 +1731,7 @@ Instruction:
                         }
                         else {
                             if (state->mips_mode) {
-                                expression_t* expression = expression_load_new(state, param_copy(param));
+                                expression_t* expression = expression_load_new(state, param);
                                 expression_output(state, expression);
                                 if (state->top_reg) {
                                     instr_add_delay_slot(state, state->current_sub, MIPS_INSTR_I("sw", state->stack_adjust, state->top_reg->index, get_reg(state->reg_block, "s6")->index));
@@ -1841,7 +1841,7 @@ Instruction:
                     }
 
                     if (param && (param->stack != 1 || param->object_link != 0 || param->value.val.S < 0 || param->value.val.S > 0x3F)) {
-                        expression_t* expression = expression_load_new(state, param_copy(param));
+                        expression_t* expression = expression_load_new(state, param);
                         expression_output(state, expression);
                         if (state->top_reg) {
                             instr_add_delay_slot(state, state->current_sub, MIPS_INSTR_I("sw", state->stack_adjust, state->top_reg->index, get_reg(state->reg_block, "s6")->index));
