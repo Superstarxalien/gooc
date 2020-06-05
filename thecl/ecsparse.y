@@ -3354,8 +3354,8 @@ expression_mips_operation(
                 case OR: case B_OR: oprname = "or"; opiname = "ori"; break;
                 case B_AND: case TEST: oprname = "and"; opiname = "andi"; break;
             }
-            if (symbol != TEST && child_expr1->type == EXPRESSION_VAL && child_expr1->value->stack == 0 && child_expr1->value->value.val.S >= -0x8000 && child_expr1->value->value.val.S <= 0x7FFF) { val_expr = child_expr1; var_expr = child_expr2; }
-            else if (child_expr2->type == EXPRESSION_VAL && child_expr2->value->stack == 0 && child_expr2->value->value.val.S >= -0x8000 && child_expr2->value->value.val.S <= 0x7FFF) { val_expr = child_expr2; var_expr = child_expr1; }
+            if (symbol != TEST && child_expr1->type == EXPRESSION_VAL && child_expr1->value->stack == 0 && child_expr1->value->value.val.S >= 0 && child_expr1->value->value.val.S <= 0xFFFF) { val_expr = child_expr1; var_expr = child_expr2; }
+            else if (child_expr2->type == EXPRESSION_VAL && child_expr2->value->stack == 0 && child_expr2->value->value.val.S >= 0 && child_expr2->value->value.val.S <= 0xFFFF) { val_expr = child_expr2; var_expr = child_expr1; }
             if (val_expr && !(var_expr->type == EXPRESSION_VAL && var_expr->value->stack == 0 && var_expr->value->value.val.S == 0)) {
                 OutputExprToReg(var_expr, op1);
                 verify_reg_load(state, &op1, var_expr);
@@ -3384,8 +3384,8 @@ expression_mips_operation(
             }
             break;
         case EQUAL:
-            if (child_expr1->type == EXPRESSION_VAL && child_expr1->value->stack == 0 && child_expr1->value->value.val.S >= -0x8000 && child_expr1->value->value.val.S <= 0x7FFF) { val_expr = child_expr1; var_expr = child_expr2; }
-            else if (child_expr2->type == EXPRESSION_VAL && child_expr2->value->stack == 0 && child_expr2->value->value.val.S >= -0x8000 && child_expr2->value->value.val.S <= 0x7FFF) { val_expr = child_expr2; var_expr = child_expr1; }
+            if (child_expr1->type == EXPRESSION_VAL && child_expr1->value->stack == 0 && child_expr1->value->value.val.S >= 0 && child_expr1->value->value.val.S <= 0xFFFF) { val_expr = child_expr1; var_expr = child_expr2; }
+            else if (child_expr2->type == EXPRESSION_VAL && child_expr2->value->stack == 0 && child_expr2->value->value.val.S >= 0 && child_expr2->value->value.val.S <= 0xFFFF) { val_expr = child_expr2; var_expr = child_expr1; }
             if (val_expr && !(var_expr->type == EXPRESSION_VAL && var_expr->value->stack == 0 && var_expr->value->value.val.S == 0)) {
                 OutputExprToReg(var_expr, op1);
                 verify_reg_load(state, &op1, var_expr);
@@ -3460,8 +3460,8 @@ expression_mips_operation(
                 child_expr2 = val_expr;
                 val_expr = NULL;
             }
-            if (child_expr1->type == EXPRESSION_VAL && child_expr1->value->stack == 0 && child_expr1->value->value.val.S >= -0x7FFF && child_expr1->value->value.val.S <= 0x8000) { val_expr = child_expr1; var_expr = child_expr2; }
-            else if (child_expr2->type == EXPRESSION_VAL && child_expr2->value->stack == 0 && child_expr2->value->value.val.S >= -0x8000 && child_expr2->value->value.val.S <= 0x7FFF) { val_expr = child_expr2; var_expr = child_expr1; }
+            if (child_expr1->type == EXPRESSION_VAL && child_expr1->value->stack == 0 && child_expr1->value->value.val.S >= -0xFFFF && child_expr1->value->value.val.S <= 0) { val_expr = child_expr1; var_expr = child_expr2; }
+            else if (child_expr2->type == EXPRESSION_VAL && child_expr2->value->stack == 0 && child_expr2->value->value.val.S >= 0 && child_expr2->value->value.val.S <= 0xFFFF) { val_expr = child_expr2; var_expr = child_expr1; }
             if (val_expr == child_expr1 && !(var_expr->type == EXPRESSION_VAL && var_expr->value->stack == 0 && var_expr->value->value.val.S == 0)) { /* imm < b --> -b < -imm */
                 OutputExprToReg(var_expr, op2);
                 verify_reg_load(state, &op2, var_expr);
@@ -3492,8 +3492,8 @@ expression_mips_operation(
             }
             break;
         case LTEQ:
-            if (child_expr1->type == EXPRESSION_VAL && child_expr1->value->stack == 0 && child_expr1->value->value.val.S >= -0x7FFF && child_expr1->value->value.val.S <= 0x8000) { val_expr = child_expr1; var_expr = child_expr2; }
-            else if (child_expr2->type == EXPRESSION_VAL && child_expr2->value->stack == 0 && child_expr2->value->value.val.S >= -0x8001 && child_expr2->value->value.val.S <= 0x7FFE) { val_expr = child_expr2; var_expr = child_expr1; }
+            if (child_expr1->type == EXPRESSION_VAL && child_expr1->value->stack == 0 && child_expr1->value->value.val.S >= -0xFFFF && child_expr1->value->value.val.S <= 0) { val_expr = child_expr1; var_expr = child_expr2; }
+            else if (child_expr2->type == EXPRESSION_VAL && child_expr2->value->stack == 0 && child_expr2->value->value.val.S >= 1 && child_expr2->value->value.val.S <= 0xFFFE) { val_expr = child_expr2; var_expr = child_expr1; }
             if (val_expr == child_expr1 && !(var_expr->type == EXPRESSION_VAL && var_expr->value->stack == 0 && var_expr->value->value.val.S == 0)) { /* imm <= b --> imm < b+1 --> imm-1 < b --> -b < -(imm-1) */
                 OutputExprToReg(var_expr, op2);
                 verify_reg_load(state, &op2, var_expr);
