@@ -3577,6 +3577,34 @@ expression_mips_operation(
             SetUsedReg(op2);
             free_reg(temp);
             break;
+        case TIME:
+            temp = request_reg(state, expr);
+            instr_add_delay_slot(state, state->current_sub, MIPS_INSTR_I("lw", 0x50, temp->index, get_reg(state->reg_block, "s8")->index));
+            if (!(child_expr2->type == EXPRESSION_VAL && child_expr2->value->stack == 0 && child_expr2->value->value.val.S == 0)) {
+                OutputExprToReg(child_expr1, op1);
+                OutputExprToReg(child_expr2, op2);
+                verify_reg_load(state, &op2, child_expr2);
+                verify_reg_load(state, &op1, child_expr1);
+                if (child_expr2->type == EXPRESSION_VAL && child_expr2->value->stack == 0 && child_expr2->value->value.val.S >= -0x7FFF && child_expr2->value->value.val.S <= 0x8000) {
+                    instr_add(state, state->current_sub, MIPS_INSTR_I("addiu", child_expr2->value->value.val.S, temp->index, temp->index));
+                }
+                else {
+                    instr_add(state, state->current_sub, MIPS_INSTR_ALU_R("addu", temp->index, op2->index, temp->index));
+                }
+                SetUsedReg(op2);
+            }
+            else {
+                OutputExprToReg(child_expr1, op1);
+                verify_reg_load(state, &op1, child_expr1);
+            }
+            ret = request_reg(state, expr);
+            instr_add(state, state->current_sub, MIPS_INSTR_DIV(op1->index, temp->index));
+            state->current_sub->multdiv_offset = state->current_sub->last_ins->offset;
+            make_optional_delay_slots(state, 36, state->current_sub->last_ins);
+            instr_add(state, state->current_sub, MIPS_INSTR_MFHI(ret->index));
+            SetUsedReg(op1);
+            free_reg(temp);
+            break;
         default:
             {
             /* a normal GOOL instruction will destroy the registers
