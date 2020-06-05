@@ -2487,7 +2487,7 @@ instr_add(
         thecl_instr_free(instr);
         return;
     }
-    if (!sub->mips_dirty && ((state->scope_cnt > 0 && instr->mips != state->scope_stack[state->scope_cnt-1].mips) || (instr->mips && state->force_mips))) {
+    if (!sub->mips_dirty && ((sub->offset > 0 && state->scope_cnt > 0 && instr->mips != state->scope_stack[state->scope_cnt-1].mips) || (instr->mips && state->force_mips))) {
         sub->mips_dirty = true;
         state->scope_stack[state->scope_cnt-1].mips = instr->mips;
         if (instr->mips) {
