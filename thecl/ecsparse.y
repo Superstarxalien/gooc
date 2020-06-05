@@ -3227,12 +3227,11 @@ expression_mips_load(
         if (val == 0) {
             instr_add(state, state->current_sub, MIPS_INSTR_ALU_R("addu", reg->index, 0, 0));
         }
-        else if (val >= -0x8000 && val <= 0x7FFF) {
+        else if (val >= 0 && val <= 0xFFFF) {
             instr_add(state, state->current_sub, MIPS_INSTR_I("ori", val & 0xFFFF, reg->index, 0));
         }
-        else if (val > 0x7FFF && val < 0x10000) {
-            instr_add(state, state->current_sub, MIPS_INSTR_I("ori", val & 0xFFFF, reg->index, 0));
-            instr_add(state, state->current_sub, MIPS_INSTR_I("andi", 0xFFFF, reg->index, reg->index));
+        else if (val >= -0x8000 && val <= 0x7FFF) {
+            instr_add(state, state->current_sub, MIPS_INSTR_I("addiu", val & 0xFFFF, reg->index, 0));
         }
         else {
             instr_add(state, state->current_sub, MIPS_INSTR_I("lui", val >> 16 & 0xFFFF, reg->index, 0));
