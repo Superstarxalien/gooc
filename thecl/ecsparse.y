@@ -3185,7 +3185,7 @@ expression_create_goto_pop(
         switch (type) {
             case IF: instr_add(state, state->current_sub, MIPS_INSTR_BNEZ(strdup(labelstr), state->top_reg->index)); break;
             case UNLESS: instr_add(state, state->current_sub, MIPS_INSTR_BEQZ(strdup(labelstr), state->top_reg->index)); break;
-            case GOTO: default: instr_add(state, state->current_sub, MIPS_INSTR_BEQZ(strdup(labelstr), 0)); break;
+            case GOTO: default: instr_add(state, state->current_sub, MIPS_INSTR_BEQZ(strdup(labelstr), 0)); instr_add(state, state->current_sub, MIPS_INSTR_NOP()); break;
         }
     }
     else {
