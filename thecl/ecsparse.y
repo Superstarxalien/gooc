@@ -3269,7 +3269,7 @@ expression_mips_operation(
     parser_state_t* state,
     expression_t* expr)
 {
-    mips_reg_t* ret = NULL, *op1, *op2;
+    mips_reg_t* ret = NULL, *op1, *op2, *temp;
     expression_t* val_expr, *var_expr = NULL, *child_expr1 = NULL, *child_expr2 = NULL, *child_expr3 = NULL;
     int i = 0;
     list_for_each(&expr->children, val_expr) {
@@ -3501,7 +3501,7 @@ expression_mips_operation(
                 verify_reg_load(state, &op2, child_expr2);
                 verify_reg_load(state, &op1, child_expr1);
                 ret = request_reg(state, expr);
-                instr_add(state, state->current_sub, MIPS_INSTR_ALU_R("addiu", 1, ret->index, op2->index));
+                instr_add(state, state->current_sub, MIPS_INSTR_I("addiu", 1, ret->index, op2->index));
                 instr_add(state, state->current_sub, MIPS_INSTR_ALU_R("slt", ret->index, ret->index, op1->index));
                 SetUsedReg(op1);
                 SetUsedReg(op2);
@@ -3546,13 +3546,43 @@ expression_mips_operation(
             SetUsedReg(op1);
             SetUsedReg(op2);
             break;
+        case SPD:
+            temp = request_reg(state, expr);
+            instr_add_delay_slot(state, state->current_sub, MIPS_INSTR_I("lw", 0x54, temp->index, get_reg(state->reg_block, "s8")->index));
+            if (!(child_expr1->type == EXPRESSION_VAL && child_expr1->value->stack == 0 && child_expr1->value->value.val.S == 0)) {
+                OutputExprToReg(child_expr1, op1);
+                OutputExprToReg(child_expr2, op2);
+                verify_reg_load(state, &op2, child_expr2);
+                verify_reg_load(state, &op1, child_expr1);
+            }
+            else {
+                OutputExprToReg(child_expr2, op2);
+                verify_reg_load(state, &op2, child_expr2);
+            }
+            ret = request_reg(state, expr);
+            instr_add(state, state->current_sub, MIPS_INSTR_MULT(temp->index, op2->index));
+            state->current_sub->multdiv_offset = state->current_sub->last_ins->offset;
+            make_optional_delay_slots(state, 13, state->current_sub->last_ins);
+            instr_add(state, state->current_sub, MIPS_INSTR_MFLO(ret->index));
+            instr_add(state, state->current_sub, MIPS_INSTR_SHIFT("sra", 10, ret->index, ret->index));
+            if (!(child_expr1->type == EXPRESSION_VAL && child_expr1->value->stack == 0 && child_expr1->value->value.val.S == 0)) {
+                if (child_expr1->type == EXPRESSION_VAL && child_expr1->value->stack == 0 && child_expr1->value->value.val.S >= -0x7FFF && child_expr1->value->value.val.S <= 0x8000) {
+                    instr_add(state, state->current_sub, MIPS_INSTR_I("addiu", child_expr1->value->value.val.S, ret->index, ret->index));
+                }
+                else {
+                    instr_add(state, state->current_sub, MIPS_INSTR_ALU_R("addu", ret->index, op1->index, ret->index));
+                }
+                SetUsedReg(op1);
+            }
+            SetUsedReg(op2);
+            free_reg(temp);
+            break;
         default:
             {
             /* a normal GOOL instruction will destroy the registers
              * s5, v0, v1, a0 and a1 for sure, not to mention any
              * other register used by any functions called from it */
             list_t* saved_regs = list_new();
-            mips_reg_t* temp_reg;
             for (int i=0; i<34; ++i) {
                 if (state->reg_block->regs[i].status == MREG_STATUS_IN_USE) {
                     state->reg_block->regs[i].status = MREG_STATUS_RESERVED;
@@ -3561,15 +3591,15 @@ expression_mips_operation(
                         instr_add_delay_slot(state, state->current_sub, MIPS_INSTR_I("sw", state->stack_adjust, state->reg_block->regs[i].index, get_reg(state->reg_block, "s6")->index));
                     }
                     else {
-                        temp_reg = request_reg(state, NULL);
+                        temp = request_reg(state, NULL);
                         if (i == get_reg(state->reg_block, "lo")->index) {
-                            instr_add(state, state->current_sub, MIPS_INSTR_MFLO(temp_reg->index));
+                            instr_add(state, state->current_sub, MIPS_INSTR_MFLO(temp->index));
                         }
                         else if (i == get_reg(state->reg_block, "hi")->index) {
-                            instr_add(state, state->current_sub, MIPS_INSTR_MFHI(temp_reg->index));
+                            instr_add(state, state->current_sub, MIPS_INSTR_MFHI(temp->index));
                         }
-                        instr_add_delay_slot(state, state->current_sub, MIPS_INSTR_I("sw", state->stack_adjust, temp_reg->index, get_reg(state->reg_block, "s6")->index));
-                        free_reg(temp_reg);
+                        instr_add_delay_slot(state, state->current_sub, MIPS_INSTR_I("sw", state->stack_adjust, temp->index, get_reg(state->reg_block, "s6")->index));
+                        free_reg(temp);
                     }
                     state->stack_adjust += 4;
                 }
@@ -3626,15 +3656,15 @@ expression_mips_operation(
                     instr_add_delay_slot(state, state->current_sub, MIPS_INSTR_I("lw", state->stack_adjust-4, saved_reg->index, get_reg(state->reg_block, "s6")->index));
                 }
                 else {
-                    mips_reg_t* temp_reg = request_reg(state, NULL);
-                    instr_add_delay_slot(state, state->current_sub, MIPS_INSTR_I("lw", state->stack_adjust-4, temp_reg->index, get_reg(state->reg_block, "s6")->index));
+                    temp = request_reg(state, NULL);
+                    instr_add_delay_slot(state, state->current_sub, MIPS_INSTR_I("lw", state->stack_adjust-4, temp->index, get_reg(state->reg_block, "s6")->index));
                     if (i == get_reg(state->reg_block, "lo")->index) {
-                        instr_add(state, state->current_sub, MIPS_INSTR_MTLO(temp_reg->index));
+                        instr_add(state, state->current_sub, MIPS_INSTR_MTLO(temp->index));
                     }
                     else if (i == get_reg(state->reg_block, "hi")->index) {
-                        instr_add(state, state->current_sub, MIPS_INSTR_MTHI(temp_reg->index));
+                        instr_add(state, state->current_sub, MIPS_INSTR_MTHI(temp->index));
                     }
-                    free_reg(temp_reg);
+                    free_reg(temp);
                 }
             }
             list_free_nodes(saved_regs);
