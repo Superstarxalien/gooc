@@ -59,25 +59,6 @@ typedef struct thecl_param_t {
     char is_expression_param; /* Temporary variable for ecsparse.y */
 } thecl_param_t;
 
-thecl_param_t* param_new(
-    int type);
-thecl_param_t* param_copy(
-    thecl_param_t* param);
-void param_free(
-    thecl_param_t* param);
-thecl_param_t* param_val_new(
-    int val);
-thecl_param_t* param_var_new(
-    char* var);
-thecl_param_t* param_null_new(
-    void);
-
-int get_obj_proc_offset(
-    unsigned int version);
-
-bool is_post_c2(
-    unsigned int version);
-
 typedef struct thecl_instr_t {
     thecl_instr_type type;
     char* string;
@@ -94,20 +75,6 @@ typedef struct thecl_instr_t {
     /* Etc.: */
     unsigned int offset;
 } thecl_instr_t;
-
-thecl_instr_t* thecl_instr_new(
-    void);
-
-thecl_instr_t* thecl_instr_label(
-    unsigned int offset);
-
-void thecl_instr_free(
-    thecl_instr_t* instr);
-
-typedef struct {
-    int32_t offset;
-    char name[];
-} thecl_label_t;
 
 typedef struct {
     unsigned int version;
@@ -139,8 +106,6 @@ typedef struct {
     int ins_offset;
 } thecl_t;
 
-/* TODO: Move label creation functions here. */
-
 typedef struct {
     char* name;
     int stack;
@@ -149,8 +114,10 @@ typedef struct {
     bool is_written;
 } thecl_variable_t;
 
-void thecl_variable_free(
-    thecl_variable_t* var);
+typedef struct {
+    int32_t offset;
+    char name[];
+} thecl_label_t;
 
 typedef struct {
     int was_written;
@@ -238,44 +205,11 @@ typedef struct {
     char* lambda_name;
 } thecl_interrupt_t;
 
-thecl_label_t*
-label_find(
-    thecl_sub_t* sub,
-    const char* name);
-
-int32_t
-label_offset(
-    thecl_sub_t* sub,
-    const char* name);
-
-/* TODO: Subroutine creation and deletion functions. */
-
 typedef struct {
     char* name;
     size_t size; /* sizeof anim member */
     void* anim; /* pointer to anim data */
 } gool_anim_t;
-
-thecl_t* thecl_new(
-    void);
-
-char* gool_to_ename(
-    char* ename, int eid);
-
-int gool_to_eid(
-    const char* ename);
-
-int gool_pool_get_index(
-    thecl_t* ecl,
-    uint32_t val);
-
-int gool_pool_force_get_index(
-    thecl_t* ecl,
-    uint32_t val);
-
-int gool_pool_force_make_index(
-    thecl_t* ecl,
-    uint32_t val);
 
 typedef struct {
     list_node_t* slot;
@@ -328,15 +262,6 @@ typedef struct {
     int scope_bound;
 } parser_state_t;
 
-extern parser_state_t* g_parser_state;
-extern int g_rate;
-extern char* g_region;
-extern char g_lev;
-extern int g_reg_block_depth;
-extern int* g_reg_blocks;
-extern bool g_has_else;
-extern char* g_module_fmt;
-
 typedef struct {
     thecl_t* (*open)(FILE* stream, unsigned int ver);
     /* Translates the data to a more general format. */
@@ -368,9 +293,84 @@ typedef struct expression_t {
 } expression_t;
 
 typedef struct {
-    char *name;
+    char* name;
     expression_t* expr;
 } expr_macro_t;
+
+thecl_param_t* param_new(
+    int type);
+thecl_param_t* param_copy(
+    thecl_param_t* param);
+void param_free(
+    thecl_param_t* param);
+thecl_param_t* param_val_new(
+    int val);
+thecl_param_t* param_var_new(
+    char* var);
+thecl_param_t* param_null_new(
+    void);
+
+int get_obj_proc_offset(
+    unsigned int version);
+
+bool is_post_c2(
+    unsigned int version);
+
+thecl_instr_t* thecl_instr_new(
+    void);
+
+thecl_instr_t* thecl_instr_label(
+    unsigned int offset);
+
+void thecl_instr_free(
+    thecl_instr_t* instr);
+
+/* TODO: Move label creation functions here. */
+
+void thecl_variable_free(
+    thecl_variable_t* var);
+
+thecl_label_t*
+label_find(
+    thecl_sub_t* sub,
+    const char* name);
+
+int32_t
+label_offset(
+    thecl_sub_t* sub,
+    const char* name);
+
+/* TODO: Subroutine creation and deletion functions. */
+
+thecl_t* thecl_new(
+    void);
+
+char* gool_to_ename(
+    char* ename, int eid);
+
+int gool_to_eid(
+    const char* ename);
+
+int gool_pool_get_index(
+    thecl_t* ecl,
+    uint32_t val);
+
+int gool_pool_force_get_index(
+    thecl_t* ecl,
+    uint32_t val);
+
+int gool_pool_force_make_index(
+    thecl_t* ecl,
+    uint32_t val);
+
+extern parser_state_t* g_parser_state;
+extern int g_rate;
+extern char* g_region;
+extern char g_lev;
+extern int g_reg_block_depth;
+extern int* g_reg_blocks;
+extern bool g_has_else;
+extern char* g_module_fmt;
 
 void expression_free(expression_t* expr);
 
