@@ -383,7 +383,6 @@ int yydebug = 0;
 %type <param> Address
 %type <param> Integer
 %type <param> Entry
-//%type <param> Text
 %type <param> Load_Type
 %type <param> Pointer_Type
 
