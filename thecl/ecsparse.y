@@ -122,7 +122,7 @@ static void expression_create_goto_pop(parser_state_t *state, int type, char *la
 
 /* macros for expression_mips_operation */
 #define OutputExprToReg(EXPR, OP) \
-    if (EXPR->type == EXPRESSION_VAL && EXPR->value->stack == 0 && EXPR->value->value.val.S == 0) OP = get_reg(state->reg_block, "zr"); else { expression_output(state, EXPR); OP = state->top_reg; }
+    if (EXPR->type == EXPRESSION_VAL && EXPR->value->val_type == PARAM_LITERAL && EXPR->value->value.val.S == 0) OP = get_reg(state->reg_block, "zr"); else { expression_output(state, EXPR); OP = state->top_reg; }
 #define SetUsedReg(OP) \
     if (OP->status != MREG_STATUS_RESERVED) OP->status = MREG_STATUS_USED;
 /* Bison things. */
@@ -185,8 +185,6 @@ static thecl_spawn_t* spawn_get(parser_state_t* state, const char* name);
 
 /* Creates a new param equivalent to a GOOL stack push/pop operand */
 static thecl_param_t* param_sp_new(void);
-/* Creates a new param equivalent to a GOOL null operand */
-static thecl_param_t* param_null_new(void);
 /* Creates a new param equivalent to a GOOL double stack pop operand */
 static thecl_param_t* param_sp2_new(void);
 
@@ -1262,7 +1260,7 @@ SaveBlock:
         list_for_each_node_safe($3, n, x) {
             list_append(&state->addresses, n);
             thecl_param_t* param = n->data;
-            if (param->stack == 2) {
+            if (param->val_type == PARAM_GLOBAL) {
                 instr_add(state, state->current_sub, instr_new(state, global_expr->id, "S", param->value.val.S));
             }
             else {
@@ -1279,7 +1277,7 @@ SaveBlock:
         const expr_t* global_expr = expr_get_by_symbol(state->version, GASSIGN);
         for (int i=0; i<m; ++i) {
             thecl_param_t* param = list_tail(&state->addresses);
-            if (param->stack == 2) {
+            if (param->val_type == PARAM_GLOBAL) {
                 instr_add(state, state->current_sub, instr_new(state, global_expr->id, "Sp", param->value.val.S, param_sp_new()));
                 param_free(param);
             }
@@ -1425,7 +1423,7 @@ WhileBlock:
           list_node_t *node, *next;
           list_for_each_node_safe($cond, node, next) {
               expr = node->data;
-              if (expr->type == EXPRESSION_VAL && !expr->value->stack && !expr->value->value.val.S) {
+              if (expr->type == EXPRESSION_VAL && expr->value->val_type == PARAM_LITERAL && !expr->value->value.val.S) {
                   expression_free(expr);
                   list_del($cond, node);
               }
@@ -1496,7 +1494,7 @@ WhileBlock:
           list_node_t *node, *next;
           list_for_each_node_safe($cond, node, next) {
               expr = node->data;
-              if (expr->type == EXPRESSION_VAL && !expr->value->stack && expr->value->value.val.S) {
+              if (expr->type == EXPRESSION_VAL && expr->value->val_type == PARAM_LITERAL && expr->value->value.val.S) {
                   expression_free(expr);
                   list_del($cond, node);
               }
@@ -1731,7 +1729,7 @@ Inline_WhileBlock:
           list_node_t *node, *next;
           list_for_each_node_safe($cond, node, next) {
               expr = node->data;
-              if (expr->type == EXPRESSION_VAL && !expr->value->stack && !expr->value->value.val.S) {
+              if (expr->type == EXPRESSION_VAL && expr->value->val_type == PARAM_LITERAL && !expr->value->value.val.S) {
                   expression_free(expr);
                   list_del($cond, node);
               }
@@ -1802,7 +1800,7 @@ Inline_WhileBlock:
           list_node_t *node, *next;
           list_for_each_node_safe($cond, node, next) {
               expr = node->data;
-              if (expr->type == EXPRESSION_VAL && !expr->value->stack && expr->value->value.val.S) {
+              if (expr->type == EXPRESSION_VAL && expr->value->val_type == PARAM_LITERAL && expr->value->value.val.S) {
                   expression_free(expr);
                   list_del($cond, node);
               }
@@ -2147,11 +2145,11 @@ Instruction_Parameters:
 
 Instruction_Parameter:
       Load_Type {
-          if ($1->stack == 2) {
+          if ($1->val_type == PARAM_GLOBAL) {
               list_prepend_new(&state->expressions, expression_load_new(state, $1));
 
               $$ = param_new('S');
-              $$->stack = 1;
+              $$->val_type = PARAM_FIELD;
               $$->object_link = 0;
               $$->is_expression_param = 1;
               $$->value.val.S = 0x1F;
@@ -2161,7 +2159,7 @@ Instruction_Parameter:
           list_prepend_new(&state->expressions, expression_pointer_new(state, $1));
 
           $$ = param_new('S');
-          $$->stack = 1;
+          $$->val_type = PARAM_FIELD;
           $$->object_link = 0;
           $$->is_expression_param = 1;
           $$->value.val.S = 0x1F;
@@ -2173,7 +2171,7 @@ Instruction_Parameter:
               list_prepend_new(&state->expressions, $1);
 
               $$ = param_new('S');
-              $$->stack = 1;
+              $$->val_type = PARAM_FIELD;
               $$->object_link = 0;
               $$->is_expression_param = 1;
               $$->value.val.S = 0x1F;
@@ -2314,7 +2312,7 @@ ExpressionSubset:
             yyerror(state, "syntax error, offsetof parameter must be value expression");
             exit(2);
         }
-        if ($3->value->stack != 1 || $3->value->object_link > 7 || $3->value->object_link < 0) {
+        if (!($3->value->val_type == PARAM_FIELD && $3->value->object_link >= 0 && $3->value->object_link <= 7)) {
             yyerror(state, "syntax error, offsetof parameter is an invalid expression");
             exit(2);
         }
@@ -2333,19 +2331,19 @@ Address:
         field_t* objfield;
         if (var_exists(state, state->current_sub, $1)) {
             $$ = param_new('S');
-            $$->stack = 1;
+            $$->val_type = PARAM_FIELD;
             $$->value.val.S = var_stack(state, state->current_sub, $1);
         } else if (arg = arg_get(state, state->current_sub, $1)) {
             $$ = param_new('S');
-            $$->stack = 1;
+            $$->val_type = PARAM_FIELD;
             $$->value.val.S = arg->stack;
         } else if (global = global_get(state->version, $1)) {
             $$ = param_new('S');
-            $$->stack = 2;
+            $$->val_type = PARAM_GLOBAL;
             $$->value.val.S = global->offset << 8;
         } else if (field = field_get($1)) {
             $$ = param_new('S');
-            $$->stack = 1;
+            $$->val_type = PARAM_FIELD;
             $$->value.val.S = field->offset;
             $$->object_link = 0;
         } else if (event = event_get(state->version, $1)) {
@@ -2353,7 +2351,7 @@ Address:
             $$->value.val.S = event->offset << 8;
         } else if (objfield = objfield_get(state, $1)) {
             $$ = param_new('S');
-            $$->stack = 1;
+            $$->val_type = PARAM_FIELD;
             $$->value.val.S = objfield->offset + 64;
             $$->object_link = 0;
         } else if (spawn = spawn_get(state, $1)) {
@@ -2391,7 +2389,7 @@ Address:
             yyerror(state, "invalid object field: %s", $1);
         }
         $$ = param_new('S');
-        $$->stack = 1;
+        $$->val_type = PARAM_FIELD;
         $$->value.val.S = field->offset;
         $$->object_link = link->offset;
         free($1);
@@ -2410,7 +2408,7 @@ Integer:
       }
     | NIL {
         $$ = param_new('S');
-        $$->stack = 1;
+        $$->val_type = PARAM_FIELD;
         $$->value.val.S = 0;
         $$->object_link = -2;
     }
@@ -2433,10 +2431,10 @@ Load_Type:
 
 Pointer_Type:
       "&" Load_Type {
-          if ($2->stack == 0) {
+          if ($2->val_type == PARAM_LITERAL) {
               $2->object_link = -3;
           }
-          $2->stack = 3;
+          $2->val_type = PARAM_POINTER;
           $$ = $2;
       }
     ;
@@ -2764,7 +2762,7 @@ instr_add(
     if (state->block_bound) {
         if (instr->id == load_expr->id && instr->param_count == 1) {
             thecl_param_t* load_param = list_head(&instr->params);
-            if (load_param->value.val.S == 0x1f && load_param->object_link == 0 && load_param->stack) {
+            if (load_param->value.val.S == 0x1f && load_param->object_link == 0 && load_param->val_type != PARAM_LITERAL) {
                 thecl_instr_free(instr);
                 return;
             }
@@ -2779,7 +2777,7 @@ instr_add(
     if (instr->id == load_expr->id) {
         if (instr->param_count == 1) {
             thecl_param_t* load_param = list_head(&instr->params);
-            if (load_param->value.val.S == 0x1f && load_param->object_link == 0 && load_param->stack) {
+            if (load_param->value.val.S == 0x1f && load_param->object_link == 0 && load_param->val_type != PARAM_LITERAL) {
                 thecl_instr_free(instr);
                 return;
             }
@@ -2819,7 +2817,7 @@ instr_add(
             const expr_t* expr = expr_get_by_symbol(state->version, NOT);
             if (sub->last_ins->id == expr->id && sub->last_ins->param_count == 2) {
                 thecl_param_t* param = list_head(&sub->last_ins->params);
-                if (param->value.val.S != 0x1F || !param->stack || param->object_link != 0)
+                if (param->value.val.S != 0x1F || param->val_type == PARAM_LITERAL || param->object_link != 0)
                     goto NO_OPTIM;
 
                 if (!is_post_c2(state->version)) {
@@ -2831,7 +2829,7 @@ instr_add(
 
                 param = list_tail(&sub->last_ins->params);
 
-                if (param->value.val.S <= 0x3F && param->value.val.S >= 0 && param->stack == 1 && param->object_link == 0) {
+                if (param->value.val.S <= 0x3F && param->value.val.S >= 0 && param->val_type == PARAM_FIELD && param->object_link == 0) {
                     thecl_param_t* reg_param = instr->params.head->next->next->data;
                     reg_param->value.val.S = param->value.val.S;
                     list_del_tail(&sub->instrs);
@@ -2849,7 +2847,7 @@ instr_add(
                 expr = expr_get_by_symbol(state->version, LOAD);
                 if (sub->last_ins->id == expr->id && sub->last_ins->param_count > 0) {
                     thecl_param_t* param = list_tail(&sub->last_ins->params);
-                    if (!param->stack) {
+                    if (param->val_type == PARAM_LITERAL) {
                         list_del_tail(&sub->last_ins->params);
                         thecl_param_t* branch_type_param = (thecl_param_t*)instr->params.tail->prev->data;
                         int branch_type = state->version == 2 ? instr->id - bra_expr->id - 1 : branch_type_param->value.val.S - 1;
@@ -2965,7 +2963,7 @@ expression_replace_var(
     list_node_t* node;
     list_for_each_node(&expression->children, node) {
         expression = node->data;
-        if (expression->type == EXPRESSION_VAL && expression->value->stack == 1 && expression->value->object_link == -1 && expression->value->value.val.S == var_stack) {
+        if (expression->type == EXPRESSION_VAL && expression->value->val_type == PARAM_LITERAL && expression->value->object_link == -1 && expression->value->value.val.S == var_stack) {
             expression_free(expression);
             node->data = expression_copy(replace);
         }
@@ -2982,7 +2980,7 @@ expression_replace_var_start(
     int var_stack,
     expression_t* replace)
 {
-    if (expression->type == EXPRESSION_VAL && expression->value->stack == 1 && expression->value->object_link == -1 && expression->value->value.val.S == var_stack) {
+    if (expression->type == EXPRESSION_VAL && expression->value->val_type == PARAM_LITERAL && expression->value->object_link == -1 && expression->value->value.val.S == var_stack) {
         expression_free(expression);
         return expression_copy(replace); /* no point in continuing */
     }
@@ -3069,11 +3067,11 @@ instr_create_inline_call(
 
                             param = expr->value;
                             if (expr_get_by_symbol(state->version, LOAD)->id == expr->id || expr_get_by_symbol(state->version, GLOAD)->id == expr->id) { /* Load_Type */
-                                if (param->stack == 2) {
+                                if (param->val_type == PARAM_GLOBAL) {
                                     list_prepend_new(&state->expressions, expression_copy(expr));
 
                                     param = param_new('S');
-                                    param->stack = 1;
+                                    param->val_type = PARAM_FIELD;
                                     param->object_link = 0;
                                     param->is_expression_param = 1;
                                     param->value.val.S = 0x1F;
@@ -3086,7 +3084,7 @@ instr_create_inline_call(
                                 list_prepend_new(&state->expressions, expression_copy(expr));
 
                                 param = param_new('S');
-                                param->stack = 1;
+                                param->val_type = PARAM_FIELD;
                                 param->object_link = 0;
                                 param->is_expression_param = 1;
                                 param->value.val.S = 0x1F;
@@ -3098,7 +3096,7 @@ instr_create_inline_call(
                                     list_prepend_new(&state->expressions, expression_copy(expr));
 
                                     param = param_new('S');
-                                    param->stack = 1;
+                                    param->val_type = PARAM_FIELD;
                                     param->object_link = 0;
                                     param->is_expression_param = 1;
                                     param->value.val.S = 0x1F;
@@ -3197,7 +3195,7 @@ instr_create_inline_call(
                     thecl_param_t *param;
                     list_for_each(line->list, param) {
                         list_append_new(&state->addresses, param);
-                        if (param->stack == 2) {
+                        if (param->val_type == PARAM_GLOBAL) {
                             instr_add(state, state->current_sub, instr_new(state, global_expr->id, "S", param->value.val.S));
                         }
                         else {
@@ -3219,7 +3217,7 @@ instr_create_inline_call(
                     const expr_t* global_expr = expr_get_by_symbol(state->version, GASSIGN);
                     for (int i=0; i<m; ++i) {
                         thecl_param_t* param = list_tail(&state->addresses);
-                        if (param->stack == 2) {
+                        if (param->val_type == PARAM_GLOBAL) {
                             instr_add(state, state->current_sub, instr_new(state, global_expr->id, "Sp", param->value.val.S, param_sp_new()));
                             param_free(param);
                         }
@@ -3369,8 +3367,8 @@ instr_create_gool_ins(
             }
         }
         list_for_each(arg_list, param) {
-            if (!(param->stack && param->object_link == 0 && param->value.val.S == 0x1F)) { /* argument is already on the stack */
-                if (param->stack == 3) {
+            if (!(param->val_type == PARAM_FIELD && param->object_link == 0 && param->value.val.S == 0x1F)) { /* argument is already on the stack */
+                if (param->val_type == PARAM_POINTER) {
                     const expr_t* expr = expr_get_by_symbol(state->version, PLOAD);
                     instr_add(state, state->current_sub, instr_new(state, expr->id, "p", param));
                 }
@@ -3428,7 +3426,7 @@ instr_create_gool_ins(
         list_free_nodes(&state->expressions);
 
         if (late_param) {
-            if ((late_expr && late_expr->type != EXPRESSION_VAL) || (late_param->stack == 1 && late_param->object_link != 0) || (late_param->stack == 0 && late_param->object_link != -1) || (late_param->stack != 0 && late_param->stack != 1) || late_param->value.val.S < 0 || late_param->value.val.S > 0x3F) {
+            if ((late_expr && late_expr->type != EXPRESSION_VAL) || (late_param->val_type == PARAM_FIELD && late_param->object_link != 0) || (late_param->val_type == PARAM_LITERAL && late_param->object_link != -1) || (late_param->val_type != PARAM_LITERAL && late_param->val_type != PARAM_FIELD) || late_param->value.val.S < 0 || late_param->value.val.S > 0x3F) {
                 if (late_expr) {
                     expression_output(state, late_expr);
                     if (state->top_reg) {
@@ -3437,7 +3435,7 @@ instr_create_gool_ins(
                     }
                     expression_free(late_expr);
                 }
-                late_param->stack = 1;
+                late_param->val_type = PARAM_FIELD;
                 late_param->object_link = 0;
                 late_param->value.val.S = 0x1F;
             }
@@ -3485,7 +3483,7 @@ instr_create_gool_ins(
                 param = NULL;
             }
 
-            if (param && (param->stack != 1 || param->object_link != 0 || param->value.val.S < 0 || param->value.val.S > 0x3F)) {
+            if (param && (param->val_type != PARAM_FIELD || param->object_link != 0 || param->value.val.S < 0 || param->value.val.S > 0x3F)) {
                 expression_t* expression = expression_load_new(state, param);
                 expression_output(state, expression);
                 if (state->top_reg) {
@@ -3493,7 +3491,7 @@ instr_create_gool_ins(
                     state->stack_adjust += 4;
                 }
                 expression_free(expression);
-                param->stack = 1;
+                param->val_type = PARAM_FIELD;
                 param->object_link = 0;
                 param->value.val.S = 0x1F;
             }
@@ -3551,7 +3549,7 @@ expression_load_new(
 {
     expression_t* ret = malloc(sizeof(expression_t));
     const expr_t* expr;
-    if (value->stack == 2) {
+    if (value->val_type == PARAM_GLOBAL) {
         expr = expr_get_by_symbol(state->version, GLOAD);
         ret->type = EXPRESSION_GLOBAL;
     }
@@ -3689,12 +3687,12 @@ expression_create_goto_pop(
         thecl_param_t *pcond;
         if (type == GOTO || cond == NULL) {
             pcond = param_new('S');
-            pcond->stack = 1;
+            pcond->val_type = PARAM_FIELD;
             pcond->object_link = 0;
             pcond->value.val.S = field_get("misc")->offset;
         }
         else {
-            if (cond->type != EXPRESSION_VAL || cond->value->stack != 1 || cond->value->object_link != 0 || cond->value->value.val.S < 0 || cond->value->value.val.S > 0x3F) {
+            if (cond->type != EXPRESSION_VAL || cond->value->val_type != PARAM_FIELD || cond->value->object_link != 0 || cond->value->value.val.S < 0 || cond->value->value.val.S > 0x3F) {
                 expression_output(state, cond);
                 pcond = param_sp_new();
             }
@@ -3713,11 +3711,11 @@ expression_mips_load(
 {
     thecl_param_t* param = expr->value;
     mips_reg_t* reg = NULL;
-    if (!((param->stack == 1 && !(param->object_link >= -1 && param->object_link <= 7)) || param->stack == 3)) {
+    if (!((param->val_type == PARAM_FIELD && !(param->object_link >= -1 && param->object_link <= 7)) || param->val_type == PARAM_POINTER)) {
         reg = request_reg(state, expr);
     }
     int val = param->value.val.S;
-    if (param->stack == 0) { /* number */
+    if (param->val_type == PARAM_LITERAL) { /* number */
         if (val == 0) {
             instr_add(state, state->current_sub, MIPS_INSTR_ALU_R("addu", reg->index, 0, 0));
         }
@@ -3732,7 +3730,7 @@ expression_mips_load(
             instr_add(state, state->current_sub, MIPS_INSTR_I("ori", val & 0xFFFF, reg->index, reg->index));
         }
     }
-    else if (param->stack == 1) { /* object field, stack */
+    else if (param->val_type == PARAM_FIELD) { /* object field, stack */
         if (param->object_link == 0) { /* object field */
             instr_add_delay_slot(state, state->current_sub, MIPS_INSTR_I("lw", val * 4 + get_obj_proc_offset(state->version), reg->index, get_reg(state->reg_block, "s0")->index));
         }
@@ -3752,11 +3750,11 @@ expression_mips_load(
             instr_add(state, state->current_sub, instr_new(state, expr->id, "p", expr->value));
         }
     }
-    else if (param->stack == 2) { /* global */
+    else if (param->val_type == PARAM_GLOBAL) { /* global */
         instr_add_delay_slot(state, state->current_sub, MIPS_INSTR_I("lw", 0x58, reg->index, get_reg(state->reg_block, "s8")->index));
         instr_add_delay_slot(state, state->current_sub, MIPS_INSTR_I("lw", (val >> 8) * 4, reg->index, reg->index));
     }
-    else if (param->stack == 3) { /* pointer */
+    else if (param->val_type == PARAM_POINTER) { /* pointer */
         instr_add(state, state->current_sub, instr_new(state, expr->id, "p", expr->value));
     }
     state->top_reg = reg;
@@ -3786,9 +3784,9 @@ expression_mips_operation(
     int symbol = expr_get_by_id(state->version, expr->id)->symbol;
     switch (symbol) {
         case ADD:
-            if (child_expr1->type == EXPRESSION_VAL && child_expr1->value->stack == 0 && child_expr1->value->value.val.S >= -0x8000 && child_expr1->value->value.val.S <= 0x7FFF) { val_expr = child_expr1; var_expr = child_expr2; }
-            else if (child_expr2->type == EXPRESSION_VAL && child_expr2->value->stack == 0 && child_expr2->value->value.val.S >= -0x8000 && child_expr2->value->value.val.S <= 0x7FFF) { val_expr = child_expr2; var_expr = child_expr1; }
-            if (val_expr && !(var_expr->type == EXPRESSION_VAL && var_expr->value->stack == 0 && var_expr->value->value.val.S == 0)) {
+            if (child_expr1->type == EXPRESSION_VAL && child_expr1->value->val_type == PARAM_LITERAL && child_expr1->value->value.val.S >= -0x8000 && child_expr1->value->value.val.S <= 0x7FFF) { val_expr = child_expr1; var_expr = child_expr2; }
+            else if (child_expr2->type == EXPRESSION_VAL && child_expr2->value->val_type == PARAM_LITERAL && child_expr2->value->value.val.S >= -0x8000 && child_expr2->value->value.val.S <= 0x7FFF) { val_expr = child_expr2; var_expr = child_expr1; }
+            if (val_expr && !(var_expr->type == EXPRESSION_VAL && var_expr->value->val_type == PARAM_LITERAL && var_expr->value->value.val.S == 0)) {
                 OutputExprToReg(var_expr, op1);
                 verify_reg_load(state, &op1, var_expr);
                 ret = request_reg(state, expr);
@@ -3807,14 +3805,14 @@ expression_mips_operation(
             }
             break;
         case SUBTRACT:
-            if (child_expr1->type == EXPRESSION_VAL && child_expr1->value->stack == 0 && child_expr1->value->value.val.S == 0) {
+            if (child_expr1->type == EXPRESSION_VAL && child_expr1->value->val_type == PARAM_LITERAL && child_expr1->value->value.val.S == 0) {
                 OutputExprToReg(child_expr2, op2);
                 verify_reg_load(state, &op2, child_expr2);
                 ret = request_reg(state, expr);
                 instr_add(state, state->current_sub, MIPS_INSTR_ALU_R("subu", ret->index, op2->index, 0));
                 SetUsedReg(op2);
             }
-            else if (child_expr2->type == EXPRESSION_VAL && child_expr2->value->stack == 0 && child_expr2->value->value.val.S >= -0x7FFF && child_expr2->value->value.val.S <= 0x8000) {
+            else if (child_expr2->type == EXPRESSION_VAL && child_expr2->value->val_type == PARAM_LITERAL && child_expr2->value->value.val.S >= -0x7FFF && child_expr2->value->value.val.S <= 0x8000) {
                 OutputExprToReg(child_expr2, op1);
                 verify_reg_load(state, &op1, child_expr2);
                 ret = request_reg(state, expr);
@@ -3848,9 +3846,9 @@ expression_mips_operation(
                 case OR: case B_OR: oprname = "or"; opiname = "ori"; break;
                 case B_AND: case TEST: oprname = "and"; opiname = "andi"; break;
             }
-            if (symbol != TEST && child_expr1->type == EXPRESSION_VAL && child_expr1->value->stack == 0 && child_expr1->value->value.val.S >= 0 && child_expr1->value->value.val.S <= 0xFFFF) { val_expr = child_expr1; var_expr = child_expr2; }
-            else if (child_expr2->type == EXPRESSION_VAL && child_expr2->value->stack == 0 && child_expr2->value->value.val.S >= 0 && child_expr2->value->value.val.S <= 0xFFFF) { val_expr = child_expr2; var_expr = child_expr1; }
-            if (val_expr && !(var_expr->type == EXPRESSION_VAL && var_expr->value->stack == 0 && var_expr->value->value.val.S == 0)) {
+            if (symbol != TEST && child_expr1->type == EXPRESSION_VAL && child_expr1->value->val_type == PARAM_LITERAL && child_expr1->value->value.val.S >= 0 && child_expr1->value->value.val.S <= 0xFFFF) { val_expr = child_expr1; var_expr = child_expr2; }
+            else if (child_expr2->type == EXPRESSION_VAL && child_expr2->value->val_type == PARAM_LITERAL && child_expr2->value->value.val.S >= 0 && child_expr2->value->value.val.S <= 0xFFFF) { val_expr = child_expr2; var_expr = child_expr1; }
+            if (val_expr && !(var_expr->type == EXPRESSION_VAL && var_expr->value->val_type == PARAM_LITERAL && var_expr->value->value.val.S == 0)) {
                 OutputExprToReg(var_expr, op1);
                 verify_reg_load(state, &op1, var_expr);
                 ret = request_reg(state, expr);
@@ -3878,9 +3876,9 @@ expression_mips_operation(
             }
             break;
         case EQUAL:
-            if (child_expr1->type == EXPRESSION_VAL && child_expr1->value->stack == 0 && child_expr1->value->value.val.S >= 0 && child_expr1->value->value.val.S <= 0xFFFF) { val_expr = child_expr1; var_expr = child_expr2; }
-            else if (child_expr2->type == EXPRESSION_VAL && child_expr2->value->stack == 0 && child_expr2->value->value.val.S >= 0 && child_expr2->value->value.val.S <= 0xFFFF) { val_expr = child_expr2; var_expr = child_expr1; }
-            if (val_expr && !(var_expr->type == EXPRESSION_VAL && var_expr->value->stack == 0 && var_expr->value->value.val.S == 0)) {
+            if (child_expr1->type == EXPRESSION_VAL && child_expr1->value->val_type == PARAM_LITERAL && child_expr1->value->value.val.S >= 0 && child_expr1->value->value.val.S <= 0xFFFF) { val_expr = child_expr1; var_expr = child_expr2; }
+            else if (child_expr2->type == EXPRESSION_VAL && child_expr2->value->val_type == PARAM_LITERAL && child_expr2->value->value.val.S >= 0 && child_expr2->value->value.val.S <= 0xFFFF) { val_expr = child_expr2; var_expr = child_expr1; }
+            if (val_expr && !(var_expr->type == EXPRESSION_VAL && var_expr->value->val_type == PARAM_LITERAL && var_expr->value->value.val.S == 0)) {
                 OutputExprToReg(var_expr, op1);
                 verify_reg_load(state, &op1, var_expr);
                 ret = request_reg(state, expr);
@@ -3923,11 +3921,11 @@ expression_mips_operation(
             break;
         case LSHIFT:
         case RSHIFT:
-            if (child_expr2->type == EXPRESSION_VAL && child_expr2->value->stack == 0 && child_expr2->value->value.val.S < 0) {
+            if (child_expr2->type == EXPRESSION_VAL && child_expr2->value->val_type == PARAM_LITERAL && child_expr2->value->value.val.S < 0) {
                 if (symbol == LSHIFT) symbol = RSHIFT; else symbol = LSHIFT;
                 child_expr2->value->value.val.S = -child_expr2->value->value.val.S;
             }
-            if (child_expr2->type == EXPRESSION_VAL && child_expr2->value->stack == 0) {
+            if (child_expr2->type == EXPRESSION_VAL && child_expr2->value->val_type == PARAM_LITERAL) {
                 OutputExprToReg(child_expr1, op1);
                 verify_reg_load(state, &op1, child_expr1);
                 ret = request_reg(state, expr);
@@ -3954,9 +3952,9 @@ expression_mips_operation(
                 child_expr2 = val_expr;
                 val_expr = NULL;
             }
-            if (child_expr1->type == EXPRESSION_VAL && child_expr1->value->stack == 0 && child_expr1->value->value.val.S >= -0xFFFF && child_expr1->value->value.val.S <= 0) { val_expr = child_expr1; var_expr = child_expr2; }
-            else if (child_expr2->type == EXPRESSION_VAL && child_expr2->value->stack == 0 && child_expr2->value->value.val.S >= 0 && child_expr2->value->value.val.S <= 0xFFFF) { val_expr = child_expr2; var_expr = child_expr1; }
-            if (val_expr == child_expr1 && !(var_expr->type == EXPRESSION_VAL && var_expr->value->stack == 0 && var_expr->value->value.val.S == 0)) { /* imm < b --> -b < -imm */
+            if (child_expr1->type == EXPRESSION_VAL && child_expr1->value->val_type == PARAM_LITERAL && child_expr1->value->value.val.S >= -0xFFFF && child_expr1->value->value.val.S <= 0) { val_expr = child_expr1; var_expr = child_expr2; }
+            else if (child_expr2->type == EXPRESSION_VAL && child_expr2->value->val_type == PARAM_LITERAL && child_expr2->value->value.val.S >= 0 && child_expr2->value->value.val.S <= 0xFFFF) { val_expr = child_expr2; var_expr = child_expr1; }
+            if (val_expr == child_expr1 && !(var_expr->type == EXPRESSION_VAL && var_expr->value->val_type == PARAM_LITERAL && var_expr->value->value.val.S == 0)) { /* imm < b --> -b < -imm */
                 OutputExprToReg(var_expr, op2);
                 verify_reg_load(state, &op2, var_expr);
                 ret = request_reg(state, expr);
@@ -3964,7 +3962,7 @@ expression_mips_operation(
                 instr_add(state, state->current_sub, MIPS_INSTR_I("slti", -val_expr->value->value.val.S, ret->index, ret->index));
                 SetUsedReg(op2);
             }
-            else if (val_expr == child_expr2 && !(var_expr->type == EXPRESSION_VAL && var_expr->value->stack == 0 && var_expr->value->value.val.S == 0)) { /* a < imm */
+            else if (val_expr == child_expr2 && !(var_expr->type == EXPRESSION_VAL && var_expr->value->val_type == PARAM_LITERAL && var_expr->value->value.val.S == 0)) { /* a < imm */
                 OutputExprToReg(var_expr, op1);
                 verify_reg_load(state, &op1, var_expr);
                 ret = request_reg(state, expr);
@@ -3986,9 +3984,9 @@ expression_mips_operation(
             }
             break;
         case LTEQ:
-            if (child_expr1->type == EXPRESSION_VAL && child_expr1->value->stack == 0 && child_expr1->value->value.val.S >= -0xFFFF && child_expr1->value->value.val.S <= 0) { val_expr = child_expr1; var_expr = child_expr2; }
-            else if (child_expr2->type == EXPRESSION_VAL && child_expr2->value->stack == 0 && child_expr2->value->value.val.S >= 1 && child_expr2->value->value.val.S <= 0xFFFE) { val_expr = child_expr2; var_expr = child_expr1; }
-            if (val_expr == child_expr1 && !(var_expr->type == EXPRESSION_VAL && var_expr->value->stack == 0 && var_expr->value->value.val.S == 0)) { /* imm <= b --> imm < b+1 --> imm-1 < b --> -b < -(imm-1) */
+            if (child_expr1->type == EXPRESSION_VAL && child_expr1->value->val_type == PARAM_LITERAL && child_expr1->value->value.val.S >= -0xFFFF && child_expr1->value->value.val.S <= 0) { val_expr = child_expr1; var_expr = child_expr2; }
+            else if (child_expr2->type == EXPRESSION_VAL && child_expr2->value->val_type == PARAM_LITERAL && child_expr2->value->value.val.S >= 1 && child_expr2->value->value.val.S <= 0xFFFE) { val_expr = child_expr2; var_expr = child_expr1; }
+            if (val_expr == child_expr1 && !(var_expr->type == EXPRESSION_VAL && var_expr->value->val_type == PARAM_LITERAL && var_expr->value->value.val.S == 0)) { /* imm <= b --> imm < b+1 --> imm-1 < b --> -b < -(imm-1) */
                 OutputExprToReg(var_expr, op2);
                 verify_reg_load(state, &op2, var_expr);
                 ret = request_reg(state, expr);
@@ -3996,7 +3994,7 @@ expression_mips_operation(
                 instr_add(state, state->current_sub, MIPS_INSTR_I("slti", -(val_expr->value->value.val.S-1), ret->index, ret->index));
                 SetUsedReg(op2);
             }
-            else if (val_expr == child_expr2 && !(var_expr->type == EXPRESSION_VAL && var_expr->value->stack == 0 && var_expr->value->value.val.S == 0)) { /* a <= imm --> a < imm+1*/
+            else if (val_expr == child_expr2 && !(var_expr->type == EXPRESSION_VAL && var_expr->value->val_type == PARAM_LITERAL && var_expr->value->value.val.S == 0)) { /* a <= imm --> a < imm+1*/
                 OutputExprToReg(var_expr, op1);
                 verify_reg_load(state, &op1, var_expr);
                 ret = request_reg(state, expr);
@@ -4057,7 +4055,7 @@ expression_mips_operation(
         case SPD:
             temp = request_reg(state, expr);
             instr_add_delay_slot(state, state->current_sub, MIPS_INSTR_I("lw", 0x54, temp->index, get_reg(state->reg_block, "s8")->index));
-            if (!(child_expr1->type == EXPRESSION_VAL && child_expr1->value->stack == 0 && child_expr1->value->value.val.S == 0)) {
+            if (!(child_expr1->type == EXPRESSION_VAL && child_expr1->value->val_type == PARAM_LITERAL && child_expr1->value->value.val.S == 0)) {
                 OutputExprToReg(child_expr1, op1);
                 OutputExprToReg(child_expr2, op2);
                 verify_reg_load(state, &op2, child_expr2);
@@ -4073,8 +4071,8 @@ expression_mips_operation(
             make_optional_delay_slots(state, 13, state->current_sub->last_ins);
             instr_add(state, state->current_sub, MIPS_INSTR_MFLO(ret->index));
             instr_add(state, state->current_sub, MIPS_INSTR_SHIFT("sra", 10, ret->index, ret->index));
-            if (!(child_expr1->type == EXPRESSION_VAL && child_expr1->value->stack == 0 && child_expr1->value->value.val.S == 0)) {
-                if (child_expr1->type == EXPRESSION_VAL && child_expr1->value->stack == 0 && child_expr1->value->value.val.S >= -0x7FFF && child_expr1->value->value.val.S <= 0x8000) {
+            if (!(child_expr1->type == EXPRESSION_VAL && child_expr1->value->val_type == PARAM_LITERAL && child_expr1->value->value.val.S == 0)) {
+                if (child_expr1->type == EXPRESSION_VAL && child_expr1->value->val_type == PARAM_LITERAL && child_expr1->value->value.val.S >= -0x7FFF && child_expr1->value->value.val.S <= 0x8000) {
                     instr_add(state, state->current_sub, MIPS_INSTR_I("addiu", child_expr1->value->value.val.S, ret->index, ret->index));
                 }
                 else {
@@ -4088,12 +4086,12 @@ expression_mips_operation(
         case TIME:
             temp = request_reg(state, expr);
             instr_add_delay_slot(state, state->current_sub, MIPS_INSTR_I("lw", 0x50, temp->index, get_reg(state->reg_block, "s8")->index));
-            if (!(child_expr2->type == EXPRESSION_VAL && child_expr2->value->stack == 0 && child_expr2->value->value.val.S == 0)) {
+            if (!(child_expr2->type == EXPRESSION_VAL && child_expr2->value->val_type == PARAM_LITERAL && child_expr2->value->value.val.S == 0)) {
                 OutputExprToReg(child_expr1, op1);
                 OutputExprToReg(child_expr2, op2);
                 verify_reg_load(state, &op2, child_expr2);
                 verify_reg_load(state, &op1, child_expr1);
-                if (child_expr2->type == EXPRESSION_VAL && child_expr2->value->stack == 0 && child_expr2->value->value.val.S >= -0x7FFF && child_expr2->value->value.val.S <= 0x8000) {
+                if (child_expr2->type == EXPRESSION_VAL && child_expr2->value->val_type == PARAM_LITERAL && child_expr2->value->value.val.S >= -0x7FFF && child_expr2->value->value.val.S <= 0x8000) {
                     instr_add(state, state->current_sub, MIPS_INSTR_I("addiu", child_expr2->value->value.val.S, temp->index, temp->index));
                 }
                 else {
@@ -4152,7 +4150,7 @@ expression_mips_operation(
             list_for_each_node_safe(&expr->children, child_node, child_next) {
                 ++c;
                 child_expr = child_node->data;
-                if (child_expr->type == EXPRESSION_VAL && child_expr->value->stack != 3 && (!expression->has_double_param || (expression->has_double_param && lc <= 2) || (expression->has_double_param && lc > 2 && c == 1))) {
+                if (child_expr->type == EXPRESSION_VAL && child_expr->value->val_type != PARAM_POINTER && (!expression->has_double_param || (expression->has_double_param && lc <= 2) || (expression->has_double_param && lc > 2 && c == 1))) {
                     list_append_new(param_list, child_expr->value);
                 }
                 else {
@@ -4161,7 +4159,7 @@ expression_mips_operation(
                         instr_add_delay_slot(state, state->current_sub, MIPS_INSTR_I("sw", state->stack_adjust, state->top_reg->index, get_reg(state->reg_block, "s6")->index));
                         state->stack_adjust += 4;
                     }
-                    if (child_expr->type == EXPRESSION_VAL && child_expr->value->stack == 3) {
+                    if (child_expr->type == EXPRESSION_VAL && child_expr->value->val_type == PARAM_POINTER) {
                         list_del(&expr->children, child_node);
                         expression_free(child_expr);
                         if (c <= expression->stack_arity) {
@@ -4264,12 +4262,12 @@ expression_output(
         list_for_each_node_safe(&expr->children, child_node, child_next) {
             ++c;
             child_expr = child_node->data;
-            if (child_expr->type == EXPRESSION_VAL && child_expr->value->stack != 3 && (!expression->has_double_param || (expression->has_double_param && lc <= 2) || (expression->has_double_param && lc > 2 && c == 1))) {
+            if (child_expr->type == EXPRESSION_VAL && child_expr->value->val_type != PARAM_POINTER && (!expression->has_double_param || (expression->has_double_param && lc <= 2) || (expression->has_double_param && lc > 2 && c == 1))) {
                 list_append_new(param_list, child_expr->value);
             }
             else {
                 expression_output(state, child_expr);
-                if (child_expr->type == EXPRESSION_VAL && child_expr->value->stack == 3) {
+                if (child_expr->type == EXPRESSION_VAL && child_expr->value->val_type == PARAM_POINTER) {
                     list_del(&expr->children, child_node);
                     expression_free(child_expr);
                     if (c <= expression->stack_arity) {
@@ -4347,16 +4345,16 @@ expression_optimize(
     if (   !tmp_expr->is_unary && (
            child_expr_1->type != EXPRESSION_VAL
         || child_expr_2->type != EXPRESSION_VAL
-        || child_expr_1->value->stack /* Variables are not acceptable, obviously. */
-        || child_expr_2->value->stack
+        || child_expr_1->value->val_type != PARAM_LITERAL /* Variables are not acceptable, obviously. */
+        || child_expr_2->value->val_type != PARAM_LITERAL
         || child_expr_1->value->type != 'S'
         || child_expr_2->value->type != 'S'
       ) || tmp_expr->is_unary && (
            child_expr_2->type != EXPRESSION_VAL
-        || child_expr_2->value->stack
+        || child_expr_2->value->val_type != PARAM_LITERAL
         || child_expr_1->value->value.val.S != 0x1F
         || child_expr_1->value->object_link != 0
-        || !child_expr_1->value->stack
+        || !child_expr_1->value->val_type != PARAM_LITERAL
         || child_expr_1->value->type != 'S'
         || child_expr_2->value->type != 'S'
       )
@@ -4835,7 +4833,7 @@ var_create_assign(
 
     if (state->mips_mode) {
         thecl_param_t* param = param_new('S');
-        param->stack = 1;
+        param->val_type = PARAM_FIELD;
         param->value.val.S = var->stack;
         param->object_link = -1;
         var_assign(state, param, expr);
@@ -4843,7 +4841,7 @@ var_create_assign(
     else {
         if (expr->type == EXPRESSION_VAL) {
             thecl_param_t* param = expr->value;
-            const expr_t* expr_load = expr_get_by_symbol(state->version, param->stack == 3 ? PLOAD : LOAD);
+            const expr_t* expr_load = expr_get_by_symbol(state->version, param->val_type == PARAM_POINTER ? PLOAD : LOAD);
             instr_add(state, state->current_sub, instr_new(state, expr_load->id, "p", param));
         } else {
             expression_output(state, expr);
@@ -4955,7 +4953,7 @@ var_assign(
     }
     const expr_t* expr = expr_get_by_id(state->version, expr_assign->id);
     thecl_param_t* src_param = expr != NULL && expr->is_unary ? ((expression_t*)list_head(&expr_assign->children))->value : NULL;
-    if (param->stack == 1 && src_param && src_param->value.val.S == 0x1F && src_param->stack == 1 && src_param->object_link == 0) {
+    if (param->val_type == PARAM_FIELD && src_param && src_param->value.val.S == 0x1F && src_param->val_type == PARAM_FIELD && src_param->object_link == 0) {
         src_param->value.val.S = param->value.val.S;
         src_param->object_link = param->object_link;
         if (param->object_link == -1 && param->value.val.S >= 3) {
@@ -4971,7 +4969,7 @@ var_assign(
     }
     else if (expr && expr->symbol == MOVC
     && ((expression_t*)expr_assign->children.tail->data)->value->value.val.S == 0x1F
-    && param->stack == 1 && param->object_link == 0 && param->value.val.S >= 0 && param->value.val.S <= 0x3F) {
+    && param->val_type == PARAM_FIELD && param->object_link == 0 && param->value.val.S >= 0 && param->value.val.S <= 0x3F) {
         ((expression_t*)expr_assign->children.tail->data)->value->value.val.S = param->value.val.S;
         param_free(param);
         expression_output(state, expr_assign);
@@ -4991,15 +4989,15 @@ var_assign(
         }
     }
     else {
-        if (expr_assign->type == EXPRESSION_VAL && (param->stack == 1 || (param->stack == 2 && !expr->is_unary))) {
+        if (expr_assign->type == EXPRESSION_VAL && (param->val_type == PARAM_FIELD || (param->val_type == PARAM_GLOBAL && !expr->is_unary))) {
             src_param = expr_assign->value;
         } else {
             expression_output(state, expr_assign);
             src_param = param_sp_new();
         }
         expression_free(expr_assign);
-        if (param->stack == 1) {
-            expr = expr_get_by_symbol(state->version, src_param->stack == 3 ? PASSIGN : ASSIGN);
+        if (param->val_type == PARAM_FIELD) {
+            expr = expr_get_by_symbol(state->version, src_param->val_type == PARAM_POINTER ? PASSIGN : ASSIGN);
 
             instr_add(state, state->current_sub, instr_new(state, expr->id, "pp", param, src_param));
 
@@ -5009,7 +5007,7 @@ var_assign(
             else if (param->object_link == -1 && param->value.val.S < 0) {
                 state->current_sub->args[-param->value.val.S - 1]->is_written = true;
             }
-        } else if (param->stack == 2) { /* WGL */
+        } else if (param->val_type == PARAM_GLOBAL) { /* WGL */
             expr = expr_get_by_symbol(state->version, GASSIGN);
 
             instr_add(state, state->current_sub, instr_new(state, expr->id, "Sp", param->value.val.S, src_param));
@@ -5027,7 +5025,7 @@ var_shorthand_assign(
     /* Can't use the same param twice, so a copy is created. */
     expression_t* expr_main = EXPR_2(EXPR, expression_load_new(state, param_copy(param)), expr_assign);
     if (state->current_sub->is_inline) {
-        if (param->stack == 1 && param->object_link == -1 && param->value.val.S < 0) {
+        if (param->val_type == PARAM_FIELD && param->object_link == -1 && param->value.val.S < 0) {
             yyerror(state, "inline subs cannot write to their arguments");
             exit(2);
         }
@@ -5038,7 +5036,7 @@ var_shorthand_assign(
     expression_free(expr_main);
     /* expr_main will free recursively. */
 
-    if (param->stack == 1) {
+    if (param->val_type == PARAM_FIELD) {
         if (param->object_link == -1 && param->value.val.S >= 3) {
             state->current_sub->vars[param->value.val.S - 3]->is_written = true;
         }
@@ -5050,11 +5048,11 @@ var_shorthand_assign(
         mips_instr_new_store(state, param);
     }
     else {
-        if (param->stack == 1) {
+        if (param->val_type == PARAM_FIELD) {
             const expr_t* expr = expr_get_by_symbol(state->version, ASSIGN);
 
             instr_add(state, state->current_sub, instr_new(state, expr->id, "pp", param, param_sp_new()));
-        } else if (param->stack == 2) { /* WGL */
+        } else if (param->val_type == PARAM_GLOBAL) { /* WGL */
             const expr_t* expr = expr_get_by_symbol(state->version, GASSIGN);
 
             instr_add(state, state->current_sub, instr_new(state, expr->id, "Sp", param->value.val.S, param_sp_new()));
@@ -5068,7 +5066,7 @@ mips_instr_new_store(
     thecl_param_t* value)
 {
     verify_reg_load(state, &state->top_reg, NULL);
-    if (value->stack == 1) { /* object field, stack */
+    if (value->val_type == PARAM_FIELD) { /* object field, stack */
         if (value->object_link == 0) { /* object field */
             instr_add_delay_slot(state, state->current_sub, MIPS_INSTR_I("sw", value->value.val.S * 4 + get_obj_proc_offset(state->version), state->top_reg->index, get_reg(state->reg_block, "s0")->index));
         }
@@ -5088,7 +5086,7 @@ mips_instr_new_store(
             instr_add_delay_slot(state, state->current_sub, MIPS_INSTR_I("sw", value->value.val.S * 4, state->top_reg->index, get_reg(state->reg_block, "s7")->index));
         }
     }
-    else if (value->stack == 2) { /* global */
+    else if (value->val_type == PARAM_GLOBAL) { /* global */
         mips_reg_t* reg = get_usable_reg(state->reg_block);
         if (reg) {
             instr_add_delay_slot(state, state->current_sub, MIPS_INSTR_I("lw", 0x58, reg->index, get_reg(state->reg_block, "s8")->index));
@@ -5252,19 +5250,9 @@ static thecl_param_t*
 param_sp_new(void)
 {
     thecl_param_t* param_sp = param_new('S');
-    param_sp->stack = 1;
+    param_sp->val_type = PARAM_FIELD;
     param_sp->object_link = 0;
     param_sp->value.val.S = 0x1F;
-    return param_sp;
-}
-
-static thecl_param_t*
-param_null_new(void)
-{
-    thecl_param_t* param_sp = param_new('S');
-    param_sp->stack = 1;
-    param_sp->object_link = -2;
-    param_sp->value.val.S = 0;
     return param_sp;
 }
 
@@ -5272,7 +5260,7 @@ static thecl_param_t*
 param_sp2_new(void)
 {
     thecl_param_t* param_sp = param_new('S');
-    param_sp->stack = 1;
+    param_sp->val_type = PARAM_FIELD;
     param_sp->object_link = -2;
     param_sp->value.val.S = 1;
     return param_sp;

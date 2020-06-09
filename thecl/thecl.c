@@ -358,7 +358,7 @@ param_new(
     param->value.type = type;
     param->is_expression_param = 0;
     param->object_link = -1;
-    param->stack = 0;
+    param->val_type = PARAM_LITERAL;
     return param;
 }
 
@@ -398,7 +398,7 @@ param_var_new(
     thecl_param_t* param = param_new('S');
     param->value.val.S = field_get(var)->offset;
     param->object_link = 0;
-    param->stack = 1;
+    param->val_type = PARAM_FIELD;
     return param;
 }
 
@@ -408,7 +408,7 @@ param_null_new(
 {
     thecl_param_t* param = param_new('S');
     param->value.val.S = 0;
-    param->stack = 1;
+    param->val_type = PARAM_FIELD;
     param->object_link = -2;
     return param;
 }

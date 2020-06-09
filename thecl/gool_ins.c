@@ -66,7 +66,7 @@ c1_gool_ins_anim_params(
     if (c == 1) {
         param = list_head(params);
 
-        if (!param->stack) {
+        if (param->val_type == PARAM_LITERAL) {
             param->value.val.S <<= 8;
         }
 
@@ -588,30 +588,18 @@ c1_gool_ins_soundcheck_params(
     thecl_param_t* param;
     size_t c = list_count(params);
     if (c == 0) {
-        param = param_new('S');
-        param->value.val.S = 0;
-        param->stack = 1;
-        param->object_link = -2;
-        list_prepend_new(params, param);
+        list_prepend_new(params, param_null_new());
         list_append_new(params, param_val_new(0));
         list_append_new(params, param_val_new(0));
         list_append_new(params, param_val_new(13));
     }
     else if (c == 1) {
-        param = param_new('S');
-        param->value.val.S = 0;
-        param->stack = 1;
-        param->object_link = -2;
-        list_prepend_new(params, param);
+        list_prepend_new(params, param_null_new());
         list_append_new(params, param_val_new(0));
         list_append_new(params, param_val_new(13));
     }
     else if (c == 2) {
-        param = param_new('S');
-        param->value.val.S = 0;
-        param->stack = 1;
-        param->object_link = -2;
-        list_prepend_new(params, param);
+        list_prepend_new(params, param_null_new());
         list_append_new(params, param_val_new(13));
     }
     else {
@@ -813,11 +801,7 @@ c1_gool_ins_savecheckpoint_params(
     thecl_param_t* param;
     size_t c = list_count(params);
     if (c == 0) {
-        param = param_new('S');
-        param->value.val.S = 0;
-        param->stack = 1;
-        param->object_link = -2;
-        list_append_new(params, param);
+        list_append_new(params, param_null_new);
         list_append_new(params, param_val_new(5));
         list_append_new(params, param_val_new(0));
         list_append_new(params, param_val_new(12));
@@ -837,11 +821,7 @@ c1_gool_ins_loadcheckpoint_params(
     thecl_param_t* param;
     size_t c = list_count(params);
     if (c == 0) {
-        param = param_new('S');
-        param->value.val.S = 0;
-        param->stack = 1;
-        param->object_link = -2;
-        list_append_new(params, param);
+        list_append_new(params, param_null_new());
         list_append_new(params, param_val_new(5));
         list_append_new(params, param_val_new(1));
         list_append_new(params, param_val_new(12));
@@ -970,11 +950,7 @@ c1_gool_ins_soundstop_params(
     thecl_param_t* param;
     size_t c = list_count(params);
     if (c == 0) {
-        param = param_new('S');
-        param->value.val.S = 0;
-        param->stack = 1;
-        param->object_link = -2;
-        list_append_new(params, param);
+        list_append_new(params, param_null_new());
         list_append_new(params, param_val_new(5));
         list_append_new(params, param_val_new(5));
         list_append_new(params, param_val_new(12));

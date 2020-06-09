@@ -51,10 +51,19 @@ typedef enum {
     THECL_INSTR_LABEL
 } thecl_instr_type;
 
+typedef enum {
+    PARAM_LITERAL = 0,
+    PARAM_FIELD,
+    PARAM_GLOBAL,
+    PARAM_POINTER,
+    PARAM_COLOR,
+    PARAM_SPEC
+} gooc_value_type;
+
 typedef struct thecl_param_t {
     int type;
     value_t value;
-    int stack; /* Determines if value is a literal or a variable */
+    gooc_value_type val_type;
     char object_link;
     char is_expression_param; /* Temporary variable for ecsparse.y */
 } thecl_param_t;

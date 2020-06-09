@@ -535,7 +535,7 @@ c1_instr_serialize(
         int bits = total_bits;
         int val = 0;
         if (op == 'R') {
-            if (param->stack) {
+            if (param->val_type != PARAM_LITERAL) {
                 if (param->object_link == 0) {
                     val = c1_make_ref_reg(p); /* reg ref */
                 }
@@ -1046,7 +1046,7 @@ c2_instr_serialize(
         int bits = total_bits;
         int val = 0;
         if (op == 'R') {
-            if (param->stack) {
+            if (param->val_type != PARAM_LITERAL) {
                 if (param->object_link == 0) {
                     val = c1_make_ref_reg(p); /* reg ref */
                 }
