@@ -370,7 +370,6 @@ int yydebug = 0;
 
 %type <list> Address_List
 %type <list> Expression_List
-%type <list> Instruction_Parameters_List
 %type <list> Instruction_Parameters
 %type <list> ParenExpressionList
 %type <list> ParenExpressionListNoScope
@@ -2136,16 +2135,12 @@ Address_List:
     ;
 
 Instruction_Parameters:
-    %empty { $$ = NULL; }
-    | Instruction_Parameters_List
-    ;
-
-Instruction_Parameters_List:
-      Instruction_Parameter {
+      %empty { $$ = NULL; }
+    | Instruction_Parameter {
         $$ = list_new();
         list_append_new($$, $1);
       }
-    | Instruction_Parameters_List "," Instruction_Parameter {
+    | Instruction_Parameters "," Instruction_Parameter {
         $$ = $1;
         list_append_new($$, $3);
       }
