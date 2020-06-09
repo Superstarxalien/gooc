@@ -4552,17 +4552,6 @@ sub_finish(
     }
 
     if (state->current_sub->is_inline) {
-        thecl_instr_t* last_ins = state->current_sub->last_ins;
-        const expr_t* tmp = expr_get_by_symbol(state->version, GOTO);
-        if (last_ins != NULL && last_ins->id == tmp->id && ((thecl_param_t*)last_ins->params.tail->data)->value.val.S == 2) {
-            thecl_param_t* label_param = list_head(&last_ins->params);
-            if (strcmp(label_param->value.val.z, "inline_end") == 0) {
-                /* Remove useless goto. */
-                list_del_tail(&state->current_sub->instrs);
-                --state->current_sub->offset;
-                thecl_instr_free(last_ins);
-            }
-        }
         label_create(state, "inline_end");
         scope_finish(state, false);
     }
