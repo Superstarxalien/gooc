@@ -93,8 +93,9 @@ static void instr_add_delay_slot(parser_state_t* state, thecl_sub_t* sub, thecl_
 static void instr_del(parser_state_t* state, thecl_sub_t* sub, thecl_instr_t* instr);
 static void instr_prepend(thecl_sub_t* sub, thecl_instr_t* instr);
 /* Returns true if the created call was inline. */
-static bool instr_create_call(parser_state_t *state, uint8_t type, char *name, list_t *params);
-/*static bool instr_create_inline_call(parser_state_t *state, thecl_sub_t *sub, list_t *params);*/
+static void instr_create_call(parser_state_t *state, uint8_t type, char *name, list_t *params);
+static void instr_create_inline_call(parser_state_t *state, thecl_sub_t *sub, list_t *params);
+static void instr_create_gool_ins(parser_state_t *state, const gool_ins_t *gool_ins, list_t *params);
 
 static expression_t* expression_load_new(const parser_state_t* state, thecl_param_t* value);
 static expression_t* expression_val_new(const parser_state_t* state, int value);
@@ -227,6 +228,7 @@ int yydebug = 0;
 }
 
 %token <string> IDENTIFIER "identifier"
+%token <string> IDENTIFIER_EXPRLIST "identifier exprlist"
 %token <string> MACRO "macro"
 %token <string> TEXT "text"
 %token <integer> INTEGER "integer"
@@ -433,7 +435,7 @@ Statement:
         }
         free($3);
       }
-      "(" ArgumentDeclaration ")" Subroutine_Body {
+      "(" ArgumentDeclaration ")" Inline_Subroutine_Body {
         sub_finish(state);
       }
     | "state" IDENTIFIER {
@@ -703,6 +705,12 @@ Subroutine_Modifier:
 
 Subroutine_Body:
       "{" Instructions "}" {
+        state->current_sub->forward_declaration = false;
+      }
+    ;
+
+Inline_Subroutine_Body:
+      "{" Inline_Instructions "}" {
         state->current_sub->forward_declaration = false;
       }
     ;
@@ -1190,6 +1198,16 @@ Instructions:
     }
     ;
 
+Inline_Instructions:
+    %empty
+    /*| Inline_Instructions IDENTIFIER ":" { label_create(state, $2); free($2); }*/
+    | Inline_Instructions Inline_Instruction
+    | Inline_Instructions Inline_Block
+    | Inline_Instructions DIRECTIVE {
+        free($2);
+    }
+    ;
+
 ParenExpressionList:
       "(" { scope_begin(state); } Expression_List[list] ")"
         { $$ = $list; }
@@ -1211,6 +1229,13 @@ Block:
     | MipsBlock
     ;
 
+Inline_Block:
+      Inline_IfBlock
+    | Inline_WhileBlock
+    | Inline_CodeBlock
+    | Inline_SaveBlock
+    ;
+
 MipsBlock:
     "mips" {
         if (is_post_c2(state->version)) {
@@ -1227,6 +1252,7 @@ MipsBlock:
     } CodeBlock {
         state->mips_mode = false;
     }
+    ;
 
 SaveBlock:
     "save" "(" Address_List ")" {
@@ -1265,6 +1291,15 @@ SaveBlock:
             list_del_tail(&state->addresses);
         }
     }
+    ;
+
+Inline_SaveBlock:
+    "save" "(" Address_List ")" {
+        list_append_new(&state->current_sub->lines, line_make_save_start($3));
+    } CodeBlock {
+        list_append_new(&state->current_sub->lines, line_make_save_end());
+    }
+    ;
 
 OnceBlock:
     "once" {
@@ -1304,49 +1339,11 @@ CodeBlock:
     | Instruction ";"
     ;
 
-ContinueStatement:
-      "continue" {
-          list_node_t *head = state->block_stack.head;
-          for(; head; head = head->next) {
-              if (
-                  strncmp(head->data, "do", 2) == 0 ||
-                  strncmp(head->data, "while", 5) == 0 ||
-                  strncmp(head->data, "until", 5) == 0
-              ) {
-                  char labelstr[256];
-                  snprintf(labelstr, 256, "%s_continue", (char*)head->data);
-                  expression_create_goto(state, GOTO, labelstr, NULL);
-                  break;
-              }
-          }
-          if(!head) {
-              yyerror(state, "continue not within while or until");
-              g_was_error = true;
-          }
-      }
-      ;
-
-BreakStatement:
-      "break" {
-          list_node_t *head = state->block_stack.head;
-          for(; head; head = head->next) {
-              if (
-                  strncmp(head->data, "do", 2) == 0 ||
-                  strncmp(head->data, "while", 5) == 0 ||
-                  strncmp(head->data, "until", 5) == 0
-              ) {
-                  char labelstr[256];
-                  snprintf(labelstr, 256, "%s_end", (char*)head->data);
-                  expression_create_goto(state, GOTO, labelstr, NULL);
-                  break;
-              }
-          }
-          if(!head) {
-              yyerror(state, "break not within while or until");
-              g_was_error = true;
-          }
-      }
-      ;
+Inline_CodeBlock:
+    "{" { scope_begin(state); }
+      Inline_Instructions "}" { scope_finish(state, true); }
+    | Inline_Instruction ";"
+    ;
 
 IfBlock:
       "unless" ParenExpressionList[cond] {
@@ -1394,7 +1391,7 @@ IfBlock:
           list_del(&state->block_stack, head);
           scope_finish(state, true);
       }
-      ;
+    ;
 
 ElseBlock:
     %empty
@@ -1418,7 +1415,7 @@ ElseBlock:
           list_del(&state->block_stack, head);
           list_prepend_new(&state->block_stack, strdup(labelstr));
     } IfBlock
-      ;
+    ;
 
 WhileBlock:
       "while" ParenExpressionList[cond] {
@@ -1654,246 +1651,405 @@ DoBlock:
     }
     ;
 
+Inline_IfBlock:
+      "unless" ParenExpressionList[cond] {
+          if ($cond == NULL) {
+              yyerror(state, "warning: empty conditional");
+              break;
+          }
+          char labelstr[256];
+          snprintf(labelstr, 256, "unless_%i_%i", yylloc.first_line, yylloc.first_column);
+          list_prepend_new(&state->block_stack, strdup(labelstr));
+          expression_t* expr;
+          list_for_each($cond, expr) {
+              expression_create_goto(state, IF, labelstr, expr);
+              expression_free(expr);
+          }
+          list_free_nodes($cond);
+          free($cond);
+      } Inline_CodeBlock Inline_ElseBlock {
+          list_node_t *head = state->block_stack.head;
+          label_create(state, head->data);
+          state->block_stack.head = head->next;
+          free(head->data);
+          list_del(&state->block_stack, head);
+          scope_finish(state, true);
+        }
+    | "if" ParenExpressionList[cond] {
+          if ($cond == NULL) {
+              yyerror(state, "warning: empty conditional");
+              break;
+          }
+          char labelstr[256];
+          snprintf(labelstr, 256, "if_%i_%i", yylloc.first_line, yylloc.first_column);
+          list_prepend_new(&state->block_stack, strdup(labelstr));
+          expression_t* expr;
+          list_for_each($cond, expr) {
+              expression_create_goto(state, UNLESS, labelstr, expr);
+              expression_free(expr);
+          }
+          list_free_nodes($cond);
+          free($cond);
+      } Inline_CodeBlock Inline_ElseBlock {
+          list_node_t *head = state->block_stack.head;
+          label_create(state, head->data);
+          free(head->data);
+          list_del(&state->block_stack, head);
+          scope_finish(state, true);
+      }
+    ;
+
+Inline_ElseBlock:
+    %empty
+    | "else"  {
+          char labelstr[256];
+          snprintf(labelstr, 256, "if_%i_%i", yylloc.first_line, yylloc.first_column);
+          expression_create_goto(state, GOTO, labelstr, NULL);
+          list_node_t *head = state->block_stack.head;
+          label_create(state, head->data);
+          free(head->data);
+          list_del(&state->block_stack, head);
+          list_prepend_new(&state->block_stack, strdup(labelstr));
+    } Inline_CodeBlock
+    | "else" {
+          char labelstr[256];
+          snprintf(labelstr, 256, "if_%i_%i", yylloc.first_line, yylloc.first_column);
+          expression_create_goto(state, GOTO, labelstr, NULL);
+          list_node_t *head = state->block_stack.head;
+          label_create(state, head->data);
+          free(head->data);
+          list_del(&state->block_stack, head);
+          list_prepend_new(&state->block_stack, strdup(labelstr));
+    } Inline_IfBlock
+    ;
+
+Inline_WhileBlock:
+      "while" ParenExpressionList[cond] {
+          if ($cond == NULL) {
+              yyerror(state, "warning: empty conditional");
+              break;
+          }
+          expression_t* expr;
+          list_node_t *node, *next;
+          list_for_each_node_safe($cond, node, next) {
+              expr = node->data;
+              if (expr->type == EXPRESSION_VAL && !expr->value->stack && !expr->value->value.val.S) {
+                  expression_free(expr);
+                  list_del($cond, node);
+              }
+              else {
+                  break;
+              }
+          }
+          if (list_empty($cond)) {
+              free($cond);
+              ++state->ignore_block;
+              break;
+          }
+
+          char labelstr[256];
+          snprintf(labelstr, 256, "while_%i_%i", yylloc.first_line, yylloc.first_column);
+          char labelstr_st[256];
+          char labelstr_end[256];
+          char labelstr_continue[256];
+          snprintf(labelstr_st, 256, "%s_st", (char*)labelstr);
+          snprintf(labelstr_end, 256, "%s_end", (char*)labelstr);
+          snprintf(labelstr_continue, 256, "%s_continue", (char*)labelstr);
+
+          expression_create_goto(state, GOTO, labelstr_continue, NULL);
+          label_create(state, labelstr_st);
+
+          list_prepend_new(&state->block_stack, strdup(labelstr));
+      } Inline_CodeBlock {
+          if (state->ignore_block) {
+              --state->ignore_block;
+              scope_finish(state, true);
+              break;
+          }
+          char labelstr_st[256];
+          char labelstr_end[256];
+          char labelstr_continue[256];
+          list_node_t *head = state->block_stack.head;
+          snprintf(labelstr_st, 256, "%s_st", (char*)head->data);
+          snprintf(labelstr_end, 256, "%s_end", (char*)head->data);
+          snprintf(labelstr_continue, 256, "%s_continue", (char*)head->data);
+
+          label_create(state, labelstr_continue);
+          expression_t* expr;
+          if (list_count($cond) == 1) {
+              expr = list_head($cond);
+              expression_create_goto(state, IF, labelstr_st, expr);
+              expression_free(expr);
+          }
+          else {
+              list_for_each($cond, expr) {
+                  expression_create_goto(state, UNLESS, labelstr_end, expr);
+                  expression_free(expr);
+              }
+              expression_create_goto(state, GOTO, labelstr_st, NULL);
+          }
+          list_free_nodes($cond);
+          label_create(state, labelstr_end);
+
+          free(head->data);
+          list_del(&state->block_stack, head);
+          scope_finish(state, true);
+      }
+    | "until" ParenExpressionList[cond] {
+          if ($cond == NULL) {
+              yyerror(state, "warning: empty conditional");
+              break;
+          }
+          expression_t* expr;
+          list_node_t *node, *next;
+          list_for_each_node_safe($cond, node, next) {
+              expr = node->data;
+              if (expr->type == EXPRESSION_VAL && !expr->value->stack && expr->value->value.val.S) {
+                  expression_free(expr);
+                  list_del($cond, node);
+              }
+              else {
+                  break;
+              }
+          }
+          if (list_empty($cond)) {
+              free($cond);
+              ++state->ignore_block;
+              break;
+          }
+
+          char labelstr[256];
+          snprintf(labelstr, 256, "until_%i_%i", yylloc.first_line, yylloc.first_column);
+          char labelstr_st[256];
+          char labelstr_end[256];
+          char labelstr_continue[256];
+          snprintf(labelstr_st, 256, "%s_st", (char*)labelstr);
+          snprintf(labelstr_end, 256, "%s_end", (char*)labelstr);
+          snprintf(labelstr_continue, 256, "%s_continue", (char*)labelstr);
+
+          expression_create_goto(state, GOTO, labelstr_continue, NULL);
+          label_create(state, labelstr_st);
+
+          list_prepend_new(&state->block_stack, strdup(labelstr));
+      } Inline_CodeBlock {
+          if (state->ignore_block) {
+              --state->ignore_block;
+              break;
+          }
+          char labelstr_st[256];
+          char labelstr_end[256];
+          char labelstr_continue[256];
+          list_node_t *head = state->block_stack.head;
+          snprintf(labelstr_st, 256, "%s_st", (char*)head->data);
+          snprintf(labelstr_end, 256, "%s_end", (char*)head->data);
+          snprintf(labelstr_continue, 256, "%s_continue", (char*)head->data);
+
+          label_create(state, labelstr_continue);
+          expression_t* expr;
+          if (list_count($cond) == 1) {
+              expr = list_head($cond);
+              expression_create_goto(state, UNLESS, labelstr_st, expr);
+              expression_free(expr);
+          }
+          else {
+              list_for_each($cond, expr) {
+                  expression_create_goto(state, IF, labelstr_end, expr);
+                  expression_free(expr);
+              }
+              expression_create_goto(state, GOTO, labelstr_st, NULL);
+          }
+          list_free_nodes($cond);
+          label_create(state, labelstr_end);
+
+          free(head->data);
+          list_del(&state->block_stack, head);
+          scope_finish(state, true);
+      }
+    | "do" {
+          char labelstr[256];
+          snprintf(labelstr, 256, "do_%i_%i", yylloc.first_line, yylloc.first_column);
+          char labelstr_st[256];
+          char labelstr_end[256];
+          snprintf(labelstr_st, 256, "%s_st", (char*)labelstr);
+          snprintf(labelstr_end, 256, "%s_end", (char*)labelstr);
+
+          list_prepend_new(&state->block_stack, strdup(labelstr));
+          label_create(state, labelstr_st);
+    } Inline_DoBlock
+    | "do" "(" { scope_begin(state); } VarDeclaration ")" {
+          char labelstr[256];
+          snprintf(labelstr, 256, "do_%i_%i", yylloc.first_line, yylloc.first_column);
+          char labelstr_st[256];
+          char labelstr_end[256];
+          snprintf(labelstr_st, 256, "%s_st", (char*)labelstr);
+          snprintf(labelstr_end, 256, "%s_end", (char*)labelstr);
+
+          list_prepend_new(&state->block_stack, strdup(labelstr));
+          label_create(state, labelstr_st);
+    } Inline_DoBlock { scope_finish(state, true); }
+    ;
+Inline_DoBlock:
+      Inline_CodeBlock "while" ParenExpressionListNoScope[cond]  {
+          if ($cond == NULL) {
+              yyerror(state, "warning: empty conditional");
+              break;
+          }
+          char labelstr_st[256];
+          char labelstr_end[256];
+          char labelstr_continue[256];
+          list_node_t *head = state->block_stack.head;
+          snprintf(labelstr_st, 256, "%s_st", (char*)head->data);
+          snprintf(labelstr_end, 256, "%s_end", (char*)head->data);
+          snprintf(labelstr_continue, 256, "%s_continue", (char*)head->data);
+
+          label_create(state, labelstr_continue);
+          expression_t* expr;
+          if (list_count($cond) == 1) {
+              expr = list_head($cond);
+              expression_create_goto(state, IF, labelstr_st, expr);
+              expression_free(expr);
+          }
+          else {
+              list_for_each($cond, expr) {
+                  expression_create_goto(state, UNLESS, labelstr_end, expr);
+                  expression_free(expr);
+              }
+              expression_create_goto(state, GOTO, labelstr_st, NULL);
+          }
+          list_free_nodes($cond);
+          label_create(state, labelstr_end);
+
+          free(head->data);
+          list_del(&state->block_stack, head);
+    }
+    | Inline_CodeBlock "until" ParenExpressionListNoScope[cond]  {
+          if ($cond == NULL) {
+              yyerror(state, "warning: empty conditional");
+              break;
+          }
+          char labelstr_st[256];
+          char labelstr_end[256];
+          char labelstr_continue[256];
+          list_node_t *head = state->block_stack.head;
+          snprintf(labelstr_st, 256, "%s_st", (char*)head->data);
+          snprintf(labelstr_end, 256, "%s_end", (char*)head->data);
+          snprintf(labelstr_continue, 256, "%s_continue", (char*)head->data);
+
+          label_create(state, labelstr_continue);
+          expression_t* expr;
+          if (list_count($cond) == 1) {
+              expr = list_head($cond);
+              expression_create_goto(state, UNLESS, labelstr_st, expr);
+              expression_free(expr);
+          }
+          else {
+              list_for_each($cond, expr) {
+                  expression_create_goto(state, IF, labelstr_end, expr);
+                  expression_free(expr);
+              }
+              expression_create_goto(state, GOTO, labelstr_st, NULL);
+          }
+          list_free_nodes($cond);
+          label_create(state, labelstr_end);
+
+          free(head->data);
+          list_del(&state->block_stack, head);
+    }
+    ;
+
 Instruction:
-      IDENTIFIER "(" Instruction_Parameters ")" {
-        const gool_ins_t* gool_ins = gool_ins_get_by_name(state->version, $1);
-        if (gool_ins) {
-            if (gool_ins->varargs != 0) {
-                list_t* param_list = list_new();
-                list_t* arg_list = list_new();
-
-                int argc = gool_ins->varargs;
-                if ($3 != NULL) {
-                    list_node_t* node, *next_node;
-                    list_for_each_node_safe($3, node, next_node) {
-                        if (argc-- > 0)
-                            list_append_new(param_list, node->data);
-                        else if (gool_ins->reverse_args)
-                            list_prepend_new(arg_list, node->data);
-                        else
-                            list_append_new(arg_list, node->data);
+      IDENTIFIER_EXPRLIST "(" Expression_List ")" {
+        /* Inline subs may be overloaded. */
+        size_t param_count = $3 ? list_count($3) : 0;
+        thecl_sub_t* sub;
+        list_for_each(&state->main_ecl->subs, sub) {
+            if (sub->is_inline && !strcmp(sub->name, $1) && sub->arg_count == param_count) {
+                instr_create_inline_call(state, sub, $3);
+                if ($3) {
+                    expression_t* e;
+                    list_for_each($3, e) {
+                        expression_free(e);
                     }
+                    list_free_nodes($3);
+                    free($3);
                 }
-
-                thecl_param_t* param;
-                expression_t* late_expr = NULL;
-                thecl_param_t* late_param = NULL;
-                if (gool_ins->late_param >= 0) {
-                    int i = 0;
-                    list_node_t* e = state->expressions.tail;
-                    list_for_each(param_list, param) {
-                        if (i++ == gool_ins->late_param && param->is_expression_param) {
-                            late_expr = e->data;
-                            late_param = param;
-                            list_del(&state->expressions, e);
-                            break;
-                        }
-                        else if (i - 1 == gool_ins->late_param) {
-                            late_param = param;
-                            break;
-                        }
-                        else if (param->is_expression_param) {
-                            e = e->prev;
-                        }
-                    }
-                }
-
-                list_node_t* expr_node;
-                if (gool_ins->reverse_args)
-                    expr_node = state->expressions.head;
-                else
-                    expr_node = state->expressions.tail;
-
-                if (!gool_ins->reverse_args) {
-                    list_for_each(param_list, param) {
-                        if (param->is_expression_param && param != late_param) {
-                            expression_t* expression = expr_node->data;
-                            expression_output(state, expression);
-                            if (state->top_reg) {
-                                instr_add_delay_slot(state, state->current_sub, MIPS_INSTR_I("sw", state->stack_adjust, state->top_reg->index, get_reg(state->reg_block, "s6")->index));
-                                state->stack_adjust += 4;
-                            }
-                            expression_free(expression);
-                            if (gool_ins->reverse_args) {
-                                expr_node = expr_node->next;
-                            }
-                            else {
-                                expr_node = expr_node->prev;
-                            }
-                        }
-                    }
-                }
-                list_for_each(arg_list, param) {
-                    if (!(param->stack && param->object_link == 0 && param->value.val.S == 0x1F)) { /* argument is already on the stack */
-                        if (param->stack == 3) {
-                            const expr_t* expr = expr_get_by_symbol(state->version, PLOAD);
-                            instr_add(state, state->current_sub, instr_new(state, expr->id, "p", param));
-                        }
-                        else {
-                            if (state->mips_mode) {
-                                expression_t* expression = expression_load_new(state, param);
-                                expression_output(state, expression);
-                                if (state->top_reg) {
-                                    instr_add_delay_slot(state, state->current_sub, MIPS_INSTR_I("sw", state->stack_adjust, state->top_reg->index, get_reg(state->reg_block, "s6")->index));
-                                    state->stack_adjust += 4;
-                                }
-                                expression_free(expression);
-                            }
-                            else {
-                                const expr_t* expr = expr_get_by_symbol(state->version, LOAD);
-                                instr_add(state, state->current_sub, instr_new(state, expr->id, "p", param));
-                            }
-                        }
-                    }
-                    else if (param->is_expression_param) {
-                        expression_t* expression = expr_node->data;
-                        expression_output(state, expression);
-                        if (state->top_reg) {
-                            instr_add_delay_slot(state, state->current_sub, MIPS_INSTR_I("sw", state->stack_adjust, state->top_reg->index, get_reg(state->reg_block, "s6")->index));
-                            state->stack_adjust += 4;
-                        }
-                        expression_free(expression);
-                        if (gool_ins->reverse_args) {
-                            expr_node = expr_node->next;
-                        }
-                        else {
-                            expr_node = expr_node->prev;
-                        }
-                    }
-                }
-                if (gool_ins->reverse_args) {
-                    list_for_each(param_list, param) {
-                        if (param->is_expression_param) {
-                            expression_t* expression = expr_node->data;
-                            expression_output(state, expression);
-                            if (state->top_reg) {
-                                instr_add_delay_slot(state, state->current_sub, MIPS_INSTR_I("sw", state->stack_adjust, state->top_reg->index, get_reg(state->reg_block, "s6")->index));
-                                state->stack_adjust += 4;
-                            }
-                            expression_free(expression);
-                            if (gool_ins->reverse_args) {
-                                expr_node = expr_node->next;
-                            }
-                            else {
-                                expr_node = expr_node->prev;
-                            }
-                        }
-                    }
-                }
-                list_free_nodes(&state->expressions);
-
-                if (late_param) {
-                    if ((late_expr && late_expr->type != EXPRESSION_VAL) || (late_param->stack == 1 && late_param->object_link != 0) || (late_param->stack == 0 && late_param->object_link != -1) || (late_param->stack != 0 && late_param->stack != 1) || late_param->value.val.S < 0 || late_param->value.val.S > 0x3F) {
-                        if (late_expr) {
-                            expression_output(state, late_expr);
-                            if (state->top_reg) {
-                                instr_add_delay_slot(state, state->current_sub, MIPS_INSTR_I("sw", state->stack_adjust, state->top_reg->index, get_reg(state->reg_block, "s6")->index));
-                                state->stack_adjust += 4;
-                            }
-                            expression_free(late_expr);
-                        }
-                        late_param->stack = 1;
-                        late_param->object_link = 0;
-                        late_param->value.val.S = 0x1F;
-                    }
-                }
-
-                instr_add(state, state->current_sub, instr_new_list(state, gool_ins->id, gool_ins->param_list_validate(param_list, list_count(arg_list))));
-
-                if (gool_ins->pop_args) {
-                    if (argc = list_count(arg_list)) {
-                        if (state->mips_mode) {
-                            state->stack_adjust -= argc * 4;
-                            mips_stack_adjust(state, state->current_sub);
-                        }
-                        else {
-                            instr_add(state, state->current_sub, instr_new(state, expr_get_by_symbol(state->version, GOTO)->id, "SSSSS", 0, argc, 0x25, 0, 0));
-                        }
-                    }
-                }
-
-                list_free_nodes(param_list);
-                free(param_list);
-
-                list_free_nodes(arg_list);
-                free(arg_list);
+                break;
             }
             else {
-                expression_t* expression;
-                list_for_each(&state->expressions, expression) {
-                    expression_output(state, expression);
-                    if (state->top_reg) {
-                        instr_add_delay_slot(state, state->current_sub, MIPS_INSTR_I("sw", state->stack_adjust, state->top_reg->index, get_reg(state->reg_block, "s6")->index));
-                        state->stack_adjust += 4;
-                    }
-                    expression_free(expression);
-                }
-                list_free_nodes(&state->expressions);
-
-                if (gool_ins->late_param >= 0) {
-                    thecl_param_t* param = NULL;
-                    int i = 0;
-                    list_for_each($3, param) {
-                        if (i++ == gool_ins->late_param && !param->is_expression_param) {
-                            break;
-                        }
-                        param = NULL;
-                    }
-
-                    if (param && (param->stack != 1 || param->object_link != 0 || param->value.val.S < 0 || param->value.val.S > 0x3F)) {
-                        expression_t* expression = expression_load_new(state, param);
-                        expression_output(state, expression);
-                        if (state->top_reg) {
-                            instr_add_delay_slot(state, state->current_sub, MIPS_INSTR_I("sw", state->stack_adjust, state->top_reg->index, get_reg(state->reg_block, "s6")->index));
-                            state->stack_adjust += 4;
-                        }
-                        expression_free(expression);
-                        param->stack = 1;
-                        param->object_link = 0;
-                        param->value.val.S = 0x1F;
-                    }
-                }
-                if (!$3) {
-                    $3 = list_new();
-                }
-                instr_add(state, state->current_sub, instr_new_list(state, gool_ins->id, gool_ins->param_list_validate($3, 0)));
-            }
-        }
-        else {
-            const expr_t* expr = expr_get_by_symbol(state->version, CALL);
-            instr_create_call(state, expr->id, $1, $3);
-        }
-        if ($3 != NULL) {
-            list_free_nodes($3);
-            free($3);
-        }
-      }
-    /* | "@" IDENTIFIER "(" Instruction_Parameters ")" {
-        const expr_t* expr = expr_get_by_symbol(state->version, CALL);
-        size_t param_count = $4 ? list_count($4) : 0;
-        thecl_sub_t* sub = state->current_sub;
-        list_for_each(&state->main_ecl->subs, sub) {
-            if (sub != state->current_sub && !sub->self_reference && !strcmp(sub->name, $2) && sub->arg_count == param_count) {
-                instr_create_inline_call(state, sub, $4);
                 sub = NULL;
             }
         }
-        if (sub) {
-            yyerror(state, "no valid inline call for %s", $2);
+        if (sub == NULL) {
+            yyerror(state, "inline sub '%s' not found", $1);
+            if ($3) {
+                expression_t* e;
+                list_for_each($3, e) {
+                    expression_free(e);
+                }
+                list_free_nodes($3);
+                free($3);
+            }
         }
-        free($2);
-        if ($4 != NULL) {
-            list_free_nodes($4);
-            free($4);
+        free($1);
+      }
+    | IDENTIFIER "(" Instruction_Parameters ")" {
+        const gool_ins_t* gool_ins = gool_ins_get_by_name(state->version, $1);
+        if (gool_ins) {
+            instr_create_gool_ins(state, gool_ins, $3);
         }
-      } */
+        else {
+            const expr_t* expr = expr_get_by_symbol(state->version, CALL);
+            instr_create_call(state, expr->id, strdup($1), $3);
+            if ($3 != NULL) {
+                list_free_nodes($3);
+                free($3);
+            }
+        }
+        free($1);
+      }
     /*| "goto" IDENTIFIER {
         expression_create_goto(state, GOTO, $2, NULL);
     }*/
     | Assignment
     | VarDeclaration
-    | BreakStatement
-    | ContinueStatement
+    | "break" {
+          list_node_t *head = state->block_stack.head;
+          for(; head; head = head->next) {
+              if (
+                  strncmp(head->data, "do", 2) == 0 ||
+                  strncmp(head->data, "while", 5) == 0 ||
+                  strncmp(head->data, "until", 5) == 0
+              ) {
+                  char labelstr[256];
+                  snprintf(labelstr, 256, "%s_end", (char*)head->data);
+                  expression_create_goto(state, GOTO, labelstr, NULL);
+                  break;
+              }
+          }
+          if(!head) {
+              yyerror(state, "break not within while or until");
+              g_was_error = true;
+          }
+      }
+    | "continue" {
+          list_node_t *head = state->block_stack.head;
+          for(; head; head = head->next) {
+              if (
+                  strncmp(head->data, "do", 2) == 0 ||
+                  strncmp(head->data, "while", 5) == 0 ||
+                  strncmp(head->data, "until", 5) == 0
+              ) {
+                  char labelstr[256];
+                  snprintf(labelstr, 256, "%s_continue", (char*)head->data);
+                  expression_create_goto(state, GOTO, labelstr, NULL);
+                  break;
+              }
+          }
+          if(!head) {
+              yyerror(state, "continue not within while or until");
+              g_was_error = true;
+          }
+      }
     | "return" {
         state->scope_stack[state->scope_cnt-1].returned = true;
         if (state->current_sub->is_inline)
@@ -1915,6 +2071,41 @@ Instruction:
             }
         }
     }
+    ;
+
+Inline_Instruction:
+      IDENTIFIER "(" Expression_List ")" {
+        /* Check for inline subs first. */
+        /* Inline subs may be overloaded. */
+        size_t param_count = $3 ? list_count($3) : 0;
+        thecl_sub_t* sub;
+        list_for_each(&state->main_ecl->subs, sub) {
+            if (sub->is_inline && !strcmp(sub->name, $1) && sub->arg_count == param_count) {
+                instr_create_inline_call(state, sub, $3);
+                if ($3) {
+                    expression_t* e;
+                    list_for_each($3, e) {
+                        expression_free(e);
+                    }
+                    list_free_nodes($3);
+                    free($3);
+                }
+                break;
+            }
+            else {
+                sub = NULL;
+            }
+        }
+        if (sub == NULL) {
+            list_append_new(&state->current_sub->lines, line_make_call($1, $3));
+        }
+        free($1);
+      }
+    | Assignment
+    | VarDeclaration
+    | "break" { list_append_new(&state->current_sub->lines, line_make(LINE_BREAK)); }
+    | "continue" { list_append_new(&state->current_sub->lines, line_make(LINE_CONTINUE)); }
+    | "return" { list_append_new(&state->current_sub->lines, line_make(LINE_RETURN)); }
     ;
 
 Assignment:
@@ -1942,6 +2133,7 @@ Address_List:
     %empty { $$ = NULL; }
     | Address { $$ = list_new(); list_append_new($$, $1); }
     | Address_List "," Address { $$ = $1; list_append_new($$, $3); }
+    ;
 
 Instruction_Parameters:
     %empty { $$ = NULL; }
@@ -1999,6 +2191,7 @@ Expression_List:
     %empty { $$ = NULL; }
     | Expression { $$ = list_new(); list_append_new($$, $1); }
     | Expression_List "," Expression { $$ = $1; list_append_new($$, $3); }
+    ;
 
 Expression:
       ExpressionLoadType
@@ -2769,205 +2962,297 @@ instr_copy(thecl_instr_t* instr) {
 }
 
 static void
+expression_replace_var(
+    parser_state_t* state,
+    expression_t* expression,
+    int var_stack,
+    expression_t* replace)
+{
+    list_node_t* node;
+    list_for_each_node(&expression->children, node) {
+        expression = node->data;
+        if (expression->type == EXPRESSION_VAL && expression->value->stack == 1 && expression->value->object_link == -1 && expression->value->value.val.S == var_stack) {
+            expression_free(expression);
+            node->data = expression_copy(replace);
+        }
+        else {
+            expression_replace_var(state, expression, var_stack, replace);
+        }
+    }
+}
+
+static expression_t*
+expression_replace_var_start(
+    parser_state_t* state,
+    expression_t* expression,
+    int var_stack,
+    expression_t* replace)
+{
+    if (expression->type == EXPRESSION_VAL && expression->value->stack == 1 && expression->value->object_link == -1 && expression->value->value.val.S == var_stack) {
+        expression_free(expression);
+        return expression_copy(replace); /* no point in continuing */
+    }
+
+    expression_replace_var(state, expression, var_stack, replace);
+
+    return expression;
+}
+
+static expression_t*
+inline_call_replace_params(
+    parser_state_t* state,
+    expression_t* expr,
+    list_t* params)
+{
+    expr = expression_copy(expr);
+
+    int arg_stack = -1;
+    if (params) {
+        expression_t* param_expr;
+        list_for_each_back(params, param_expr) {
+            expr = expression_replace_var_start(state, expr, arg_stack, param_expr);
+            --arg_stack;
+        }
+    }
+
+    return expr;
+}
+
+static list_t*
+expression_list_copy(
+    list_t* list)
+{
+    list_t* new_list = list_new();
+    expression_t* e;
+    list_for_each(list, e) {
+        list_append_new(new_list, expression_copy(e));
+    }
+    return new_list;
+}
+
+static void
 instr_create_inline_call(
     parser_state_t* state,
     thecl_sub_t* sub,
     list_t* params_org
 ) {
-    /*   INLINE SUBS: how do they work?
-     * Generally the main concept is that the sub that's inline gets parsed normally
-     * (with some exceptions, like the return statement jumping to the end of the sub instead)
-     * and then, when called, all insructions from the inline sub get copied into the caller,
-     * with some instr parameters being replaced by the values provided as inline sub parameters,
-     * stack variables being recreated, labels being adjusted etc.
-     *
-     * So, how do parameters actually get passed? This part is a bit tricky, since it depends from
-     * what the parameter actually is, and what the inline sub does with the parameter inside:
-     * - For example, if we pass the RAND variable as a parameter, it needs to be copied into
-     * a new variable, in order to keep the same value when being read multiple times.
-     * - On the other hand, when passing a static value, creating a variable to store it in
-     * would be a waste of time, and as such all occurences of the parameter are replaced
-     * by the static value directly instead.
-     * - When the parameter is an expression, it needs to be stored in a variable too,
-     * since 1. evaluating the expression every time would be stupid, 2. expression does
-     * not neccesairly have to result in the same value every time (thanks to variables like RAND).
-     * - But, there still is another thing to keep in mind - the parameter could be written to
-     * inside of the inline sub! In this case, creating a variable to store the parameter in
-     * is absolutely necessary. */
-
     /* An inline sub can't call itself for obvious reasons. */
     if (strcmp(sub->name, state->current_sub->name) == 0) {
         yyerror(state, "an inline sub is not allowed to call itself");
         return;
     }
-    char buf[256];
 
-    /* A new variable is created in order to know whether the list was passed or created here later. */
-    list_t* params = params_org == NULL ? list_new() : params_org;
-
-    /* Verify parameter count before doing anything else. */
-    size_t i = list_count(params);
-    thecl_param_t* param;
-    if (i > sub->arg_count) {
-        yyerror(state, "too many paramters for inline sub \"%s\"", sub->name);
-        list_for_each(params, param)
-            param_free(param);
-        return;
-    }
-    if (i < sub->arg_count) {
-        yyerror(state, "not enough parameters for inline sub \"%s\"", sub->name);
-        list_for_each(params, param)
-            param_free(param);
-        return;
-    }
-
-    /* After making sure that everything is correct, we can now create the inline sub scope. */
     scope_begin(state);
 
     /* This string will be prepended to label names/var names etc. */
-    char name[256];
+    char name[256], buf[512];
     snprintf(name, 256, "%s_%d_%d_%s_", state->current_sub->name, yylloc.first_line, yylloc.first_column, sub->name);
 
-    /* It's time to setup the param replacements.
-     * As mentioned earlier, it is necessary to create vars if the param ever
-     * gets written to, or the passed parameter is an expression.
-     * We will use a param_replace array to replace all argument variable references from the code of copied inline sub. */
-    thecl_param_t** param_replace = calloc(sub->arg_count, sizeof(thecl_param_t*));
-    thecl_variable_t* arg;
-    i = 0;
+    thecl_line_t* line;
+    list_for_each(&sub->lines, line) {
+        switch (line->type) {
+            default: yyerror(state, "invalid line type in sub '%s'", state->current_sub->name); break;
+            case LINE_ASSIGNMENT: {
+                var_assign(state, param_copy(line->ass.address), inline_call_replace_params(state, line->ass.expr, params_org));
+            } break;
+            case LINE_LABEL: {
+                snprintf(buf, 512, "%s%s", name, line->name);
+                label_create(state, buf);
+            } break;
+            case LINE_INSTRUCTION:
+            case LINE_CALL: {
+                if (state->current_sub->is_inline) {
+                    list_append_new(&state->current_sub->lines, line_make_call(line->call.name, expression_list_copy(line->call.expr_list)));
+                }
+                else {
+                    list_t* ins_params = line->call.expr_list ? list_new() : NULL;
 
-    list_for_each(params, param) { /* It has alredy been verified that param amount is correct. */
-        arg = sub->args[i];
+                    if (line->call.expr_list) {
+                        thecl_param_t* param;
+                        expression_t* expr;
+                        list_for_each(line->call.expr_list, expr) {
+                            expr = inline_call_replace_params(state, expr, params_org);
 
-        if (param->value.val.S >= 0 && (arg->is_written || param->is_expression_param || (param->stack && param->object_link == -1))) {
-            /* Non-static param value or the param is written to, need to create var. */
-            if (param->is_expression_param) {
-                expression_output(state, state->expressions.head->data);
-                expression_free(state->expressions.head->data);
-                list_del_head(&state->expressions);
-            }
+                            param = expr->value;
+                            if (expr_get_by_symbol(state->version, LOAD)->id == expr->id || expr_get_by_symbol(state->version, GLOAD)->id == expr->id) { /* Load_Type */
+                                if (param->stack == 2) {
+                                    list_prepend_new(&state->expressions, expression_copy(expr));
 
-            strcpy(buf, name);
-            strcat(buf, arg->name);
-            thecl_param_t* new_param = param_new(param->type);
-            new_param->stack = 1;
+                                    param = param_new('S');
+                                    param->stack = 1;
+                                    param->object_link = 0;
+                                    param->is_expression_param = 1;
+                                    param->value.val.S = 0x1F;
+                                }
+                                else {
+                                    param = param_copy(expr->value);
+                                }
+                            }
+                            else if (expr_get_by_symbol(state->version, PLOAD)->id == expr->id) { /* Pointer_Type */
+                                list_prepend_new(&state->expressions, expression_copy(expr));
 
-            thecl_variable_t* var = var_create_assign(state, state->current_sub, buf, expression_load_new(state, param_copy(param)));
-            new_param->value.val.S = var->stack;
-            param_replace[i] = new_param;
-        } else {
-            param_replace[i] = param_copy(param);
-        }
-        ++i;
-    }
+                                param = param_new('S');
+                                param->stack = 1;
+                                param->object_link = 0;
+                                param->is_expression_param = 1;
+                                param->value.val.S = 0x1F;
+                            }
+                            else {
+                                if (expr->type == EXPRESSION_VAL) {
+                                    param = param_copy(expr->value);
+                                } else {
+                                    list_prepend_new(&state->expressions, expression_copy(expr));
 
-    /* Create non-param variables that the inline sub uses.. */
-    thecl_variable_t** stack_replace = malloc(sizeof(thecl_variable_t*) * sub->var_count);
-    for (i = 0; i < sub->var_count; ++i) {
-        thecl_variable_t* var = sub->vars[i];
-        snprintf(buf, 256, "%s%s", name, var->name);
-        thecl_variable_t* var_new = var_create(state, state->current_sub, buf, false);
-        stack_replace[i] = var_new;
-        state->current_sub->vars = realloc(state->current_sub->vars, --state->current_sub->var_count * sizeof(thecl_variable_t*));
-    }
-
-    /* Create labels that the inline sub uses (with changed offsets) */
-    thecl_label_t* label;
-    list_for_each(&sub->labels, label) {
-        snprintf(buf, 256, "%s%s", name, label->name);
-        thecl_label_t* new_label = malloc(sizeof(thecl_label_t) + strlen(buf) + 1);
-        new_label->offset = label->offset + state->current_sub->offset;
-        strcpy(new_label->name, buf);
-        list_append_new(&state->current_sub->labels, new_label);
-    }
-
-    /* And finally, copy the instructions. */
-
-    thecl_instr_t* instr;
-    list_for_each(&sub->instrs, instr) {
-        thecl_instr_t* new_instr = instr_copy(instr);
-
-        list_node_t* param_node;
-        list_for_each_node(&new_instr->params, param_node) {
-            /* Still reusing the same param variable as earlier. */
-            param = (thecl_param_t*)param_node->data;
-            if (param->stack && param->object_link == -1) {
-                if (param->value.type == 'S') {
-                    if (param->value.val.S < 0) {
-                        /* Parameter. */
-                        param_node->data = param_copy(param_replace[sub->arg_count + param->value.val.S]);
-                        param_free(param);
-                    } else if (param->value.val.S >= 3) {
-                        /* Regular stack variable, needs adjusting the offset. */
-                        param->value.val.S = stack_replace[param->value.val.S - 3]->stack;
+                                    param = param_new('S');
+                                    param->stack = 1;
+                                    param->object_link = 0;
+                                    param->is_expression_param = 1;
+                                    param->value.val.S = 0x1F;
+                                }
+                            }
+                            list_append_new(ins_params, param);
+                        }
+                    }
+                    const gool_ins_t* gool_ins = gool_ins_get_by_name(state->version, line->call.name);
+                    if (gool_ins) {
+                        instr_create_gool_ins(state, gool_ins, ins_params);
+                    }
+                    else {
+                        instr_create_call(state, expr_get_by_symbol(state->version, CALL)->id, strdup(line->call.name), ins_params);
+                        if (ins_params != NULL) {
+                            list_free_nodes(ins_params);
+                            free(ins_params);
+                        }
                     }
                 }
-            } else if (param->stack && param->object_link == 0 && param->value.val.S == 0x1F) {
-                thecl_instr_t* last_ins = state->current_sub->last_ins;
-                const expr_t* last_expr = last_ins ? expr_get_by_id(state->version, last_ins->id) : NULL;
-                if (last_expr && last_expr->allow_optim) {
-                    thecl_param_t* p1 = last_ins->params.head->data;
-                    thecl_param_t* p2 = last_ins->params.head->next->data;
-                    if (p1->stack || p2->stack) continue;
-                    int val1 = p1->value.val.S;
-                    int val2 = p2->value.val.S;
-                    param->value.val.S = math_preprocess(state, last_expr->symbol, val1, val2);
-                    param->stack = 0;
-                    param->object_link = -1;
-                    instr_del(state, state->current_sub, last_ins);
-                    thecl_instr_free(last_ins);
+            } break;
+            case LINE_SCOPE_START: {
+                scope_begin(state);
+            } break;
+            case LINE_SCOPE_END: {
+                scope_finish(state, true);
+            } break;
+            case LINE_VAR_DECL: {
+                var_create(state, state->current_sub, line->var.name, true);
+            } break;
+            case LINE_VAR_DECL_ASSIGN: {
+                var_create_assign(state, state->current_sub, line->var.name, inline_call_replace_params(state, line->var.expr, params_org));
+            } break;
+            case LINE_BREAK: {
+                if (state->current_sub->is_inline) {
+                    list_append_new(&state->current_sub->lines, line_make(LINE_BREAK));
                 }
-            } else if (param->type == 'o' && label_find(sub, param->value.val.z)) {
-                /* We also have to make sure that all jumps are correct. */
-                snprintf(buf, 256, "%s%s", name, param->value.val.z);
-                free(param->value.val.z);
-                param->value.val.z = strdup(buf);
-            }
+                else {
+                    list_node_t *head = state->block_stack.head;
+                    for(; head; head = head->next) {
+                        if (strncmp(head->data, "do", 2) == 0 ||
+                            strncmp(head->data, "while", 5) == 0 ||
+                            strncmp(head->data, "until", 5) == 0
+                        ) {
+                            char labelstr[256];
+                            snprintf(labelstr, 256, "%s_end", (char*)head->data);
+                            expression_create_goto(state, GOTO, labelstr, NULL);
+                            break;
+                        }
+                    }
+                    if(!head) {
+                        yyerror(state, "break not within while or until");
+                        g_was_error = true;
+                    }
+                }
+            } break;
+            case LINE_CONTINUE: {
+                if (state->current_sub->is_inline) {
+                    list_append_new(&state->current_sub->lines, line_make(LINE_CONTINUE));
+                }
+                else {
+                    list_node_t *head = state->block_stack.head;
+                    for(; head; head = head->next) {
+                        if (strncmp(head->data, "do", 2) == 0 ||
+                            strncmp(head->data, "while", 5) == 0 ||
+                            strncmp(head->data, "until", 5) == 0
+                        ) {
+                            char labelstr[256];
+                            snprintf(labelstr, 256, "%s_continue", (char*)head->data);
+                            expression_create_goto(state, GOTO, labelstr, NULL);
+                            break;
+                        }
+                    }
+                    if(!head) {
+                        yyerror(state, "break not within while or until");
+                        g_was_error = true;
+                    }
+                }
+            } break;
+            case LINE_RETURN: {
+                if (state->current_sub->is_inline) {
+                    list_append_new(&state->current_sub->lines, line_make(LINE_RETURN));
+                }
+                else {
+                    snprintf(buf, 512, "%s%s", name, "inline_end");
+                    expression_create_goto(state, GOTO, buf, NULL);
+                }
+            } break;
+            case LINE_SAVE_START: {
+                if (state->current_sub->is_inline) {
+                    list_append_new(&state->current_sub->lines, line_make_save_start(line->list));
+                }
+                else {
+                    const expr_t* local_expr = expr_get_by_symbol(state->version, LOAD);
+                    const expr_t* global_expr = expr_get_by_symbol(state->version, GLOAD);
+                    thecl_param_t *param;
+                    list_for_each(line->list, param) {
+                        list_append_new(&state->addresses, param);
+                        if (param->stack == 2) {
+                            instr_add(state, state->current_sub, instr_new(state, global_expr->id, "S", param->value.val.S));
+                        }
+                        else {
+                            instr_add(state, state->current_sub, instr_new(state, local_expr->id, "p", param));
+                        }
+                    }
+                    list_append_new(&state->addresses, list_count(line->list));
+                }
+            } break;
+            case LINE_SAVE_END: {
+                if (state->current_sub->is_inline) {
+                    list_append_new(&state->current_sub->lines, line_make_save_end());
+                }
+                else {
+                    int m = list_tail(&state->addresses);
+                    list_del_tail(&state->addresses);
+
+                    const expr_t* local_expr = expr_get_by_symbol(state->version, ASSIGN);
+                    const expr_t* global_expr = expr_get_by_symbol(state->version, GASSIGN);
+                    for (int i=0; i<m; ++i) {
+                        thecl_param_t* param = list_tail(&state->addresses);
+                        if (param->stack == 2) {
+                            instr_add(state, state->current_sub, instr_new(state, global_expr->id, "Sp", param->value.val.S, param_sp_new()));
+                            param_free(param);
+                        }
+                        else {
+                            instr_add(state, state->current_sub, instr_new(state, local_expr->id, "pp", param_copy(param), param_sp_new()));
+                        }
+                        list_del_tail(&state->addresses);
+                    }
+                }
+            } break;
+            case LINE_GOTO: {
+                snprintf(buf, 512, "%s%s", name, line->go.label);
+                expression_create_goto(state, line->go.type, buf, line->go.expr ? inline_call_replace_params(state, line->go.expr, params_org) : NULL);
+            } break;
         }
-        instr_add(state, state->current_sub, new_instr);
     }
 
     scope_finish(state, true);
-
-    /* We have to mark variables that were marked as unused in the inline sub
-     * as unused in the current sub as well. */
-    for (size_t v=0; v<sub->var_count; ++v) {
-        stack_replace[v]->is_unused = sub->vars[v]->is_unused;
-    }
-
-    /* Free stuff. */
-    /* Still the same variables used here */
-    i = 0;
-    list_for_each(params, param) {
-        param_free(param);
-        param_free(param_replace[i++]);
-    }
-    /* Only free this list if it was created here.
-     * It's empty, so no need to free nodes. */
-    if (params_org == NULL)
-        free(params);
-    free(param_replace);
-    free(stack_replace);
 }
 
-static bool
+static void
 instr_create_call(
     parser_state_t *state,
     uint8_t type,
     char *name,
     list_t *params)
 {
-    size_t param_count = params ? list_count(params) : 0;
-    /* First, check if the called sub is inline. */
-    thecl_sub_t* sub;
-    list_for_each(&state->main_ecl->subs, sub) {
-        if (sub->is_inline && !strcmp(sub->name, name) && sub->arg_count == param_count) {
-            instr_create_inline_call(state, sub, params);
-            free(name);
-            return true;
-        }
-    }
-
     /* Instr name */
     thecl_param_t *name_param = param_new('z');
     name_param->value.type = 'z';
@@ -2985,7 +3270,7 @@ instr_create_call(
                 list_node_t* last_node = node_expr;
                 node_expr = node_expr->prev;
 
-                if (current_expr->type == EXPRESSION_VAL) {
+                if (current_expr->type == EXPRESSION_VAL && !state->mips_mode) {
                     const expr_t* expr = expr_get_by_id(state->version, current_expr->id);
                     if (expr->symbol == LOAD) {
                         param_free(param);
@@ -3016,7 +3301,218 @@ instr_create_call(
     }
 
     instr_add(state, state->current_sub, instr_new(state, type, "pSS", name_param, 38, argc));
-    return false;
+}
+
+static void
+instr_create_gool_ins(
+    parser_state_t* state,
+    const gool_ins_t* gool_ins,
+    list_t* params)
+{
+    if (gool_ins->varargs != 0) {
+        list_t* param_list = list_new();
+        list_t* arg_list = list_new();
+
+        int argc = gool_ins->varargs;
+        if (params != NULL) {
+            list_node_t* node, *next_node;
+            list_for_each_node_safe(params, node, next_node) {
+                if (argc-- > 0)
+                    list_append_new(param_list, node->data);
+                else if (gool_ins->reverse_args)
+                    list_prepend_new(arg_list, node->data);
+                else
+                    list_append_new(arg_list, node->data);
+            }
+        }
+
+        thecl_param_t* param;
+        expression_t* late_expr = NULL;
+        thecl_param_t* late_param = NULL;
+        if (gool_ins->late_param >= 0) {
+            int i = 0;
+            list_node_t* e = state->expressions.tail;
+            list_for_each(param_list, param) {
+                if (i++ == gool_ins->late_param && param->is_expression_param) {
+                    late_expr = e->data;
+                    late_param = param;
+                    list_del(&state->expressions, e);
+                    break;
+                }
+                else if (i - 1 == gool_ins->late_param) {
+                    late_param = param;
+                    break;
+                }
+                else if (param->is_expression_param) {
+                    e = e->prev;
+                }
+            }
+        }
+
+        list_node_t* expr_node;
+        if (gool_ins->reverse_args)
+            expr_node = state->expressions.head;
+        else
+            expr_node = state->expressions.tail;
+
+        if (!gool_ins->reverse_args) {
+            list_for_each(param_list, param) {
+                if (param->is_expression_param && param != late_param) {
+                    expression_t* expression = expr_node->data;
+                    expression_output(state, expression);
+                    if (state->top_reg) {
+                        instr_add_delay_slot(state, state->current_sub, MIPS_INSTR_I("sw", state->stack_adjust, state->top_reg->index, get_reg(state->reg_block, "s6")->index));
+                        state->stack_adjust += 4;
+                    }
+                    expression_free(expression);
+                    if (gool_ins->reverse_args) {
+                        expr_node = expr_node->next;
+                    }
+                    else {
+                        expr_node = expr_node->prev;
+                    }
+                }
+            }
+        }
+        list_for_each(arg_list, param) {
+            if (!(param->stack && param->object_link == 0 && param->value.val.S == 0x1F)) { /* argument is already on the stack */
+                if (param->stack == 3) {
+                    const expr_t* expr = expr_get_by_symbol(state->version, PLOAD);
+                    instr_add(state, state->current_sub, instr_new(state, expr->id, "p", param));
+                }
+                else {
+                    if (state->mips_mode) {
+                        expression_t* expression = expression_load_new(state, param);
+                        expression_output(state, expression);
+                        if (state->top_reg) {
+                            instr_add_delay_slot(state, state->current_sub, MIPS_INSTR_I("sw", state->stack_adjust, state->top_reg->index, get_reg(state->reg_block, "s6")->index));
+                            state->stack_adjust += 4;
+                        }
+                        expression_free(expression);
+                    }
+                    else {
+                        const expr_t* expr = expr_get_by_symbol(state->version, LOAD);
+                        instr_add(state, state->current_sub, instr_new(state, expr->id, "p", param));
+                    }
+                }
+            }
+            else if (param->is_expression_param) {
+                expression_t* expression = expr_node->data;
+                expression_output(state, expression);
+                if (state->top_reg) {
+                    instr_add_delay_slot(state, state->current_sub, MIPS_INSTR_I("sw", state->stack_adjust, state->top_reg->index, get_reg(state->reg_block, "s6")->index));
+                    state->stack_adjust += 4;
+                }
+                expression_free(expression);
+                if (gool_ins->reverse_args) {
+                    expr_node = expr_node->next;
+                }
+                else {
+                    expr_node = expr_node->prev;
+                }
+            }
+        }
+        if (gool_ins->reverse_args) {
+            list_for_each(param_list, param) {
+                if (param->is_expression_param) {
+                    expression_t* expression = expr_node->data;
+                    expression_output(state, expression);
+                    if (state->top_reg) {
+                        instr_add_delay_slot(state, state->current_sub, MIPS_INSTR_I("sw", state->stack_adjust, state->top_reg->index, get_reg(state->reg_block, "s6")->index));
+                        state->stack_adjust += 4;
+                    }
+                    expression_free(expression);
+                    if (gool_ins->reverse_args) {
+                        expr_node = expr_node->next;
+                    }
+                    else {
+                        expr_node = expr_node->prev;
+                    }
+                }
+            }
+        }
+        list_free_nodes(&state->expressions);
+
+        if (late_param) {
+            if ((late_expr && late_expr->type != EXPRESSION_VAL) || (late_param->stack == 1 && late_param->object_link != 0) || (late_param->stack == 0 && late_param->object_link != -1) || (late_param->stack != 0 && late_param->stack != 1) || late_param->value.val.S < 0 || late_param->value.val.S > 0x3F) {
+                if (late_expr) {
+                    expression_output(state, late_expr);
+                    if (state->top_reg) {
+                        instr_add_delay_slot(state, state->current_sub, MIPS_INSTR_I("sw", state->stack_adjust, state->top_reg->index, get_reg(state->reg_block, "s6")->index));
+                        state->stack_adjust += 4;
+                    }
+                    expression_free(late_expr);
+                }
+                late_param->stack = 1;
+                late_param->object_link = 0;
+                late_param->value.val.S = 0x1F;
+            }
+        }
+
+        instr_add(state, state->current_sub, instr_new_list(state, gool_ins->id, gool_ins->param_list_validate(param_list, list_count(arg_list))));
+
+        if (gool_ins->pop_args) {
+            if (argc = list_count(arg_list)) {
+                if (state->mips_mode) {
+                    state->stack_adjust -= argc * 4;
+                    mips_stack_adjust(state, state->current_sub);
+                }
+                else {
+                    instr_add(state, state->current_sub, instr_new(state, expr_get_by_symbol(state->version, GOTO)->id, "SSSSS", 0, argc, 0x25, 0, 0));
+                }
+            }
+        }
+
+        list_free_nodes(param_list);
+        free(param_list);
+
+        list_free_nodes(arg_list);
+        free(arg_list);
+    }
+    else {
+        expression_t* expression;
+        list_for_each(&state->expressions, expression) {
+            expression_output(state, expression);
+            if (state->top_reg) {
+                instr_add_delay_slot(state, state->current_sub, MIPS_INSTR_I("sw", state->stack_adjust, state->top_reg->index, get_reg(state->reg_block, "s6")->index));
+                state->stack_adjust += 4;
+            }
+            expression_free(expression);
+        }
+        list_free_nodes(&state->expressions);
+
+        if (gool_ins->late_param >= 0) {
+            thecl_param_t* param = NULL;
+            int i = 0;
+            list_for_each(params, param) {
+                if (i++ == gool_ins->late_param && !param->is_expression_param) {
+                    break;
+                }
+                param = NULL;
+            }
+
+            if (param && (param->stack != 1 || param->object_link != 0 || param->value.val.S < 0 || param->value.val.S > 0x3F)) {
+                expression_t* expression = expression_load_new(state, param);
+                expression_output(state, expression);
+                if (state->top_reg) {
+                    instr_add_delay_slot(state, state->current_sub, MIPS_INSTR_I("sw", state->stack_adjust, state->top_reg->index, get_reg(state->reg_block, "s6")->index));
+                    state->stack_adjust += 4;
+                }
+                expression_free(expression);
+                param->stack = 1;
+                param->object_link = 0;
+                param->value.val.S = 0x1F;
+            }
+        }
+        if (!params) {
+            params = list_new();
+        }
+        instr_add(state, state->current_sub, instr_new_list(state, gool_ins->id, gool_ins->param_list_validate(params, 0)));
+    }
+    if (params) {
+        list_free_nodes(params);
+        free(params);
+    }
 }
 
 static mips_reg_t*
@@ -3175,6 +3671,10 @@ expression_create_goto_pop(
     expression_t* cond,
     int pop)
 {
+    if (state->current_sub->is_inline) {
+        list_append_new(&state->current_sub->lines, line_make_goto(type, strdup(labelstr), cond ? expression_copy(cond) : NULL));
+        return;
+    }
     if (state->mips_mode) {
         mips_stack_adjust(state, state->current_sub);
         if (type != GOTO) {
@@ -4014,6 +4514,7 @@ sub_begin(
     thecl_sub_t* sub = malloc(sizeof(thecl_sub_t));
 
     sub->name = strdup(name);
+    list_init(&sub->lines);
     list_init(&sub->instrs);
     sub->stack = 3;
     sub->var_count = 0;
@@ -4105,6 +4606,11 @@ static void
 scope_begin(
     parser_state_t* state
 ) {
+    if (state->current_sub && state->current_sub->is_inline && state->scope_cnt > 0) {
+        list_append_new(&state->current_sub->lines, line_make(LINE_SCOPE_START));
+        return;
+    }
+
     kill_delay_slots(state, state->current_sub);
 
     state->scope_stack = realloc(state->scope_stack, sizeof(thecl_scope_t)*(state->scope_cnt+1));
@@ -4120,6 +4626,11 @@ scope_finish(
     parser_state_t* state,
     bool pop_vars
 ) {
+    if (state->current_sub && state->current_sub->is_inline && pop_vars) {
+        list_append_new(&state->current_sub->lines, line_make(LINE_SCOPE_END));
+        return;
+    }
+
     /* pop GOOL stack variables */
     int pop = 0;
     for (int v=0; v < state->current_sub->var_count; ++v)
@@ -4308,6 +4819,11 @@ var_create(
     if (var->stack == sub->stack) /* Only increment the stack if the variable uses a new offset. */
         ++sub->stack;
 
+    if (sub->is_inline && push) { /* do not make instructions for inline subs */
+        list_append_new(&state->current_sub->lines, line_make_var_decl(name));
+        return var;
+    }
+
     if (state->mips_mode) {
         state->stack_adjust += 4;
     }
@@ -4328,6 +4844,11 @@ var_create_assign(
 {
     thecl_variable_t* var = var_create(state, sub, name, false);
     var->is_written = true;
+
+    if (sub->is_inline) { /* do not make instructions for inline subs */
+        list_append_new(&state->current_sub->lines, line_make_var_decl_assign(name, expr));
+        return var;
+    }
 
     if (state->mips_mode) {
         thecl_param_t* param = param_new('S');
@@ -4445,6 +4966,10 @@ var_assign(
     thecl_param_t* param,
     expression_t* expr_assign)
 {
+    if (state->current_sub->is_inline) {
+        list_append_new(&state->current_sub->lines, line_make_assignment(param, expr_assign));
+        return;
+    }
     const expr_t* expr = expr_get_by_id(state->version, expr_assign->id);
     thecl_param_t* src_param = expr != NULL && expr->is_unary ? ((expression_t*)list_head(&expr_assign->children))->value : NULL;
     if (param->stack == 1 && src_param && src_param->value.val.S == 0x1F && src_param->stack == 1 && src_param->object_link == 0) {
@@ -4517,14 +5042,18 @@ var_shorthand_assign(
     int EXPR)
 {
     /* Can't use the same param twice, so a copy is created. */
-    thecl_param_t* param_clone = malloc(sizeof(thecl_param_t));
-    memcpy(param_clone, param, sizeof(thecl_param_t));
-
-    expression_t* expr_load = expression_load_new(state, param_clone);
-    expression_t* expr_main = EXPR_2(EXPR, expr_load, expr_assign);
+    expression_t* expr_main = EXPR_2(EXPR, expression_load_new(state, param_copy(param)), expr_assign);
+    if (state->current_sub->is_inline) {
+        if (param->stack == 1 && param->object_link == -1 && param->value.val.S < 0) {
+            yyerror(state, "inline subs cannot write to their arguments");
+            exit(2);
+        }
+        list_append_new(&state->current_sub->lines, line_make_assignment(param, expr_main));
+        return;
+    }
     expression_output(state, expr_main);
     expression_free(expr_main);
-    /* No need to free expr_load or expr, since they both got freed as children of expr_main. */
+    /* expr_main will free recursively. */
 
     if (param->stack == 1) {
         if (param->object_link == -1 && param->value.val.S >= 3) {
@@ -4596,6 +5125,10 @@ label_create(
     parser_state_t* state,
     char* name)
 {
+    if (state->current_sub->is_inline) {
+        list_append_new(&state->current_sub->lines, line_make_label(strdup(name)));
+        return;
+    }
     thecl_label_t* label = malloc(sizeof(thecl_label_t) + strlen(name) + 1);
     list_prepend_new(&state->current_sub->labels, label);
     label->offset = state->current_sub->offset;

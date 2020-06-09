@@ -93,6 +93,12 @@ size_t list_count(list_t* list);
          ((var) = node ? node->data : NULL), node; \
          node = node->next)
 
+/* Iterates through the data backwards in the list. */
+#define list_for_each_back(list, var) \
+    for (list_node_t* node = (list)->tail; \
+         ((var) = node ? node->data : NULL), node; \
+         node = node->prev)
+
 /* Iterates through the nodes in the list. */
 #define list_for_each_node(list, node) \
     for ((node) = (list)->head; \

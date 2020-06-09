@@ -124,6 +124,75 @@ typedef struct {
     uint32_t data[];
 } gool_sub_t;
 
+enum expression_type {
+    EXPRESSION_OP,
+    EXPRESSION_VAL,
+    EXPRESSION_GLOBAL,
+    EXPRESSION_TERNARY
+};
+
+typedef struct expression_t {
+    /* General things. */
+    enum expression_type type;
+    int id;
+    /* For values: The value. */
+    thecl_param_t* value;
+    /* For operators: The child expressions. */
+    list_t children;
+} expression_t;
+
+typedef struct {
+    char* name;
+    expression_t* expr;
+} expr_macro_t;
+
+enum thecl_line_type {
+    LINE_INVALID = 0,
+    LINE_LOAD,
+    LINE_INSTRUCTION,
+    LINE_CALL,
+    LINE_LABEL,
+    LINE_ASSIGNMENT,
+    LINE_VAR_DECL,
+    LINE_VAR_DECL_ASSIGN,
+    LINE_GOTO,
+    LINE_SCOPE_START,
+    LINE_SCOPE_END,
+    LINE_BREAK,
+    LINE_CONTINUE,
+    LINE_RETURN,
+
+    LINE_SAVE_START,
+    LINE_SAVE_END
+};
+
+typedef struct {
+    enum thecl_line_type type;
+    union {
+        thecl_label_t* label;
+        list_t* list;
+        const char* name;
+        expression_t* expression;
+        struct {
+            thecl_param_t* address;
+            expression_t* expr;
+        } ass;
+        struct {
+            const char* name;
+            list_t* expr_list;
+        } call;
+        struct {
+            const char* name;
+            expression_t* expr;
+        } var;
+        struct {
+            int type;
+            const char* label;
+            expression_t* expr;
+        } go;
+    };
+} thecl_line_t;
+
 typedef struct {
     char* name;
     bool forward_declaration;
@@ -138,6 +207,7 @@ typedef struct {
 
     list_t instrs;
     list_t labels;
+    list_t lines;
 
     uint16_t offset;
     uint16_t start_offset;
@@ -251,6 +321,7 @@ typedef struct {
     int path_cnt;
     char** path_stack;
     thecl_sub_t* (*find_state_sub)(thecl_t* ecl, thecl_t* ecl_ext, thecl_state_sub_t* state_sub, thecl_state_sub_type type);
+    thecl_sub_t* (*find_sub)(thecl_t* ecl, const char* name);
 
     uint16_t state_count;
     size_t spawn_count;
@@ -274,28 +345,6 @@ typedef struct {
 
     void (*create_header)(const thecl_t* ecl, FILE* stream);
 } thecl_module_t;
-
-enum expression_type {
-    EXPRESSION_OP,
-    EXPRESSION_VAL,
-    EXPRESSION_GLOBAL,
-    EXPRESSION_TERNARY
-};
-
-typedef struct expression_t {
-    /* General things. */
-    enum expression_type type;
-    int id;
-    /* For values: The value. */
-    thecl_param_t* value;
-    /* For operators: The child expressions. */
-    list_t children;
-} expression_t;
-
-typedef struct {
-    char* name;
-    expression_t* expr;
-} expr_macro_t;
 
 thecl_param_t* param_new(
     int type);
@@ -362,6 +411,37 @@ int gool_pool_force_get_index(
 int gool_pool_force_make_index(
     thecl_t* ecl,
     uint32_t val);
+
+thecl_line_t* line_make(
+    enum thecl_line_type type);
+
+thecl_line_t* line_make_var_decl(
+    const char* name);
+
+thecl_line_t* line_make_var_decl_assign(
+    const char* name,
+    expression_t* expression);
+
+thecl_line_t* line_make_assignment(
+    thecl_param_t* address,
+    expression_t* expression);
+
+thecl_line_t* line_make_call(
+    const char* name,
+    list_t* expr_list);
+
+thecl_line_t* line_make_label(
+    const char* label_name);
+
+thecl_line_t* line_make_goto(
+    int type,
+    const char* label_name,
+    expression_t* expression);
+
+thecl_line_t* line_make_save_start(
+    list_t* address_list);
+
+thecl_line_t* line_make_save_end(void);
 
 extern parser_state_t* g_parser_state;
 extern int g_rate;

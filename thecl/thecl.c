@@ -147,6 +147,53 @@ thecl_free(
         }
         list_free_nodes(&sub->labels);
 
+        thecl_line_t* line;
+        list_for_each(&sub->lines, line) {
+            thecl_param_t* p;
+            switch (line->type) {
+            case LINE_ASSIGNMENT:
+                param_free(line->ass.address);
+                expression_free(line->ass.expr);
+                break;
+            case LINE_INSTRUCTION:
+            case LINE_CALL:
+                free(line->call.name);
+                if (line->call.expr_list) {
+                    expression_t* e;
+                    list_for_each(line->call.expr_list, e) {
+                        expression_free(e);
+                    }
+                    list_free_nodes(line->call.expr_list);
+                    free(line->call.expr_list);
+                }
+                break;
+            case LINE_LABEL:
+                free(line->label);
+                break;
+            case LINE_GOTO:
+                if (line->go.expr) expression_free(line->go.expr);
+                free(line->go.label);
+                break;
+            case LINE_LOAD:
+                expression_free(line->expression);
+                break;
+            case LINE_VAR_DECL_ASSIGN:
+                expression_free(line->var.expr);
+            case LINE_VAR_DECL: /* intentional fallthrough */
+                free(line->var.name);
+                break;
+            case LINE_SAVE_START:
+                list_for_each(line->list, p) {
+                    param_free(p);
+                }
+                list_free_nodes(line->list);
+                free(line->list);
+                break;
+            }
+            free(line);
+        }
+        list_free_nodes(&sub->lines);
+
         free(sub->name);
         free(sub);
     }
@@ -417,6 +464,104 @@ macro_get(
             return macro;
     }
     return NULL;
+}
+
+thecl_line_t*
+line_make(
+    enum thecl_line_type type)
+{
+    thecl_line_t* line = calloc(1, sizeof(thecl_line_t));
+    line->type = type;
+    return line;
+}
+
+thecl_line_t*
+line_make_var_decl(
+    const char* name)
+{
+    thecl_line_t* line = calloc(1, sizeof(thecl_line_t));
+    line->type = LINE_VAR_DECL;
+    line->var.name = strdup(name);
+    line->var.expr = NULL;
+    return line;
+}
+
+thecl_line_t*
+line_make_var_decl_assign(
+    const char* name,
+    expression_t* expression)
+{
+    thecl_line_t* line = calloc(1, sizeof(thecl_line_t));
+    line->type = LINE_VAR_DECL_ASSIGN;
+    line->var.name = strdup(name);
+    line->var.expr = expression;
+    return line;
+}
+
+thecl_line_t*
+line_make_assignment(
+    thecl_param_t* address,
+    expression_t* expression)
+{
+    thecl_line_t* line = calloc(1, sizeof(thecl_line_t));
+    line->type = LINE_ASSIGNMENT;
+    line->ass.address = address;
+    line->ass.expr = expression;
+    return line;
+}
+
+thecl_line_t*
+line_make_call(
+    const char* name,
+    list_t* expr_list)
+{
+    thecl_line_t* line = calloc(1, sizeof(thecl_line_t));
+    line->type = LINE_CALL;
+    line->call.name = strdup(name);
+    line->call.expr_list = expr_list;
+    return line;
+}
+
+thecl_line_t*
+line_make_label(
+    const char* label_name)
+{
+    thecl_line_t* line = calloc(1, sizeof(thecl_line_t));
+    line->type = LINE_LABEL;
+    line->name = label_name;
+    return line;
+}
+
+thecl_line_t*
+line_make_goto(
+    int type,
+    const char* label_name,
+    expression_t* expression)
+{
+    thecl_line_t* line = calloc(1, sizeof(thecl_line_t));
+    line->type = LINE_GOTO;
+    line->go.type = type;
+    line->go.label = label_name;
+    line->go.expr = expression;
+    return line;
+}
+
+thecl_line_t*
+line_make_save_start(
+    list_t* address_list)
+{
+    thecl_line_t* line = calloc(1, sizeof(thecl_line_t));
+    line->type = LINE_SAVE_START;
+    line->list = address_list;
+    return line;
+}
+
+thecl_line_t*
+line_make_save_end(void)
+{
+    thecl_line_t* line = calloc(1, sizeof(thecl_line_t));
+    line->type = LINE_SAVE_END;
+    return line;
 }
 
 int
