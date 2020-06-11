@@ -42,10 +42,12 @@ global_expressions[] = {
     /*SYM        ID  A SP2 O  U */
     { LOAD,      22, 0, 0, 0, 0 }, /* p0 */
     { GLOAD,     31, 0, 0, 0, 0 }, /* p0 */
+    { CLOAD,     35, 0, 0, 0, 0 }, /* p0 */
     { PLOAD,     38, 0, 0, 0, 0 }, /* &p0 */
-    { GASSIGN,   32, 1, 0, 0, 0 }, /* p0 = s0 */
     { ASSIGN,    17, 1, 0, 0, 0 }, /* p0 = s0 */
     { PASSIGN,   20, 2, 0, 0, 1 }, /* p0 = &s0 */
+    { GASSIGN,   32, 1, 0, 0, 0 }, /* p0 = s0 */
+    { CASSIGN,   36, 1, 0, 0, 0 }, /* p0 = s0 */
 
     { ADD,        0, 2, 0, 1, 0 }, /* s1 + s0 */
     { SUBTRACT,   1, 2, 0, 1, 0 }, /* s1 - s0 */

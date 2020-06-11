@@ -137,6 +137,7 @@ enum expression_type {
     EXPRESSION_OP,
     EXPRESSION_VAL,
     EXPRESSION_GLOBAL,
+    EXPRESSION_COLOR,
     EXPRESSION_TERNARY
 };
 
@@ -460,6 +461,9 @@ extern int g_reg_block_depth;
 extern int* g_reg_blocks;
 extern bool g_has_else;
 extern char* g_module_fmt;
+
+extern bool g_warn_deprecate_getcolor;
+extern bool g_warn_deprecate_setcolor;
 
 void expression_free(expression_t* expr);
 

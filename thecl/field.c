@@ -127,6 +127,65 @@ gool_fields[] = {
 };
 
 static const field_t
+c1_colors[] = {
+    { "src11",     0 },
+    { "src12",     1 },
+    { "src13",     2 },
+    { "src21",     3 },
+    { "src22",     4 },
+    { "src23",     5 },
+    { "src31",     6 },
+    { "src32",     7 },
+    { "src33",     8 },
+    { "amb1",      9 },
+    { "amb2",     10 },
+    { "amb3",     11 },
+    { "colr1",    12 },
+    { "colg1",    13 },
+    { "colb1",    14 },
+    { "colr2",    15 },
+    { "colg2",    16 },
+    { "colb2",    17 },
+    { "colr3",    18 },
+    { "colg3",    19 },
+    { "colb3",    20 },
+    { "colr",     21 },
+    { "colg",     22 },
+    { "colb",     23 },
+    { "colr4",    21 },
+    { "colg4",    22 },
+    { "colb4",    23 },
+    { NULL, 0 }
+};
+
+static const field_t
+c2_colors[] = {
+    { "moda",      0 },
+    { "modb",      1 },
+    { "modc",      2 },
+    { "modd",      3 },
+    { "colr1",     4 },
+    { "colg1",     5 },
+    { "colb1",     6 },
+    { "colr2",     7 },
+    { "colg2",     8 },
+    { "colb2",     9 },
+    { "ldirx",     7 },
+    { "ldiry",     8 },
+    { "ldirz",     9 },
+    { "colr3",    10 },
+    { "colg3",    11 },
+    { "colb3",    12 },
+    { "finalr",   13 },
+    { "finalg",   14 },
+    { "finalb",   15 },
+    { "colr4",    13 },
+    { "colg4",    14 },
+    { "colb4",    15 },
+    { NULL, 0 }
+};
+
+static const field_t
 c1_globals[] = {
     { "LEVEL",               0 },
 
@@ -366,6 +425,21 @@ field_get_from_table(
     }
 
     return NULL;
+}
+
+const field_t*
+color_get(
+    unsigned int version,
+    char* name)
+{
+    const field_t* ret = NULL;
+
+    switch (version) {
+    case 2: ret = field_get_from_table(c2_colors, name); break;
+    case 1: ret = field_get_from_table(c1_colors, name); break;
+    }
+
+    return ret;
 }
 
 const field_t*

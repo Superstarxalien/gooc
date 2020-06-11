@@ -187,6 +187,10 @@ c1_gool_ins_setcolor_params(
     list_t* params,
     int argc)
 {
+    if (g_warn_deprecate_setcolor) {
+        fprintf(stderr, "%s: setcolor: deprecate function. use as address instead (i.e. 'color = 255')\n", argv0);
+        g_warn_deprecate_setcolor = false;
+    }
     thecl_param_t* param;
     size_t c = list_count(params);
     if (c == 3) {

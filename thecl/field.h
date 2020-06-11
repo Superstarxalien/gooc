@@ -39,6 +39,9 @@ typedef struct {
 /* Returns an object field by its name. */
 const field_t* field_get(char* name);
 
+/* Returns an object color field by its name. */
+const field_t* color_get(unsigned int version, char* name);
+
 /* Returns a global GOOL variable by its name. */
 const field_t* global_get(unsigned int version, char* name);
 

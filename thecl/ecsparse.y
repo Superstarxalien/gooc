@@ -288,6 +288,7 @@ int yydebug = 0;
 %token LOAD
 %token GLOAD
 %token PLOAD
+%token CLOAD
 %token ASSIGN "="
 %token GASSIGN
 %token ASSIGNADD "+="
@@ -323,6 +324,7 @@ int yydebug = 0;
 %token RSHIFT ">>"
 %token TEST "\\"
 %token PASSIGN
+%token CASSIGN
 %token ARRL "array load"
 %token ABS "abs"
 %token SEEK "seek"
@@ -1254,17 +1256,17 @@ SaveBlock:
     "save" "(" Address_List ")" {
         const expr_t* local_expr = expr_get_by_symbol(state->version, LOAD);
         const expr_t* global_expr = expr_get_by_symbol(state->version, GLOAD);
+        const expr_t* color_expr = expr_get_by_symbol(state->version, CLOAD);
         if ($3 == NULL)
             $3 = list_new();
         list_node_t *n, *x;
         list_for_each_node_safe($3, n, x) {
             list_append(&state->addresses, n);
             thecl_param_t* param = n->data;
-            if (param->val_type == PARAM_GLOBAL) {
-                instr_add(state, state->current_sub, instr_new(state, global_expr->id, "S", param->value.val.S));
-            }
-            else {
-                instr_add(state, state->current_sub, instr_new(state, local_expr->id, "p", param));
+            switch (param->val_type) {
+                default: instr_add(state, state->current_sub, instr_new(state, local_expr->id, "p", param_copy(param))); break;
+                case PARAM_GLOBAL: instr_add(state, state->current_sub, instr_new(state, global_expr->id, "S", param->value.val.S)); break;
+                case PARAM_COLOR: instr_add(state, state->current_sub, instr_new(state, color_expr->id, "SS", param->object_link, param->value.val.S)); break;
             }
         }
         list_append_new(&state->addresses, list_count($3));
@@ -1275,15 +1277,15 @@ SaveBlock:
 
         const expr_t* local_expr = expr_get_by_symbol(state->version, ASSIGN);
         const expr_t* global_expr = expr_get_by_symbol(state->version, GASSIGN);
+        const expr_t* color_expr = expr_get_by_symbol(state->version, CASSIGN);
         for (int i=0; i<m; ++i) {
             thecl_param_t* param = list_tail(&state->addresses);
-            if (param->val_type == PARAM_GLOBAL) {
-                instr_add(state, state->current_sub, instr_new(state, global_expr->id, "Sp", param->value.val.S, param_sp_new()));
-                param_free(param);
+            switch (param->val_type) {
+                default: instr_add(state, state->current_sub, instr_new(state, local_expr->id, "pp", param_copy(param), param_sp_new())); break;
+                case PARAM_GLOBAL: instr_add(state, state->current_sub, instr_new(state, global_expr->id, "Sp", param->value.val.S, param_sp_new())); break;
+                case PARAM_COLOR: instr_add(state, state->current_sub, instr_new(state, color_expr->id, "pSS", param_sp_new(), param->object_link, param->value.val.S)); break;
             }
-            else {
-                instr_add(state, state->current_sub, instr_new(state, local_expr->id, "pp", param_copy(param), param_sp_new()));
-            }
+            param_free(param);
             list_del_tail(&state->addresses);
         }
     }
@@ -2145,7 +2147,7 @@ Instruction_Parameters:
 
 Instruction_Parameter:
       Load_Type {
-          if ($1->val_type == PARAM_GLOBAL) {
+          if ($1->val_type == PARAM_GLOBAL || $1->val_type == PARAM_COLOR) {
               list_prepend_new(&state->expressions, expression_load_new(state, $1));
 
               $$ = param_new('S');
@@ -2242,8 +2244,8 @@ ExpressionSubset:
     | "nearseek" "(" Expression "," Expression ")"                { $$ = EXPR_2(NEARSEEK, $3, $5); }
     | "time" "(" Expression "," Expression ")"                    { $$ = EXPR_2(TIME, $3, $5); }
     | "time" "(" Expression ")"                                   { $$ = EXPR_2(TIME, $3, expression_val_new(state, 0)); }
-    | "getcolor" "(" Expression "," Expression ")"                { $$ = EXPR_2(GETCOLOR, $3, $5); }
-    | "getcolor" "(" Expression ")"                               { $$ = EXPR_2(GETCOLOR, expression_val_new(state, 0), $3); }
+    | "getcolor" "(" Expression "," Expression ")"                { if (g_warn_deprecate_getcolor) { yyerror(state, "getcolor: deprecate expression. use as address instead (i.e. 'color + 64')"); g_warn_deprecate_getcolor = false; }; $$ = EXPR_2(GETCOLOR, $3, $5); }
+    | "getcolor" "(" Expression ")"                               { if (g_warn_deprecate_getcolor) { yyerror(state, "getcolor: deprecate expression. use as address instead (i.e. 'color + 64')"); g_warn_deprecate_getcolor = false; }; $$ = EXPR_2(GETCOLOR, expression_val_new(state, 0), $3); }
     | "pad" "(" Expression "," Expression "," Expression "," Expression "," Expression ")" { $$ = EXPR_5(PAD, $3, $5, $7, $9, $11); }
     | "buttonpress" "(" Expression ")"                            { $$ = EXPR_5(PAD, $3, expression_val_new(state, 1), expression_val_new(state, 0), expression_val_new(state, 8), expression_val_new(state, 0)); }
     | "buttonhold" "(" Expression ")"                             { $$ = EXPR_5(PAD, $3, expression_val_new(state, 2), expression_val_new(state, 0), expression_val_new(state, 8), expression_val_new(state, 0)); }
@@ -2323,10 +2325,8 @@ ExpressionSubset:
 Address:
       IDENTIFIER {
         thecl_variable_t* arg;
-        const field_t* global;
         thecl_spawn_t* spawn;
         const field_t* field;
-        const field_t* event;
         size_t anim_offset;
         field_t* objfield;
         if (var_exists(state, state->current_sub, $1)) {
@@ -2337,18 +2337,23 @@ Address:
             $$ = param_new('S');
             $$->val_type = PARAM_FIELD;
             $$->value.val.S = arg->stack;
-        } else if (global = global_get(state->version, $1)) {
+        } else if (field = global_get(state->version, $1)) {
             $$ = param_new('S');
             $$->val_type = PARAM_GLOBAL;
-            $$->value.val.S = global->offset << 8;
+            $$->value.val.S = field->offset << 8;
+        } else if (field = color_get(state->version, $1)) {
+            $$ = param_new('S');
+            $$->val_type = PARAM_COLOR;
+            $$->value.val.S = field->offset;
+            $$->object_link = 0;
         } else if (field = field_get($1)) {
             $$ = param_new('S');
             $$->val_type = PARAM_FIELD;
             $$->value.val.S = field->offset;
             $$->object_link = 0;
-        } else if (event = event_get(state->version, $1)) {
+        } else if (field = event_get(state->version, $1)) {
             $$ = param_new('S');
-            $$->value.val.S = event->offset << 8;
+            $$->value.val.S = field->offset << 8;
         } else if (objfield = objfield_get(state, $1)) {
             $$ = param_new('S');
             $$->val_type = PARAM_FIELD;
@@ -2370,6 +2375,11 @@ Address:
     | IDENTIFIER "->" IDENTIFIER {
         const field_t* link = field_get($1);
         const field_t* field = field_get($3);
+        bool color = false;
+        if (field == NULL) {
+            field = color_get(state->version, $3);
+            color = true;
+        }
         if (link == NULL) {
             yyerror(state, "object link not found: %s", $1);
             free($1);
@@ -2377,7 +2387,7 @@ Address:
             return 1;
         }
         if (field == NULL) {
-            yyerror(state, "object field not found: %s", $3);
+            yyerror(state, "object field/color not found: %s", $3);
             free($1);
             free($3);
             return 1;
@@ -2389,7 +2399,7 @@ Address:
             yyerror(state, "invalid object field: %s", $1);
         }
         $$ = param_new('S');
-        $$->val_type = PARAM_FIELD;
+        $$->val_type = color ? PARAM_COLOR : PARAM_FIELD;
         $$->value.val.S = field->offset;
         $$->object_link = link->offset;
         free($1);
@@ -2762,7 +2772,7 @@ instr_add(
     if (state->block_bound) {
         if (instr->id == load_expr->id && instr->param_count == 1) {
             thecl_param_t* load_param = list_head(&instr->params);
-            if (load_param->value.val.S == 0x1f && load_param->object_link == 0 && load_param->val_type != PARAM_LITERAL) {
+            if (load_param->value.val.S == 0x1f && load_param->object_link == 0 && load_param->val_type == PARAM_FIELD) {
                 thecl_instr_free(instr);
                 return;
             }
@@ -2777,7 +2787,7 @@ instr_add(
     if (instr->id == load_expr->id) {
         if (instr->param_count == 1) {
             thecl_param_t* load_param = list_head(&instr->params);
-            if (load_param->value.val.S == 0x1f && load_param->object_link == 0 && load_param->val_type != PARAM_LITERAL) {
+            if (load_param->value.val.S == 0x1f && load_param->object_link == 0 && load_param->val_type == PARAM_FIELD) {
                 thecl_instr_free(instr);
                 return;
             }
@@ -2817,7 +2827,7 @@ instr_add(
             const expr_t* expr = expr_get_by_symbol(state->version, NOT);
             if (sub->last_ins->id == expr->id && sub->last_ins->param_count == 2) {
                 thecl_param_t* param = list_head(&sub->last_ins->params);
-                if (param->value.val.S != 0x1F || param->val_type == PARAM_LITERAL || param->object_link != 0)
+                if (param->value.val.S != 0x1F || param->val_type != PARAM_FIELD || param->object_link != 0)
                     goto NO_OPTIM;
 
                 if (!is_post_c2(state->version)) {
@@ -3007,6 +3017,8 @@ inline_call_replace_params(
         }
     }
 
+    expression_optimize(state, expr);
+
     return expr;
 }
 
@@ -3066,8 +3078,8 @@ instr_create_inline_call(
                             expr = inline_call_replace_params(state, expr, params_org);
 
                             param = expr->value;
-                            if (expr_get_by_symbol(state->version, LOAD)->id == expr->id || expr_get_by_symbol(state->version, GLOAD)->id == expr->id) { /* Load_Type */
-                                if (param->val_type == PARAM_GLOBAL) {
+                            if (expr_get_by_symbol(state->version, LOAD)->id == expr->id || expr_get_by_symbol(state->version, GLOAD)->id == expr->id || expr_get_by_symbol(state->version, CLOAD)->id == expr->id) { /* Load_Type */
+                                if (param->val_type == PARAM_GLOBAL || param->val_type == PARAM_COLOR) {
                                     list_prepend_new(&state->expressions, expression_copy(expr));
 
                                     param = param_new('S');
@@ -3192,14 +3204,14 @@ instr_create_inline_call(
                 else {
                     const expr_t* local_expr = expr_get_by_symbol(state->version, LOAD);
                     const expr_t* global_expr = expr_get_by_symbol(state->version, GLOAD);
+                    const expr_t* color_expr = expr_get_by_symbol(state->version, CLOAD);
                     thecl_param_t *param;
                     list_for_each(line->list, param) {
                         list_append_new(&state->addresses, param);
-                        if (param->val_type == PARAM_GLOBAL) {
-                            instr_add(state, state->current_sub, instr_new(state, global_expr->id, "S", param->value.val.S));
-                        }
-                        else {
-                            instr_add(state, state->current_sub, instr_new(state, local_expr->id, "p", param));
+                        switch (param->val_type) {
+                            default: instr_add(state, state->current_sub, instr_new(state, local_expr->id, "p", param)); break;
+                            case PARAM_GLOBAL: instr_add(state, state->current_sub, instr_new(state, global_expr->id, "S", param->value.val.S)); break;
+                            case PARAM_COLOR: instr_add(state, state->current_sub, instr_new(state, color_expr->id, "SS", param->object_link, param->value.val.S)); break;
                         }
                     }
                     list_append_new(&state->addresses, list_count(line->list));
@@ -3215,14 +3227,13 @@ instr_create_inline_call(
 
                     const expr_t* local_expr = expr_get_by_symbol(state->version, ASSIGN);
                     const expr_t* global_expr = expr_get_by_symbol(state->version, GASSIGN);
+                    const expr_t* color_expr = expr_get_by_symbol(state->version, CASSIGN);
                     for (int i=0; i<m; ++i) {
                         thecl_param_t* param = list_tail(&state->addresses);
-                        if (param->val_type == PARAM_GLOBAL) {
-                            instr_add(state, state->current_sub, instr_new(state, global_expr->id, "Sp", param->value.val.S, param_sp_new()));
-                            param_free(param);
-                        }
-                        else {
-                            instr_add(state, state->current_sub, instr_new(state, local_expr->id, "pp", param_copy(param), param_sp_new()));
+                        switch (param->val_type) {
+                            default: instr_add(state, state->current_sub, instr_new(state, local_expr->id, "pp", param_copy(param), param_sp_new())); break;
+                            case PARAM_GLOBAL: instr_add(state, state->current_sub, instr_new(state, global_expr->id, "Sp", param->value.val.S, param_sp_new())); break;
+                            case PARAM_COLOR: instr_add(state, state->current_sub, instr_new(state, color_expr->id, "pSS", param_sp_new(), param->object_link, param->value.val.S)); break;
                         }
                         list_del_tail(&state->addresses);
                     }
@@ -3271,7 +3282,7 @@ instr_create_call(
                         list_del(&state->expressions, last_node);
                         expression_free(current_expr);
                     }
-                } else if (current_expr->type == EXPRESSION_OP || current_expr->type == EXPRESSION_GLOBAL) {
+                } else if (current_expr->type == EXPRESSION_OP || current_expr->type == EXPRESSION_GLOBAL || current_expr->type == EXPRESSION_COLOR) {
                     expression_output(state, current_expr);
                     if (state->top_reg) {
                         instr_add_delay_slot(state, state->current_sub, MIPS_INSTR_I("sw", state->stack_adjust, state->top_reg->index, get_reg(state->reg_block, "s6")->index));
@@ -3369,8 +3380,7 @@ instr_create_gool_ins(
         list_for_each(arg_list, param) {
             if (!(param->val_type == PARAM_FIELD && param->object_link == 0 && param->value.val.S == 0x1F)) { /* argument is already on the stack */
                 if (param->val_type == PARAM_POINTER) {
-                    const expr_t* expr = expr_get_by_symbol(state->version, PLOAD);
-                    instr_add(state, state->current_sub, instr_new(state, expr->id, "p", param));
+                    instr_add(state, state->current_sub, instr_new(state, expr_get_by_symbol(state->version, PLOAD)->id, "p", param));
                 }
                 else {
                     if (state->mips_mode) {
@@ -3383,8 +3393,7 @@ instr_create_gool_ins(
                         expression_free(expression);
                     }
                     else {
-                        const expr_t* expr = expr_get_by_symbol(state->version, LOAD);
-                        instr_add(state, state->current_sub, instr_new(state, expr->id, "p", param));
+                        instr_add(state, state->current_sub, instr_new(state, expr_get_by_symbol(state->version, LOAD)->id, "p", param));
                     }
                 }
             }
@@ -3552,6 +3561,10 @@ expression_load_new(
     if (value->val_type == PARAM_GLOBAL) {
         expr = expr_get_by_symbol(state->version, GLOAD);
         ret->type = EXPRESSION_GLOBAL;
+    }
+    else if (value->val_type == PARAM_COLOR) {
+        expr = expr_get_by_symbol(state->version, CLOAD);
+        ret->type = EXPRESSION_COLOR;
     }
     else {
         expr = expr_get_by_symbol(state->version, LOAD);
@@ -3753,6 +3766,20 @@ expression_mips_load(
     else if (param->val_type == PARAM_GLOBAL) { /* global */
         instr_add_delay_slot(state, state->current_sub, MIPS_INSTR_I("lw", 0x58, reg->index, get_reg(state->reg_block, "s8")->index));
         instr_add_delay_slot(state, state->current_sub, MIPS_INSTR_I("lw", (val >> 8) * 4, reg->index, reg->index));
+    }
+    else if (param->val_type == PARAM_COLOR) { /* color field */
+        if (param->object_link >= 1 && param->object_link <= 7) { /* linked color field */
+            mips_reg_t* link_reg = get_usable_reg(state->reg_block);
+            if (!link_reg) link_reg = reg;
+            instr_add_delay_slot(state, state->current_sub, MIPS_INSTR_I("lw", param->object_link * 4 + get_obj_proc_offset(state->version), link_reg->index, get_reg(state->reg_block, "s0")->index));
+            instr_add_delay_slot(state, state->current_sub, MIPS_INSTR_I("lh", val * 2 + 0x20, reg->index, link_reg->index));
+            if (link_reg != reg) {
+                link_reg->status = MREG_STATUS_USED;
+            }
+        }
+        else {
+            instr_add_delay_slot(state, state->current_sub, MIPS_INSTR_I("lh", val * 2 + 0x20, reg->index, get_reg(state->reg_block, "s0")->index));
+        }
     }
     else if (param->val_type == PARAM_POINTER) { /* pointer */
         instr_add(state, state->current_sub, instr_new(state, expr->id, "p", expr->value));
@@ -3984,7 +4011,7 @@ expression_mips_operation(
             }
             break;
         case LTEQ:
-            if (child_expr1->type == EXPRESSION_VAL && child_expr1->value->val_type == PARAM_LITERAL && child_expr1->value->value.val.S >= -0xFFFF && child_expr1->value->value.val.S <= 0) { val_expr = child_expr1; var_expr = child_expr2; }
+            if (child_expr1->type == EXPRESSION_VAL && child_expr1->value->val_type == PARAM_LITERAL && child_expr1->value->value.val.S >= -0xFFFE && child_expr1->value->value.val.S <= 1) { val_expr = child_expr1; var_expr = child_expr2; }
             else if (child_expr2->type == EXPRESSION_VAL && child_expr2->value->val_type == PARAM_LITERAL && child_expr2->value->value.val.S >= 1 && child_expr2->value->value.val.S <= 0xFFFE) { val_expr = child_expr2; var_expr = child_expr1; }
             if (val_expr == child_expr1 && !(var_expr->type == EXPRESSION_VAL && var_expr->value->val_type == PARAM_LITERAL && var_expr->value->value.val.S == 0)) { /* imm <= b --> imm < b+1 --> imm-1 < b --> -b < -(imm-1) */
                 OutputExprToReg(var_expr, op2);
@@ -4150,7 +4177,7 @@ expression_mips_operation(
             list_for_each_node_safe(&expr->children, child_node, child_next) {
                 ++c;
                 child_expr = child_node->data;
-                if (child_expr->type == EXPRESSION_VAL && child_expr->value->val_type != PARAM_POINTER && (!expression->has_double_param || (expression->has_double_param && lc <= 2) || (expression->has_double_param && lc > 2 && c == 1))) {
+                if (child_expr->type == EXPRESSION_VAL && (child_expr->value->val_type == PARAM_LITERAL || child_expr->value->val_type == PARAM_FIELD) && (!expression->has_double_param || (expression->has_double_param && lc <= 2) || (expression->has_double_param && lc > 2 && c == 1))) {
                     list_append_new(param_list, child_expr->value);
                 }
                 else {
@@ -4242,6 +4269,8 @@ expression_output(
         instr_add(state, state->current_sub, instr_new(state, expr->id, "p", expr->value));
     } else if (expr->type == EXPRESSION_GLOBAL) {
         instr_add(state, state->current_sub, instr_new(state, expr->id, "S", expr->value->value.val.S));
+    } else if (expr->type == EXPRESSION_COLOR) {
+        instr_add(state, state->current_sub, instr_new(state, expr->id, "SS", expr->value->object_link, expr->value->value.val.S));
     } else if (expr->type == EXPRESSION_OP) {
         const expr_t* expression = expr_get_by_id(state->version, expr->id);
         int c = 0, lc = list_count(&expr->children);
@@ -4262,7 +4291,7 @@ expression_output(
         list_for_each_node_safe(&expr->children, child_node, child_next) {
             ++c;
             child_expr = child_node->data;
-            if (child_expr->type == EXPRESSION_VAL && child_expr->value->val_type != PARAM_POINTER && (!expression->has_double_param || (expression->has_double_param && lc <= 2) || (expression->has_double_param && lc > 2 && c == 1))) {
+            if (child_expr->type == EXPRESSION_VAL && (child_expr->value->val_type == PARAM_LITERAL || child_expr->value->val_type == PARAM_FIELD) && (!expression->has_double_param || (expression->has_double_param && lc <= 2) || (expression->has_double_param && lc > 2 && c == 1))) {
                 list_append_new(param_list, child_expr->value);
             }
             else {
@@ -4989,7 +5018,7 @@ var_assign(
         }
     }
     else {
-        if (expr_assign->type == EXPRESSION_VAL && (param->val_type == PARAM_FIELD || (param->val_type == PARAM_GLOBAL && !expr->is_unary))) {
+        if (expr_assign->type == EXPRESSION_VAL && (param->val_type == PARAM_FIELD || ((param->val_type == PARAM_GLOBAL || param->val_type == PARAM_COLOR) && !expr->is_unary))) {
             src_param = expr_assign->value;
         } else {
             expression_output(state, expr_assign);
@@ -4997,9 +5026,7 @@ var_assign(
         }
         expression_free(expr_assign);
         if (param->val_type == PARAM_FIELD) {
-            expr = expr_get_by_symbol(state->version, src_param->val_type == PARAM_POINTER ? PASSIGN : ASSIGN);
-
-            instr_add(state, state->current_sub, instr_new(state, expr->id, "pp", param, src_param));
+            instr_add(state, state->current_sub, instr_new(state, expr_get_by_symbol(state->version, src_param->val_type == PARAM_POINTER ? PASSIGN : ASSIGN)->id, "pp", param, src_param));
 
             if (param->object_link == -1 && param->value.val.S >= 3) {
                 state->current_sub->vars[param->value.val.S - 3]->is_written = true;
@@ -5008,9 +5035,9 @@ var_assign(
                 state->current_sub->args[-param->value.val.S - 1]->is_written = true;
             }
         } else if (param->val_type == PARAM_GLOBAL) { /* WGL */
-            expr = expr_get_by_symbol(state->version, GASSIGN);
-
-            instr_add(state, state->current_sub, instr_new(state, expr->id, "Sp", param->value.val.S, src_param));
+            instr_add(state, state->current_sub, instr_new(state, expr_get_by_symbol(state->version, GASSIGN)->id, "Sp", param->value.val.S, src_param));
+        } else if (param->val_type == PARAM_COLOR) { /* CVMW */
+            instr_add(state, state->current_sub, instr_new(state, expr_get_by_symbol(state->version, CASSIGN)->id, "pSS", src_param, param->object_link, param->value.val.S));
         }
     }
 }
@@ -5049,13 +5076,11 @@ var_shorthand_assign(
     }
     else {
         if (param->val_type == PARAM_FIELD) {
-            const expr_t* expr = expr_get_by_symbol(state->version, ASSIGN);
-
-            instr_add(state, state->current_sub, instr_new(state, expr->id, "pp", param, param_sp_new()));
+            instr_add(state, state->current_sub, instr_new(state, expr_get_by_symbol(state->version, ASSIGN)->id, "pp", param, param_sp_new()));
         } else if (param->val_type == PARAM_GLOBAL) { /* WGL */
-            const expr_t* expr = expr_get_by_symbol(state->version, GASSIGN);
-
-            instr_add(state, state->current_sub, instr_new(state, expr->id, "Sp", param->value.val.S, param_sp_new()));
+            instr_add(state, state->current_sub, instr_new(state, expr_get_by_symbol(state->version, GASSIGN)->id, "Sp", param->value.val.S, param_sp_new()));
+        } else if (param->val_type == PARAM_COLOR) { /* CVMW */
+            instr_add(state, state->current_sub, instr_new(state, expr_get_by_symbol(state->version, CASSIGN)->id, "pSS", param_sp_new(), param->object_link, param->value.val.S));
         }
     }
 }
@@ -5066,15 +5091,16 @@ mips_instr_new_store(
     thecl_param_t* value)
 {
     verify_reg_load(state, &state->top_reg, NULL);
+    int val = value->value.val.S;
     if (value->val_type == PARAM_FIELD) { /* object field, stack */
         if (value->object_link == 0) { /* object field */
-            instr_add_delay_slot(state, state->current_sub, MIPS_INSTR_I("sw", value->value.val.S * 4 + get_obj_proc_offset(state->version), state->top_reg->index, get_reg(state->reg_block, "s0")->index));
+            instr_add_delay_slot(state, state->current_sub, MIPS_INSTR_I("sw", val * 4 + get_obj_proc_offset(state->version), state->top_reg->index, get_reg(state->reg_block, "s0")->index));
         }
         else if (value->object_link >= 1 && value->object_link <= 7) { /* linked object field */
             mips_reg_t* link_reg = get_usable_reg(state->reg_block);
             if (link_reg) {
                 instr_add_delay_slot(state, state->current_sub, MIPS_INSTR_I("lw", value->object_link * 4 + get_obj_proc_offset(state->version), link_reg->index, get_reg(state->reg_block, "s0")->index));
-                instr_add_delay_slot(state, state->current_sub, MIPS_INSTR_I("sw", value->value.val.S * 4 + get_obj_proc_offset(state->version), state->top_reg->index, link_reg->index));
+                instr_add_delay_slot(state, state->current_sub, MIPS_INSTR_I("sw", val * 4 + get_obj_proc_offset(state->version), state->top_reg->index, link_reg->index));
                 link_reg->status = MREG_STATUS_USED;
             }
             else {
@@ -5083,19 +5109,36 @@ mips_instr_new_store(
             }
         }
         else if (value->object_link == -1) { /* stack */
-            instr_add_delay_slot(state, state->current_sub, MIPS_INSTR_I("sw", value->value.val.S * 4, state->top_reg->index, get_reg(state->reg_block, "s7")->index));
+            instr_add_delay_slot(state, state->current_sub, MIPS_INSTR_I("sw", val * 4, state->top_reg->index, get_reg(state->reg_block, "s7")->index));
         }
     }
     else if (value->val_type == PARAM_GLOBAL) { /* global */
         mips_reg_t* reg = get_usable_reg(state->reg_block);
         if (reg) {
             instr_add_delay_slot(state, state->current_sub, MIPS_INSTR_I("lw", 0x58, reg->index, get_reg(state->reg_block, "s8")->index));
-            instr_add_delay_slot(state, state->current_sub, MIPS_INSTR_I("lw", (value->value.val.S >> 8) * 4, state->top_reg->index, reg->index));
+            instr_add_delay_slot(state, state->current_sub, MIPS_INSTR_I("lw", (val >> 8) * 4, state->top_reg->index, reg->index));
             reg->status = MREG_STATUS_USED;
         }
         else {
             yyerror(state, "no available registers for mips mode");
             exit(2);
+        }
+    }
+    else if (value->val_type == PARAM_COLOR) { /* color field */
+        if (value->object_link == 0) { /* object field */
+            instr_add_delay_slot(state, state->current_sub, MIPS_INSTR_I("sh", val * 2 + 0x20, state->top_reg->index, get_reg(state->reg_block, "s0")->index));
+        }
+        else if (value->object_link >= 1 && value->object_link <= 7) { /* linked color field */
+            mips_reg_t* link_reg = get_usable_reg(state->reg_block);
+            if (link_reg) {
+                instr_add_delay_slot(state, state->current_sub, MIPS_INSTR_I("lw", value->object_link * 4 + get_obj_proc_offset(state->version), link_reg->index, get_reg(state->reg_block, "s0")->index));
+                instr_add_delay_slot(state, state->current_sub, MIPS_INSTR_I("sh", val * 2 + 0x20, state->top_reg->index, link_reg->index));
+                link_reg->status = MREG_STATUS_USED;
+            }
+            else {
+                yyerror(state, "no available registers for mips mode");
+                exit(2);
+            }
         }
     }
     SetUsedReg(state->top_reg);
