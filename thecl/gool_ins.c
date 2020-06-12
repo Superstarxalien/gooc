@@ -75,7 +75,7 @@ c1_gool_ins_anim_params(
     else if (c == 2) {
     }
     else {
-        fprintf(stderr, "%s: anim: wrong number of arguments (expected 1 or 2, got %zu)\n", argv0, c);
+        fprintf(stderr, "%s:%s:anim: wrong number of arguments (expected 1 or 2, got %zu)\n", argv0, current_input, c);
         return NULL;
     }
     return params;
@@ -96,7 +96,7 @@ c1_gool_ins_playanim_params(
         list_append_new(params, param_val_new(3));
     }
     else if (c != 4) {
-        fprintf(stderr, "%s: playanim: wrong number of arguments (expected 2, 3 or 4, got %zu)\n", argv0, c);
+        fprintf(stderr, "%s:%s:playanim: wrong number of arguments (expected 2, 3 or 4, got %zu)\n", argv0, current_input, c);
         return NULL;
     }
     return params;
@@ -114,7 +114,7 @@ c1_gool_ins_playtext_params(
         list_append_new(params, param_val_new(3));
     }
     else {
-        fprintf(stderr, "%s: playtext: wrong number of arguments (expected 2, got %zu)\n", argv0, c);
+        fprintf(stderr, "%s:%s:playtext: wrong number of arguments (expected 2, got %zu)\n", argv0, current_input, c);
         return NULL;
     }
     return params;
@@ -142,7 +142,7 @@ c1_gool_ins_changestate_params(
         list_append_new(params, param_val_new(1));
     }
     else {
-        fprintf(stderr, "%s: %s: wrong number of arguments (expected at least %d, got %zu)\n", argv0, type == 0 ? "changestate" : (type == 1 ? "changestateif" : "changestateifn"), 1 + (type == 1 || type == 2), c+argc);
+        fprintf(stderr, "%s:%s:%s:%s:wrong number of arguments (expected at least %d, got %zu)\n", argv0, current_input, type == 0 ? "changestate" : (type == 1 ? "changestateif" : "changestateifn"), 1 + (type == 1 || type == 2), c+argc);
         return NULL;
     }
     return params;
@@ -163,7 +163,7 @@ c1_gool_ins_stateif_params(
 {
     size_t c = list_count(params);
     if (c != 2) {
-        fprintf(stderr, "%s: changestateif: wrong number of arguments (expected 2, got %zu)\n", argv0, c);
+        fprintf(stderr, "%s:%s:changestateif: wrong number of arguments (expected 2, got %zu)\n", argv0, current_input, c);
         return NULL;
     }
     return c1_gool_ins_changestate_params(params, argc, 1);
@@ -176,7 +176,7 @@ c1_gool_ins_stateifn_params(
 {
     size_t c = list_count(params);
     if (c != 2) {
-        fprintf(stderr, "%s: changestateifn: wrong number of arguments (expected 2, got %zu)\n", argv0, c);
+        fprintf(stderr, "%s:%s:changestateifn: wrong number of arguments (expected 2, got %zu)\n", argv0, current_input, c);
         return NULL;
     }
     return c1_gool_ins_changestate_params(params, argc, 2);
@@ -188,7 +188,7 @@ c1_gool_ins_setcolor_params(
     int argc)
 {
     if (g_warn_deprecate_setcolor) {
-        fprintf(stderr, "%s: setcolor: deprecate function. use as address instead (i.e. 'color = 255')\n", argv0);
+        fprintf(stderr, "%s:%s:setcolor: deprecate function. use as address instead (i.e. 'color = 255')\n", argv0, current_input);
         g_warn_deprecate_setcolor = false;
     }
     thecl_param_t* param;
@@ -204,7 +204,7 @@ c1_gool_ins_setcolor_params(
         node = node->next;
     }
     else {
-        fprintf(stderr, "%s: setcolor: wrong number of arguments (expected 3 or 2, got %zu)\n", argv0, c);
+        fprintf(stderr, "%s:%s:setcolor: wrong number of arguments (expected 3 or 2, got %zu)\n", argv0, current_input, c);
         return NULL;
     }
     return params;
@@ -239,7 +239,7 @@ c1_gool_ins_spawn_params(
         list_append_new(params, param_val_new(argc));
     }
     else {
-        fprintf(stderr, "%s: spawn: wrong number of arguments (expected 2 or 3, got %zu)\n", argv0, c);
+        fprintf(stderr, "%s:%s:spawn: wrong number of arguments (expected 2 or 3, got %zu)\n", argv0, current_input, c);
         return NULL;
     }
     return params;
@@ -257,7 +257,7 @@ c1_gool_ins_sendevent_params(
         list_prepend_to(params, param_val_new(argc), params->tail);
     }
     else {
-        fprintf(stderr, "%s: sendevent: wrong number of arguments (expected at least 2, got %zu)\n", argv0, c);
+        fprintf(stderr, "%s:%s:sendevent: wrong number of arguments (expected at least 2, got %zu)\n", argv0, current_input, c);
         return NULL;
     }
     return params;
@@ -276,7 +276,7 @@ c1_gool_ins_sendeventif_params(
         list_prepend_to(params, param_val_new(argc), params->tail);
     }
     else {
-        fprintf(stderr, "%s: sendeventif: wrong number of arguments (expected at least 3, got %zu)\n", argv0, c);
+        fprintf(stderr, "%s:%s:sendeventif: wrong number of arguments (expected at least 3, got %zu)\n", argv0, current_input, c);
         return NULL;
     }
     return params;
@@ -308,7 +308,7 @@ c1_gool_ins_eventstatus_params(
         list_append_new(params, param_val_new(0));
     }
     else {
-        fprintf(stderr, "%s: accept/rejectevent: wrong number of arguments (expected 0 or 1, got %zu)\n", argv0, c);
+        fprintf(stderr, "%s:%s:accept/rejectevent: wrong number of arguments (expected 0 or 1, got %zu)\n", argv0, current_input, c);
         return NULL;
     }
     return params;
@@ -340,7 +340,7 @@ c1_gool_ins_eventstatusreturn_params(
         list_append_new(params, param_val_new(2));
     }
     else {
-        fprintf(stderr, "%s: accept/rejectevent: wrong number of arguments (expected 0 or 1, got %zu)\n", argv0, c);
+        fprintf(stderr, "%s:%s:accept/rejectevent: wrong number of arguments (expected 0 or 1, got %zu)\n", argv0, current_input, c);
         return NULL;
     }
     return params;
@@ -367,7 +367,7 @@ c1_gool_ins_eventstatusstate_params(
         list_append_new(params, param_val_new(1));
     }
     else {
-        fprintf(stderr, "%s: accept/rejectevent: wrong number of arguments (expected 1 or 2, got %zu)\n", argv0, c);
+        fprintf(stderr, "%s:%s:accept/rejectevent: wrong number of arguments (expected 1 or 2, got %zu)\n", argv0, current_input, c);
         return NULL;
     }
     return params;
@@ -384,7 +384,7 @@ c1_gool_ins_onexit_params(
         list_append_new(params, param_val_new(field_get("hpc")->offset));
     }
     else {
-        fprintf(stderr, "%s: onstateexit: wrong number of arguments (expected 1, got %zu)\n", argv0, c);
+        fprintf(stderr, "%s:%s:onstateexit: wrong number of arguments (expected 1, got %zu)\n", argv0, current_input, c);
         return NULL;
     }
     return params;
@@ -401,7 +401,7 @@ c1_gool_ins_settrans_params(
         list_append_new(params, param_val_new(field_get("tpc")->offset));
     }
     else {
-        fprintf(stderr, "%s: settrans: wrong number of arguments (expected 1, got %zu)\n", argv0, c);
+        fprintf(stderr, "%s:%s:settrans: wrong number of arguments (expected 1, got %zu)\n", argv0, current_input, c);
         return NULL;
     }
     return params;
@@ -421,7 +421,7 @@ c1_gool_ins_setfield_params(
         list_append_new(params, param_val_new(4));
     }
     else {
-        fprintf(stderr, "%s: setfield: wrong number of arguments (expected 3, got %zu)\n", argv0, c + argc);
+        fprintf(stderr, "%s:%s:setfield: wrong number of arguments (expected 3, got %zu)\n", argv0, current_input, c + argc);
         return NULL;
     }
     return params;
@@ -441,7 +441,7 @@ c1_gool_ins_movetozoneinposition_params(
         list_append_new(params, param_val_new(9));
     }
     else {
-        fprintf(stderr, "%s: movetozoneinposition: wrong number of arguments (expected 2, got %zu)\n", argv0, c);
+        fprintf(stderr, "%s:%s:movetozoneinposition: wrong number of arguments (expected 2, got %zu)\n", argv0, current_input, c);
         return NULL;
     }
     return params;
@@ -460,7 +460,7 @@ c1_gool_ins_entitysetspawn_params(
         list_append_new(params, param_val_new(8));
     }
     else {
-        fprintf(stderr, "%s: entitysetspawn: wrong number of arguments (expected 1, got %zu)\n", argv0, c);
+        fprintf(stderr, "%s:%s:entitysetspawn: wrong number of arguments (expected 1, got %zu)\n", argv0, current_input, c);
         return NULL;
     }
     return params;
@@ -482,7 +482,7 @@ c1_gool_ins_entitysetstate_params(
         list_append_new(params, param_val_new(10));
     }
     else {
-        fprintf(stderr, "%s: entitysetstate: wrong number of arguments (expected 2, got %zu)\n", argv0, c);
+        fprintf(stderr, "%s:%s:entitysetstate: wrong number of arguments (expected 2, got %zu)\n", argv0, current_input, c);
         return NULL;
     }
     return params;
@@ -509,7 +509,7 @@ c1_gool_ins_getvert_params(
         }
     }
     else {
-        fprintf(stderr, "%s: getvert: wrong number of arguments (expected 3, got %zu)\n", argv0, c);
+        fprintf(stderr, "%s:%s:getvert: wrong number of arguments (expected 3, got %zu)\n", argv0, current_input, c);
         return NULL;
     }
     return params;
@@ -541,7 +541,7 @@ c1_gool_ins_calcpath_params(
         list_append_new(params, param_val_new(0));
     }
     else {
-        fprintf(stderr, "%s: calcpath: wrong number of arguments (expected 0, 1 or 2, got %zu)\n", argv0, c);
+        fprintf(stderr, "%s:%s:calcpath: wrong number of arguments (expected 0, 1 or 2, got %zu)\n", argv0, current_input, c);
         return NULL;
     }
     return params;
@@ -555,7 +555,7 @@ c1_gool_ins_soundplay_params(
     thecl_param_t* param;
     size_t c = list_count(params);
     if (c != 2) {
-        fprintf(stderr, "%s: soundplay: wrong number of arguments (expected 2, got %zu)\n", argv0, c);
+        fprintf(stderr, "%s:%s:soundplay: wrong number of arguments (expected 2, got %zu)\n", argv0, current_input, c);
         return NULL;
     }
     return params;
@@ -578,7 +578,7 @@ c1_gool_ins_setupsound_params(
     else if (c == 4) {
     }
     else {
-        fprintf(stderr, "%s: soundsetup: wrong number of arguments (expected 2, 3 or 4, got %zu)\n", argv0, c);
+        fprintf(stderr, "%s:%s:soundsetup: wrong number of arguments (expected 2, 3 or 4, got %zu)\n", argv0, current_input, c);
         return NULL;
     }
     return params;
@@ -607,7 +607,7 @@ c1_gool_ins_soundcheck_params(
         list_append_new(params, param_val_new(13));
     }
     else {
-        fprintf(stderr, "%s: soundcheck: wrong number of arguments (expected 0, 1 or 2, got %zu)\n", argv0, c);
+        fprintf(stderr, "%s:%s:soundcheck: wrong number of arguments (expected 0, 1 or 2, got %zu)\n", argv0, current_input, c);
         return NULL;
     }
     return params;
@@ -626,7 +626,7 @@ c1_gool_ins_loadlevel_params(
         list_append_new(params, param_val_new(12));
     }
     else {
-        fprintf(stderr, "%s: loadlevel: wrong number of arguments (expected 1, got %zu)\n", argv0, c);
+        fprintf(stderr, "%s:%s:loadlevel: wrong number of arguments (expected 1, got %zu)\n", argv0, current_input, c);
         return NULL;
     }
     return params;
@@ -653,7 +653,7 @@ c1_gool_ins_soundspec_params(
         list_append_new(params, param_val_new(type));
     }
     else {
-        fprintf(stderr, "%s: %s: wrong number of arguments (expected 1, 2 or 3, got %zu)\n", argv0, name, c);
+        fprintf(stderr, "%s:%s:%s:%s:wrong number of arguments (expected 1, 2 or 3, got %zu)\n", argv0, current_input, name, c);
         return NULL;
     }
     return params;
@@ -727,7 +727,7 @@ c1_gool_ins_ntry_params(
         list_append_new(params, param_val_new(type));
     }
     else {
-        fprintf(stderr, "%s: %s: wrong number of arguments (expected 1, got %zu)\n", argv0, name, c);
+        fprintf(stderr, "%s:%s:%s:%s:wrong number of arguments (expected 1, got %zu)\n", argv0, current_input, name, c);
         return NULL;
     }
     return params;
@@ -772,7 +772,7 @@ c1_gool_ins_calclight_params(
         list_append_new(params, param_val_new(0));
     }
     else {
-        fprintf(stderr, "%s: calclight: wrong number of arguments (expected 0, got %zu)\n", argv0, c);
+        fprintf(stderr, "%s:%s:calclight: wrong number of arguments (expected 0, got %zu)\n", argv0, current_input, c);
         return NULL;
     }
     return params;
@@ -791,7 +791,7 @@ c1_gool_ins_movetolist_params(
         list_append_new(params, param_val_new(12));
     }
     else {
-        fprintf(stderr, "%s: movetolist: wrong number of arguments (expected 1, got %zu)\n", argv0, c);
+        fprintf(stderr, "%s:%s:movetolist: wrong number of arguments (expected 1, got %zu)\n", argv0, current_input, c);
         return NULL;
     }
     return params;
@@ -811,7 +811,7 @@ c1_gool_ins_savecheckpoint_params(
         list_append_new(params, param_val_new(12));
     }
     else {
-        fprintf(stderr, "%s: savecheckpoint: wrong number of arguments (expected 0, got %zu)\n", argv0, c);
+        fprintf(stderr, "%s:%s:savecheckpoint: wrong number of arguments (expected 0, got %zu)\n", argv0, current_input, c);
         return NULL;
     }
     return params;
@@ -831,7 +831,7 @@ c1_gool_ins_loadcheckpoint_params(
         list_append_new(params, param_val_new(12));
     }
     else {
-        fprintf(stderr, "%s: loadcheckpoint: wrong number of arguments (expected 0, got %zu)\n", argv0, c);
+        fprintf(stderr, "%s:%s:loadcheckpoint: wrong number of arguments (expected 0, got %zu)\n", argv0, current_input, c);
         return NULL;
     }
     return params;
@@ -850,7 +850,7 @@ c1_gool_ins_gamefunc4_params(
         list_append_new(params, param_val_new(12));
     }
     else {
-        fprintf(stderr, "%s: gamefunc4: wrong number of arguments (expected 1, got %zu)\n", argv0, c);
+        fprintf(stderr, "%s:%s:gamefunc4: wrong number of arguments (expected 1, got %zu)\n", argv0, current_input, c);
         return NULL;
     }
     return params;
@@ -902,7 +902,7 @@ c1_gool_ins_moveto2d_params(
         list_append_new(params, param_val_new(0));
     }
     else {
-        fprintf(stderr, "%s: moveto2d: wrong number of arguments (expected 0, 2 or 3, got %zu)\n", argv0, c);
+        fprintf(stderr, "%s:%s:moveto2d: wrong number of arguments (expected 0, 2 or 3, got %zu)\n", argv0, current_input, c);
         return NULL;
     }
     return params;
@@ -940,7 +940,7 @@ c1_gool_ins_setvel_params(
         list_append_new(params, param_val_new(0));
     }
     else {
-        fprintf(stderr, "%s: setvel: wrong number of arguments (expected 0, 1 or 2, got %zu)\n", argv0, c);
+        fprintf(stderr, "%s:%s:setvel: wrong number of arguments (expected 0, 1 or 2, got %zu)\n", argv0, current_input, c);
         return NULL;
     }
     return params;
@@ -960,7 +960,7 @@ c1_gool_ins_soundstop_params(
         list_append_new(params, param_val_new(12));
     }
     else {
-        fprintf(stderr, "%s: soundstop: wrong number of arguments (expected 0, got %zu)\n", argv0, c);
+        fprintf(stderr, "%s:%s:soundstop: wrong number of arguments (expected 0, got %zu)\n", argv0, current_input, c);
         return NULL;
     }
     return params;
@@ -979,7 +979,7 @@ c1_gool_ins_seqplay_params(
         list_append_new(params, param_val_new(12));
     }
     else {
-        fprintf(stderr, "%s: seqplay: wrong number of arguments (expected 1, got %zu)\n", argv0, c);
+        fprintf(stderr, "%s:%s:seqplay: wrong number of arguments (expected 1, got %zu)\n", argv0, current_input, c);
         return NULL;
     }
     return params;
@@ -998,7 +998,7 @@ c1_gool_ins_gamefunc10_params(
         list_append_new(params, param_val_new(12));
     }
     else {
-        fprintf(stderr, "%s: gamefunc10: wrong number of arguments (expected 1, got %zu)\n", argv0, c);
+        fprintf(stderr, "%s:%s:gamefunc10: wrong number of arguments (expected 1, got %zu)\n", argv0, current_input, c);
         return NULL;
     }
     return params;
@@ -1019,7 +1019,7 @@ c1_gool_ins_vectransf_params(
         list_append_new(params, param_val_new(0));
     }
     else {
-        fprintf(stderr, "%s: vectransf: wrong number of arguments (expected 5, got %zu)\n", argv0, c+argc);
+        fprintf(stderr, "%s:%s:vectransf: wrong number of arguments (expected 5, got %zu)\n", argv0, current_input, c+argc);
         return NULL;
     }
     return params;
@@ -1039,7 +1039,7 @@ c1_gool_ins_vectransf2_params(
         list_append_new(params, param_val_new(0));
     }
     else {
-        fprintf(stderr, "%s: vectransf2: wrong number of arguments (expected 5, got %zu)\n", argv0, c + argc);
+        fprintf(stderr, "%s:%s:vectransf2: wrong number of arguments (expected 5, got %zu)\n", argv0, current_input, c + argc);
         return NULL;
     }
     return params;
@@ -1126,7 +1126,7 @@ c2_gool_ins_onexit_params(
         list_append_new(params, param_val_new(field_get("hpc")->offset));
     }
     else {
-        fprintf(stderr, "%s: onstateexit: wrong number of arguments (expected 1, got %zu)\n", argv0, c);
+        fprintf(stderr, "%s:%s:onstateexit: wrong number of arguments (expected 1, got %zu)\n", argv0, current_input, c);
         return NULL;
     }
     return params;
@@ -1144,7 +1144,7 @@ c2_gool_ins_settrans_params(
         list_append_new(params, param_val_new(field_get("tpc")->offset));
     }
     else {
-        fprintf(stderr, "%s: settrans: wrong number of arguments (expected 1, got %zu)\n", argv0, c);
+        fprintf(stderr, "%s:%s:settrans: wrong number of arguments (expected 1, got %zu)\n", argv0, current_input, c);
         return NULL;
     }
     return params;
@@ -1163,7 +1163,7 @@ c2_gool_ins_checkzonecollision_params(
         list_append_new(params, param_val_new(0));
     }
     else {
-        fprintf(stderr, "%s: checkzonecollision: wrong number of arguments (expected 2, got %zu)\n", argv0, c);
+        fprintf(stderr, "%s:%s:checkzonecollision: wrong number of arguments (expected 2, got %zu)\n", argv0, current_input, c);
         return NULL;
     }
     return params;
@@ -1180,7 +1180,7 @@ c2_gool_ins_call_params(
         list_append_new(params, param_val_new(argc << 8));
     }
     else {
-        fprintf(stderr, "%s: call: wrong number of arguments (expected at least 1, got %zu)\n", argv0, c+argc);
+        fprintf(stderr, "%s:%s:call: wrong number of arguments (expected at least 1, got %zu)\n", argv0, current_input, c+argc);
         return NULL;
     }
     return params;
@@ -1199,7 +1199,7 @@ c2_gool_ins_savecheckpoint_params(
         list_append_new(params, param_val_new(12));
     }
     else {
-        fprintf(stderr, "%s: savecheckpoint: wrong number of arguments (expected 1, got %zu)\n", argv0, c);
+        fprintf(stderr, "%s:%s:savecheckpoint: wrong number of arguments (expected 1, got %zu)\n", argv0, current_input, c);
         return NULL;
     }
     return params;
@@ -1218,7 +1218,7 @@ c2_gool_ins_loadcheckpoint_params(
         list_append_new(params, param_val_new(12));
     }
     else {
-        fprintf(stderr, "%s: loadcheckpoint: wrong number of arguments (expected 1, got %zu)\n", argv0, c);
+        fprintf(stderr, "%s:%s:loadcheckpoint: wrong number of arguments (expected 1, got %zu)\n", argv0, current_input, c);
         return NULL;
     }
     return params;
@@ -1234,7 +1234,7 @@ c2_gool_ins_ins46_params(
     if (c == 2) {
     }
     else {
-        fprintf(stderr, "%s: ins46: wrong number of arguments (expected 2, got %zu)\n", argv0, c);
+        fprintf(stderr, "%s:%s:ins46: wrong number of arguments (expected 2, got %zu)\n", argv0, current_input, c);
         return NULL;
     }
     return params;
@@ -1250,7 +1250,7 @@ c2_gool_ins_ins72_params(
     if (c == 2) {
     }
     else {
-        fprintf(stderr, "%s: ins72: wrong number of arguments (expected 2, got %zu)\n", argv0, c);
+        fprintf(stderr, "%s:%s:ins72: wrong number of arguments (expected 2, got %zu)\n", argv0, current_input, c);
         return NULL;
     }
     return params;
@@ -1270,7 +1270,7 @@ c1_gool_ins_killvictims_params(
         list_append_new(params, param_val_new(12));
     }
     else {
-        fprintf(stderr, "%s: killvictims: wrong number of arguments (expected 0, got %zu)\n", argv0, c);
+        fprintf(stderr, "%s:%s:killvictims: wrong number of arguments (expected 0, got %zu)\n", argv0, current_input, c);
         return NULL;
     }
     return params;
