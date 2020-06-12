@@ -2973,7 +2973,7 @@ expression_replace_var(
     list_node_t* node;
     list_for_each_node(&expression->children, node) {
         expression = node->data;
-        if (expression->type == EXPRESSION_VAL && expression->value->val_type == PARAM_LITERAL && expression->value->object_link == -1 && expression->value->value.val.S == var_stack) {
+        if (expression->type == EXPRESSION_VAL && expression->value->val_type == PARAM_FIELD && expression->value->object_link == -1 && expression->value->value.val.S == var_stack) {
             expression_free(expression);
             node->data = expression_copy(replace);
         }
@@ -2990,7 +2990,7 @@ expression_replace_var_start(
     int var_stack,
     expression_t* replace)
 {
-    if (expression->type == EXPRESSION_VAL && expression->value->val_type == PARAM_LITERAL && expression->value->object_link == -1 && expression->value->value.val.S == var_stack) {
+    if (expression->type == EXPRESSION_VAL && expression->value->val_type == PARAM_FIELD && expression->value->object_link == -1 && expression->value->value.val.S == var_stack) {
         expression_free(expression);
         return expression_copy(replace); /* no point in continuing */
     }
