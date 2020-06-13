@@ -2337,7 +2337,7 @@ Address:
         if (var_exists(state, state->current_sub, $1)) {
             $$ = param_new('S');
             $$->val_type = PARAM_FIELD;
-            $$->value.val.S = var_stack(state, state->current_sub, $1) + sub->stack_offset;
+            $$->value.val.S = var_stack(state, state->current_sub, $1) + state->current_sub->stack_offset;
         } else if (arg = arg_get(state, state->current_sub, $1)) {
             $$ = param_new('S');
             $$->val_type = PARAM_FIELD;
