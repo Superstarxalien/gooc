@@ -4423,7 +4423,7 @@ expression_optimize(
            !expression_is_number(child_expr_1) /* Variables are not acceptable, obviously. */
         || !expression_is_number(child_expr_2)
       ) || expr->is_unary && (
-           expression_is_number(child_expr_2)
+           !expression_is_number(child_expr_2)
         || child_expr_1->value->value.val.S != 0x1F
         || child_expr_1->value->object_link != 0
         || child_expr_1->value->val_type != PARAM_FIELD
