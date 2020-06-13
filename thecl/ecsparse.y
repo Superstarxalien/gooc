@@ -4531,7 +4531,7 @@ expression_optimize(
             }
             if (expression_is_number(child_expr_2) && int_has_bit(child_expr_2->value->value.val.S)) {
                 int i = 0;
-                while (true) if (child_expr_1->value->value.val.S == (1 << i++)) break;
+                while (true) if (child_expr_2->value->value.val.S == (1 << i++)) break;
                 expression_t* other_expr = expression_copy(child_expr_1);
                 expression_t* number_expr = expression_val_new(state, i);
 
