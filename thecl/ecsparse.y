@@ -1271,7 +1271,7 @@ SaveBlock:
             }
         }
         int count = list_count($3);
-        state->current_sub->stack += count;
+        state->current_sub->stack_offset += count;
         list_append_new(&state->addresses, count);
         free($3);
     } CodeBlock {
@@ -1291,7 +1291,7 @@ SaveBlock:
             param_free(param);
             list_del_tail(&state->addresses);
         }
-        state->current_sub->stack -= m;
+        state->current_sub->stack_offset -= m;
     }
     ;
 
@@ -2337,7 +2337,7 @@ Address:
         if (var_exists(state, state->current_sub, $1)) {
             $$ = param_new('S');
             $$->val_type = PARAM_FIELD;
-            $$->value.val.S = var_stack(state, state->current_sub, $1);
+            $$->value.val.S = var_stack(state, state->current_sub, $1) + sub->stack_offset;
         } else if (arg = arg_get(state, state->current_sub, $1)) {
             $$ = param_new('S');
             $$->val_type = PARAM_FIELD;
@@ -3220,7 +3220,7 @@ instr_create_inline_call(
                         }
                     }
                     int count = list_count(line->list);
-                    state->current_sub->stack += count;
+                    state->current_sub->stack_offset += count;
                     list_append_new(&state->addresses, count);
                 }
             } break;
@@ -3244,7 +3244,7 @@ instr_create_inline_call(
                         }
                         list_del_tail(&state->addresses);
                     }
-                    state->current_sub->stack -= m;
+                    state->current_sub->stack_offset -= m;
                 }
             } break;
             case LINE_GOTO: {
@@ -4569,6 +4569,7 @@ sub_begin(
     list_init(&sub->lines);
     list_init(&sub->instrs);
     sub->stack = 3;
+    sub->stack_offset = 0;
     sub->var_count = 0;
     sub->arg_count = 0;
     sub->vars = NULL;
@@ -4893,7 +4894,7 @@ var_create_assign(
     if (state->mips_mode) {
         thecl_param_t* param = param_new('S');
         param->val_type = PARAM_FIELD;
-        param->value.val.S = var->stack;
+        param->value.val.S = var->stack > 0 ? var->stack + sub->stack_offset : var->stack;
         param->object_link = -1;
         var_assign(state, param, expr);
     }

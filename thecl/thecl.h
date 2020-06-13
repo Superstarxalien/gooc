@@ -210,6 +210,7 @@ typedef struct {
     bool is_external;
 
     size_t stack;
+    size_t stack_offset;
     size_t var_count;
     thecl_variable_t** vars;
     int arg_count;
