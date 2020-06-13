@@ -54,7 +54,7 @@ global_expressions[] = {
     { MULTIPLY,   2, 2, 0, 1, 0 }, /* s1 * s0 */
     { DIVIDE,     3, 2, 0, 1, 0 }, /* s1 / s0 */
     { EQUAL,      4, 2, 0, 1, 0 }, /* s1 == s0 */
-    { INEQUAL,    4, 2, 0, 1, 0 }, /* GOOL does not have this instruction, use NOT + CEQ instead /* s1 != s0 */
+    { INEQUAL,   -2, 2, 0, 1, 0 }, /* GOOL does not have this instruction, use NOT + CEQ instead /* s1 != s0 */
     { AND,        5, 2, 0, 1, 0 }, /* s1 && s0 */
     { OR,         6, 2, 0, 1, 0 }, /* s1 || s0 */
     { B_AND,      7, 2, 0, 1, 0 }, /* s1 & s0 */

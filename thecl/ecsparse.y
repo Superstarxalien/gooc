@@ -2231,7 +2231,7 @@ ExpressionSubset:
     | Expression ">>"  Expression { $$ = EXPR_2(RSHIFT,   $1, $3); }
     | Expression "\\"  Expression { $$ = EXPR_2(TEST,     $1, $3); }
     | Expression "!="  Expression {
-        $$ = EXPR_2(INEQUAL,  $1, $3);
+        $$ = EXPR_2(EQUAL,  $1, $3);
         $$ = EXPR_2(NOT,      expression_load_new(state, param_sp_new()), $$);
       }
     | "+" Expression              { $$ = $2; }
@@ -2460,6 +2460,23 @@ Literal_Int:
     | "+" INTEGER { $$ = +$2; }
     ;
 %%
+
+static bool
+int_has_bit(
+    uint32_t v)
+{
+    for (int i=0; i<32; ++i) {
+        if (v == (1 << i)) return true;
+    }
+    return false;
+}
+
+static bool
+expression_is_number(
+    expression_t* expr)
+{
+    return expr->type == EXPRESSION_VAL && expr->value->val_type == PARAM_LITERAL;
+}
 
 static thecl_instr_t*
 instr_init(
@@ -4285,7 +4302,7 @@ expression_output(
     parser_state_t* state,
     expression_t* expr)
 {
-    if (expr->type != EXPRESSION_TERNARY && expr_get_by_id(state->version, expr->id)->id < -1) {
+    if (expr->type != EXPRESSION_TERNARY && expr_get_by_id(state->version, expr->id)->id < -2) {
         yyerror(state, "error, cannot output non-compileable expression %d", expr->id);
         exit(2);
     }
@@ -4398,39 +4415,53 @@ expression_optimize(
         ++child_cnt;
     }
 
-    const expr_t* tmp_expr = expr_get_by_id(state->version, expression->id);
+    const expr_t* expr = expr_get_by_id(state->version, expression->id);
 
-    if (tmp_expr->stack_arity != 2 || !tmp_expr->allow_optim) return;
+    if (expr->stack_arity != 2 || !expr->allow_optim) return;
 
-    if (   !tmp_expr->is_unary && (
+    if ((child_expr_1->type == EXPRESSION_VAL && child_expr_1->value->type != 'S') || (child_expr_2->type == EXPRESSION_VAL && child_expr_2->value->type != 'S')) return;
+
+    if (   !expr->is_unary && (
            child_expr_1->type != EXPRESSION_VAL
         || child_expr_2->type != EXPRESSION_VAL
         || child_expr_1->value->val_type != PARAM_LITERAL /* Variables are not acceptable, obviously. */
         || child_expr_2->value->val_type != PARAM_LITERAL
-        || child_expr_1->value->type != 'S'
-        || child_expr_2->value->type != 'S'
-      ) || tmp_expr->is_unary && (
+      ) || expr->is_unary && (
            child_expr_2->type != EXPRESSION_VAL
         || child_expr_2->value->val_type != PARAM_LITERAL
         || child_expr_1->value->value.val.S != 0x1F
         || child_expr_1->value->object_link != 0
         || !child_expr_1->value->val_type != PARAM_LITERAL
-        || child_expr_1->value->type != 'S'
-        || child_expr_2->value->type != 'S'
       )
     ) {
         /* Partial expression optimization */
-        if ((tmp_expr = expr_get_by_symbol(state->version, ADD))->id == expression->id) {
-            tmp_expr = expr_get_by_symbol(state->version, RAND);
-            if ((child_expr_1->id == tmp_expr->id && child_expr_2->type == EXPRESSION_VAL && ((expression_t*)child_expr_1->children.head->data)->type == EXPRESSION_VAL && ((expression_t*)child_expr_1->children.head->data)->value->value.val.S == 0) ||
-            (child_expr_2->id == tmp_expr->id && child_expr_1->type == EXPRESSION_VAL && ((expression_t*)child_expr_2->children.head->data)->type == EXPRESSION_VAL && ((expression_t*)child_expr_2->children.head->data)->value->value.val.S == 0)) {
-                expression_t* rand_expr = child_expr_1->id == tmp_expr->id ? child_expr_1 : child_expr_2;
-                expression_t* numb_expr = child_expr_1->id == tmp_expr->id ? child_expr_2 : child_expr_1;
+        expr = expr_get_by_id(state->version, expression->id);
+        if (expr->symbol == ADD) {
+            expression_t* zero_expr = expression_is_number(child_expr_1) && child_expr_1->value->value.val.S == 0 ? child_expr_1 : (expression_is_number(child_expr_2) && child_expr_2->value->value.val.S == 0 ? child_expr_2 : NULL);
+            if (zero_expr) {
+                expression_t* value_expr = zero_expr == child_expr_1 ? child_expr_2 : child_expr_1;
+
+                expression->value = param_copy(value_expr->value);
+                expression->type = EXPRESSION_VAL;
+                expression->id = expr_get_by_symbol(state->version, LOAD)->id;
+
+                if (child_expr_1->type == EXPRESSION_VAL) param_free(child_expr_1->value);
+                if (child_expr_2->type == EXPRESSION_VAL) param_free(child_expr_2->value);
+                expression_free(child_expr_1);
+                expression_free(child_expr_2);
+                list_free_nodes(&expression->children);
+                return;
+            }
+
+            expr = expr_get_by_symbol(state->version, RAND);
+            expression_t* rand_expr = child_expr_1->id == expr->id ? child_expr_1 : (child_expr_2->id == expr->id ? child_expr_2 : NULL);
+            expression_t* numb_expr = rand_expr == child_expr_1 ? child_expr_2 : child_expr_1;
+            if (rand_expr && numb_expr->type == EXPRESSION_VAL && expression_is_number(list_head(&rand_expr->children)) && ((expression_t*)list_head(&rand_expr->children))->value->value.val.S == 0) {
                 rand_expr = expression_copy(list_tail(&rand_expr->children));
                 numb_expr = expression_copy(numb_expr);
 
-                expression->id = tmp_expr->id;
-                param_free((child_expr_1->id == tmp_expr->id ? child_expr_2 : child_expr_1)->value);
+                expression->id = expr->id;
+                param_free((child_expr_1->id == expr->id ? child_expr_2 : child_expr_1)->value);
                 expression_free(child_expr_1);
                 expression_free(child_expr_2);
                 list_free_nodes(&expression->children);
@@ -4440,7 +4471,49 @@ expression_optimize(
                 return;
             }
         }
-        else if ((tmp_expr = expr_get_by_symbol(state->version, EQUAL))->id == expression->id) {
+        else if (expr->symbol == SUBTRACT) {
+            if (expression_is_number(child_expr_2) && child_expr_2->value->value.val.S == 0) {
+                expression->value = param_copy(child_expr_1->value);
+                expression->type = EXPRESSION_VAL;
+                expression->id = expr_get_by_symbol(state->version, LOAD)->id;
+
+                if (child_expr_1->type == EXPRESSION_VAL) param_free(child_expr_1->value);
+                if (child_expr_2->type == EXPRESSION_VAL) param_free(child_expr_2->value);
+                expression_free(child_expr_1);
+                expression_free(child_expr_2);
+                list_free_nodes(&expression->children);
+            }
+        }
+        else if (expr->symbol == MULTIPLY) {
+            expression_t* neutral_expr = expression_is_number(child_expr_1) && child_expr_1->value->value.val.S == 1 ? child_expr_1 : (expression_is_number(child_expr_2) && child_expr_2->value->value.val.S == 1 ? child_expr_2 : NULL);
+            if (neutral_expr) {
+                expression_t* value_expr = neutral_expr == child_expr_1 ? child_expr_2 : child_expr_1;
+
+                expression->value = param_copy(value_expr->value);
+                expression->type = EXPRESSION_VAL;
+                expression->id = expr_get_by_symbol(state->version, LOAD)->id;
+
+                if (child_expr_1->type == EXPRESSION_VAL) param_free(child_expr_1->value);
+                if (child_expr_2->type == EXPRESSION_VAL) param_free(child_expr_2->value);
+                expression_free(child_expr_1);
+                expression_free(child_expr_2);
+                list_free_nodes(&expression->children);
+            }
+        }
+        else if (expr->symbol == DIVIDE) {
+            if (expression_is_number(child_expr_2) && child_expr_2->value->value.val.S == 1) {
+                expression->value = param_copy(child_expr_1->value);
+                expression->type = EXPRESSION_VAL;
+                expression->id = expr_get_by_symbol(state->version, LOAD)->id;
+
+                if (child_expr_1->type == EXPRESSION_VAL) param_free(child_expr_1->value);
+                if (child_expr_2->type == EXPRESSION_VAL) param_free(child_expr_2->value);
+                expression_free(child_expr_1);
+                expression_free(child_expr_2);
+                list_free_nodes(&expression->children);
+            }
+        }
+        else if (expr->symbol == EQUAL) {
             if ((child_expr_1->type == EXPRESSION_VAL && child_expr_1->value->value.val.S == 0) ||
             (child_expr_2->type == EXPRESSION_VAL && child_expr_2->value->value.val.S == 0)) {
                 expression_t* zero_expr = (child_expr_1->type == EXPRESSION_VAL && child_expr_1->value->value.val.S == 0) ? child_expr_1 : child_expr_2;
@@ -4449,11 +4522,20 @@ expression_optimize(
                 expression_free(zero_expr);
                 list_free_nodes(&expression->children);
 
-                tmp_expr = expr_get_by_symbol(state->version, NOT);
-                expression->id = tmp_expr->id;
+                expression->id = expr_get_by_symbol(state->version, NOT)->id;
                 list_append_new(&expression->children, expression_load_new(state, param_sp_new()));
                 list_append_new(&expression->children, zero_expr == child_expr_1 ? child_expr_2 : child_expr_1);
-                return;
+            }
+        }
+        else if (expr->symbol == MODULO) {
+            if (expression_is_number(child_expr_2) && int_has_bit(child_expr_2->value->value.val.S)) {
+                expression->id = expr_get_by_symbol(state->version, AND)->id;
+                child_expr_2->value->value.val.S--;
+            }
+        }
+        else if (expr->symbol == TEST) {
+            if (expression_is_number(child_expr_2) && int_has_bit(child_expr_2->value->value.val.S)) {
+                expression->id = expr_get_by_symbol(state->version, AND)->id;
             }
         }
         return;
@@ -4464,12 +4546,11 @@ expression_optimize(
     int val1 = child_expr_1->value->value.val.S;
     int val2 = child_expr_2->value->value.val.S;
 
-    param->value.val.S = math_preprocess(state, tmp_expr->symbol, val1, val2);
+    param->value.val.S = math_preprocess(state, expr->symbol, val1, val2);
 
     expression->value = param;
     expression->type = EXPRESSION_VAL;
-    tmp_expr = expr_get_by_symbol(state->version, LOAD);
-    expression->id = tmp_expr->id;
+    expression->id = expr_get_by_symbol(state->version, LOAD)->id;
 
     param_free(child_expr_1->value);
     param_free(child_expr_2->value);

@@ -436,8 +436,7 @@ c1_instr_serialize(
     int ret = c1_ins_init(instr->id);
 
     if (format == NULL) {
-        fprintf(stderr, "%s:c1_instr_serialize: in sub %s: instruction with id %d is not known to exist in version %d\n", argv0, sub->name, instr->id, ecl->version);
-        return ret;
+        return ret | c1_make_ref_null() | (c1_make_ref_null() << 12);
     }
 
     bool was_error = false;
@@ -948,8 +947,7 @@ c2_instr_serialize(
     int ret = c1_ins_init(instr->id);
 
     if (format == NULL) {
-        fprintf(stderr, "%s:c2_instr_serialize: in sub %s: instruction with id %d is not known to exist in version %d\n", argv0, sub->name, instr->id, ecl->version);
-        return ret;
+        return ret | c1_make_ref_null() | (c1_make_ref_null() << 12);
     }
 
     bool was_error = false;

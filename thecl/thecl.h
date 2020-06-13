@@ -357,6 +357,7 @@ typedef struct {
     void (*create_header)(const thecl_t* ecl, FILE* stream);
 } thecl_module_t;
 
+/* Param functions */
 thecl_param_t* param_new(
     int type);
 thecl_param_t* param_copy(
@@ -370,11 +371,15 @@ thecl_param_t* param_var_new(
 thecl_param_t* param_null_new(
     void);
 
+/* Miscellaneous version functions */
+
 int get_obj_proc_offset(
     unsigned int version);
 
 bool is_post_c2(
     unsigned int version);
+
+/* Instruction functions */
 
 thecl_instr_t* thecl_instr_new(
     void);
@@ -405,6 +410,8 @@ label_offset(
 thecl_t* thecl_new(
     void);
 
+/* GOOL functions */
+
 char* gool_to_ename(
     char* ename, int eid);
 
@@ -422,6 +429,8 @@ int gool_pool_force_get_index(
 int gool_pool_force_make_index(
     thecl_t* ecl,
     uint32_t val);
+
+/* Line system functions */
 
 thecl_line_t* line_make(
     enum thecl_line_type type);
@@ -454,6 +463,8 @@ thecl_line_t* line_make_save_start(
 
 thecl_line_t* line_make_save_end(void);
 
+/* Globals */
+
 extern parser_state_t* g_parser_state;
 extern int g_rate;
 extern char* g_region;
@@ -465,6 +476,8 @@ extern char* g_module_fmt;
 
 extern bool g_warn_deprecate_getcolor;
 extern bool g_warn_deprecate_setcolor;
+
+/* Expression functions */
 
 void expression_free(expression_t* expr);
 
