@@ -88,6 +88,7 @@ static thecl_instr_t* mips_instr_branch_new(parser_state_t* state, const char* n
 #define MIPS_INSTR_MOVE(rd, rt) \
     mips_instr_new(state, "addu", 0, 0, rd, rt, 0, 0)
 static void mips_instr_new_store(parser_state_t* state, thecl_param_t* value);
+static void instr_return_mips(parser_state_t* state, thecl_sub_t* sub);
 static void instr_add(parser_state_t* state, thecl_sub_t* sub, thecl_instr_t* instr);
 static void instr_add_delay_slot(parser_state_t* state, thecl_sub_t* sub, thecl_instr_t* instr);
 static void instr_del(parser_state_t* state, thecl_sub_t* sub, thecl_instr_t* instr);
@@ -1269,7 +1270,9 @@ SaveBlock:
                 case PARAM_COLOR: instr_add(state, state->current_sub, instr_new(state, color_expr->id, "SS", param->object_link, param->value.val.S)); break;
             }
         }
-        list_append_new(&state->addresses, list_count($3));
+        int count = list_count($3);
+        state->current_sub->stack += count;
+        list_append_new(&state->addresses, count);
         free($3);
     } CodeBlock {
         int m = list_tail(&state->addresses);
@@ -1288,6 +1291,7 @@ SaveBlock:
             param_free(param);
             list_del_tail(&state->addresses);
         }
+        state->current_sub->stack -= m;
     }
     ;
 
@@ -2049,25 +2053,26 @@ Instruction:
           }
       }
     | "return" {
-        state->scope_stack[state->scope_cnt-1].returned = true;
-        if (state->current_sub->is_inline)
-            expression_create_goto(state, GOTO, "inline_end", NULL);
-        else {/*
-            int pop = 0;
-            for (int v=0; v < state->current_sub->var_count; ++v)
-                for (int s=1; s < state->scope_cnt; ++s)
-                    if (state->current_sub->vars[v]->scope == state->scope_stack[s])
-                        ++pop;
-            if (pop > 0) {
-                char buf[512];
-                snprintf(buf, 512, "@%s_sub_end", state->current_sub->name);
-                expression_create_goto_pop(state, GOTO, buf, NULL, pop);
+        /*
+        int pop = 0;
+        for (int v=0; v < state->current_sub->var_count; ++v)
+            for (int s=1; s < state->scope_cnt; ++s)
+                if (state->current_sub->vars[v]->scope == state->scope_stack[s])
+                    ++pop;
+        if (pop > 0) {
+            char buf[512];
+            snprintf(buf, 512, "@%s_sub_end", state->current_sub->name);
+            expression_create_goto_pop(state, GOTO, buf, NULL, pop);
+        }
+        else */{
+            if (state->scope_stack[state->scope_cnt-1].mips) {
+                instr_return_mips(state, state->current_sub);
             }
-            else */{
-                const expr_t* expr = expr_get_by_symbol(state->version, RETURN);
-                instr_add(state, state->current_sub, instr_new(state, expr->id, "SSSSS", 0, 0, 0x25, 0, 2));
+            else {
+                instr_add(state, state->current_sub, instr_new(state, expr_get_by_symbol(state->version, RETURN)->id, "SSSSS", 0, 0, 0x25, 0, 2));
             }
         }
+        state->scope_stack[state->scope_cnt-1].returned = true;
     }
     ;
 
@@ -2678,13 +2683,12 @@ instr_add(
     thecl_sub_t* sub,
     thecl_instr_t* instr)
 {
-    if (state->ignore_block || (state->scope_cnt > 0 && state->scope_stack[state->scope_cnt-1].returned)) {
+    if (state->ignore_block) {
         thecl_instr_free(instr);
         return;
     }
     if (!sub->mips_dirty && ((sub->offset > 0 && state->scope_cnt > 0 && instr->mips != state->scope_stack[state->scope_cnt-1].mips) || (instr->mips && state->force_mips))) {
         sub->mips_dirty = true;
-        state->scope_stack[state->scope_cnt-1].mips = instr->mips;
         if (instr->mips) {
             instr_start_mips(state, sub);
         }
@@ -2694,6 +2698,7 @@ instr_add(
         if (state->force_mips) state->force_mips = false;
         sub->mips_dirty = false;
     }
+    if (state->scope_cnt > 0) state->scope_stack[state->scope_cnt-1].mips = instr->mips;
     if (instr->mips) {
         if (instr->ins.ins != 0) {
             if (mips_instr_is_multdiv(&instr->ins)) {
@@ -3214,7 +3219,9 @@ instr_create_inline_call(
                             case PARAM_COLOR: instr_add(state, state->current_sub, instr_new(state, color_expr->id, "SS", param->object_link, param->value.val.S)); break;
                         }
                     }
-                    list_append_new(&state->addresses, list_count(line->list));
+                    int count = list_count(line->list);
+                    state->current_sub->stack += count;
+                    list_append_new(&state->addresses, count);
                 }
             } break;
             case LINE_SAVE_END: {
@@ -3237,6 +3244,7 @@ instr_create_inline_call(
                         }
                         list_del_tail(&state->addresses);
                     }
+                    state->current_sub->stack -= m;
                 }
             } break;
             case LINE_GOTO: {
@@ -4241,11 +4249,34 @@ expression_output_mips(
     parser_state_t* state,
     expression_t* expr)
 {
-    if (expr->type == EXPRESSION_VAL) {
+    if (expr->type == EXPRESSION_VAL || expr->type == EXPRESSION_GLOBAL || expr->type == EXPRESSION_COLOR) {
         expression_mips_load(state, expr);
     }
     else if (expr->type == EXPRESSION_OP) {
         expression_mips_operation(state, expr);
+    }
+    else if (expr->type == EXPRESSION_TERNARY) {
+        char labelstr_unless[256];
+        char labelstr_end[256];
+
+        snprintf(labelstr_unless, 256, "ternary_unless_%d_%d", yylloc.first_line, yylloc.first_column);
+        snprintf(labelstr_end, 256, "ternary_end_%d_%d", yylloc.first_line, yylloc.first_column);
+
+        int i = 0;
+        expression_t* child_expr;
+        list_for_each(&expr->children, child_expr) {
+            if (i == 0) {
+                expression_create_goto(state, UNLESS, labelstr_unless, child_expr);
+            } else if (i == 1) {
+                expression_output(state, child_expr);
+                expression_create_goto(state, GOTO, labelstr_end, NULL);
+                label_create(state, labelstr_unless);
+            } else {
+                expression_output(state, child_expr);
+                label_create(state, labelstr_end);
+            }
+            ++i;
+        }
     }
 }
 
@@ -4590,13 +4621,12 @@ sub_finish(
         snprintf(buf, 512, "@%s_sub_end", state->current_sub->name);
         label_create(state, buf);
         scope_finish(state, true);
-        const expr_t* expr = expr_get_by_symbol(state->version, RETURN);
         if (bb || !r) {
             if (!state->mips_mode) {
                 if (m) {
                     instr_end_mips(state, state->current_sub);
                 }
-                instr_add(state, state->current_sub, instr_new(state, expr->id, "SSSSS", 0, 0, 0x25, 0, 2));
+                instr_add(state, state->current_sub, instr_new(state, expr_get_by_symbol(state->version, RETURN)->id, "SSSSS", 0, 0, 0x25, 0, 2));
             }
             else {
                 if (!m) {
@@ -4658,7 +4688,7 @@ scope_finish(
         }
     }
 
-    if (state->scope_cnt > 1 && !state->scope_stack[state->scope_cnt-1].returned && state->scope_stack[state->scope_cnt-2].mips != state->scope_stack[state->scope_cnt-1].mips) {
+    if (state->scope_cnt > 1 && state->scope_stack[state->scope_cnt-2].mips != state->scope_stack[state->scope_cnt-1].mips) {
         if (state->scope_stack[state->scope_cnt-2].mips) {
             instr_start_mips(state, state->current_sub);
         }
@@ -5125,7 +5155,7 @@ mips_instr_new_store(
         }
     }
     else if (value->val_type == PARAM_COLOR) { /* color field */
-        if (value->object_link == 0) { /* object field */
+        if (value->object_link == 0) { /* color field */
             instr_add_delay_slot(state, state->current_sub, MIPS_INSTR_I("sh", val * 2 + 0x20, state->top_reg->index, get_reg(state->reg_block, "s0")->index));
         }
         else if (value->object_link >= 1 && value->object_link <= 7) { /* linked color field */
