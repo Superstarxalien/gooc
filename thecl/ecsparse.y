@@ -4501,7 +4501,7 @@ expression_optimize(
                 int i = 0;
                 while (true) if (number_expr->value->value.val.S == (1 << i++)) break;
                 other_expr = expression_copy(other_expr);
-                number_expr = expression_val_new(state, i);
+                number_expr = expression_val_new(state, i-1);
 
                 expression->id = expr_get_by_symbol(state->version, LSHIFT)->id;
 
@@ -4533,7 +4533,7 @@ expression_optimize(
                 int i = 0;
                 while (true) if (child_expr_2->value->value.val.S == (1 << i++)) break;
                 expression_t* other_expr = expression_copy(child_expr_1);
-                expression_t* number_expr = expression_val_new(state, i);
+                expression_t* number_expr = expression_val_new(state, i-1);
 
                 expression->id = expr_get_by_symbol(state->version, RSHIFT)->id;
 
