@@ -3676,9 +3676,7 @@ expression_copy(
         list_for_each(&expr->children, child_expr)
             list_append_new(&copy->children, expression_copy(child_expr));
     } else if (expr->type == EXPRESSION_VAL) {
-        thecl_param_t *param = malloc(sizeof(thecl_param_t));
-        memcpy(param, expr->value, sizeof(thecl_param_t));
-        copy->value = param;
+        copy->value = param_copy(expr->value);
     }
     return copy;
 }
@@ -4422,16 +4420,13 @@ expression_optimize(
     if ((child_expr_1->type == EXPRESSION_VAL && child_expr_1->value->type != 'S') || (child_expr_2->type == EXPRESSION_VAL && child_expr_2->value->type != 'S')) return;
 
     if (   !expr->is_unary && (
-           child_expr_1->type != EXPRESSION_VAL
-        || child_expr_2->type != EXPRESSION_VAL
-        || child_expr_1->value->val_type != PARAM_LITERAL /* Variables are not acceptable, obviously. */
-        || child_expr_2->value->val_type != PARAM_LITERAL
+           !expression_is_number(child_expr_1) /* Variables are not acceptable, obviously. */
+        || !expression_is_number(child_expr_2)
       ) || expr->is_unary && (
-           child_expr_2->type != EXPRESSION_VAL
-        || child_expr_2->value->val_type != PARAM_LITERAL
+           expression_is_number(child_expr_2)
         || child_expr_1->value->value.val.S != 0x1F
         || child_expr_1->value->object_link != 0
-        || !child_expr_1->value->val_type != PARAM_LITERAL
+        || child_expr_1->value->val_type != PARAM_FIELD
       )
     ) {
         /* Partial expression optimization */
@@ -4498,6 +4493,27 @@ expression_optimize(
                 expression_free(child_expr_1);
                 expression_free(child_expr_2);
                 list_free_nodes(&expression->children);
+                return;
+            }
+            expression_t* number_expr = expression_is_number(child_expr_1) && int_has_bit(child_expr_1->value->value.val.S) ? child_expr_1 : (expression_is_number(child_expr_2) && int_has_bit(child_expr_2->value->value.val.S) ? child_expr_2 : NULL);
+            if (number_expr) {
+                expression_t* other_expr = number_expr == child_expr_1 ? child_expr_2 : child_expr_1;
+                int i = 0;
+                while (true) if (number_expr->value->value.val.S == (1 << i++)) break;
+                other_expr = expression_copy(other_expr);
+                number_expr = expression_val_new(state, i);
+
+                expression->id = expr_get_by_symbol(state->version, LSHIFT)->id;
+
+                if (child_expr_1->type == EXPRESSION_VAL) param_free(child_expr_1->value);
+                if (child_expr_2->type == EXPRESSION_VAL) param_free(child_expr_2->value);
+                expression_free(child_expr_1);
+                expression_free(child_expr_2);
+                list_free_nodes(&expression->children);
+
+                list_append_new(&expression->children, other_expr);
+                list_append_new(&expression->children, number_expr);
+                return;
             }
         }
         else if (expr->symbol == DIVIDE) {
@@ -4511,6 +4527,24 @@ expression_optimize(
                 expression_free(child_expr_1);
                 expression_free(child_expr_2);
                 list_free_nodes(&expression->children);
+            }
+            else if (expression_is_number(child_expr_2) && int_has_bit(child_expr_2->value->value.val.S)) {
+                int i = 0;
+                while (true) if (child_expr_1->value->value.val.S == (1 << i++)) break;
+                expression_t* other_expr = expression_copy(child_expr_1);
+                expression_t* number_expr = expression_val_new(state, i);
+
+                expression->id = expr_get_by_symbol(state->version, RSHIFT)->id;
+
+                if (child_expr_1->type == EXPRESSION_VAL) param_free(child_expr_1->value);
+                if (child_expr_2->type == EXPRESSION_VAL) param_free(child_expr_2->value);
+                expression_free(child_expr_1);
+                expression_free(child_expr_2);
+                list_free_nodes(&expression->children);
+
+                list_append_new(&expression->children, other_expr);
+                list_append_new(&expression->children, number_expr);
+                return;
             }
         }
         else if (expr->symbol == EQUAL) {
@@ -4529,13 +4563,13 @@ expression_optimize(
         }
         else if (expr->symbol == MODULO) {
             if (expression_is_number(child_expr_2) && int_has_bit(child_expr_2->value->value.val.S)) {
-                expression->id = expr_get_by_symbol(state->version, AND)->id;
+                expression->id = expr_get_by_symbol(state->version, B_AND)->id;
                 child_expr_2->value->value.val.S--;
             }
         }
         else if (expr->symbol == TEST) {
             if (expression_is_number(child_expr_2) && int_has_bit(child_expr_2->value->value.val.S)) {
-                expression->id = expr_get_by_symbol(state->version, AND)->id;
+                expression->id = expr_get_by_symbol(state->version, B_AND)->id;
             }
         }
         return;
