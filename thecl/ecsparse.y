@@ -4527,8 +4527,9 @@ expression_optimize(
                 expression_free(child_expr_1);
                 expression_free(child_expr_2);
                 list_free_nodes(&expression->children);
+                return;
             }
-            else if (expression_is_number(child_expr_2) && int_has_bit(child_expr_2->value->value.val.S)) {
+            if (expression_is_number(child_expr_2) && int_has_bit(child_expr_2->value->value.val.S)) {
                 int i = 0;
                 while (true) if (child_expr_1->value->value.val.S == (1 << i++)) break;
                 expression_t* other_expr = expression_copy(child_expr_1);
