@@ -180,11 +180,11 @@ vol\([0-9]+\.[0-9]+\) {
     yylval.integer = (int)(strtod(yytext+4, NULL) * 0x3FFF);
     return INTEGER;
 }
-[0-9]+(\.[0-9]+)?\s*deg {
+[0-9]+(\.[0-9]+)?[\t\n\r ]*deg {
     yylval.integer = (int)(strtod(yytext, NULL) / 180.0 * 0x800);
     return GOOL_INTEGER;
 }
-[0-9]+\.[0-9]+([MmsVv]|[Hh]z)? {
+[0-9]+\.[0-9]+([MmSsVv]|[Hh]z)? {
     char* afternum;
     double num = strtod(yytext, &afternum);
     if (strstr(afternum, "hz") || strstr(afternum, "Hz"))
@@ -195,11 +195,13 @@ vol\([0-9]+\.[0-9]+\) {
         yylval.integer = (int)(num * 0x3FFF);
     else if (strchr(afternum, 's'))
         yylval.integer = (int)(num * g_rate);
+    else if (strchr(afternum, 'S'))
+        yylval.integer = (int)(num * 0x1000);
     else
         yylval.integer = (int)(num * 0x100);
     return GOOL_INTEGER;
 }
-[0-9]+([GgMmVvs]|[Hh]z)? {
+[0-9]+([GgMmVvSs]|[Hh]z)? {
     char* afternum;
     yylval.integer = strtoul(yytext, &afternum, 10);
     if (strstr(afternum, "hz") || strstr(afternum, "Hz"))
@@ -212,14 +214,20 @@ vol\([0-9]+\.[0-9]+\) {
         yylval.integer *= 0x3FFF;
     else if (strchr(afternum, 's'))
         yylval.integer *= g_rate;
+    else if (strchr(afternum, 'S'))
+        yylval.integer *= 0x1000;
     else
         return INTEGER;
     return GOOL_INTEGER;
 }
-[Gg]?0x[0-9a-fA-F]+ {
+[GgS]?0x[0-9a-fA-F]+ {
     char* txt = yytext;
     if (txt[0] == 'G' || txt[0] == 'g') {
         yylval.integer = 0x100;
+        ++txt;
+    }
+    else if (txt[0] == 'S') {
+        yylval.integer = 0x1000;
         ++txt;
     }
     else
