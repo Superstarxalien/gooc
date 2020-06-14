@@ -343,7 +343,7 @@ c2_globals[] = {
     { "SPAWNTRANSZ",       104 },
 
     { "FADECONTROL",       106 },
-
+    { "FADEAMOUNT",        107 },
     { "DEATHCOUNT",        108 },
 
     { "ANALOGAMT",         124 },
