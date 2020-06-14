@@ -779,31 +779,36 @@ Font_Char:
                 yyerror(state, "syntax error, texture x offset is out of bounds");
             }
             int uv = 0;
-            if (($9 != 4 && $9 != 8 && $9 != 16 && $9 != 32 && $9 != 64) ||
-                ($10 != 4 && $10 != 8 && $10 != 16 && $10 != 32 && $10 != 64)) {
+            if (($9 != 0 && $9 != 4 && $9 != 8 && $9 != 16 && $9 != 32 && $9 != 64) ||
+                ($10 != 0 && $10 != 4 && $10 != 8 && $10 != 16 && $10 != 32 && $10 != 64)) {
                 yyerror(state, "syntax error, invalid texture width/height");
             }
-            if ($9 == 4) uv = 0;
+            uint64_t zero = 0;
+            if ($9 == 0 && $9 == 4) uv = 0;
             if ($9 == 8) uv = 1;
             if ($9 == 16) uv = 2;
             if ($9 == 32) uv = 3;
             if ($9 == 64) uv = 4;
-            if ($10 == 4) uv += 0;
+            if ($10 == 0 && $10 == 4) uv += 0;
             if ($10 == 8) uv += 5;
             if ($10 == 16) uv += 10;
             if ($10 == 32) uv += 15;
             if ($10 == 64) uv += 20;
-            character->tex1 = $2 & 0xFFFFFF; /* rgb */
-            character->tex1 |= ($5 & 0xF) << 24; /* clutx */
-            character->tex1 |= ($4 & 0x3) << 29; /* blend */
-            character->tex2 = $8 & 0x1F; /* yoff */
-            character->tex2 |= ($6 & 0x7F) << 6; /* cluty */
-            character->tex2 |= ($7 & 0x1F) << 13; /* xoff */
-            character->tex2 |= (($7 / 0x20) & 0x3) << 18; /* segment */
-            character->tex2 |= ($3 & 0x3) << 20; /* color */
-            character->tex2 |= (uv & 0x3FF) << 22; /* uv */
-            if (character->tex1 || character->tex2)
-                character->tex1 |= 0x80000000;
+            character->tex.r = $2 >> 0 & 0xFF;
+            character->tex.g = $2 >> 8 & 0xFF;
+            character->tex.b = $2 >> 16 & 0xFF;
+            character->tex.color = $3 & 0x3;
+            character->tex.blend = $4 & 0x3;
+            character->tex.cx = $5 & 0xF;
+            character->tex.cy = $6 & 0x7F;
+            character->tex.x = $7 & 0x1F;
+            character->tex.y = $8 & 0x1F;
+            character->tex.segment = ($7 / 0x20) & 0x3;
+            character->tex.uv = uv & 0x3FF;
+            character->tex.unk1 = 0;
+            character->tex.unk2 = 0;
+            if (memcmp(&character->tex, &zero, 8))
+                character->tex.textured = 1;
             character->w = $11;
             character->h = $12;
         } else if (state->version == 2) {
@@ -869,40 +874,45 @@ Sprite_Frame:
     DIRECTIVE_TEXTURE INTEGER INTEGER INTEGER INTEGER INTEGER INTEGER INTEGER INTEGER INTEGER { /* rgb color blend cx cy x y w h */
         if (state->version == 1) {
             c1_sprite_t* sprite = state->current_anim->anim;
-            sprite = realloc(sprite, sizeof(c1_sprite_t) + sizeof(c1_frame_t) * ++sprite->count);
+            sprite = realloc(sprite, sizeof(c1_sprite_t) + sizeof(c1_tex_t) * ++sprite->count);
             state->current_anim->anim = sprite;
-            state->current_anim->size = sizeof(c1_sprite_t) + sizeof(c1_frame_t) * sprite->count;
+            state->current_anim->size = sizeof(c1_sprite_t) + sizeof(c1_tex_t) * sprite->count;
 
-            c1_frame_t* frame = sprite->frames + sprite->count - 1;
+            c1_tex_t* tex = sprite->frames + sprite->count - 1;
             if ($7 >= 128) {
                 yyerror(state, "syntax error, texture x offset is out of bounds");
             }
             int uv = 0;
-            if (($9 != 4 && $9 != 8 && $9 != 16 && $9 != 32 && $9 != 64) ||
-                ($10 != 4 && $10 != 8 && $10 != 16 && $10 != 32 && $10 != 64)) {
+            if (($9 != 0 && $9 != 4 && $9 != 8 && $9 != 16 && $9 != 32 && $9 != 64) ||
+                ($10 != 0 && $10 != 4 && $10 != 8 && $10 != 16 && $10 != 32 && $10 != 64)) {
                 yyerror(state, "syntax error, invalid texture width/height");
             }
-            if ($9 == 4) uv = 0;
+            uint64_t zero = 0;
+            if ($9 == 0 && $9 == 4) uv = 0;
             if ($9 == 8) uv = 1;
             if ($9 == 16) uv = 2;
             if ($9 == 32) uv = 3;
             if ($9 == 64) uv = 4;
-            if ($10 == 4) uv += 0;
+            if ($10 == 0 && $10 == 4) uv += 0;
             if ($10 == 8) uv += 5;
             if ($10 == 16) uv += 10;
             if ($10 == 32) uv += 15;
             if ($10 == 64) uv += 20;
-            frame->tex1 = $2 & 0xFFFFFF; /* rgb */
-            frame->tex1 |= ($5 & 0xF) << 24; /* clutx */
-            frame->tex1 |= ($4 & 0x3) << 29; /* blend */
-            frame->tex2 = $8 & 0x1F; /* yoff */
-            frame->tex2 |= ($6 & 0x7F) << 6; /* cluty */
-            frame->tex2 |= ($7 & 0x1F) << 13; /* xoff */
-            frame->tex2 |= (($7 / 0x20) & 0x3) << 18; /* segment */
-            frame->tex2 |= ($3 & 0x3) << 20; /* color */
-            frame->tex2 |= (uv & 0x3FF) << 22; /* uv */
-            if (frame->tex1 || frame->tex2)
-                frame->tex1 |= 0x80000000;
+            tex->r = $2 >> 0 & 0xFF;
+            tex->g = $2 >> 8 & 0xFF;
+            tex->b = $2 >> 16 & 0xFF;
+            tex->color = $3 & 0x3;
+            tex->blend = $4 & 0x3;
+            tex->cx = $5 & 0xF;
+            tex->cy = $6 & 0x7F;
+            tex->x = $7 & 0x1F;
+            tex->y = $8 & 0x1F;
+            tex->segment = ($7 / 0x20) & 0x3;
+            tex->uv = uv & 0x3FF;
+            tex->unk1 = 0;
+            tex->unk2 = 0;
+            if (memcmp(tex, &zero, 8))
+                tex->textured = 1;
         } else if (state->version == 2) {
             c2_sprite_t* sprite = state->current_anim->anim;
             sprite = realloc(sprite, sizeof(c2_sprite_t) + sizeof(c2_tex_t) * ++sprite->count);
@@ -991,31 +1001,36 @@ Frag:
             yyerror(state, "syntax error, texture x offset is out of bounds");
         }
         int uv = 0;
-        if (($9 != 4 && $9 != 8 && $9 != 16 && $9 != 32 && $9 != 64) ||
-            ($10 != 4 && $10 != 8 && $10 != 16 && $10 != 32 && $10 != 64)) {
+        if (($9 != 0 && $9 != 4 && $9 != 8 && $9 != 16 && $9 != 32 && $9 != 64) ||
+            ($10 != 0 && $10 != 4 && $10 != 8 && $10 != 16 && $10 != 32 && $10 != 64)) {
             yyerror(state, "syntax error, invalid texture width/height");
         }
-        if ($9 == 4) uv = 0;
+        uint64_t zero = 0;
+        if ($9 == 0 && $9 == 4) uv = 0;
         if ($9 == 8) uv = 1;
         if ($9 == 16) uv = 2;
         if ($9 == 32) uv = 3;
         if ($9 == 64) uv = 4;
-        if ($10 == 4) uv += 0;
+        if ($10 == 0 && $10 == 4) uv += 0;
         if ($10 == 8) uv += 5;
         if ($10 == 16) uv += 10;
         if ($10 == 32) uv += 15;
         if ($10 == 64) uv += 20;
-        frag->tex1 = $2 & 0xFFFFFF; /* rgb */
-        frag->tex1 |= ($5 & 0xF) << 24; /* clutx */
-        frag->tex1 |= ($4 & 0x3) << 29; /* blend */
-        frag->tex2 = $8 & 0x1F; /* yoff */
-        frag->tex2 |= ($6 & 0x7F) << 6; /* cluty */
-        frag->tex2 |= ($7 & 0x1F) << 13; /* xoff */
-        frag->tex2 |= (($7 / 0x20) & 0x3) << 18; /* segment */
-        frag->tex2 |= ($3 & 0x3) << 20; /* color */
-        frag->tex2 |= (uv & 0x3FF) << 22; /* uv */
-        if (frag->tex1 || frag->tex2)
-            frag->tex1 |= 0x80000000;
+        frag->tex.r = $2 >> 0 & 0xFF;
+        frag->tex.g = $2 >> 8 & 0xFF;
+        frag->tex.b = $2 >> 16 & 0xFF;
+        frag->tex.color = $3 & 0x3;
+        frag->tex.blend = $4 & 0x3;
+        frag->tex.cx = $5 & 0xF;
+        frag->tex.cy = $6 & 0x7F;
+        frag->tex.x = $7 & 0x1F;
+        frag->tex.y = $8 & 0x1F;
+        frag->tex.segment = ($7 / 0x20) & 0x3;
+        frag->tex.uv = uv & 0x3FF;
+        frag->tex.unk1 = 0;
+        frag->tex.unk2 = 0;
+        if (memcmp(&frag->tex, &zero, 8))
+            frag->tex.textured = 1;
         frag->x = $11;
         frag->y = $12;
         frag->w = $13;

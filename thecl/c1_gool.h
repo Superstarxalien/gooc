@@ -39,20 +39,33 @@ typedef struct {
 } c1_anim_t;
 
 typedef struct {
-    uint32_t tex1;
-    uint32_t tex2;
-} c1_frame_t;
+PACK_BEGIN
+    uint32_t r:8;
+    uint32_t g:8;
+    uint32_t b:8;
+    uint32_t cx:4;
+    uint32_t unk1:1;
+    uint32_t blend:2;
+    uint32_t textured:1;
+    uint32_t y:5;
+    uint32_t unk2:1;
+    uint32_t cy:7;
+    uint32_t x:5;
+    uint32_t segment:2;
+    uint32_t color:2;
+    uint32_t uv:10;
+PACK_END
+} PACK_ATTRIBUTE c1_tex_t;
 
 typedef struct {
     uint16_t type; /* 2 */
     uint16_t count;
     uint32_t eid;
-    c1_frame_t frames[];
+    c1_tex_t frames[];
 } c1_sprite_t;
 
 typedef struct {
-    uint32_t tex1;
-    uint32_t tex2;
+    c1_tex_t tex;
     uint16_t w;
     uint16_t h;
 } c1_char_t;
@@ -73,8 +86,7 @@ typedef struct {
 } c1_text_t;
 
 typedef struct {
-    uint32_t tex1;
-    uint32_t tex2;
+    c1_tex_t tex;
     int16_t x;
     int16_t y;
     int16_t w;
