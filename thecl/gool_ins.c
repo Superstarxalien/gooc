@@ -779,6 +779,46 @@ c1_gool_ins_calclight_params(
 }
 
 static list_t*
+c1_gool_ins_projobj_params(
+    list_t* params,
+    int argc)
+{
+    thecl_param_t* param;
+    size_t c = list_count(params);
+    if (c == 1) {
+        list_append_new(params, param_val_new(5));
+        list_append_new(params, param_val_new(5));
+        list_append_new(params, param_val_new(1));
+        list_append_new(params, param_val_new(0));
+    }
+    else {
+        fprintf(stderr, "%s:%s:projectobjshadow: wrong number of arguments (expected 1, got %zu)\n", argv0, current_input, c);
+        return NULL;
+    }
+    return params;
+}
+
+static list_t*
+c1_gool_ins_projzone_params(
+    list_t* params,
+    int argc)
+{
+    thecl_param_t* param;
+    size_t c = list_count(params);
+    if (c == 1) {
+        list_append_new(params, param_val_new(5));
+        list_append_new(params, param_val_new(5));
+        list_append_new(params, param_val_new(3));
+        list_append_new(params, param_val_new(0));
+    }
+    else {
+        fprintf(stderr, "%s:%s:projectzoneshadow: wrong number of arguments (expected 1, got %zu)\n", argv0, current_input, c);
+        return NULL;
+    }
+    return params;
+}
+
+static list_t*
 c1_gool_ins_movetolist_params(
     list_t* params,
     int argc)
@@ -1106,6 +1146,8 @@ c1_gool_ins[] = {
     { "soundset",                 0x8D, 0, 0, 0, -1, c1_gool_ins_soundset_params },
     { "soundcheck",               0x8D, 0, 0, 0, -1, c1_gool_ins_soundcheck_params },
     { "calclight",                0x8E, 0, 0, 0, -1, c1_gool_ins_calclight_params },
+    { "projectobjshadow",         0x8E, 0, 0, 0, -1, c1_gool_ins_projobj_params },
+    { "projectzoneshadow",        0x8E, 0, 0, 0, -1, c1_gool_ins_projzone_params },
     { "broadcastevent",           0x8F, 2, 0, 0, -1, c1_gool_ins_sendevent_params },
     { "broadcasteventif",         0x8F, 3, 0, 0,  2, c1_gool_ins_sendeventif_params },
     { "cascadeevent",             0x90, 2, 0, 0, -1, c1_gool_ins_sendevent_params },
@@ -1336,6 +1378,8 @@ c2_gool_ins[] = {
     { "soundset",                   66, 0, 0, 0, -1, c1_gool_ins_soundset_params },
     { "soundcheck",                 66, 0, 0, 0, -1, c1_gool_ins_soundcheck_params },
     { "calclight",                  67, 0, 0, 0, -1, c1_gool_ins_calclight_params },
+    { "projectobjshadow",           67, 0, 0, 0, -1, c1_gool_ins_projobj_params },
+    { "projectzoneshadow",          67, 0, 0, 0, -1, c1_gool_ins_projzone_params },
     { "checkzonecollision",         67, 0, 0, 0, -1, c2_gool_ins_checkzonecollision_params },
     { "broadcastevent",             68, 2, 0, 0, -1, c1_gool_ins_sendevent_params },
     { "broadcasteventif",           68, 3, 0, 0,  2, c1_gool_ins_sendeventif_params },
