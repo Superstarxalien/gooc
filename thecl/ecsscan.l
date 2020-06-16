@@ -448,9 +448,9 @@ vol\([0-9]+\.[0-9]+\) {
         return DIRECTIVE_TEXTURE;
     else if (!strcmp(txt, "sprite"))
         return DIRECTIVE_SPRITE;
-    else if (!strcmp(txt, "fraganim") && g_parser_state->version == 1)
+    else if (!strcmp(txt, "fraganim"))
         return DIRECTIVE_FANIM;
-    else if (!strcmp(txt, "frag") && g_parser_state->version == 1)
+    else if (!strcmp(txt, "frag"))
         return DIRECTIVE_FRAG;
     yylval.string = strdup(yytext + 1);
     return DIRECTIVE;

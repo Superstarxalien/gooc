@@ -584,6 +584,126 @@ is_post_c2(
     }
 }
 
+static const char* kana[] = {
+    "あ", "い", "う", "え", "お",
+    "か", "き", "く", "け", "こ",
+    "さ", "し", "す", "せ", "そ",
+    "た", "ち", "つ", "て", "と",
+    "な", "に", "ぬ", "ね", "の",
+    "は", "ひ", "ふ", "へ", "ほ",
+    "ま", "み", "む", "め", "も",
+    "や", "ゆ", "よ", "ら", "り",
+    "る", "れ", "ろ", "わ", "を",
+    "ん", "ぁ", "ぃ", "ぅ", "ぇ",
+    "ぉ", "ゃ", "ゅ", "ょ", "っ",
+    "ー", "「", "」", "。", "、",
+    "゜", "゛", "゛", "　",
+    "ア", "イ", "ウ", "エ", "オ",
+    "カ", "キ", "ク", "ケ", "コ",
+    "サ", "シ", "ス", "セ", "ソ",
+    "タ", "チ", "ツ", "テ", "ト",
+    "ナ", "ニ", "ヌ", "ネ", "ノ",
+    "ハ", "ヒ", "フ", "ヘ", "ホ",
+    "マ", "ミ", "ム", "メ", "モ",
+    "ヤ", "ユ", "ヨ", "ラ", "リ",
+    "ル", "レ", "ロ", "ワ", "ヲ",
+    "ン", "ァ", "ィ", "ゥ", "ェ",
+    "ォ", "ャ", "ュ", "ョ", "ッ",
+    "１", "２", "３", "　", "　",
+    "／", "？", "！", NULL
+};
+
+static int
+find_in_extended_map(
+    char* str)
+{
+    int k;
+    for (k=0;k < 128;++k) {
+        if (!strncmpa(str, kana[k])) break;
+    }
+    return k;
+}
+
+static char*
+convert_extended_string(
+    unsigned int version,
+    char* old_string)
+{
+    char* buf = calloc(0x10000, sizeof(char));
+    size_t i = 0;
+    while (*old_string) {
+        if (*old_string & 0x80) { /* UTF-8 continuation bit */
+            int k = find_in_extended_map(old_string);
+            if (k == 128) {
+#define SplitDakuten(KOrig, KPart) if (!strncmpa(old_string, KOrig)) { buf[i++] = find_in_extended_map(KPart); buf[i++] = find_in_extended_map("゛"); old_string += strlen(KOrig); }
+#define SplitDakuten2(KOrig, KPart) if (!strncmpa(old_string, KOrig)) { buf[i++] = find_in_extended_map(KPart); buf[i++] = find_in_extended_map("゛")+1; old_string += strlen(KOrig); }
+#define SplitHandakuten(KOrig, KPart) if (!strncmpa(old_string, KOrig)) { buf[i++] = find_in_extended_map(KPart); buf[i++] = find_in_extended_map("゜"); old_string += strlen(KOrig); }
+                     SplitDakuten("が", "か")
+                else SplitDakuten("ぎ", "き")
+                else SplitDakuten("ぐ", "く")
+                else SplitDakuten("げ", "け")
+                else SplitDakuten("ご", "こ")
+                else SplitDakuten("だ", "た")
+                else SplitDakuten("ぢ", "ち")
+                else SplitDakuten("づ", "つ")
+                else SplitDakuten2("で", "て")
+                else SplitDakuten("ど", "と")
+                else SplitDakuten("ざ", "さ")
+                else SplitDakuten("じ", "し")
+                else SplitDakuten("ず", "す")
+                else SplitDakuten("ぜ", "せ")
+                else SplitDakuten("ぞ", "そ")
+                else SplitDakuten("ば", "は")
+                else SplitDakuten("び", "ひ")
+                else SplitDakuten("ぶ", "ふ")
+                else SplitDakuten("べ", "へ")
+                else SplitDakuten("ぼ", "ほ")
+                else SplitHandakuten("ぱ", "は")
+                else SplitHandakuten("ぴ", "ひ")
+                else SplitHandakuten("ぷ", "ふ")
+                else SplitHandakuten("ぺ", "へ")
+                else SplitHandakuten("ぽ", "ほ")
+                else SplitDakuten("ガ", "カ")
+                else SplitDakuten("ギ", "キ")
+                else SplitDakuten("グ", "ク")
+                else SplitDakuten("ゲ", "ケ")
+                else SplitDakuten("ゴ", "コ")
+                else SplitDakuten("ダ", "タ")
+                else SplitDakuten("ヂ", "チ")
+                else SplitDakuten("ヅ", "ツ")
+                else SplitDakuten("デ", "テ")
+                else SplitDakuten("ド", "ト")
+                else SplitDakuten("ザ", "サ")
+                else SplitDakuten("ジ", "シ")
+                else SplitDakuten("ズ", "ス")
+                else SplitDakuten("ゼ", "セ")
+                else SplitDakuten("ゾ", "ソ")
+                else SplitDakuten("バ", "ハ")
+                else SplitDakuten("ビ", "ヒ")
+                else SplitDakuten("ブ", "フ")
+                else SplitDakuten("ベ", "ヘ")
+                else SplitDakuten("ボ", "ホ")
+                else SplitHandakuten("パ", "ハ")
+                else SplitHandakuten("ピ", "ヒ")
+                else SplitHandakuten("プ", "フ")
+                else SplitHandakuten("ペ", "ヘ")
+                else SplitHandakuten("ポ", "ホ")
+                fprintf(stderr, "%s: Invalid extended character in string '%s'", argv0, old_string);
+                continue;
+#undef SplitDakuten
+#undef SplitDakuten2
+#undef SplitHandakuten
+            }
+            buf[i++] = k;
+            old_string += strlen(kana[k]);
+        }
+        else {
+            buf[i++] = *(old_string++);
+        }
+    }
+    return realloc(buf, i+1);
+}
+
 static void
 free_globals(void)
 {

@@ -642,24 +642,43 @@ Statement:
     | DIRECTIVE_FANIM IDENTIFIER ENTRY INTEGER {
         gool_anim_t* anim = malloc(sizeof(gool_anim_t));
         anim->name = strdup($2);
-        anim->size = sizeof(c1_fraganim_t);
 
-        c1_fraganim_t* fraganim = malloc(sizeof(c1_fraganim_t));
-        fraganim->type = 5;
-        fraganim->sprite_count = 0;
-        fraganim->frag_count = $4;
-        fraganim->eid = gool_to_eid($3);
+        if (state->version == 1) {
+            anim->size = sizeof(c1_fraganim_t);
+            c1_fraganim_t* fraganim = malloc(sizeof(c1_fraganim_t));
+            fraganim->type = 5;
+            fraganim->sprite_count = 0;
+            fraganim->frag_count = $4;
+            fraganim->eid = gool_to_eid($3);
+            anim->anim = fraganim;
+        }
+        else {
+            anim->size = sizeof(c2_fraganim_t);
+            c2_fraganim_t* fraganim = malloc(sizeof(c2_fraganim_t));
+            fraganim->type = 5;
+            fraganim->sprite_count = 0;
+            fraganim->frag_count = $4;
+            fraganim->eid = gool_to_eid($3);
+            anim->anim = fraganim;
+        }
 
-        anim->anim = fraganim;
         state->current_anim = anim;
 
         free($2);
         free($3);
       }
       Frags {
-        c1_fraganim_t* fraganim = state->current_anim->anim;
-        ++fraganim->sprite_count;
-        fraganim->sprite_count /= fraganim->frag_count;
+        if (state->version == 1) {
+            c1_fraganim_t* fraganim = state->current_anim->anim;
+            ++fraganim->sprite_count;
+            fraganim->sprite_count /= fraganim->frag_count;
+        }
+        else {
+            c2_fraganim_t* fraganim = state->current_anim->anim;
+            ++fraganim->sprite_count;
+            fraganim->sprite_count /= fraganim->frag_count;
+        }
+
         list_append_new(&state->main_ecl->anims, state->current_anim);
         state->current_anim = NULL;
       }
@@ -968,7 +987,8 @@ Sprite_Frame:
 String_List:
     %empty
     | String_List TEXT {
-        size_t stringlen = strlen($2) + 1;
+        char* newstring = convert_extended_string(state->version, $2);
+        size_t stringlen = newstring + 1;
 
         state->current_anim->anim = realloc(state->current_anim->anim, state->current_anim->size + stringlen);
 
@@ -976,11 +996,12 @@ String_List:
         ++text->string_count;
 
         char *string = (char*)state->current_anim->anim + state->current_anim->size;
-        strcpy(string, $2);
+        strcpy(string, newstring);
 
         state->current_anim->size += stringlen;
 
         free($2);
+        free(newstring);
     }
     ;
 
@@ -991,50 +1012,105 @@ Frags:
 
 Frag:
     DIRECTIVE_FRAG INTEGER INTEGER INTEGER INTEGER INTEGER INTEGER INTEGER INTEGER INTEGER Literal_Int Literal_Int Literal_Int Literal_Int {
-        state->current_anim->anim = realloc(state->current_anim->anim, state->current_anim->size + sizeof(c1_frag_t));
-        c1_fraganim_t* fraganim = state->current_anim->anim;
-        c1_frag_t* frag = (char*)fraganim + state->current_anim->size;
-        state->current_anim->size += sizeof(c1_frag_t);
-        ++fraganim->sprite_count;
+        if (state->version == 1) {
+            state->current_anim->anim = realloc(state->current_anim->anim, state->current_anim->size + sizeof(c1_frag_t));
+            c1_fraganim_t* fraganim = state->current_anim->anim;
+            c1_frag_t* frag = (char*)fraganim + state->current_anim->size;
+            state->current_anim->size += sizeof(c1_frag_t);
+            ++fraganim->sprite_count;
 
-        if ($7 >= 128) {
-            yyerror(state, "syntax error, texture x offset is out of bounds");
+            if ($7 >= 128) {
+                yyerror(state, "syntax error, texture x offset is out of bounds");
+            }
+            int uv = 0;
+            if (($9 != 0 && $9 != 4 && $9 != 8 && $9 != 16 && $9 != 32 && $9 != 64) ||
+                ($10 != 0 && $10 != 4 && $10 != 8 && $10 != 16 && $10 != 32 && $10 != 64)) {
+                yyerror(state, "syntax error, invalid texture width/height");
+            }
+            uint64_t zero = 0;
+            if ($9 == 0 && $9 == 4) uv = 0;
+            if ($9 == 8) uv = 1;
+            if ($9 == 16) uv = 2;
+            if ($9 == 32) uv = 3;
+            if ($9 == 64) uv = 4;
+            if ($10 == 0 && $10 == 4) uv += 0;
+            if ($10 == 8) uv += 5;
+            if ($10 == 16) uv += 10;
+            if ($10 == 32) uv += 15;
+            if ($10 == 64) uv += 20;
+            frag->tex.r = $2 >> 0 & 0xFF;
+            frag->tex.g = $2 >> 8 & 0xFF;
+            frag->tex.b = $2 >> 16 & 0xFF;
+            frag->tex.color = $3 & 0x3;
+            frag->tex.blend = $4 & 0x3;
+            frag->tex.cx = $5 & 0xF;
+            frag->tex.cy = $6 & 0x7F;
+            frag->tex.x = $7 & 0x1F;
+            frag->tex.y = $8 & 0x1F;
+            frag->tex.segment = ($7 / 0x20) & 0x3;
+            frag->tex.uv = uv & 0x3FF;
+            frag->tex.unk1 = 0;
+            frag->tex.unk2 = 0;
+            if (memcmp(&frag->tex, &zero, 8))
+                frag->tex.textured = 1;
+            frag->x = $11;
+            frag->y = $12;
+            frag->w = $13;
+            frag->h = $14;
         }
-        int uv = 0;
-        if (($9 != 0 && $9 != 4 && $9 != 8 && $9 != 16 && $9 != 32 && $9 != 64) ||
-            ($10 != 0 && $10 != 4 && $10 != 8 && $10 != 16 && $10 != 32 && $10 != 64)) {
-            yyerror(state, "syntax error, invalid texture width/height");
+        else if (state->version == 2) {
+            state->current_anim->anim = realloc(state->current_anim->anim, state->current_anim->size + sizeof(c2_frag_t));
+            c2_fraganim_t* fraganim = state->current_anim->anim;
+            c2_frag_t* frag = (char*)fraganim + state->current_anim->size;
+            state->current_anim->size += sizeof(c2_frag_t);
+            ++fraganim->sprite_count;
+
+            int x = $7;
+            int y = $8;
+            int w = $9;
+            int h = $10;
+            int segsize = 256 >> $3;
+            if ((x & 0xff) + w > 256) {
+                yyerror(state, "syntax error, aligned texture is too wide");
+            }
+            if (y + h > 128) {
+                yyerror(state, "syntax error, texture is too tall");
+            }
+            if (y < 0 || x < 0) {
+                yyerror(state, "syntax error, invalid texture parameters");
+            }
+            --w;
+            --h;
+            frag->tex.r = $2 >> 0 & 0xFF;
+            frag->tex.g = $2 >> 8 & 0xFF;
+            frag->tex.b = $2 >> 16 & 0xFF;
+            frag->tex.primtype = $2 == 0 ? 0 : 11;
+            frag->tex.unk1 = 0;
+            frag->tex.unk2 = 0;
+            frag->tex.unused1 = 0;
+            frag->tex.unk3 = 0;
+            frag->tex.additive = $4 >> 1 & 0x1;
+            frag->tex.unk4 = 0;
+            frag->tex.unk5 = 0;
+            frag->tex.segment = x / segsize;
+            x &= segsize - 1;
+            frag->tex.color = $3;
+            frag->tex.blend = $4 & 0x1;
+            frag->tex.cx = $5;
+            frag->tex.cy = $6;
+            frag->tex.u1 = x;
+            frag->tex.v1 = y;
+            frag->tex.u2 = x+w;
+            frag->tex.v2 = y;
+            frag->tex.u3 = x;
+            frag->tex.v3 = y+h;
+            frag->tex.u4 = x+w;
+            frag->tex.v4 = y+h;
+            frag->x = $11;
+            frag->y = $12;
+            frag->w = $13;
+            frag->h = $14;
         }
-        uint64_t zero = 0;
-        if ($9 == 0 && $9 == 4) uv = 0;
-        if ($9 == 8) uv = 1;
-        if ($9 == 16) uv = 2;
-        if ($9 == 32) uv = 3;
-        if ($9 == 64) uv = 4;
-        if ($10 == 0 && $10 == 4) uv += 0;
-        if ($10 == 8) uv += 5;
-        if ($10 == 16) uv += 10;
-        if ($10 == 32) uv += 15;
-        if ($10 == 64) uv += 20;
-        frag->tex.r = $2 >> 0 & 0xFF;
-        frag->tex.g = $2 >> 8 & 0xFF;
-        frag->tex.b = $2 >> 16 & 0xFF;
-        frag->tex.color = $3 & 0x3;
-        frag->tex.blend = $4 & 0x3;
-        frag->tex.cx = $5 & 0xF;
-        frag->tex.cy = $6 & 0x7F;
-        frag->tex.x = $7 & 0x1F;
-        frag->tex.y = $8 & 0x1F;
-        frag->tex.segment = ($7 / 0x20) & 0x3;
-        frag->tex.uv = uv & 0x3FF;
-        frag->tex.unk1 = 0;
-        frag->tex.unk2 = 0;
-        if (memcmp(&frag->tex, &zero, 8))
-            frag->tex.textured = 1;
-        frag->x = $11;
-        frag->y = $12;
-        frag->w = $13;
-        frag->h = $14;
     }
     ;
 

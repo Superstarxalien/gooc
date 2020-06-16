@@ -523,4 +523,6 @@ PACK_BEGIN
 PACK_END
 } PACK_ATTRIBUTE state_t;
 
+#define strncmpa(Str1, Str2)        strncmp(Str1, Str2, strlen(Str2))
+
 #endif
