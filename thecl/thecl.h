@@ -465,6 +465,10 @@ thecl_line_t* line_make_save_end(void);
 
 /* Globals */
 
+char* convert_extended_string(
+    unsigned int version,
+    char* old_string);
+
 extern parser_state_t* g_parser_state;
 extern int g_rate;
 extern char* g_region;

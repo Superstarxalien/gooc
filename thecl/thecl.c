@@ -624,7 +624,7 @@ find_in_extended_map(
     return k;
 }
 
-static char*
+char*
 convert_extended_string(
     unsigned int version,
     char* old_string)

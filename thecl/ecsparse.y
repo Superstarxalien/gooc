@@ -4526,16 +4526,14 @@ expression_optimize(
             expression_t* zero_expr = expression_is_number(child_expr_1) && child_expr_1->value->value.val.S == 0 ? child_expr_1 : (expression_is_number(child_expr_2) && child_expr_2->value->value.val.S == 0 ? child_expr_2 : NULL);
             if (zero_expr) {
                 expression_t* value_expr = zero_expr == child_expr_1 ? child_expr_2 : child_expr_1;
-
-                expression->value = param_copy(value_expr->value);
-                expression->type = EXPRESSION_VAL;
-                expression->id = expr_get_by_symbol(state->version, LOAD)->id;
+                expression_t* new_expr = expression_copy(value_expr);
+                memcpy(expression, new_expr, sizeof(expression_t));
+                free(new_expr);
 
                 if (child_expr_1->type == EXPRESSION_VAL) param_free(child_expr_1->value);
                 if (child_expr_2->type == EXPRESSION_VAL) param_free(child_expr_2->value);
                 expression_free(child_expr_1);
                 expression_free(child_expr_2);
-                list_free_nodes(&expression->children);
                 return;
             }
 
@@ -4559,31 +4557,28 @@ expression_optimize(
         }
         else if (expr->symbol == SUBTRACT) {
             if (expression_is_number(child_expr_2) && child_expr_2->value->value.val.S == 0) {
-                expression->value = param_copy(child_expr_1->value);
-                expression->type = EXPRESSION_VAL;
-                expression->id = expr_get_by_symbol(state->version, LOAD)->id;
+                expression_t* new_expr = expression_copy(child_expr_1);
+                memcpy(expression, new_expr, sizeof(expression_t));
+                free(new_expr);
 
                 if (child_expr_1->type == EXPRESSION_VAL) param_free(child_expr_1->value);
                 if (child_expr_2->type == EXPRESSION_VAL) param_free(child_expr_2->value);
                 expression_free(child_expr_1);
                 expression_free(child_expr_2);
-                list_free_nodes(&expression->children);
             }
         }
         else if (expr->symbol == MULTIPLY) {
             expression_t* neutral_expr = expression_is_number(child_expr_1) && child_expr_1->value->value.val.S == 1 ? child_expr_1 : (expression_is_number(child_expr_2) && child_expr_2->value->value.val.S == 1 ? child_expr_2 : NULL);
             if (neutral_expr) {
                 expression_t* value_expr = neutral_expr == child_expr_1 ? child_expr_2 : child_expr_1;
-
-                expression->value = param_copy(value_expr->value);
-                expression->type = EXPRESSION_VAL;
-                expression->id = expr_get_by_symbol(state->version, LOAD)->id;
+                expression_t* new_expr = expression_copy(value_expr);
+                memcpy(expression, new_expr, sizeof(expression_t));
+                free(new_expr);
 
                 if (child_expr_1->type == EXPRESSION_VAL) param_free(child_expr_1->value);
                 if (child_expr_2->type == EXPRESSION_VAL) param_free(child_expr_2->value);
                 expression_free(child_expr_1);
                 expression_free(child_expr_2);
-                list_free_nodes(&expression->children);
                 return;
             }
             expression_t* number_expr = expression_is_number(child_expr_1) && int_has_bit(child_expr_1->value->value.val.S) ? child_expr_1 : (expression_is_number(child_expr_2) && int_has_bit(child_expr_2->value->value.val.S) ? child_expr_2 : NULL);
@@ -4609,15 +4604,14 @@ expression_optimize(
         }
         else if (expr->symbol == DIVIDE) {
             if (expression_is_number(child_expr_2) && child_expr_2->value->value.val.S == 1) {
-                expression->value = param_copy(child_expr_1->value);
-                expression->type = EXPRESSION_VAL;
-                expression->id = expr_get_by_symbol(state->version, LOAD)->id;
+                expression_t* new_expr = expression_copy(child_expr_1);
+                memcpy(expression, new_expr, sizeof(expression_t));
+                free(new_expr);
 
                 if (child_expr_1->type == EXPRESSION_VAL) param_free(child_expr_1->value);
                 if (child_expr_2->type == EXPRESSION_VAL) param_free(child_expr_2->value);
                 expression_free(child_expr_1);
                 expression_free(child_expr_2);
-                list_free_nodes(&expression->children);
                 return;
             }
             if (expression_is_number(child_expr_2) && int_has_bit(child_expr_2->value->value.val.S)) {
