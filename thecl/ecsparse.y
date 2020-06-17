@@ -988,7 +988,7 @@ String_List:
     %empty
     | String_List TEXT {
         char* newstring = convert_extended_string(state->version, $2);
-        size_t stringlen = newstring + 1;
+        size_t stringlen = strlen(newstring) + 1;
 
         state->current_anim->anim = realloc(state->current_anim->anim, state->current_anim->size + stringlen);
 
