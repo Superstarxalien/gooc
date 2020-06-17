@@ -619,7 +619,7 @@ find_in_extended_map(
 {
     int k;
     for (k=0;k < 128;++k) {
-        if (!strncmpa(str, kana[k])) break;
+        if (kana[k] != NULL && !strncmpa(str, kana[k])) break;
     }
     return k;
 }
@@ -688,7 +688,7 @@ convert_extended_string(
                 else SplitHandakuten("プ", "フ")
                 else SplitHandakuten("ペ", "ヘ")
                 else SplitHandakuten("ポ", "ホ")
-                fprintf(stderr, "%s: Invalid extended character in string '%s'", argv0, old_string);
+                else fprintf(stderr, "%s: Invalid extended character in string '%s'\n", argv0, old_string);
                 continue;
 #undef SplitDakuten
 #undef SplitDakuten2
