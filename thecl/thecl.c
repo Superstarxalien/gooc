@@ -688,7 +688,7 @@ convert_extended_string(
                 else SplitHandakuten("プ", "フ")
                 else SplitHandakuten("ペ", "ヘ")
                 else SplitHandakuten("ポ", "ホ")
-                else fprintf(stderr, "%s: Invalid extended character in string '%s'\n", argv0, old_string);
+                else fprintf(stderr, "%s:%s: Invalid extended character.\n", argv0, current_input);
                 continue;
 #undef SplitDakuten
 #undef SplitDakuten2
