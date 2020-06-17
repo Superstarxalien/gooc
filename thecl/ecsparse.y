@@ -3136,13 +3136,15 @@ inline_call_replace_params(
 }
 
 static list_t*
-expression_list_copy(
-    list_t* list)
+inline_expression_list_copy(
+    parser_state_t* state,
+    list_t* list,
+    list_t* params)
 {
     list_t* new_list = list_new();
     expression_t* e;
     list_for_each(list, e) {
-        list_append_new(new_list, expression_copy(e));
+        list_append_new(new_list, inline_call_replace_params(state, e, params));
     }
     return new_list;
 }
@@ -3179,7 +3181,7 @@ instr_create_inline_call(
             case LINE_INSTRUCTION:
             case LINE_CALL: {
                 if (state->current_sub->is_inline) {
-                    list_append_new(&state->current_sub->lines, line_make_call(line->call.name, expression_list_copy(line->call.expr_list)));
+                    list_append_new(&state->current_sub->lines, line_make_call(line->call.name, inline_expression_list_copy(state, line->call.expr_list, params_org)));
                 }
                 else {
                     list_t* ins_params = line->call.expr_list ? list_new() : NULL;
