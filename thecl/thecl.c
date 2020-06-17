@@ -635,9 +635,9 @@ convert_extended_string(
         if (*old_string & 0x80) { /* UTF-8 continuation bit */
             int k = find_in_extended_map(old_string);
             if (k == 128) {
-#define SplitDakuten(KOrig, KPart) if (!strncmpa(old_string, KOrig)) { buf[i++] = find_in_extended_map(KPart); buf[i++] = find_in_extended_map("゛"); old_string += strlen(KOrig); }
-#define SplitDakuten2(KOrig, KPart) if (!strncmpa(old_string, KOrig)) { buf[i++] = find_in_extended_map(KPart); buf[i++] = find_in_extended_map("゛")+1; old_string += strlen(KOrig); }
-#define SplitHandakuten(KOrig, KPart) if (!strncmpa(old_string, KOrig)) { buf[i++] = find_in_extended_map(KPart); buf[i++] = find_in_extended_map("゜"); old_string += strlen(KOrig); }
+#define SplitDakuten(KOrig, KPart) if (!strncmpa(old_string, KOrig)) { buf[i++] = find_in_extended_map(KPart) | 0x80; buf[i++] = find_in_extended_map("゛") | 0x80; old_string += strlen(KOrig); }
+#define SplitDakuten2(KOrig, KPart) if (!strncmpa(old_string, KOrig)) { buf[i++] = find_in_extended_map(KPart) | 0x80; buf[i++] = (find_in_extended_map("゛")+1) | 0x80; old_string += strlen(KOrig); }
+#define SplitHandakuten(KOrig, KPart) if (!strncmpa(old_string, KOrig)) { buf[i++] = find_in_extended_map(KPart) | 0x80; buf[i++] = find_in_extended_map("゜") | 0x80; old_string += strlen(KOrig); }
                      SplitDakuten("が", "か")
                 else SplitDakuten("ぎ", "き")
                 else SplitDakuten("ぐ", "く")
@@ -694,7 +694,7 @@ convert_extended_string(
 #undef SplitDakuten2
 #undef SplitHandakuten
             }
-            buf[i++] = k;
+            buf[i++] = k | 0x80;
             old_string += strlen(kana[k]);
         }
         else {
