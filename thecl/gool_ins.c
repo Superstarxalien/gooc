@@ -614,25 +614,6 @@ c1_gool_ins_soundcheck_params(
 }
 
 static list_t*
-c1_gool_ins_loadlevel_params(
-    list_t* params,
-    int argc)
-{
-    thecl_param_t* param;
-    size_t c = list_count(params);
-    if (c == 1) {
-        list_append_new(params, param_val_new(5));
-        list_append_new(params, param_val_new(9));
-        list_append_new(params, param_val_new(12));
-    }
-    else {
-        fprintf(stderr, "%s:%s:loadlevel: wrong number of arguments (expected 1, got %zu)\n", argv0, current_input, c);
-        return NULL;
-    }
-    return params;
-}
-
-static list_t*
 c1_gool_ins_soundspec_params(
     list_t* params,
     int type,
@@ -819,25 +800,6 @@ c1_gool_ins_projzone_params(
 }
 
 static list_t*
-c1_gool_ins_movetolist_params(
-    list_t* params,
-    int argc)
-{
-    thecl_param_t* param;
-    size_t c = list_count(params);
-    if (c == 1) {
-        list_append_new(params, param_val_new(5));
-        list_append_new(params, param_val_new(2));
-        list_append_new(params, param_val_new(12));
-    }
-    else {
-        fprintf(stderr, "%s:%s:movetolist: wrong number of arguments (expected 1, got %zu)\n", argv0, current_input, c);
-        return NULL;
-    }
-    return params;
-}
-
-static list_t*
 c1_gool_ins_savecheckpoint_params(
     list_t* params,
     int argc)
@@ -878,6 +840,25 @@ c1_gool_ins_loadcheckpoint_params(
 }
 
 static list_t*
+c1_gool_ins_movetolist_params(
+    list_t* params,
+    int argc)
+{
+    thecl_param_t* param;
+    size_t c = list_count(params);
+    if (c == 1) {
+        list_append_new(params, param_val_new(5));
+        list_append_new(params, param_val_new(2));
+        list_append_new(params, param_val_new(12));
+    }
+    else {
+        fprintf(stderr, "%s:%s:movetolist: wrong number of arguments (expected 1, got %zu)\n", argv0, current_input, c);
+        return NULL;
+    }
+    return params;
+}
+
+static list_t*
 c1_gool_ins_gamefunc4_params(
     list_t* params,
     int argc)
@@ -891,6 +872,83 @@ c1_gool_ins_gamefunc4_params(
     }
     else {
         fprintf(stderr, "%s:%s:gamefunc4: wrong number of arguments (expected 1, got %zu)\n", argv0, current_input, c);
+        return NULL;
+    }
+    return params;
+}
+
+static list_t*
+c1_gool_ins_soundstop_params(
+    list_t* params,
+    int argc)
+{
+    thecl_param_t* param;
+    size_t c = list_count(params);
+    if (c == 0) {
+        list_append_new(params, param_null_new());
+        list_append_new(params, param_val_new(5));
+        list_append_new(params, param_val_new(5));
+        list_append_new(params, param_val_new(12));
+    }
+    else {
+        fprintf(stderr, "%s:%s:soundstop: wrong number of arguments (expected 0, got %zu)\n", argv0, current_input, c);
+        return NULL;
+    }
+    return params;
+}
+
+static list_t*
+c1_gool_ins_seqplay_params(
+    list_t* params,
+    int argc)
+{
+    thecl_param_t* param;
+    size_t c = list_count(params);
+    if (c == 1) {
+        list_append_new(params, param_val_new(5));
+        list_append_new(params, param_val_new(6));
+        list_append_new(params, param_val_new(12));
+    }
+    else {
+        fprintf(stderr, "%s:%s:seqplay: wrong number of arguments (expected 1, got %zu)\n", argv0, current_input, c);
+        return NULL;
+    }
+    return params;
+}
+
+static list_t*
+c1_gool_ins_loadlevel_params(
+    list_t* params,
+    int argc)
+{
+    thecl_param_t* param;
+    size_t c = list_count(params);
+    if (c == 1) {
+        list_append_new(params, param_val_new(5));
+        list_append_new(params, param_val_new(9));
+        list_append_new(params, param_val_new(12));
+    }
+    else {
+        fprintf(stderr, "%s:%s:loadlevel: wrong number of arguments (expected 1, got %zu)\n", argv0, current_input, c);
+        return NULL;
+    }
+    return params;
+}
+
+static list_t*
+c1_gool_ins_gamefunc10_params(
+    list_t* params,
+    int argc)
+{
+    thecl_param_t* param;
+    size_t c = list_count(params);
+    if (c == 1) {
+        list_append_new(params, param_val_new(5));
+        list_append_new(params, param_val_new(10));
+        list_append_new(params, param_val_new(12));
+    }
+    else {
+        fprintf(stderr, "%s:%s:gamefunc10: wrong number of arguments (expected 1, got %zu)\n", argv0, current_input, c);
         return NULL;
     }
     return params;
@@ -1006,64 +1064,6 @@ c1_gool_ins_setvel_params(
     return params;
 }
 
-static list_t*
-c1_gool_ins_soundstop_params(
-    list_t* params,
-    int argc)
-{
-    thecl_param_t* param;
-    size_t c = list_count(params);
-    if (c == 0) {
-        list_append_new(params, param_null_new());
-        list_append_new(params, param_val_new(5));
-        list_append_new(params, param_val_new(5));
-        list_append_new(params, param_val_new(12));
-    }
-    else {
-        fprintf(stderr, "%s:%s:soundstop: wrong number of arguments (expected 0, got %zu)\n", argv0, current_input, c);
-        return NULL;
-    }
-    return params;
-}
-
-static list_t*
-c1_gool_ins_seqplay_params(
-    list_t* params,
-    int argc)
-{
-    thecl_param_t* param;
-    size_t c = list_count(params);
-    if (c == 1) {
-        list_append_new(params, param_val_new(5));
-        list_append_new(params, param_val_new(6));
-        list_append_new(params, param_val_new(12));
-    }
-    else {
-        fprintf(stderr, "%s:%s:seqplay: wrong number of arguments (expected 1, got %zu)\n", argv0, current_input, c);
-        return NULL;
-    }
-    return params;
-}
-
-static list_t*
-c1_gool_ins_gamefunc10_params(
-    list_t* params,
-    int argc)
-{
-    thecl_param_t* param;
-    size_t c = list_count(params);
-    if (c == 1) {
-        list_append_new(params, param_val_new(5));
-        list_append_new(params, param_val_new(10));
-        list_append_new(params, param_val_new(12));
-    }
-    else {
-        fprintf(stderr, "%s:%s:gamefunc10: wrong number of arguments (expected 1, got %zu)\n", argv0, current_input, c);
-        return NULL;
-    }
-    return params;
-}
-
 /* Format is: trans, out, z, x, y */
 static list_t*
 c1_gool_ins_vectransf_params(
@@ -1114,13 +1114,13 @@ c1_gool_ins[] = {
     { "entitysetspawn",             28, 0, 0, 0, -1, c1_gool_ins_entitysetspawn_params },
     { "movetozoneinposition",       28, 0, 0, 0, -1, c1_gool_ins_movetozoneinposition_params },
     { "entitysetstate",             28, 0, 0, 0, -1, c1_gool_ins_entitysetstate_params },
-    { "loadlevel",                  28, 0, 0, 0, -1, c1_gool_ins_loadlevel_params },
-    { "movetolist",                 28, 0, 0, 0, -1, c1_gool_ins_movetolist_params },
     { "savecheckpoint",             28, 0, 0, 0, -1, c1_gool_ins_savecheckpoint_params },
     { "loadcheckpoint",             28, 0, 0, 0, -1, c1_gool_ins_loadcheckpoint_params },
+    { "movetolist",                 28, 0, 0, 0, -1, c1_gool_ins_movetolist_params },
     { "gamefunc4",                  28, 0, 0, 0, -1, c1_gool_ins_gamefunc4_params },
     { "soundstop",                  28, 0, 0, 0, -1, c1_gool_ins_soundstop_params },
     { "seqplay",                    28, 0, 0, 0, -1, c1_gool_ins_seqplay_params },
+    { "loadlevel",                  28, 0, 0, 0, -1, c1_gool_ins_loadlevel_params },
     { "gamefunc10",                 28, 0, 0, 0, -1, c1_gool_ins_gamefunc10_params },
     { "startgame",                  28, 0, 0, 0, -1, c1_gool_ins_startgame_params },
     { "setcolor",                   36, 0, 0, 0, -1, c1_gool_ins_setcolor_params },
@@ -1347,13 +1347,14 @@ c2_gool_ins[] = {
     { "setfield",                   28, 2, 0, 0, -1, c1_gool_ins_setfield_params },
     { "entitysetspawn",             28, 0, 0, 0, -1, c1_gool_ins_entitysetspawn_params },
     { "entitysetstate",             28, 0, 0, 0, -1, c1_gool_ins_entitysetstate_params },
-    { "loadlevel",                  28, 0, 0, 0, -1, c1_gool_ins_loadlevel_params },
     { "savecheckpoint",             28, 0, 0, 0, -1, c2_gool_ins_savecheckpoint_params },
     { "loadcheckpoint",             28, 0, 0, 0, -1, c2_gool_ins_loadcheckpoint_params },
-    { "soundstop",                  28, 0, 0, 0, -1, c1_gool_ins_soundstop_params },
-    { "seqplay",                    28, 0, 0, 0, -1, c1_gool_ins_seqplay_params },
     { "movetolist",                 28, 0, 0, 0, -1, c1_gool_ins_movetolist_params },
     { "gamefunc4",                  28, 0, 0, 0, -1, c1_gool_ins_gamefunc4_params },
+    { "soundstop",                  28, 0, 0, 0, -1, c1_gool_ins_soundstop_params },
+    { "seqplay",                    28, 0, 0, 0, -1, c1_gool_ins_seqplay_params },
+    { "loadlevel",                  28, 0, 0, 0, -1, c1_gool_ins_loadlevel_params },
+    { "gamefunc10",                 28, 0, 0, 0, -1, c1_gool_ins_gamefunc10_params },
     { "startgame",                  28, 0, 0, 0, -1, c1_gool_ins_startgame_params },
     { "killvictims",                28, 0, 0, 0, -1, c2_gool_ins_killvictims_params },
     { "setcolor",                   36, 0, 0, 0, -1, c1_gool_ins_setcolor_params },
