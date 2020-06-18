@@ -137,6 +137,7 @@
 "<<"       return LSHIFT;
 ">>"       return RSHIFT;
 "\\"       return TEST;
+"avg"              return AVG;
 "abs"              return ABS;
 "seek"             return SEEK;
 "degseek"          return DEGSEEK;
