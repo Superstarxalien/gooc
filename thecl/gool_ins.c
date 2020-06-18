@@ -975,6 +975,44 @@ c1_gool_ins_startgame_params(
 }
 
 static list_t*
+c1_gool_ins_unkget_params(
+    list_t* params,
+    int argc)
+{
+    thecl_param_t* param;
+    size_t c = list_count(params);
+    if (c == 1) {
+        list_append_new(params, param_val_new(5));
+        list_append_new(params, param_val_new(12));
+        list_append_new(params, param_val_new(12));
+    }
+    else {
+        fprintf(stderr, "%s:%s:unkget: wrong number of arguments (expected 1, got %zu)\n", argv0, current_input, c);
+        return NULL;
+    }
+    return params;
+}
+
+static list_t*
+c1_gool_ins_unkset_params(
+    list_t* params,
+    int argc)
+{
+    thecl_param_t* param;
+    size_t c = list_count(params);
+    if (c == 1) {
+        list_append_new(params, param_val_new(5));
+        list_append_new(params, param_val_new(13));
+        list_append_new(params, param_val_new(12));
+    }
+    else {
+        fprintf(stderr, "%s:%s:unkset: wrong number of arguments (expected 1, got %zu)\n", argv0, current_input, c);
+        return NULL;
+    }
+    return params;
+}
+
+static list_t*
 c1_gool_ins_moveto2d_params(
     list_t* params,
     int argc)
@@ -1123,6 +1161,8 @@ c1_gool_ins[] = {
     { "loadlevel",                  28, 0, 0, 0, -1, c1_gool_ins_loadlevel_params },
     { "gamefunc10",                 28, 0, 0, 0, -1, c1_gool_ins_gamefunc10_params },
     { "startgame",                  28, 0, 0, 0, -1, c1_gool_ins_startgame_params },
+    { "unkget",                     28, 0, 0, 0, -1, c1_gool_ins_unkget_params },
+    { "unkset",                     28, 0, 0, 0, -1, c1_gool_ins_unkset_params },
     { "setcolor",                   36, 0, 0, 0, -1, c1_gool_ins_setcolor_params },
     { "anim",                       39, 0, 0, 0, -1, c1_gool_ins_anim_params },
     { "nop",                      0x81, 0, 0, 0, -1, c1_gool_ins_nop_params },
@@ -1356,6 +1396,8 @@ c2_gool_ins[] = {
     { "loadlevel",                  28, 0, 0, 0, -1, c1_gool_ins_loadlevel_params },
     { "gamefunc10",                 28, 0, 0, 0, -1, c1_gool_ins_gamefunc10_params },
     { "startgame",                  28, 0, 0, 0, -1, c1_gool_ins_startgame_params },
+    { "unkget",                     28, 0, 0, 0, -1, c1_gool_ins_unkget_params },
+    { "unkset",                     28, 0, 0, 0, -1, c1_gool_ins_unkset_params },
     { "killvictims",                28, 0, 0, 0, -1, c2_gool_ins_killvictims_params },
     { "setcolor",                   36, 0, 0, 0, -1, c1_gool_ins_setcolor_params },
     { "anim",                       39, 0, 0, 0, -1, c1_gool_ins_anim_params },
