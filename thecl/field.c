@@ -230,13 +230,13 @@ c1_globals[] = {
     { "BONUSROUND",         60 },
 
     { "BOXCOUNT",           62 },
-    { "GAMEITEMPOOL1",      63 },
+    { "ITEMPOOL1",          63 },
 
     { "DEBUG",              68 },
     { "CHECKPOINTID",       69 },
     { "PREVBOXCOUNT",       70 },
     { "PREVLEVEL",          71 },
-    { "GAMEITEMPOOL2",      72 },
+    { "ITEMPOOL2",          72 },
 
     { "DEMOTEXTOBJ",        76 },
 
