@@ -257,12 +257,12 @@ vol\([0-9]+\.[0-9]+\) {
 "false" {
     /* boolean "false" */
     yylval.integer = 0;
-    return INTEGER;
+    return GOOL_INTEGER;
 }
 "true" {
     /* boolean "true" */
-    yylval.integer = 1;
-    return INTEGER;
+    yylval.integer = 0x100;
+    return GOOL_INTEGER;
 }
 "null" |
 "nil" {
