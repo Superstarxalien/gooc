@@ -232,6 +232,8 @@ c1_globals[] = {
     { "BOXCOUNT",           62 },
     { "ITEMPOOL1",          63 },
 
+    { "GEMTIME",            65 },
+
     { "DEBUG",              68 },
     { "CHECKPOINTID",       69 },
     { "PREVBOXCOUNT",       70 },
