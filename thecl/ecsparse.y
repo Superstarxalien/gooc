@@ -3195,7 +3195,7 @@ instr_create_inline_call(
                             expr = inline_call_replace_params(state, expr, params_org);
 
                             param = expr->value;
-                            if (expr_get_by_symbol(state->version, LOAD)->id == expr->id || expr_get_by_symbol(state->version, GLOAD)->id == expr->id || expr_get_by_symbol(state->version, CLOAD)->id == expr->id) { /* Load_Type */
+                            if (expr->type != EXPRESSION_TERNARY && (expr_get_by_symbol(state->version, LOAD)->id == expr->id || expr_get_by_symbol(state->version, GLOAD)->id == expr->id || expr_get_by_symbol(state->version, CLOAD)->id == expr->id)) { /* Load_Type */
                                 if (param->val_type == PARAM_GLOBAL || param->val_type == PARAM_COLOR) {
                                     list_prepend_new(&state->expressions, expression_copy(expr));
 
@@ -3209,7 +3209,7 @@ instr_create_inline_call(
                                     param = param_copy(expr->value);
                                 }
                             }
-                            else if (expr_get_by_symbol(state->version, PLOAD)->id == expr->id) { /* Pointer_Type */
+                            else if (expr->type != EXPRESSION_TERNARY && expr_get_by_symbol(state->version, PLOAD)->id == expr->id) { /* Pointer_Type */
                                 list_prepend_new(&state->expressions, expression_copy(expr));
 
                                 param = param_new('S');
