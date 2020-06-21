@@ -197,11 +197,12 @@ c1_globals[] = {
 
     { "GAMEFLAGS",           4 },
     { "RESPAWNCOUNT",        5 },
-    { "FRUITCOUNTER",        6 },
-    { "LIFECOUNTER",         7 },
+    { "FRUITDISPLAY",        6 },
+    { "LIFEDISPLAY",         7 },
 
     { "PAUSEMENU",          12 },
     { "LIFEICONTRANSX",     13 },
+    { "PICKUPDISPLAY",      14 },
 
     { "DOCTOR",             16 },
 
@@ -288,12 +289,12 @@ c2_globals[] = {
 
     { "GAMEFLAGS",           4 },
     { "RESPAWNCOUNT",        5 },
-    { "FRUITCOUNTER",        6 },
-    { "LIFECOUNTER",         7 },
+    { "FRUITDISPLAY",        6 },
+    { "LIFEDISPLAY",         7 },
 
     { "PAUSEMENU",          12 },
     { "LIFEICONTRANSX",     13 },
-    { "ITEMDISPLAY",        14 },
+    { "PICKUPDISPLAY",      14 },
 
     { "DOCTOR",             16 },
 
