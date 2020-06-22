@@ -650,7 +650,7 @@ convert_extended_string(
                 else SplitDakuten("ど", "と")
                 else SplitDakuten("ざ", "さ")
                 else SplitDakuten("じ", "し")
-                else SplitDakuten("ず", "す")
+                else SplitDakuten2("ず", "す")
                 else SplitDakuten("ぜ", "せ")
                 else SplitDakuten("ぞ", "そ")
                 else SplitDakuten("ば", "は")
