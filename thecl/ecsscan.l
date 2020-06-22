@@ -396,6 +396,7 @@ vol\([0-9]+\.[0-9]+\) {
     else {
         BEGIN(P_BLOCK);
     }
+    g_reg_blocks[g_reg_block_depth - 1] = !g_reg_blocks[g_reg_block_depth - 1];
     yylval.string = strdup(yytext + 1);
     return DIRECTIVE;
 }
