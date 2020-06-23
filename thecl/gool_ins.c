@@ -1156,8 +1156,8 @@ c1_gool_ins_checkzonecollision_params(
     thecl_param_t* param;
     size_t c = list_count(params);
     if (c == 1) {
-        list_prepend_new(params, param_null_new());
         list_prepend_new(params, param_val_new(3));
+        list_prepend_new(params, param_null_new());
         list_append_new(params, param_val_new(0));
         list_append_new(params, param_val_new(0));
     }
