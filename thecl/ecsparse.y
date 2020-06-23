@@ -116,6 +116,8 @@ static void expression_optimize(parser_state_t* state, expression_t* expr);
     expression_operation_new(state, a, (expression_t*[]){ A, B, NULL })
 #define EXPR_1(a, A) \
     expression_operation_new(state, a, (expression_t*[]){ A, NULL })
+#define EXPR_VAL(val) \
+    expression_val_new(state, val)
 
 static expression_t *expression_copy(expression_t *expr);
 static void expression_create_goto(parser_state_t *state, int type, char *labelstr, expression_t* cond);
@@ -2328,68 +2330,69 @@ ExpressionSubset:
         $$ = EXPR_2(NOT,      expression_load_new(state, param_sp_new()), $$);
       }
     | "+" Expression              { $$ = $2; }
-    | "-" Expression              { $$ = EXPR_2(SUBTRACT, expression_val_new(state, 0), $2); }
+    | "-" Expression              { $$ = EXPR_2(SUBTRACT, EXPR_VAL(0), $2); }
     | "abs" "(" Expression ")"    { $$ = EXPR_2(ABS,      expression_load_new(state, param_sp_new()), $3); }
-    | "getanim" "(" Expression ")"{ $$ = EXPR_2(GETANIM,  expression_load_new(state, param_sp_new()), EXPR_2(LSHIFT, $3, expression_val_new(state, 8))); }
+    | "getanim" "(" Expression ")"{ $$ = EXPR_2(GETANIM,  expression_load_new(state, param_sp_new()), EXPR_2(LSHIFT, $3, EXPR_VAL(8))); }
     | "seek" "(" Expression "," Expression "," Expression ")"     { $$ = EXPR_3(SEEK, $3, $5, $7); }
     | "seek" "(" Expression "," Expression ")"                    { $$ = EXPR_2(SEEK, $3, $5); }
     | "degseek" "(" Expression "," Expression "," Expression ")"  { $$ = EXPR_3(DEGSEEK, $3, $5, $7); }
     | "degseek" "(" Expression "," Expression ")"                 { $$ = EXPR_2(DEGSEEK, $3, $5); }
     | "degdist" "(" Expression "," Expression ")"                 { $$ = EXPR_2(DEGDIST, $3, $5); }
-    | "rand" "(" Expression ")"                                   { $$ = EXPR_2(RAND, expression_val_new(state, 0), $3); }
+    | "rand" "(" Expression ")"                                   { $$ = EXPR_2(RAND, EXPR_VAL(0), $3); }
     | "rand" "(" Expression "," Expression ")"                    { $$ = EXPR_2(RAND, $3, $5); }
-    | "randi" "(" Expression "," Expression ")"                   { $$ = EXPR_2(RAND, $3, EXPR_2(ADD, $5, expression_val_new(state, 8))); }
+    | "randi" "(" Expression  ")"                                 { $$ = EXPR_2(RAND, EXPR_VAL(0), EXPR_2(ADD, $3, EXPR_VAL(1))); }
+    | "randi" "(" Expression "," Expression ")"                   { $$ = EXPR_2(RAND, $3,          EXPR_2(ADD, $5, EXPR_VAL(1))); }
     | "nearseek" "(" Expression "," Expression "," Expression ")" { $$ = EXPR_3(NEARSEEK, $3, $5, $7); }
     | "nearseek" "(" Expression "," Expression ")"                { $$ = EXPR_2(NEARSEEK, $3, $5); }
     | "time" "(" Expression "," Expression ")"                    { $$ = EXPR_2(TIME, $3, $5); }
-    | "time" "(" Expression ")"                                   { $$ = EXPR_2(TIME, $3, expression_val_new(state, 0)); }
+    | "time" "(" Expression ")"                                   { $$ = EXPR_2(TIME, $3, EXPR_VAL(0)); }
     | "getcolor" "(" Expression "," Expression ")"                { if (g_warn_deprecate_getcolor) { yyerror(state, "getcolor: deprecate expression. use as address instead (i.e. 'color + 64')"); g_warn_deprecate_getcolor = false; }; $$ = EXPR_2(GETCOLOR, $3, $5); }
-    | "getcolor" "(" Expression ")"                               { if (g_warn_deprecate_getcolor) { yyerror(state, "getcolor: deprecate expression. use as address instead (i.e. 'color + 64')"); g_warn_deprecate_getcolor = false; }; $$ = EXPR_2(GETCOLOR, expression_val_new(state, 0), $3); }
+    | "getcolor" "(" Expression ")"                               { if (g_warn_deprecate_getcolor) { yyerror(state, "getcolor: deprecate expression. use as address instead (i.e. 'color + 64')"); g_warn_deprecate_getcolor = false; }; $$ = EXPR_2(GETCOLOR, EXPR_VAL(0), $3); }
     | "pad" "(" Expression "," Expression "," Expression "," Expression "," Expression ")" { $$ = EXPR_5(PAD, $3, $5, $7, $9, $11); }
-    | "buttonpress" "(" Expression ")"                            { $$ = EXPR_5(PAD, $3, expression_val_new(state, 1), expression_val_new(state, 0), expression_val_new(state, 8), expression_val_new(state, 0)); }
-    | "buttonhold" "(" Expression ")"                             { $$ = EXPR_5(PAD, $3, expression_val_new(state, 2), expression_val_new(state, 0), expression_val_new(state, 8), expression_val_new(state, 0)); }
-    | "buttonbuffer" "(" Expression ")"                           { $$ = EXPR_5(PAD, $3, expression_val_new(state, 3), expression_val_new(state, 0), expression_val_new(state, 8), expression_val_new(state, 0)); }
-    | "buttonpress" "(" Expression "," Expression ")"             { $$ = EXPR_5(PAD, $3, expression_val_new(state, 1), expression_val_new(state, 0), expression_val_new(state, 8), $5); }
-    | "buttonhold" "(" Expression "," Expression ")"              { $$ = EXPR_5(PAD, $3, expression_val_new(state, 2), expression_val_new(state, 0), expression_val_new(state, 8), $5); }
-    | "buttonbuffer" "(" Expression "," Expression ")"            { $$ = EXPR_5(PAD, $3, expression_val_new(state, 3), expression_val_new(state, 0), expression_val_new(state, 8), $5); }
-    | "dirpress" "(" Expression ")"                               { $$ = EXPR_5(PAD, expression_val_new(state, 0), expression_val_new(state, 0), expression_val_new(state, 1), $3, expression_val_new(state, 0)); }
-    | "dirhold" "(" Expression ")"                                { $$ = EXPR_5(PAD, expression_val_new(state, 0), expression_val_new(state, 0), expression_val_new(state, 2), $3, expression_val_new(state, 0)); }
-    | "dirbuffer" "(" Expression ")"                              { $$ = EXPR_5(PAD, expression_val_new(state, 0), expression_val_new(state, 0), expression_val_new(state, 3), $3, expression_val_new(state, 0)); }
-    | "dirpress" "(" Expression "," Expression ")"                { $$ = EXPR_5(PAD, expression_val_new(state, 0), expression_val_new(state, 0), expression_val_new(state, 1), $3, $5); }
-    | "dirhold" "(" Expression "," Expression ")"                 { $$ = EXPR_5(PAD, expression_val_new(state, 0), expression_val_new(state, 0), expression_val_new(state, 2), $3, $5); }
-    | "dirbuffer" "(" Expression "," Expression ")"               { $$ = EXPR_5(PAD, expression_val_new(state, 0), expression_val_new(state, 0), expression_val_new(state, 3), $3, $5); }
+    | "buttonpress" "(" Expression ")"                            { $$ = EXPR_5(PAD, $3, EXPR_VAL(1), EXPR_VAL(0), EXPR_VAL(8), EXPR_VAL(0)); }
+    | "buttonhold" "(" Expression ")"                             { $$ = EXPR_5(PAD, $3, EXPR_VAL(2), EXPR_VAL(0), EXPR_VAL(8), EXPR_VAL(0)); }
+    | "buttonbuffer" "(" Expression ")"                           { $$ = EXPR_5(PAD, $3, EXPR_VAL(3), EXPR_VAL(0), EXPR_VAL(8), EXPR_VAL(0)); }
+    | "buttonpress" "(" Expression "," Expression ")"             { $$ = EXPR_5(PAD, $3, EXPR_VAL(1), EXPR_VAL(0), EXPR_VAL(8), $5); }
+    | "buttonhold" "(" Expression "," Expression ")"              { $$ = EXPR_5(PAD, $3, EXPR_VAL(2), EXPR_VAL(0), EXPR_VAL(8), $5); }
+    | "buttonbuffer" "(" Expression "," Expression ")"            { $$ = EXPR_5(PAD, $3, EXPR_VAL(3), EXPR_VAL(0), EXPR_VAL(8), $5); }
+    | "dirpress" "(" Expression ")"                               { $$ = EXPR_5(PAD, EXPR_VAL(0), EXPR_VAL(0), EXPR_VAL(1), $3, EXPR_VAL(0)); }
+    | "dirhold" "(" Expression ")"                                { $$ = EXPR_5(PAD, EXPR_VAL(0), EXPR_VAL(0), EXPR_VAL(2), $3, EXPR_VAL(0)); }
+    | "dirbuffer" "(" Expression ")"                              { $$ = EXPR_5(PAD, EXPR_VAL(0), EXPR_VAL(0), EXPR_VAL(3), $3, EXPR_VAL(0)); }
+    | "dirpress" "(" Expression "," Expression ")"                { $$ = EXPR_5(PAD, EXPR_VAL(0), EXPR_VAL(0), EXPR_VAL(1), $3, $5); }
+    | "dirhold" "(" Expression "," Expression ")"                 { $$ = EXPR_5(PAD, EXPR_VAL(0), EXPR_VAL(0), EXPR_VAL(2), $3, $5); }
+    | "dirbuffer" "(" Expression "," Expression ")"               { $$ = EXPR_5(PAD, EXPR_VAL(0), EXPR_VAL(0), EXPR_VAL(3), $3, $5); }
     | "spd" "(" Expression "," Expression ")"                     { $$ = EXPR_2(SPD, $3, $5); }
-    | "spd" "(" Expression ")"                                    { $$ = EXPR_2(SPD, expression_val_new(state, 0), $3); }
+    | "spd" "(" Expression ")"                                    { $$ = EXPR_2(SPD, EXPR_VAL(0), $3); }
     | "sin" "(" Expression "," Expression ")"                     { $$ = EXPR_2(PSIN, $3, $5); }
     | "sin" "(" Expression ")"                                    { $$ = EXPR_2(SIN, expression_load_new(state, param_sp_new()), $3); }
     | "cos" "(" Expression ")"                                    { $$ = EXPR_2(COS, expression_load_new(state, param_sp_new()), $3); }
     | "fieldval" "(" Expression ")"                               { $$ = EXPR_2(FVAL, expression_load_new(state, param_sp_new()), $3); }
     | "fieldrow" "(" Expression "," Expression ")"                { $$ = EXPR_2(FROW, $3, $5); }
-    | Address "[" Expression "]"                                  { if (!is_post_c2(state->version)) $$ = EXPR_4(MISC, expression_load_new(state, $1), expression_val_new(state, 5), $3, expression_val_new(state, 0));
+    | Address "[" Expression "]"                                  { if (!is_post_c2(state->version)) $$ = EXPR_4(MISC, expression_load_new(state, $1), EXPR_VAL(5), $3, EXPR_VAL(0));
                                                                     else $$ = EXPR_2(ARRL, expression_load_new(state, $1), $3);
                                                                   }
-    | "getval" "(" Expression "," Expression ")"                  { if (!is_post_c2(state->version)) $$ = EXPR_4(MISC, $3, expression_val_new(state, 5), $5, expression_val_new(state, 0)); }
-    | "distance" "(" Expression "," Expression ")"                { $$ = EXPR_4(MISC, expression_load_new(state, param_null_new()), $3, $5, expression_val_new(state, 1)); }
+    | "getval" "(" Expression "," Expression ")"                  { if (!is_post_c2(state->version)) $$ = EXPR_4(MISC, $3, EXPR_VAL(5), $5, EXPR_VAL(0)); }
+    | "distance" "(" Expression "," Expression ")"                { $$ = EXPR_4(MISC, expression_load_new(state, param_null_new()), $3, $5, EXPR_VAL(1)); }
     | "atan" "(" Expression "," Expression ")"                    { $$ = EXPR_2(ATAN, $3, $5); }
-    | "atan2" "(" Expression "," Expression ")"                   { $$ = EXPR_4(MISC, $5, $3, expression_val_new(state, 0), expression_val_new(state, 2)); }
-    | "getfield" "(" Expression "," Expression ")"                { $$ = EXPR_4(MISC, $5, $3, expression_val_new(state, 0), expression_val_new(state, 3)); }
+    | "atan2" "(" Expression "," Expression ")"                   { $$ = EXPR_4(MISC, $5, $3, EXPR_VAL(0), EXPR_VAL(2)); }
+    | "getfield" "(" Expression "," Expression ")"                { $$ = EXPR_4(MISC, $5, $3, EXPR_VAL(0), EXPR_VAL(3)); }
 
-    | "atan2_mirrored" "(" Expression ")"                         { if (!is_post_c2(state->version)) $$ = EXPR_4(MISC, expression_load_new(state, param_null_new()), $3, expression_val_new(state, 0), expression_val_new(state, 5)); }
-    | "distance" "(" Expression "," Expression "," Expression ")" { $$ = EXPR_4(MISC, $3, $5, $7, expression_val_new(state, 6)); }
-    | "objectget" "(" Expression ")"                              { $$ = EXPR_4(MISC, $3, expression_val_new(state, 5), expression_val_new(state, 0), expression_val_new(state, 7)); }
+    | "atan2_mirrored" "(" Expression ")"                         { if (!is_post_c2(state->version)) $$ = EXPR_4(MISC, expression_load_new(state, param_null_new()), $3, EXPR_VAL(0), EXPR_VAL(5)); }
+    | "distance" "(" Expression "," Expression "," Expression ")" { $$ = EXPR_4(MISC, $3, $5, $7, EXPR_VAL(6)); }
+    | "objectget" "(" Expression ")"                              { $$ = EXPR_4(MISC, $3, EXPR_VAL(5), EXPR_VAL(0), EXPR_VAL(7)); }
 
-    | "entitygetstate" "(" Expression ")"                         { $$ = EXPR_4(MISC, expression_load_new(state, param_var_new("id")), expression_val_new(state, 0), $3, expression_val_new(state, 11)); }
-    | "entitygetstate" "(" Expression "," Expression ")"          { $$ = EXPR_4(MISC, $3, expression_val_new(state, 0), $5, expression_val_new(state, 11)); }
-//  | "gamefunc" "(" Expression "," Expression ")"                { if (!is_post_c2(state->version)) $$ = EXPR_4(MISC, $3, expression_val_new(state, 0), $5, expression_val_new(state, 12)); }
-    | "getvalideventobj" "(" Expression "," Expression "," Expression ")"   { $$ = EXPR_4(MISC, $3, $5, $7, expression_val_new(state, 13)); }
-    | "getvalideventobj" "(" Expression "," Expression ")"        { $$ = EXPR_4(MISC, $3, expression_val_new(state, 0), $5, expression_val_new(state, 13)); }
-    | "iscolliding" "(" Expression "," Expression ")"             { if (!is_post_c2(state->version)) $$ = EXPR_4(MISC, $3, $5, expression_val_new(state, 0), expression_val_new(state, 14)); }
-//  | "__unk2" "(" Expression "," Expression ")"                  { if (!is_post_c2(state->version)) $$ = EXPR_4(MISC, $3, expression_val_new(state, 0), $5, expression_val_new(state, 15)); }
+    | "entitygetstate" "(" Expression ")"                         { $$ = EXPR_4(MISC, expression_load_new(state, param_var_new("id")), EXPR_VAL(0), $3, EXPR_VAL(11)); }
+    | "entitygetstate" "(" Expression "," Expression ")"          { $$ = EXPR_4(MISC, $3, EXPR_VAL(0), $5, EXPR_VAL(11)); }
+//  | "gamefunc" "(" Expression "," Expression ")"                { if (!is_post_c2(state->version)) $$ = EXPR_4(MISC, $3, EXPR_VAL(0), $5, EXPR_VAL(12)); }
+    | "getvalideventobj" "(" Expression "," Expression "," Expression ")"   { $$ = EXPR_4(MISC, $3, $5, $7, EXPR_VAL(13)); }
+    | "getvalideventobj" "(" Expression "," Expression ")"        { $$ = EXPR_4(MISC, $3, EXPR_VAL(0), $5, EXPR_VAL(13)); }
+    | "iscolliding" "(" Expression "," Expression ")"             { if (!is_post_c2(state->version)) $$ = EXPR_4(MISC, $3, $5, EXPR_VAL(0), EXPR_VAL(14)); }
+//  | "__unk2" "(" Expression "," Expression ")"                  { if (!is_post_c2(state->version)) $$ = EXPR_4(MISC, $3, EXPR_VAL(0), $5, EXPR_VAL(15)); }
 
-    | "tryload" "(" Expression ")"                                { $$ = EXPR_2(NTRY, $3, expression_val_new(state, 3)); }
+    | "tryload" "(" Expression ")"                                { $$ = EXPR_2(NTRY, $3, EXPR_VAL(3)); }
     | "ntry5" "(" Expression_List ")" {
         if ($3 != NULL) {
-            $$ = EXPR_2(NTRY, expression_val_new(state, list_count($3)), expression_val_new(state, 5));
+            $$ = EXPR_2(NTRY, EXPR_VAL(list_count($3)), EXPR_VAL(5));
             expression_t* expr;
             list_for_each($3, expr) {
                 list_append_new(&$$->children, expr);
@@ -2398,16 +2401,16 @@ ExpressionSubset:
             free($3);
         }
         else {
-            $$ = EXPR_2(NTRY, expression_val_new(state, 0), expression_val_new(state, 5));
+            $$ = EXPR_2(NTRY, EXPR_VAL(0), EXPR_VAL(5));
         }
       }
-    | "ntry4" "(" ")"                                             { $$ = EXPR_2(NTRY, expression_load_new(state, param_null_new()), expression_val_new(state, 4)); }
+    | "ntry4" "(" ")"                                             { $$ = EXPR_2(NTRY, expression_load_new(state, param_null_new()), EXPR_VAL(4)); }
 
-    | "getins" "(" Expression ")"                                 { $$ = EXPR_3(MOVC, $3, expression_val_new(state, 0), expression_val_new(state, 0x1F)); }
+    | "getins" "(" Expression ")"                                 { $$ = EXPR_3(MOVC, $3, EXPR_VAL(0), EXPR_VAL(0x1F)); }
 
     /* Custom expressions. */
 
-    | "avg" "(" Expression "," Expression ")"                     { $$ = EXPR_2(RSHIFT, EXPR_2(ADD, $3, $5), expression_val_new(state, 1)); }
+    | "avg" "(" Expression "," Expression ")"                     { $$ = EXPR_2(RSHIFT, EXPR_2(ADD, $3, $5), EXPR_VAL(1)); }
     | Expression "?" Expression ":" Expression  %prec QUESTION    { $$ = expression_ternary_new(state, $1, $3, $5); }
     | "offsetof" "(" Expression ")"                               {
         if ($3->type != EXPRESSION_VAL) {
@@ -2418,7 +2421,7 @@ ExpressionSubset:
             yyerror(state, "syntax error, offsetof parameter is an invalid expression");
             exit(2);
         }
-        $$ = expression_val_new(state, $3->value->value.val.S << 8);
+        $$ = EXPR_VAL($3->value->value.val.S << 8);
       }
     ;
 
@@ -4421,7 +4424,7 @@ expression_output(
         if (expression->symbol == RSHIFT && lc == 2) { /* special case handling, as GOOL does not have a native >> operation */
             expression_t* shamt = list_tail(&expr->children);
             list_del_tail(&expr->children);
-            list_append_new(&expr->children, EXPR_2(SUBTRACT, expression_val_new(state, 0), expression_copy(shamt)));
+            list_append_new(&expr->children, EXPR_2(SUBTRACT, EXPR_VAL(0), expression_copy(shamt)));
             expression_free(shamt);
             expr->id = expr_get_by_symbol(state->version, LSHIFT)->id;
         }
@@ -4593,7 +4596,7 @@ expression_optimize(
                 int i = 0;
                 while (true) if (number_expr->value->value.val.S == (1 << i++)) break;
                 other_expr = expression_copy(other_expr);
-                number_expr = expression_val_new(state, i-1);
+                number_expr = EXPR_VAL(i-1);
 
                 expression->id = expr_get_by_symbol(state->version, LSHIFT)->id;
 
@@ -4624,7 +4627,7 @@ expression_optimize(
                 int i = 0;
                 while (true) if (child_expr_2->value->value.val.S == (1 << i++)) break;
                 expression_t* other_expr = expression_copy(child_expr_1);
-                expression_t* number_expr = expression_val_new(state, i-1);
+                expression_t* number_expr = EXPR_VAL(i-1);
 
                 expression->id = expr_get_by_symbol(state->version, RSHIFT)->id;
 
