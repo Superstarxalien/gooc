@@ -760,7 +760,7 @@ c1_gool_ins_calclight_params(
 }
 
 static list_t*
-c1_gool_ins_projobj_params(
+c1_gool_ins_projzone_params(
     list_t* params,
     int argc)
 {
@@ -772,15 +772,20 @@ c1_gool_ins_projobj_params(
         list_append_new(params, param_val_new(1));
         list_append_new(params, param_val_new(0));
     }
+    else if (c == 2) {
+        list_append_to(params, param_val_new(5), params->head);
+        list_append_new(params, param_val_new(1));
+        list_append_new(params, param_val_new(0));
+    }
     else {
-        fprintf(stderr, "%s:%s:projectobjshadow: wrong number of arguments (expected 1, got %zu)\n", argv0, current_input, c);
+        fprintf(stderr, "%s:%s:projectzoneshadow: wrong number of arguments (expected 1 or 2, got %zu)\n", argv0, current_input, c);
         return NULL;
     }
     return params;
 }
 
 static list_t*
-c1_gool_ins_projzone_params(
+c1_gool_ins_projobj_params(
     list_t* params,
     int argc)
 {
@@ -793,7 +798,7 @@ c1_gool_ins_projzone_params(
         list_append_new(params, param_val_new(0));
     }
     else {
-        fprintf(stderr, "%s:%s:projectzoneshadow: wrong number of arguments (expected 1, got %zu)\n", argv0, current_input, c);
+        fprintf(stderr, "%s:%s:projectobjshadow: wrong number of arguments (expected 1, got %zu)\n", argv0, current_input, c);
         return NULL;
     }
     return params;
@@ -1144,7 +1149,7 @@ c1_gool_ins_vectransf2_params(
 }
 
 static list_t*
-c1_gool_ins_checkzonecollision1_params(
+c1_gool_ins_checkzonecollision_params(
     list_t* params,
     int argc)
 {
@@ -1172,26 +1177,7 @@ c1_gool_ins_checkzonecollision1_params(
         list_append_new(params, param_val_new(0));
     }
     else {
-        fprintf(stderr, "%s:%s:checkzonecollision1: wrong number of arguments (expected 1, 2 or 3, got %zu)\n", argv0, current_input, c);
-        return NULL;
-    }
-    return params;
-}
-
-static list_t*
-c1_gool_ins_checkzonecollision2_params(
-    list_t* params,
-    int argc)
-{
-    thecl_param_t* param;
-    size_t c = list_count(params);
-    if (c == 2) {
-        list_append_to(params, param_val_new(5), params->head);
-        list_append_new(params, param_val_new(1));
-        list_append_new(params, param_val_new(0));
-    }
-    else {
-        fprintf(stderr, "%s:%s:checkzonecollision2: wrong number of arguments (expected 2, got %zu)\n", argv0, current_input, c);
+        fprintf(stderr, "%s:%s:checkzonecollision: wrong number of arguments (expected 1, 2 or 3, got %zu)\n", argv0, current_input, c);
         return NULL;
     }
     return params;
@@ -1260,8 +1246,7 @@ c1_gool_ins[] = {
     { "sounddecay",               0x8D, 0, 0, 0, -1, c1_gool_ins_sounddecay_params },
     { "soundset",                 0x8D, 0, 0, 0, -1, c1_gool_ins_soundset_params },
     { "soundcheck",               0x8D, 0, 0, 0, -1, c1_gool_ins_soundcheck_params },
-    { "checkzonecollision1",      0x8E, 0, 0, 0, -1, c1_gool_ins_checkzonecollision1_params },
-    { "checkzonecollision2",      0x8E, 0, 0, 0, -1, c1_gool_ins_checkzonecollision2_params },
+    { "checkzonecollision",       0x8E, 0, 0, 0, -1, c1_gool_ins_checkzonecollision_params },
     { "calclight",                0x8E, 0, 0, 0, -1, c1_gool_ins_calclight_params },
     { "projectobjshadow",         0x8E, 0, 0, 0, -1, c1_gool_ins_projobj_params },
     { "projectzoneshadow",        0x8E, 0, 0, 0, -1, c1_gool_ins_projzone_params },
@@ -1479,8 +1464,7 @@ c2_gool_ins[] = {
     { "sounddecay",                 66, 0, 0, 0, -1, c1_gool_ins_sounddecay_params },
     { "soundset",                   66, 0, 0, 0, -1, c1_gool_ins_soundset_params },
     { "soundcheck",                 66, 0, 0, 0, -1, c1_gool_ins_soundcheck_params },
-    { "checkzonecollision1",        67, 0, 0, 0, -1, c1_gool_ins_checkzonecollision1_params },
-    { "checkzonecollision2",        67, 0, 0, 0, -1, c1_gool_ins_checkzonecollision2_params },
+    { "checkzonecollision",         67, 0, 0, 0, -1, c1_gool_ins_checkzonecollision_params },
     { "calclight",                  67, 0, 0, 0, -1, c1_gool_ins_calclight_params },
     { "projectobjshadow",           67, 0, 0, 0, -1, c1_gool_ins_projobj_params },
     { "projectzoneshadow",          67, 0, 0, 0, -1, c1_gool_ins_projzone_params },
