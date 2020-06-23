@@ -144,6 +144,7 @@
 "degdist"          return DEGDIST;
 "time"             return TIME;
 "rand"             return RAND;
+"randi"            return RANDI;
 "nearseek"         return NEARSEEK;
 "getcolor"         return GETCOLOR;
 "pad"              return PAD;

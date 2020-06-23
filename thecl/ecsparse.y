@@ -333,6 +333,7 @@ int yydebug = 0;
 %token DEGSEEK "degseek"
 %token DEGDIST "degdist"
 %token RAND "rand"
+%token RANDI "randi"
 %token NEARSEEK "nearseek"
 %token TIME "time"
 %token GETCOLOR "getcolor"
@@ -2337,6 +2338,7 @@ ExpressionSubset:
     | "degdist" "(" Expression "," Expression ")"                 { $$ = EXPR_2(DEGDIST, $3, $5); }
     | "rand" "(" Expression ")"                                   { $$ = EXPR_2(RAND, expression_val_new(state, 0), $3); }
     | "rand" "(" Expression "," Expression ")"                    { $$ = EXPR_2(RAND, $3, $5); }
+    | "randi" "(" Expression "," Expression ")"                   { $$ = EXPR_2(RAND, $3, EXPR_2(ADD, $5, expression_val_new(state, 8))); }
     | "nearseek" "(" Expression "," Expression "," Expression ")" { $$ = EXPR_3(NEARSEEK, $3, $5, $7); }
     | "nearseek" "(" Expression "," Expression ")"                { $$ = EXPR_2(NEARSEEK, $3, $5); }
     | "time" "(" Expression "," Expression ")"                    { $$ = EXPR_2(TIME, $3, $5); }
