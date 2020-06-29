@@ -359,6 +359,7 @@ int yydebug = 0;
 %token DISTANCE "distance"
 %token ATAN "atan"
 %token ATAN2 "atan2"
+%token ATAN2_3D "atan2_3d"
 %token GETFIELD "getfield"
 %token ATAN2M "atan2_mirrored"
 %token OBJGET "objectget"
@@ -2371,7 +2372,9 @@ ExpressionSubset:
     | Address "[" Expression "]"                                  { if (!is_post_c2(state->version)) $$ = EXPR_4(MISC, expression_load_new(state, $1), EXPR_VAL(5), $3, EXPR_VAL(0));
                                                                     else $$ = EXPR_2(ARRL, expression_load_new(state, $1), $3);
                                                                   }
-    | "getval" "(" Expression "," Expression ")"                  { if (!is_post_c2(state->version)) $$ = EXPR_4(MISC, $3, EXPR_VAL(5), $5, EXPR_VAL(0)); }
+    | "getval" "(" Expression "," Expression ")"                  { if (!is_post_c2(state->version)) $$ = EXPR_4(MISC, $3, EXPR_VAL(5), $5, EXPR_VAL(0));
+                                                                    else $$ = EXPR_2(ARRL, expression_load_new(state, $3), $5);
+                                                                  }
     | "distance" "(" Expression "," Expression ")"                { $$ = EXPR_4(MISC, expression_load_new(state, param_null_new()), $3, $5, EXPR_VAL(1)); }
     | "atan" "(" Expression "," Expression ")"                    { $$ = EXPR_2(ATAN, $3, $5); }
     | "atan2" "(" Expression "," Expression ")"                   { $$ = EXPR_4(MISC, $5, $3, EXPR_VAL(0), EXPR_VAL(2)); }
@@ -2384,6 +2387,7 @@ ExpressionSubset:
     | "entitygetstate" "(" Expression ")"                         { $$ = EXPR_4(MISC, expression_load_new(state, param_var_new("id")), EXPR_VAL(0), $3, EXPR_VAL(11)); }
     | "entitygetstate" "(" Expression "," Expression ")"          { $$ = EXPR_4(MISC, $3, EXPR_VAL(0), $5, EXPR_VAL(11)); }
 //  | "gamefunc" "(" Expression "," Expression ")"                { if (!is_post_c2(state->version)) $$ = EXPR_4(MISC, $3, EXPR_VAL(0), $5, EXPR_VAL(12)); }
+    | "atan2_3d" "(" Expression "," Expression ")"                { $$ = EXPR_4(MISC, $5, $3, EXPR_VAL(8), EXPR_VAL(12)); }
     | "getvalideventobj" "(" Expression "," Expression "," Expression ")"   { $$ = EXPR_4(MISC, $3, $5, $7, EXPR_VAL(13)); }
     | "getvalideventobj" "(" Expression "," Expression ")"        { $$ = EXPR_4(MISC, $3, EXPR_VAL(0), $5, EXPR_VAL(13)); }
     | "iscolliding" "(" Expression "," Expression ")"             { if (!is_post_c2(state->version)) $$ = EXPR_4(MISC, $3, $5, EXPR_VAL(0), EXPR_VAL(14)); }

@@ -164,6 +164,7 @@
 "distance"         return DISTANCE;
 "atan"             return ATAN;
 "atan2"            return ATAN2;
+"atan2_3d"         return ATAN2_3D;
 "getfield"         return GETFIELD;
 "atan2_mirrored"   return ATAN2M;
 "objectget"        return OBJGET;
