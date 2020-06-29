@@ -15,6 +15,7 @@ add_library(thtk SHARED
   detect.c
   detect.h
 
+  util.c
   util.h thtk.h)
 find_package(OpenMP)
 if (OPENMP_FOUND)

@@ -26,19 +26,18 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH
  * DAMAGE.
  */
-#ifndef UTIL_H_
-#define UTIL_H_
-
 #include <config.h>
 #include <string.h>
+#include "util.h"
 
 #ifndef HAVE_MEMPCPY
-/* "Writes" a value to a buffer and returns a pointer to the memory location
- * after the written value. */
-void* mempcpy(
+void*
+mempcpy(
     void* dest,
     const void* src,
-    size_t n);
-#endif
-
+    size_t n)
+{
+    memcpy(dest, src, n);
+    return (void*)((size_t)dest + n);
+}
 #endif

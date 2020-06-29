@@ -53,7 +53,7 @@ util_shortname(
         fprintf(stderr, "%s: NULL path passed to short_name\n", argv0);
         abort();
     }
-#ifdef _WIN32
+#ifdef WIN32
     ret = MAX(strrchr(path, '/'), strrchr(path, '\\'));
 #else
     ret = strrchr(path, '/');

@@ -31,11 +31,17 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#ifdef HAVE_MMAP
+#ifdef HAVE_SYS_MMAN_H
 #include <sys/mman.h>
 #endif
-#ifdef HAVE_FSTAT
+#ifdef HAVE_SYS_STAT_H
 #include <sys/stat.h>
+#endif
+#ifdef HAVE_SYS_TYPES_H
+#include <sys/types.h>
+#endif
+#ifdef HAVE_UNISTD_H
+#include <unistd.h>
 #endif
 #include "file.h"
 #include "program.h"
@@ -184,10 +190,8 @@ file_mmap(
     return map;
 #else
     void* buffer = malloc(length);
-    if (buffer && !file_read(stream, buffer, length)) {
-        free(buffer);
-        buffer = NULL;
-    }
+    if (!file_read(stream, buffer, length))
+        return NULL;
     return buffer;
 #endif
 }
@@ -197,7 +201,7 @@ file_munmap(
     void* map,
     size_t length)
 {
-#ifdef HAVE_MMAP
+#ifdef HAVE_MUNMAP
     if (munmap(map, length) == -1) {
         fprintf(stderr, "%s: munmap failed: %s\n", argv0, strerror(errno));
         return 0;
