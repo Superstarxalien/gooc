@@ -47,7 +47,6 @@ char* g_region = NULL;
 char g_lev = '0';
 int g_reg_block_depth = 0;
 int* g_reg_blocks = NULL;
-bool g_has_else = false;
 char* g_module_fmt = NULL;
 
 bool g_warn_deprecate_getcolor = true;
@@ -356,7 +355,7 @@ thecl_param_t*
 param_new(
     int type)
 {
-    thecl_param_t* param = malloc(sizeof(thecl_param_t));
+    thecl_param_t* param = calloc(1, sizeof(thecl_param_t));
     param->type = type;
     param->value.type = type;
     param->is_expression_param = 0;

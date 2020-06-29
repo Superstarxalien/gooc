@@ -348,7 +348,6 @@ vol\([0-9]+\.[0-9]+\) {
     if (!cmp) {
         BEGIN(P_BLOCK);
     }
-    g_has_else = false;
     yylval.string = strdup(yytext + 1);
     return DIRECTIVE;
 }
@@ -360,7 +359,6 @@ vol\([0-9]+\.[0-9]+\) {
     if (!cmp) {
         BEGIN(P_BLOCK);
     }
-    g_has_else = false;
     yylval.string = strdup(yytext + 1);
     return DIRECTIVE;
 }
@@ -381,24 +379,22 @@ vol\([0-9]+\.[0-9]+\) {
     if (!cmp) {
         BEGIN(P_BLOCK);
     }
-    g_has_else = false;
     yylval.string = strdup(yytext + 1);
     return DIRECTIVE;
 }
 #else |
 <P_BLOCK>#else {
-    if (g_reg_block_depth == 0 || g_has_else) {
+    if (g_reg_block_depth == 0 || g_reg_blocks[g_reg_block_depth - 1] & 2) {
         yyerror(NULL, "invalid #else");
         yyterminate();
     }
-    g_has_else = true;
-    if (g_reg_blocks[g_reg_block_depth - 1]) {
+    if (g_reg_blocks[g_reg_block_depth - 1] & 1) {
         BEGIN(INITIAL);
     }
     else {
         BEGIN(P_BLOCK);
     }
-    g_reg_blocks[g_reg_block_depth - 1] = !g_reg_blocks[g_reg_block_depth - 1];
+    g_reg_blocks[g_reg_block_depth - 1] = !g_reg_blocks[g_reg_block_depth - 1] | 2;
     yylval.string = strdup(yytext + 1);
     return DIRECTIVE;
 }
@@ -412,7 +408,7 @@ vol\([0-9]+\.[0-9]+\) {
     if (g_reg_block_depth == 0) {
         BEGIN(INITIAL);
     }
-    else if (g_reg_blocks[g_reg_block_depth - 1]) {
+    else if (g_reg_blocks[g_reg_block_depth - 1] & 1) {
         BEGIN(P_BLOCK);
     }
     else {

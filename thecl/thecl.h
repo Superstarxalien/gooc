@@ -475,7 +475,6 @@ extern char* g_region;
 extern char g_lev;
 extern int g_reg_block_depth;
 extern int* g_reg_blocks;
-extern bool g_has_else;
 extern char* g_module_fmt;
 
 extern bool g_warn_deprecate_getcolor;
