@@ -66,7 +66,7 @@ c1_gool_ins_anim_params(
     if (c == 1) {
         param = list_head(params);
 
-        if (param->val_type == PARAM_LITERAL) {
+        if (param->val_type == PARAM_LITERAL && param->value.type == 'S') {
             param->value.val.S <<= 8;
         }
 
