@@ -853,7 +853,7 @@ main(int argc, char* argv[])
         }
 
         if (mode == 'c') {
-#ifdef WIN32
+#ifdef _WIN32
             (void)_setmode(fileno(stdout), _O_BINARY);
 #endif
             parser_state_t* parser = module->parse(in, argv[0], version);
