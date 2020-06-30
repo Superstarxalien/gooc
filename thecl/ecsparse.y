@@ -404,7 +404,7 @@ int yydebug = 0;
 %left EQUAL INEQUAL
 %left LT LTEQ GT GTEQ
 %left LSHIFT RSHIFT
-%right ADD SUBTRACT
+%left ADD SUBTRACT
 %left MULTIPLY DIVIDE MODULO
 %precedence NOT B_NOT
 
