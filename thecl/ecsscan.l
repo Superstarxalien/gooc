@@ -145,7 +145,7 @@
 "time"             return TIME;
 "rand"             return RAND;
 "randi"            return RANDI;
-"nearseek"         return NEARSEEK;
+"loopseek"         return LOOPSEEK;
 "getcolor"         return GETCOLOR;
 "pad"              return PAD;
 "buttonpress"      return BPRESS;

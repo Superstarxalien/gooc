@@ -336,7 +336,7 @@ int yydebug = 0;
 %token DEGDIST "degdist"
 %token RAND "rand"
 %token RANDI "randi"
-%token NEARSEEK "nearseek"
+%token LOOPSEEK "loopseek"
 %token TIME "time"
 %token GETCOLOR "getcolor"
 %token PAD "pad"
@@ -2343,8 +2343,8 @@ ExpressionSubset:
     | "rand" "(" Expression "," Expression ")"                    { $$ = EXPR_2(RAND, $3, $5); }
     | "randi" "(" Expression  ")"                                 { $$ = EXPR_2(RAND, EXPR_VAL(0), EXPR_2(ADD, $3, EXPR_VAL(1))); }
     | "randi" "(" Expression "," Expression ")"                   { $$ = EXPR_2(RAND, $3,          EXPR_2(ADD, $5, EXPR_VAL(1))); }
-    | "nearseek" "(" Expression "," Expression "," Expression ")" { $$ = EXPR_3(NEARSEEK, $3, $5, $7); }
-    | "nearseek" "(" Expression "," Expression ")"                { $$ = EXPR_2(NEARSEEK, $3, $5); }
+    | "loopseek" "(" Address "," Expression "," Expression ")"    { $$ = EXPR_3(LOOPSEEK, expression_load_new(state, $3), $5, $7); }
+    | "loopseek" "(" Address "," Expression ")"                   { $$ = EXPR_2(LOOPSEEK, expression_load_new(state, $3), $5); }
     | "time" "(" Expression "," Expression ")"                    { $$ = EXPR_2(TIME, $3, $5); }
     | "time" "(" Expression ")"                                   { $$ = EXPR_2(TIME, $3, EXPR_VAL(0)); }
     | "getcolor" "(" Expression "," Expression ")"                { if (g_warn_deprecate_getcolor) { yyerror(state, "getcolor: deprecate expression. use as address instead (i.e. 'color + 64')"); g_warn_deprecate_getcolor = false; }; $$ = EXPR_2(GETCOLOR, $3, $5); }

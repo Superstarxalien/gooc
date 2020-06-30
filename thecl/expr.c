@@ -68,7 +68,7 @@ global_expressions[] = {
     { TEST,      15, 2, 0, 1, 0 }, /* s1 \ s0 */
     { RAND,      16, 2, 0, 0, 0 }, /* rand(s0, s1) */
     { NOT,       18, 2, 0, 1, 1 }, /* !s0 */
-    { NEARSEEK,  19, 3, 1, 0, 0 }, /* nearseek(s0, s1, s2) */
+    { LOOPSEEK,  19, 3, 1, 0, 0 }, /* loopseek(s0, s1, s2) */
     { LSHIFT,    21, 2, 0, 1, 0 }, /* s1 << s0 */
     { RSHIFT,    -1, 2, 0, 1, 0 }, /* s1 >> s0 */
     { B_NOT,     23, 2, 0, 1, 1 }, /* ~s0 */
