@@ -877,7 +877,7 @@ main(int argc, char* argv[])
             fclose(h_out);
 
         if(g_was_error) {
-          printf("%s: %s: there were errors.\n", argv0, argv[0]);
+          printf("%s:%s: there were errors.\n", argv0, argv[0]);
           exit(1);
         }
         exit(0);
