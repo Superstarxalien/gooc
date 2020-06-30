@@ -2512,6 +2512,12 @@ Address:
         free($1);
         free($3);
       }
+    | NIL {
+        $$ = param_new('S');
+        $$->val_type = PARAM_FIELD;
+        $$->value.val.S = 0;
+        $$->object_link = -2;
+    }
     ;
 
 Integer:
@@ -2523,12 +2529,6 @@ Integer:
         $$ = param_new('S');
         $$->value.val.S = $1;
       }
-    | NIL {
-        $$ = param_new('S');
-        $$->val_type = PARAM_FIELD;
-        $$->value.val.S = 0;
-        $$->object_link = -2;
-    }
     ;
 
 Entry:
