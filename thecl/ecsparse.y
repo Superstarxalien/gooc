@@ -2548,9 +2548,6 @@ Load_Type:
 
 Pointer_Type:
       "&" Load_Type {
-          if ($2->val_type == PARAM_LITERAL) {
-              $2->object_link = -3;
-          }
           $2->val_type = PARAM_POINTER;
           $$ = $2;
       }

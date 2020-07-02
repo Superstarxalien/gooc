@@ -547,9 +547,6 @@ c1_instr_serialize(
                 else if (param->object_link == -2) {
                     val = c1_make_ref_special(param->value.val.S); /* sp-double ref OR null ref */
                 }
-                else if (param->object_link == -3) {
-                    val = c1_make_ref_pool(gool_pool_force_make_index(ecl, p)); /* pool ref */
-                }
             }
             else {
                 if (!(p % 0x100) && p >= -256 * 0x100 && p <= 255 * 0x100) {
@@ -1056,9 +1053,6 @@ c2_instr_serialize(
                 }
                 else if (param->object_link == -2) {
                     val = c1_make_ref_special(param->value.val.S); /* sp-double ref OR null ref */
-                }
-                else if (param->object_link == -3) {
-                    val = c1_make_ref_pool(gool_pool_force_make_index(ecl, p)); /* pool ref */
                 }
             }
             else {
