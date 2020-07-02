@@ -421,8 +421,7 @@ Statement:
         sub_begin(state, $2);
         state->current_sub->is_inline = false;
         free($2);
-      }
-      "(" ArgumentDeclaration ")" Subroutine_Modifiers Subroutine_Body {
+      } "(" ArgumentDeclaration ")" Subroutine_Modifiers Subroutine_Body {
         if (state->current_sub->mod_trans) {
             for (int a=state->current_sub->mod_trans_count-1; a >= 0; --a) {
                 objfield_delete(state, state->main_ecl->vars[state->main_ecl->var_count - 1]->name);
@@ -438,15 +437,13 @@ Statement:
             list_append_new(&state->main_ecl->subs, state->current_sub);
         }
         free($3);
-      }
-      "(" ArgumentDeclaration ")" Inline_Subroutine_Body {
+      } "(" ArgumentDeclaration ")" Inline_Subroutine_Body {
         sub_finish(state);
       }
     | "state" IDENTIFIER {
         state_begin(state, $2);
         free($2);
-      }
-      State_Body {
+      } State_Body {
         state_finish(state);
       }
     | "event" IDENTIFIER "=>" {
@@ -462,8 +459,7 @@ Statement:
         memcpy(state->current_interrupt->event, event, sizeof(field_t));
 
         free($2);
-      }
-      Interrupt_Body {
+      } Interrupt_Body {
         list_append_new(&state->main_ecl->interrupts, state->current_interrupt);
 
         state->current_interrupt = NULL;
@@ -588,8 +584,7 @@ Statement:
 
         free($2);
         free($3);
-      }
-      Font_Chars {
+      } Font_Chars {
         list_append_new(&state->main_ecl->anims, state->current_anim);
         state->current_anim = NULL;
       }
@@ -617,8 +612,7 @@ Statement:
 
         free($2);
         free($3);
-      }
-      Sprite_Frames {
+      } Sprite_Frames {
         list_append_new(&state->main_ecl->anims, state->current_anim);
         state->current_anim = NULL;
       }
@@ -639,8 +633,7 @@ Statement:
         free($2);
         free($3);
         free($4);
-      }
-      String_List {
+      } String_List {
         list_append_new(&state->main_ecl->anims, state->current_anim);
         state->current_anim = NULL;
       }
@@ -671,8 +664,7 @@ Statement:
 
         free($2);
         free($3);
-      }
-      Frags {
+      } Frags {
         if (state->version == 1) {
             c1_fraganim_t* fraganim = state->current_anim->anim;
             ++fraganim->sprite_count;
@@ -705,7 +697,7 @@ Pre_Subroutine_Modifier:
         else {
             yyerror(state, "mips mode is not supported for this game");
         }
-    }
+      }
     ;
 
 Subroutine_Modifiers:
@@ -722,7 +714,7 @@ Subroutine_Modifier:
             arg_delete(state, state->current_sub, state->current_sub->args[state->current_sub->arg_count-1]->name);
         state->current_sub->mod_trans = true;
         state->current_sub->is_trans = true;
-    }
+      }
     | "__args" "(" ArgumentDeclaration ")"
     ;
 
@@ -762,8 +754,7 @@ Interrupt_Body:
 
         sub_begin(state, buf);
         state->current_sub->is_inline = false;
-      }
-      "(" ArgumentDeclaration ")" Subroutine_Body {
+      } "(" ArgumentDeclaration ")" Subroutine_Body {
         sub_finish(state);
       }
     ;
@@ -886,7 +877,7 @@ Font_Char:
             character->w = $11;
             character->h = $12;
         }
-    }
+      }
     ;
 
 Sprite_Frames:
@@ -986,7 +977,7 @@ Sprite_Frame:
             tex->u4 = x+w;
             tex->v4 = y+h;
         }
-    }
+      }
     ;
 
 String_List:
@@ -1007,7 +998,7 @@ String_List:
 
         free($2);
         free(newstring);
-    }
+      }
     ;
 
 Frags:
@@ -1116,7 +1107,7 @@ Frag:
             frag->w = $13;
             frag->h = $14;
         }
-    }
+      }
     ;
 
 VarDeclaration:
@@ -1154,13 +1145,13 @@ State_Instructions:
     %empty
     | State_Instructions DIRECTIVE {
         free($2);
-    }
+      }
     | State_Instructions "__transargs" {
         if (state->current_state->trans && state->current_state->event)
             yyerror(state, "useless modifier __transargs, trans and event blocks already defined");
         state->current_state->trans_args = true;
         state->declared_tempfields = true;
-    }
+      }
     | State_Instructions IDENTIFIER INTEGER {
         if (!strcmp($2, "stateflag"))
             state->current_state->stateflag = $3;
@@ -1174,21 +1165,21 @@ State_Instructions:
     | State_Instructions "trans" "=>" {
         state->current_state->trans = calloc(sizeof(thecl_state_sub_t), 1);
         state->current_state_sub = state->current_state->trans;
-    } State_Subroutine_Identifier {
+      } State_Subroutine_Identifier {
         state->current_state_sub = NULL;
-    }
+      }
     | State_Instructions "code" "=>" {
         state->current_state->code = calloc(sizeof(thecl_state_sub_t), 1);
         state->current_state_sub = state->current_state->code;
-    } State_Subroutine_Identifier {
+      } State_Subroutine_Identifier {
         state->current_state_sub = NULL;
-    }
+      }
     | State_Instructions "event" "=>" {
         state->current_state->event = calloc(sizeof(thecl_state_sub_t), 1);
         state->current_state_sub = state->current_state->event;
-    } State_Subroutine_Identifier {
+      } State_Subroutine_Identifier {
         state->current_state_sub = NULL;
-    }
+      }
     | State_Instructions "trans" Pre_Subroutine_Modifiers {
         if (state->current_state->trans) {
             yyerror(state, "duplicate trans block in state: %s", state->current_state->name);
@@ -1215,8 +1206,7 @@ State_Instructions:
                 }
             }
         }
-      }
-      Subroutine_Body {
+      } Subroutine_Body {
         if (state->current_state->trans_args) {
             thecl_sub_t* sub_code = state->find_state_sub(state->main_ecl, state->ecl != state->main_ecl ? state->ecl : NULL, state->current_state->code, STATE_SUB_CODE);
             for (int a=sub_code->arg_count-1; a >= 0; --a) {
@@ -1266,8 +1256,7 @@ State_Instructions:
                 }
             }
         }
-      }
-      "(" ArgumentDeclaration ")" Subroutine_Body {
+      } "(" ArgumentDeclaration ")" Subroutine_Body {
         if (state->current_state->trans_args) {
             thecl_sub_t* sub_code = state->find_state_sub(state->main_ecl, state->ecl != state->main_ecl ? state->ecl : NULL, state->current_state->code, STATE_SUB_CODE);
             for (int a=sub_code->arg_count-1; a >= 0; --a) {
@@ -1290,7 +1279,7 @@ Instructions:
     | Instructions Block
     | Instructions DIRECTIVE {
         free($2);
-    }
+      }
     ;
 
 Inline_Instructions:
@@ -1300,7 +1289,7 @@ Inline_Instructions:
     | Inline_Instructions Inline_Block
     | Inline_Instructions DIRECTIVE {
         free($2);
-    }
+      }
     ;
 
 ParenExpressionList:
@@ -1344,9 +1333,9 @@ MipsBlock:
         else {
             yyerror(state, "mips mode is not supported for this game");
         }
-    } CodeBlock {
+      } CodeBlock {
         state->mips_mode = false;
-    }
+      }
     ;
 
 SaveBlock:
@@ -1370,7 +1359,7 @@ SaveBlock:
         state->current_sub->stack_offset += count;
         list_append_new(&state->addresses, count);
         free($3);
-    } CodeBlock {
+      } CodeBlock {
         int m = list_tail(&state->addresses);
         list_del_tail(&state->addresses);
 
@@ -1388,28 +1377,28 @@ SaveBlock:
             list_del_tail(&state->addresses);
         }
         state->current_sub->stack_offset -= m;
-    }
+      }
     ;
 
 Inline_SaveBlock:
     "save" "(" Address_List ")" {
         list_append_new(&state->current_sub->lines, line_make_save_start($3));
-    } CodeBlock {
+      } CodeBlock {
         list_append_new(&state->current_sub->lines, line_make_save_end());
-    }
+      }
     ;
 
 OnceBlock:
     "once" {
         state->current_sub->has_once = true;
-    } CodeBlock {
+      } CodeBlock {
         const expr_t* expr = expr_get_by_symbol(state->version, ASSIGN);
 
         thecl_param_t* p1 = param_var_new("tpc");
         thecl_param_t* p2 = param_var_new("pc");
 
         instr_add(state, state->current_sub, instr_new(state, expr->id, "pp", p1, p2));
-    }
+      }
     | "nofirst" {
         state->current_sub->has_nofirst = true;
 
@@ -1422,51 +1411,49 @@ OnceBlock:
         snprintf(labelstr, 256, "nofirst_%i_%i", yylloc.first_line, yylloc.first_column);
         list_prepend_new(&state->block_stack, strdup(labelstr));
         expression_create_goto(state, GOTO, labelstr, NULL);
-    } CodeBlock {
+      } CodeBlock {
         list_node_t *head = state->block_stack.head;
         label_create(state, head->data);
         state->block_stack.head = head->next;
         free(head->data);
         list_del(&state->block_stack, head);
-    }
+      }
     ;
 
 CodeBlock:
-    "{" { scope_begin(state); }
-      Instructions "}" { scope_finish(state, true); }
+    "{" { scope_begin(state); } Instructions "}" { scope_finish(state, true); }
     | Instruction ";"
     ;
 
 Inline_CodeBlock:
-    "{" { scope_begin(state); }
-      Inline_Instructions "}" { scope_finish(state, true); }
+    "{" { scope_begin(state); } Inline_Instructions "}" { scope_finish(state, true); }
     | Inline_Instruction ";"
     ;
 
 IfBlock:
       "unless" ParenExpressionList[cond] {
-          if ($cond == NULL) {
-              yyerror(state, "warning: empty conditional");
-              break;
-          }
-          char labelstr[256];
-          snprintf(labelstr, 256, "unless_%i_%i", yylloc.first_line, yylloc.first_column);
-          list_prepend_new(&state->block_stack, strdup(labelstr));
-          expression_t* expr;
-          list_for_each($cond, expr) {
-              expression_create_goto(state, IF, labelstr, expr);
-              expression_free(expr);
-          }
-          list_free_nodes($cond);
-          free($cond);
-      } CodeBlock ElseBlock {
-          list_node_t *head = state->block_stack.head;
-          label_create(state, head->data);
-          state->block_stack.head = head->next;
-          free(head->data);
-          list_del(&state->block_stack, head);
-          scope_finish(state, true);
+        if ($cond == NULL) {
+            yyerror(state, "warning: empty conditional");
+            break;
         }
+        char labelstr[256];
+        snprintf(labelstr, 256, "unless_%i_%i", yylloc.first_line, yylloc.first_column);
+        list_prepend_new(&state->block_stack, strdup(labelstr));
+        expression_t* expr;
+        list_for_each($cond, expr) {
+            expression_create_goto(state, IF, labelstr, expr);
+            expression_free(expr);
+        }
+        list_free_nodes($cond);
+        free($cond);
+      } CodeBlock ElseBlock {
+        list_node_t *head = state->block_stack.head;
+        label_create(state, head->data);
+        state->block_stack.head = head->next;
+        free(head->data);
+        list_del(&state->block_stack, head);
+        scope_finish(state, true);
+      }
     | "if" ParenExpressionList[cond] {
           if ($cond == NULL) {
               yyerror(state, "warning: empty conditional");
@@ -1502,7 +1489,7 @@ ElseBlock:
           free(head->data);
           list_del(&state->block_stack, head);
           list_prepend_new(&state->block_stack, strdup(labelstr));
-    } CodeBlock
+      } CodeBlock
     | "else" {
           char labelstr[256];
           snprintf(labelstr, 256, "if_%i_%i", yylloc.first_line, yylloc.first_column);
@@ -1512,547 +1499,547 @@ ElseBlock:
           free(head->data);
           list_del(&state->block_stack, head);
           list_prepend_new(&state->block_stack, strdup(labelstr));
-    } IfBlock
+      } IfBlock
     ;
 
 WhileBlock:
       "while" ParenExpressionList[cond] {
-          if ($cond == NULL) {
-              yyerror(state, "warning: empty conditional");
-              break;
-          }
-          expression_t* expr;
-          list_node_t *node, *next;
-          list_for_each_node_safe($cond, node, next) {
-              expr = node->data;
-              if (expr->type == EXPRESSION_VAL && expr->value->val_type == PARAM_LITERAL && !expr->value->value.val.S) {
-                  expression_free(expr);
-                  list_del($cond, node);
-              }
-              else {
-                  break;
-              }
-          }
+        if ($cond == NULL) {
+            yyerror(state, "warning: empty conditional");
+            break;
+        }
+        expression_t* expr;
+        list_node_t *node, *next;
+        list_for_each_node_safe($cond, node, next) {
+            expr = node->data;
+            if (expr->type == EXPRESSION_VAL && expr->value->val_type == PARAM_LITERAL && !expr->value->value.val.S) {
+                expression_free(expr);
+                list_del($cond, node);
+            }
+            else {
+                break;
+            }
+        }
           if (list_empty($cond)) {
-              free($cond);
-              ++state->ignore_block;
-              break;
-          }
+            free($cond);
+            ++state->ignore_block;
+            break;
+        }
 
-          char labelstr[256];
-          snprintf(labelstr, 256, "while_%i_%i", yylloc.first_line, yylloc.first_column);
-          char labelstr_st[256];
-          char labelstr_end[256];
-          char labelstr_continue[256];
-          snprintf(labelstr_st, 256, "%s_st", (char*)labelstr);
-          snprintf(labelstr_end, 256, "%s_end", (char*)labelstr);
-          snprintf(labelstr_continue, 256, "%s_continue", (char*)labelstr);
+        char labelstr[256];
+        snprintf(labelstr, 256, "while_%i_%i", yylloc.first_line, yylloc.first_column);
+        char labelstr_st[256];
+        char labelstr_end[256];
+        char labelstr_continue[256];
+        snprintf(labelstr_st, 256, "%s_st", (char*)labelstr);
+        snprintf(labelstr_end, 256, "%s_end", (char*)labelstr);
+        snprintf(labelstr_continue, 256, "%s_continue", (char*)labelstr);
 
-          expression_create_goto(state, GOTO, labelstr_continue, NULL);
-          label_create(state, labelstr_st);
+        expression_create_goto(state, GOTO, labelstr_continue, NULL);
+        label_create(state, labelstr_st);
 
-          list_prepend_new(&state->block_stack, strdup(labelstr));
+        list_prepend_new(&state->block_stack, strdup(labelstr));
       } CodeBlock {
-          if (state->ignore_block) {
-              --state->ignore_block;
-              scope_finish(state, true);
-              break;
-          }
-          char labelstr_st[256];
-          char labelstr_end[256];
-          char labelstr_continue[256];
-          list_node_t *head = state->block_stack.head;
-          snprintf(labelstr_st, 256, "%s_st", (char*)head->data);
-          snprintf(labelstr_end, 256, "%s_end", (char*)head->data);
-          snprintf(labelstr_continue, 256, "%s_continue", (char*)head->data);
+        if (state->ignore_block) {
+            --state->ignore_block;
+            scope_finish(state, true);
+            break;
+        }
+        char labelstr_st[256];
+        char labelstr_end[256];
+        char labelstr_continue[256];
+        list_node_t *head = state->block_stack.head;
+        snprintf(labelstr_st, 256, "%s_st", (char*)head->data);
+        snprintf(labelstr_end, 256, "%s_end", (char*)head->data);
+        snprintf(labelstr_continue, 256, "%s_continue", (char*)head->data);
 
-          label_create(state, labelstr_continue);
-          expression_t* expr;
-          if (list_count($cond) == 1) {
-              expr = list_head($cond);
-              expression_create_goto(state, IF, labelstr_st, expr);
-              expression_free(expr);
-          }
-          else {
-              list_for_each($cond, expr) {
-                  expression_create_goto(state, UNLESS, labelstr_end, expr);
-                  expression_free(expr);
-              }
-              expression_create_goto(state, GOTO, labelstr_st, NULL);
-          }
-          list_free_nodes($cond);
-          label_create(state, labelstr_end);
+        label_create(state, labelstr_continue);
+        expression_t* expr;
+        if (list_count($cond) == 1) {
+            expr = list_head($cond);
+            expression_create_goto(state, IF, labelstr_st, expr);
+            expression_free(expr);
+        }
+        else {
+            list_for_each($cond, expr) {
+                expression_create_goto(state, UNLESS, labelstr_end, expr);
+                expression_free(expr);
+            }
+            expression_create_goto(state, GOTO, labelstr_st, NULL);
+        }
+        list_free_nodes($cond);
+        label_create(state, labelstr_end);
 
-          free(head->data);
-          list_del(&state->block_stack, head);
-          scope_finish(state, true);
+        free(head->data);
+        list_del(&state->block_stack, head);
+        scope_finish(state, true);
       }
     | "until" ParenExpressionList[cond] {
-          if ($cond == NULL) {
-              yyerror(state, "warning: empty conditional");
-              break;
-          }
-          expression_t* expr;
-          list_node_t *node, *next;
-          list_for_each_node_safe($cond, node, next) {
-              expr = node->data;
-              if (expr->type == EXPRESSION_VAL && expr->value->val_type == PARAM_LITERAL && expr->value->value.val.S) {
-                  expression_free(expr);
-                  list_del($cond, node);
-              }
-              else {
-                  break;
-              }
-          }
-          if (list_empty($cond)) {
-              free($cond);
-              ++state->ignore_block;
-              break;
-          }
+        if ($cond == NULL) {
+            yyerror(state, "warning: empty conditional");
+            break;
+        }
+        expression_t* expr;
+        list_node_t *node, *next;
+        list_for_each_node_safe($cond, node, next) {
+            expr = node->data;
+            if (expr->type == EXPRESSION_VAL && expr->value->val_type == PARAM_LITERAL && expr->value->value.val.S) {
+                expression_free(expr);
+                list_del($cond, node);
+            }
+            else {
+                break;
+            }
+        }
+        if (list_empty($cond)) {
+            free($cond);
+            ++state->ignore_block;
+            break;
+        }
 
-          char labelstr[256];
-          snprintf(labelstr, 256, "until_%i_%i", yylloc.first_line, yylloc.first_column);
-          char labelstr_st[256];
-          char labelstr_end[256];
-          char labelstr_continue[256];
-          snprintf(labelstr_st, 256, "%s_st", (char*)labelstr);
-          snprintf(labelstr_end, 256, "%s_end", (char*)labelstr);
-          snprintf(labelstr_continue, 256, "%s_continue", (char*)labelstr);
+        char labelstr[256];
+        snprintf(labelstr, 256, "until_%i_%i", yylloc.first_line, yylloc.first_column);
+        char labelstr_st[256];
+        char labelstr_end[256];
+        char labelstr_continue[256];
+        snprintf(labelstr_st, 256, "%s_st", (char*)labelstr);
+        snprintf(labelstr_end, 256, "%s_end", (char*)labelstr);
+        snprintf(labelstr_continue, 256, "%s_continue", (char*)labelstr);
 
-          expression_create_goto(state, GOTO, labelstr_continue, NULL);
-          label_create(state, labelstr_st);
+        expression_create_goto(state, GOTO, labelstr_continue, NULL);
+        label_create(state, labelstr_st);
 
-          list_prepend_new(&state->block_stack, strdup(labelstr));
+        list_prepend_new(&state->block_stack, strdup(labelstr));
       } CodeBlock {
-          if (state->ignore_block) {
-              --state->ignore_block;
-              break;
-          }
-          char labelstr_st[256];
-          char labelstr_end[256];
-          char labelstr_continue[256];
-          list_node_t *head = state->block_stack.head;
-          snprintf(labelstr_st, 256, "%s_st", (char*)head->data);
-          snprintf(labelstr_end, 256, "%s_end", (char*)head->data);
-          snprintf(labelstr_continue, 256, "%s_continue", (char*)head->data);
+        if (state->ignore_block) {
+            --state->ignore_block;
+            break;
+        }
+        char labelstr_st[256];
+        char labelstr_end[256];
+        char labelstr_continue[256];
+        list_node_t *head = state->block_stack.head;
+        snprintf(labelstr_st, 256, "%s_st", (char*)head->data);
+        snprintf(labelstr_end, 256, "%s_end", (char*)head->data);
+        snprintf(labelstr_continue, 256, "%s_continue", (char*)head->data);
 
-          label_create(state, labelstr_continue);
-          expression_t* expr;
-          if (list_count($cond) == 1) {
-              expr = list_head($cond);
-              expression_create_goto(state, UNLESS, labelstr_st, expr);
-              expression_free(expr);
-          }
-          else {
-              list_for_each($cond, expr) {
-                  expression_create_goto(state, IF, labelstr_end, expr);
-                  expression_free(expr);
-              }
-              expression_create_goto(state, GOTO, labelstr_st, NULL);
-          }
-          list_free_nodes($cond);
-          label_create(state, labelstr_end);
+        label_create(state, labelstr_continue);
+        expression_t* expr;
+        if (list_count($cond) == 1) {
+            expr = list_head($cond);
+            expression_create_goto(state, UNLESS, labelstr_st, expr);
+            expression_free(expr);
+        }
+        else {
+            list_for_each($cond, expr) {
+                expression_create_goto(state, IF, labelstr_end, expr);
+                expression_free(expr);
+            }
+            expression_create_goto(state, GOTO, labelstr_st, NULL);
+        }
+        list_free_nodes($cond);
+        label_create(state, labelstr_end);
 
-          free(head->data);
-          list_del(&state->block_stack, head);
-          scope_finish(state, true);
+        free(head->data);
+        list_del(&state->block_stack, head);
+        scope_finish(state, true);
       }
     | "do" {
-          char labelstr[256];
-          snprintf(labelstr, 256, "do_%i_%i", yylloc.first_line, yylloc.first_column);
-          char labelstr_st[256];
-          char labelstr_end[256];
-          snprintf(labelstr_st, 256, "%s_st", (char*)labelstr);
-          snprintf(labelstr_end, 256, "%s_end", (char*)labelstr);
+        char labelstr[256];
+        snprintf(labelstr, 256, "do_%i_%i", yylloc.first_line, yylloc.first_column);
+        char labelstr_st[256];
+        char labelstr_end[256];
+        snprintf(labelstr_st, 256, "%s_st", (char*)labelstr);
+        snprintf(labelstr_end, 256, "%s_end", (char*)labelstr);
 
-          list_prepend_new(&state->block_stack, strdup(labelstr));
-          label_create(state, labelstr_st);
-    } DoBlock
+        list_prepend_new(&state->block_stack, strdup(labelstr));
+        label_create(state, labelstr_st);
+      } DoBlock
     | "do" "(" { scope_begin(state); } VarDeclaration ")" {
-          char labelstr[256];
-          snprintf(labelstr, 256, "do_%i_%i", yylloc.first_line, yylloc.first_column);
-          char labelstr_st[256];
-          char labelstr_end[256];
-          snprintf(labelstr_st, 256, "%s_st", (char*)labelstr);
-          snprintf(labelstr_end, 256, "%s_end", (char*)labelstr);
+        char labelstr[256];
+        snprintf(labelstr, 256, "do_%i_%i", yylloc.first_line, yylloc.first_column);
+        char labelstr_st[256];
+        char labelstr_end[256];
+        snprintf(labelstr_st, 256, "%s_st", (char*)labelstr);
+        snprintf(labelstr_end, 256, "%s_end", (char*)labelstr);
 
-          list_prepend_new(&state->block_stack, strdup(labelstr));
-          label_create(state, labelstr_st);
-    } DoBlock { scope_finish(state, true); }
+        list_prepend_new(&state->block_stack, strdup(labelstr));
+        label_create(state, labelstr_st);
+      } DoBlock { scope_finish(state, true); }
     ;
 DoBlock:
       CodeBlock "while" ParenExpressionListNoScope[cond]  {
-          if ($cond == NULL) {
-              yyerror(state, "warning: empty conditional");
-              break;
-          }
-          char labelstr_st[256];
-          char labelstr_end[256];
-          char labelstr_continue[256];
-          list_node_t *head = state->block_stack.head;
-          snprintf(labelstr_st, 256, "%s_st", (char*)head->data);
-          snprintf(labelstr_end, 256, "%s_end", (char*)head->data);
-          snprintf(labelstr_continue, 256, "%s_continue", (char*)head->data);
+        if ($cond == NULL) {
+            yyerror(state, "warning: empty conditional");
+            break;
+        }
+        char labelstr_st[256];
+        char labelstr_end[256];
+        char labelstr_continue[256];
+        list_node_t *head = state->block_stack.head;
+        snprintf(labelstr_st, 256, "%s_st", (char*)head->data);
+        snprintf(labelstr_end, 256, "%s_end", (char*)head->data);
+        snprintf(labelstr_continue, 256, "%s_continue", (char*)head->data);
 
-          label_create(state, labelstr_continue);
-          expression_t* expr;
-          if (list_count($cond) == 1) {
-              expr = list_head($cond);
-              expression_create_goto(state, IF, labelstr_st, expr);
-              expression_free(expr);
-          }
-          else {
-              list_for_each($cond, expr) {
-                  expression_create_goto(state, UNLESS, labelstr_end, expr);
-                  expression_free(expr);
-              }
-              expression_create_goto(state, GOTO, labelstr_st, NULL);
-          }
-          list_free_nodes($cond);
-          label_create(state, labelstr_end);
+        label_create(state, labelstr_continue);
+        expression_t* expr;
+        if (list_count($cond) == 1) {
+            expr = list_head($cond);
+            expression_create_goto(state, IF, labelstr_st, expr);
+            expression_free(expr);
+        }
+        else {
+            list_for_each($cond, expr) {
+                expression_create_goto(state, UNLESS, labelstr_end, expr);
+                expression_free(expr);
+            }
+            expression_create_goto(state, GOTO, labelstr_st, NULL);
+        }
+        list_free_nodes($cond);
+        label_create(state, labelstr_end);
 
-          free(head->data);
-          list_del(&state->block_stack, head);
-    }
+        free(head->data);
+        list_del(&state->block_stack, head);
+      }
     | CodeBlock "until" ParenExpressionListNoScope[cond]  {
-          if ($cond == NULL) {
-              yyerror(state, "warning: empty conditional");
-              break;
-          }
-          char labelstr_st[256];
-          char labelstr_end[256];
-          char labelstr_continue[256];
-          list_node_t *head = state->block_stack.head;
-          snprintf(labelstr_st, 256, "%s_st", (char*)head->data);
-          snprintf(labelstr_end, 256, "%s_end", (char*)head->data);
-          snprintf(labelstr_continue, 256, "%s_continue", (char*)head->data);
+        if ($cond == NULL) {
+            yyerror(state, "warning: empty conditional");
+            break;
+        }
+        char labelstr_st[256];
+        char labelstr_end[256];
+        char labelstr_continue[256];
+        list_node_t *head = state->block_stack.head;
+        snprintf(labelstr_st, 256, "%s_st", (char*)head->data);
+        snprintf(labelstr_end, 256, "%s_end", (char*)head->data);
+        snprintf(labelstr_continue, 256, "%s_continue", (char*)head->data);
 
-          label_create(state, labelstr_continue);
-          expression_t* expr;
-          if (list_count($cond) == 1) {
-              expr = list_head($cond);
-              expression_create_goto(state, UNLESS, labelstr_st, expr);
-              expression_free(expr);
-          }
-          else {
-              list_for_each($cond, expr) {
-                  expression_create_goto(state, IF, labelstr_end, expr);
-                  expression_free(expr);
-              }
-              expression_create_goto(state, GOTO, labelstr_st, NULL);
-          }
-          list_free_nodes($cond);
-          label_create(state, labelstr_end);
+        label_create(state, labelstr_continue);
+        expression_t* expr;
+        if (list_count($cond) == 1) {
+            expr = list_head($cond);
+            expression_create_goto(state, UNLESS, labelstr_st, expr);
+            expression_free(expr);
+        }
+        else {
+            list_for_each($cond, expr) {
+                expression_create_goto(state, IF, labelstr_end, expr);
+                expression_free(expr);
+            }
+            expression_create_goto(state, GOTO, labelstr_st, NULL);
+        }
+        list_free_nodes($cond);
+        label_create(state, labelstr_end);
 
-          free(head->data);
-          list_del(&state->block_stack, head);
-    }
+        free(head->data);
+        list_del(&state->block_stack, head);
+      }
     ;
 
 Inline_IfBlock:
       "unless" ParenExpressionList[cond] {
-          if ($cond == NULL) {
-              yyerror(state, "warning: empty conditional");
-              break;
-          }
-          char labelstr[256];
-          snprintf(labelstr, 256, "unless_%i_%i", yylloc.first_line, yylloc.first_column);
-          list_prepend_new(&state->block_stack, strdup(labelstr));
-          expression_t* expr;
-          list_for_each($cond, expr) {
-              expression_create_goto(state, IF, labelstr, expr);
-              expression_free(expr);
-          }
-          list_free_nodes($cond);
-          free($cond);
-      } Inline_CodeBlock Inline_ElseBlock {
-          list_node_t *head = state->block_stack.head;
-          label_create(state, head->data);
-          state->block_stack.head = head->next;
-          free(head->data);
-          list_del(&state->block_stack, head);
-          scope_finish(state, true);
+        if ($cond == NULL) {
+            yyerror(state, "warning: empty conditional");
+            break;
         }
-    | "if" ParenExpressionList[cond] {
-          if ($cond == NULL) {
-              yyerror(state, "warning: empty conditional");
-              break;
-          }
-          char labelstr[256];
-          snprintf(labelstr, 256, "if_%i_%i", yylloc.first_line, yylloc.first_column);
-          list_prepend_new(&state->block_stack, strdup(labelstr));
-          expression_t* expr;
-          list_for_each($cond, expr) {
-              expression_create_goto(state, UNLESS, labelstr, expr);
-              expression_free(expr);
-          }
-          list_free_nodes($cond);
-          free($cond);
+        char labelstr[256];
+        snprintf(labelstr, 256, "unless_%i_%i", yylloc.first_line, yylloc.first_column);
+        list_prepend_new(&state->block_stack, strdup(labelstr));
+        expression_t* expr;
+        list_for_each($cond, expr) {
+            expression_create_goto(state, IF, labelstr, expr);
+            expression_free(expr);
+        }
+        list_free_nodes($cond);
+        free($cond);
       } Inline_CodeBlock Inline_ElseBlock {
-          list_node_t *head = state->block_stack.head;
-          label_create(state, head->data);
-          free(head->data);
-          list_del(&state->block_stack, head);
-          scope_finish(state, true);
+        list_node_t *head = state->block_stack.head;
+        label_create(state, head->data);
+        state->block_stack.head = head->next;
+        free(head->data);
+        list_del(&state->block_stack, head);
+        scope_finish(state, true);
+      }
+    | "if" ParenExpressionList[cond] {
+        if ($cond == NULL) {
+            yyerror(state, "warning: empty conditional");
+            break;
+        }
+        char labelstr[256];
+        snprintf(labelstr, 256, "if_%i_%i", yylloc.first_line, yylloc.first_column);
+        list_prepend_new(&state->block_stack, strdup(labelstr));
+        expression_t* expr;
+        list_for_each($cond, expr) {
+            expression_create_goto(state, UNLESS, labelstr, expr);
+            expression_free(expr);
+        }
+        list_free_nodes($cond);
+        free($cond);
+      } Inline_CodeBlock Inline_ElseBlock {
+        list_node_t *head = state->block_stack.head;
+        label_create(state, head->data);
+        free(head->data);
+        list_del(&state->block_stack, head);
+        scope_finish(state, true);
       }
     ;
 
 Inline_ElseBlock:
     %empty
     | "else"  {
-          char labelstr[256];
-          snprintf(labelstr, 256, "if_%i_%i", yylloc.first_line, yylloc.first_column);
-          expression_create_goto(state, GOTO, labelstr, NULL);
-          list_node_t *head = state->block_stack.head;
-          label_create(state, head->data);
-          free(head->data);
-          list_del(&state->block_stack, head);
-          list_prepend_new(&state->block_stack, strdup(labelstr));
-    } Inline_CodeBlock
+        char labelstr[256];
+        snprintf(labelstr, 256, "if_%i_%i", yylloc.first_line, yylloc.first_column);
+        expression_create_goto(state, GOTO, labelstr, NULL);
+        list_node_t *head = state->block_stack.head;
+        label_create(state, head->data);
+        free(head->data);
+        list_del(&state->block_stack, head);
+        list_prepend_new(&state->block_stack, strdup(labelstr));
+      } Inline_CodeBlock
     | "else" {
-          char labelstr[256];
-          snprintf(labelstr, 256, "if_%i_%i", yylloc.first_line, yylloc.first_column);
-          expression_create_goto(state, GOTO, labelstr, NULL);
-          list_node_t *head = state->block_stack.head;
-          label_create(state, head->data);
-          free(head->data);
-          list_del(&state->block_stack, head);
-          list_prepend_new(&state->block_stack, strdup(labelstr));
-    } Inline_IfBlock
+        char labelstr[256];
+        snprintf(labelstr, 256, "if_%i_%i", yylloc.first_line, yylloc.first_column);
+        expression_create_goto(state, GOTO, labelstr, NULL);
+        list_node_t *head = state->block_stack.head;
+        label_create(state, head->data);
+        free(head->data);
+        list_del(&state->block_stack, head);
+        list_prepend_new(&state->block_stack, strdup(labelstr));
+      } Inline_IfBlock
     ;
 
 Inline_WhileBlock:
       "while" ParenExpressionList[cond] {
-          if ($cond == NULL) {
-              yyerror(state, "warning: empty conditional");
-              break;
-          }
-          expression_t* expr;
-          list_node_t *node, *next;
-          list_for_each_node_safe($cond, node, next) {
-              expr = node->data;
-              if (expr->type == EXPRESSION_VAL && expr->value->val_type == PARAM_LITERAL && !expr->value->value.val.S) {
-                  expression_free(expr);
-                  list_del($cond, node);
-              }
-              else {
-                  break;
-              }
-          }
-          if (list_empty($cond)) {
-              free($cond);
-              ++state->ignore_block;
-              break;
-          }
+        if ($cond == NULL) {
+            yyerror(state, "warning: empty conditional");
+            break;
+        }
+        expression_t* expr;
+        list_node_t *node, *next;
+        list_for_each_node_safe($cond, node, next) {
+            expr = node->data;
+            if (expr->type == EXPRESSION_VAL && expr->value->val_type == PARAM_LITERAL && !expr->value->value.val.S) {
+                expression_free(expr);
+                list_del($cond, node);
+            }
+            else {
+                break;
+            }
+        }
+        if (list_empty($cond)) {
+            free($cond);
+            ++state->ignore_block;
+            break;
+        }
 
-          char labelstr[256];
-          snprintf(labelstr, 256, "while_%i_%i", yylloc.first_line, yylloc.first_column);
-          char labelstr_st[256];
-          char labelstr_end[256];
-          char labelstr_continue[256];
-          snprintf(labelstr_st, 256, "%s_st", (char*)labelstr);
-          snprintf(labelstr_end, 256, "%s_end", (char*)labelstr);
-          snprintf(labelstr_continue, 256, "%s_continue", (char*)labelstr);
+        char labelstr[256];
+        snprintf(labelstr, 256, "while_%i_%i", yylloc.first_line, yylloc.first_column);
+        char labelstr_st[256];
+        char labelstr_end[256];
+        char labelstr_continue[256];
+        snprintf(labelstr_st, 256, "%s_st", (char*)labelstr);
+        snprintf(labelstr_end, 256, "%s_end", (char*)labelstr);
+        snprintf(labelstr_continue, 256, "%s_continue", (char*)labelstr);
 
-          expression_create_goto(state, GOTO, labelstr_continue, NULL);
-          label_create(state, labelstr_st);
+        expression_create_goto(state, GOTO, labelstr_continue, NULL);
+        label_create(state, labelstr_st);
 
-          list_prepend_new(&state->block_stack, strdup(labelstr));
+        list_prepend_new(&state->block_stack, strdup(labelstr));
       } Inline_CodeBlock {
-          if (state->ignore_block) {
-              --state->ignore_block;
-              scope_finish(state, true);
-              break;
-          }
-          char labelstr_st[256];
-          char labelstr_end[256];
-          char labelstr_continue[256];
-          list_node_t *head = state->block_stack.head;
-          snprintf(labelstr_st, 256, "%s_st", (char*)head->data);
-          snprintf(labelstr_end, 256, "%s_end", (char*)head->data);
-          snprintf(labelstr_continue, 256, "%s_continue", (char*)head->data);
+        if (state->ignore_block) {
+            --state->ignore_block;
+            scope_finish(state, true);
+            break;
+        }
+        char labelstr_st[256];
+        char labelstr_end[256];
+        char labelstr_continue[256];
+        list_node_t *head = state->block_stack.head;
+        snprintf(labelstr_st, 256, "%s_st", (char*)head->data);
+        snprintf(labelstr_end, 256, "%s_end", (char*)head->data);
+        snprintf(labelstr_continue, 256, "%s_continue", (char*)head->data);
 
-          label_create(state, labelstr_continue);
-          expression_t* expr;
-          if (list_count($cond) == 1) {
-              expr = list_head($cond);
-              expression_create_goto(state, IF, labelstr_st, expr);
-              expression_free(expr);
-          }
-          else {
-              list_for_each($cond, expr) {
-                  expression_create_goto(state, UNLESS, labelstr_end, expr);
-                  expression_free(expr);
-              }
-              expression_create_goto(state, GOTO, labelstr_st, NULL);
-          }
-          list_free_nodes($cond);
-          label_create(state, labelstr_end);
+        label_create(state, labelstr_continue);
+        expression_t* expr;
+        if (list_count($cond) == 1) {
+            expr = list_head($cond);
+            expression_create_goto(state, IF, labelstr_st, expr);
+            expression_free(expr);
+        }
+        else {
+            list_for_each($cond, expr) {
+                expression_create_goto(state, UNLESS, labelstr_end, expr);
+                expression_free(expr);
+            }
+            expression_create_goto(state, GOTO, labelstr_st, NULL);
+        }
+        list_free_nodes($cond);
+        label_create(state, labelstr_end);
 
-          free(head->data);
-          list_del(&state->block_stack, head);
-          scope_finish(state, true);
+        free(head->data);
+        list_del(&state->block_stack, head);
+        scope_finish(state, true);
       }
     | "until" ParenExpressionList[cond] {
-          if ($cond == NULL) {
-              yyerror(state, "warning: empty conditional");
-              break;
-          }
-          expression_t* expr;
-          list_node_t *node, *next;
-          list_for_each_node_safe($cond, node, next) {
-              expr = node->data;
-              if (expr->type == EXPRESSION_VAL && expr->value->val_type == PARAM_LITERAL && expr->value->value.val.S) {
-                  expression_free(expr);
-                  list_del($cond, node);
-              }
-              else {
-                  break;
-              }
-          }
-          if (list_empty($cond)) {
-              free($cond);
-              ++state->ignore_block;
-              break;
-          }
+        if ($cond == NULL) {
+            yyerror(state, "warning: empty conditional");
+            break;
+        }
+        expression_t* expr;
+        list_node_t *node, *next;
+        list_for_each_node_safe($cond, node, next) {
+            expr = node->data;
+            if (expr->type == EXPRESSION_VAL && expr->value->val_type == PARAM_LITERAL && expr->value->value.val.S) {
+                expression_free(expr);
+                list_del($cond, node);
+            }
+            else {
+                break;
+            }
+        }
+        if (list_empty($cond)) {
+            free($cond);
+            ++state->ignore_block;
+            break;
+        }
 
-          char labelstr[256];
-          snprintf(labelstr, 256, "until_%i_%i", yylloc.first_line, yylloc.first_column);
-          char labelstr_st[256];
-          char labelstr_end[256];
-          char labelstr_continue[256];
-          snprintf(labelstr_st, 256, "%s_st", (char*)labelstr);
-          snprintf(labelstr_end, 256, "%s_end", (char*)labelstr);
-          snprintf(labelstr_continue, 256, "%s_continue", (char*)labelstr);
+        char labelstr[256];
+        snprintf(labelstr, 256, "until_%i_%i", yylloc.first_line, yylloc.first_column);
+        char labelstr_st[256];
+        char labelstr_end[256];
+        char labelstr_continue[256];
+        snprintf(labelstr_st, 256, "%s_st", (char*)labelstr);
+        snprintf(labelstr_end, 256, "%s_end", (char*)labelstr);
+        snprintf(labelstr_continue, 256, "%s_continue", (char*)labelstr);
 
-          expression_create_goto(state, GOTO, labelstr_continue, NULL);
-          label_create(state, labelstr_st);
+        expression_create_goto(state, GOTO, labelstr_continue, NULL);
+        label_create(state, labelstr_st);
 
-          list_prepend_new(&state->block_stack, strdup(labelstr));
+        list_prepend_new(&state->block_stack, strdup(labelstr));
       } Inline_CodeBlock {
-          if (state->ignore_block) {
-              --state->ignore_block;
-              break;
-          }
-          char labelstr_st[256];
-          char labelstr_end[256];
-          char labelstr_continue[256];
-          list_node_t *head = state->block_stack.head;
-          snprintf(labelstr_st, 256, "%s_st", (char*)head->data);
-          snprintf(labelstr_end, 256, "%s_end", (char*)head->data);
-          snprintf(labelstr_continue, 256, "%s_continue", (char*)head->data);
+        if (state->ignore_block) {
+            --state->ignore_block;
+            break;
+        }
+        char labelstr_st[256];
+        char labelstr_end[256];
+        char labelstr_continue[256];
+        list_node_t *head = state->block_stack.head;
+        snprintf(labelstr_st, 256, "%s_st", (char*)head->data);
+        snprintf(labelstr_end, 256, "%s_end", (char*)head->data);
+        snprintf(labelstr_continue, 256, "%s_continue", (char*)head->data);
 
-          label_create(state, labelstr_continue);
-          expression_t* expr;
-          if (list_count($cond) == 1) {
-              expr = list_head($cond);
-              expression_create_goto(state, UNLESS, labelstr_st, expr);
-              expression_free(expr);
-          }
-          else {
-              list_for_each($cond, expr) {
-                  expression_create_goto(state, IF, labelstr_end, expr);
-                  expression_free(expr);
-              }
-              expression_create_goto(state, GOTO, labelstr_st, NULL);
-          }
-          list_free_nodes($cond);
-          label_create(state, labelstr_end);
+        label_create(state, labelstr_continue);
+        expression_t* expr;
+        if (list_count($cond) == 1) {
+            expr = list_head($cond);
+            expression_create_goto(state, UNLESS, labelstr_st, expr);
+            expression_free(expr);
+        }
+        else {
+            list_for_each($cond, expr) {
+                expression_create_goto(state, IF, labelstr_end, expr);
+                expression_free(expr);
+            }
+            expression_create_goto(state, GOTO, labelstr_st, NULL);
+        }
+        list_free_nodes($cond);
+        label_create(state, labelstr_end);
 
-          free(head->data);
-          list_del(&state->block_stack, head);
-          scope_finish(state, true);
+        free(head->data);
+        list_del(&state->block_stack, head);
+        scope_finish(state, true);
       }
     | "do" {
-          char labelstr[256];
-          snprintf(labelstr, 256, "do_%i_%i", yylloc.first_line, yylloc.first_column);
-          char labelstr_st[256];
-          char labelstr_end[256];
-          snprintf(labelstr_st, 256, "%s_st", (char*)labelstr);
-          snprintf(labelstr_end, 256, "%s_end", (char*)labelstr);
+        char labelstr[256];
+        snprintf(labelstr, 256, "do_%i_%i", yylloc.first_line, yylloc.first_column);
+        char labelstr_st[256];
+        char labelstr_end[256];
+        snprintf(labelstr_st, 256, "%s_st", (char*)labelstr);
+        snprintf(labelstr_end, 256, "%s_end", (char*)labelstr);
 
-          list_prepend_new(&state->block_stack, strdup(labelstr));
-          label_create(state, labelstr_st);
-    } Inline_DoBlock
+        list_prepend_new(&state->block_stack, strdup(labelstr));
+        label_create(state, labelstr_st);
+      } Inline_DoBlock
     | "do" "(" { scope_begin(state); } VarDeclaration ")" {
-          char labelstr[256];
-          snprintf(labelstr, 256, "do_%i_%i", yylloc.first_line, yylloc.first_column);
-          char labelstr_st[256];
-          char labelstr_end[256];
-          snprintf(labelstr_st, 256, "%s_st", (char*)labelstr);
-          snprintf(labelstr_end, 256, "%s_end", (char*)labelstr);
+        char labelstr[256];
+        snprintf(labelstr, 256, "do_%i_%i", yylloc.first_line, yylloc.first_column);
+        char labelstr_st[256];
+        char labelstr_end[256];
+        snprintf(labelstr_st, 256, "%s_st", (char*)labelstr);
+        snprintf(labelstr_end, 256, "%s_end", (char*)labelstr);
 
-          list_prepend_new(&state->block_stack, strdup(labelstr));
-          label_create(state, labelstr_st);
-    } Inline_DoBlock { scope_finish(state, true); }
+        list_prepend_new(&state->block_stack, strdup(labelstr));
+        label_create(state, labelstr_st);
+      } Inline_DoBlock { scope_finish(state, true); }
     ;
 Inline_DoBlock:
       Inline_CodeBlock "while" ParenExpressionListNoScope[cond]  {
-          if ($cond == NULL) {
-              yyerror(state, "warning: empty conditional");
-              break;
-          }
-          char labelstr_st[256];
-          char labelstr_end[256];
-          char labelstr_continue[256];
-          list_node_t *head = state->block_stack.head;
-          snprintf(labelstr_st, 256, "%s_st", (char*)head->data);
-          snprintf(labelstr_end, 256, "%s_end", (char*)head->data);
-          snprintf(labelstr_continue, 256, "%s_continue", (char*)head->data);
+        if ($cond == NULL) {
+            yyerror(state, "warning: empty conditional");
+            break;
+        }
+        char labelstr_st[256];
+        char labelstr_end[256];
+        char labelstr_continue[256];
+        list_node_t *head = state->block_stack.head;
+        snprintf(labelstr_st, 256, "%s_st", (char*)head->data);
+        snprintf(labelstr_end, 256, "%s_end", (char*)head->data);
+        snprintf(labelstr_continue, 256, "%s_continue", (char*)head->data);
 
-          label_create(state, labelstr_continue);
-          expression_t* expr;
-          if (list_count($cond) == 1) {
-              expr = list_head($cond);
-              expression_create_goto(state, IF, labelstr_st, expr);
-              expression_free(expr);
-          }
-          else {
-              list_for_each($cond, expr) {
-                  expression_create_goto(state, UNLESS, labelstr_end, expr);
-                  expression_free(expr);
-              }
-              expression_create_goto(state, GOTO, labelstr_st, NULL);
-          }
-          list_free_nodes($cond);
-          label_create(state, labelstr_end);
+        label_create(state, labelstr_continue);
+        expression_t* expr;
+        if (list_count($cond) == 1) {
+            expr = list_head($cond);
+            expression_create_goto(state, IF, labelstr_st, expr);
+            expression_free(expr);
+        }
+        else {
+            list_for_each($cond, expr) {
+                expression_create_goto(state, UNLESS, labelstr_end, expr);
+                expression_free(expr);
+            }
+            expression_create_goto(state, GOTO, labelstr_st, NULL);
+        }
+        list_free_nodes($cond);
+        label_create(state, labelstr_end);
 
-          free(head->data);
-          list_del(&state->block_stack, head);
-    }
+        free(head->data);
+        list_del(&state->block_stack, head);
+      }
     | Inline_CodeBlock "until" ParenExpressionListNoScope[cond]  {
-          if ($cond == NULL) {
-              yyerror(state, "warning: empty conditional");
-              break;
-          }
-          char labelstr_st[256];
-          char labelstr_end[256];
-          char labelstr_continue[256];
-          list_node_t *head = state->block_stack.head;
-          snprintf(labelstr_st, 256, "%s_st", (char*)head->data);
-          snprintf(labelstr_end, 256, "%s_end", (char*)head->data);
-          snprintf(labelstr_continue, 256, "%s_continue", (char*)head->data);
+        if ($cond == NULL) {
+            yyerror(state, "warning: empty conditional");
+            break;
+        }
+        char labelstr_st[256];
+        char labelstr_end[256];
+        char labelstr_continue[256];
+        list_node_t *head = state->block_stack.head;
+        snprintf(labelstr_st, 256, "%s_st", (char*)head->data);
+        snprintf(labelstr_end, 256, "%s_end", (char*)head->data);
+        snprintf(labelstr_continue, 256, "%s_continue", (char*)head->data);
 
-          label_create(state, labelstr_continue);
-          expression_t* expr;
-          if (list_count($cond) == 1) {
-              expr = list_head($cond);
-              expression_create_goto(state, UNLESS, labelstr_st, expr);
-              expression_free(expr);
-          }
-          else {
-              list_for_each($cond, expr) {
-                  expression_create_goto(state, IF, labelstr_end, expr);
-                  expression_free(expr);
-              }
-              expression_create_goto(state, GOTO, labelstr_st, NULL);
-          }
-          list_free_nodes($cond);
-          label_create(state, labelstr_end);
+        label_create(state, labelstr_continue);
+        expression_t* expr;
+        if (list_count($cond) == 1) {
+            expr = list_head($cond);
+            expression_create_goto(state, UNLESS, labelstr_st, expr);
+            expression_free(expr);
+        }
+        else {
+            list_for_each($cond, expr) {
+                expression_create_goto(state, IF, labelstr_end, expr);
+                expression_free(expr);
+            }
+            expression_create_goto(state, GOTO, labelstr_st, NULL);
+        }
+        list_free_nodes($cond);
+        label_create(state, labelstr_end);
 
-          free(head->data);
-          list_del(&state->block_stack, head);
-    }
+        free(head->data);
+        list_del(&state->block_stack, head);
+      }
     ;
 
 Instruction:
@@ -2111,42 +2098,42 @@ Instruction:
     | Assignment
     | VarDeclaration
     | "break" {
-          list_node_t *head = state->block_stack.head;
-          for(; head; head = head->next) {
-              if (
-                  strncmp(head->data, "do", 2) == 0 ||
-                  strncmp(head->data, "while", 5) == 0 ||
-                  strncmp(head->data, "until", 5) == 0
-              ) {
-                  char labelstr[256];
-                  snprintf(labelstr, 256, "%s_end", (char*)head->data);
-                  expression_create_goto(state, GOTO, labelstr, NULL);
-                  break;
-              }
-          }
-          if(!head) {
-              yyerror(state, "break not within while or until");
-              g_was_error = true;
-          }
+        list_node_t *head = state->block_stack.head;
+        for(; head; head = head->next) {
+            if (
+                strncmp(head->data, "do", 2) == 0 ||
+                strncmp(head->data, "while", 5) == 0 ||
+                strncmp(head->data, "until", 5) == 0
+            ) {
+                char labelstr[256];
+                snprintf(labelstr, 256, "%s_end", (char*)head->data);
+                expression_create_goto(state, GOTO, labelstr, NULL);
+                break;
+            }
+        }
+        if(!head) {
+            yyerror(state, "break not within while or until");
+            g_was_error = true;
+        }
       }
     | "continue" {
-          list_node_t *head = state->block_stack.head;
-          for(; head; head = head->next) {
-              if (
-                  strncmp(head->data, "do", 2) == 0 ||
-                  strncmp(head->data, "while", 5) == 0 ||
-                  strncmp(head->data, "until", 5) == 0
-              ) {
-                  char labelstr[256];
-                  snprintf(labelstr, 256, "%s_continue", (char*)head->data);
-                  expression_create_goto(state, GOTO, labelstr, NULL);
-                  break;
-              }
-          }
-          if(!head) {
-              yyerror(state, "continue not within while or until");
-              g_was_error = true;
-          }
+        list_node_t *head = state->block_stack.head;
+        for(; head; head = head->next) {
+            if (
+                strncmp(head->data, "do", 2) == 0 ||
+                strncmp(head->data, "while", 5) == 0 ||
+                strncmp(head->data, "until", 5) == 0
+            ) {
+                char labelstr[256];
+                snprintf(labelstr, 256, "%s_continue", (char*)head->data);
+                expression_create_goto(state, GOTO, labelstr, NULL);
+                break;
+            }
+        }
+        if(!head) {
+            yyerror(state, "continue not within while or until");
+            g_was_error = true;
+        }
       }
     | "return" {
         /*
@@ -2169,7 +2156,7 @@ Instruction:
             }
         }
         state->scope_stack[state->scope_cnt-1].returned = true;
-    }
+      }
     ;
 
 Inline_Instruction:
@@ -2248,37 +2235,37 @@ Instruction_Parameters:
 
 Instruction_Parameter:
       Load_Type {
-          if ($1->val_type == PARAM_GLOBAL || $1->val_type == PARAM_COLOR) {
-              list_prepend_new(&state->expressions, expression_load_new(state, $1));
+        if ($1->val_type == PARAM_GLOBAL || $1->val_type == PARAM_COLOR) {
+            list_prepend_new(&state->expressions, expression_load_new(state, $1));
 
-              $$ = param_new('S');
-              $$->val_type = PARAM_FIELD;
-              $$->object_link = 0;
-              $$->is_expression_param = 1;
-              $$->value.val.S = 0x1F;
-          }
+            $$ = param_new('S');
+            $$->val_type = PARAM_FIELD;
+            $$->object_link = 0;
+            $$->is_expression_param = 1;
+            $$->value.val.S = 0x1F;
+        }
       }
     | Pointer_Type {
-          list_prepend_new(&state->expressions, expression_pointer_new(state, $1));
+        list_prepend_new(&state->expressions, expression_pointer_new(state, $1));
 
-          $$ = param_new('S');
-          $$->val_type = PARAM_FIELD;
-          $$->object_link = 0;
-          $$->is_expression_param = 1;
-          $$->value.val.S = 0x1F;
+        $$ = param_new('S');
+        $$->val_type = PARAM_FIELD;
+        $$->object_link = 0;
+        $$->is_expression_param = 1;
+        $$->value.val.S = 0x1F;
       }
     | ExpressionSubsetInstParam {
-          if ($1->type == EXPRESSION_VAL) {
-              $$ = param_copy($1->value);
-          } else {
-              list_prepend_new(&state->expressions, $1);
+        if ($1->type == EXPRESSION_VAL) {
+            $$ = param_copy($1->value);
+        } else {
+            list_prepend_new(&state->expressions, $1);
 
-              $$ = param_new('S');
-              $$->val_type = PARAM_FIELD;
-              $$->object_link = 0;
-              $$->is_expression_param = 1;
-              $$->value.val.S = 0x1F;
-          }
+            $$ = param_new('S');
+            $$->val_type = PARAM_FIELD;
+            $$->object_link = 0;
+            $$->is_expression_param = 1;
+            $$->value.val.S = 0x1F;
+        }
       }
     ;
 
@@ -2517,7 +2504,7 @@ Address:
         $$->val_type = PARAM_FIELD;
         $$->value.val.S = 0;
         $$->object_link = -2;
-    }
+      }
     ;
 
 Integer:
@@ -2548,8 +2535,8 @@ Load_Type:
 
 Pointer_Type:
       "&" Load_Type {
-          $2->val_type = PARAM_POINTER;
-          $$ = $2;
+        $2->val_type = PARAM_POINTER;
+        $$ = $2;
       }
     ;
 
