@@ -86,6 +86,7 @@
 "state"    return STATE;
 "return"   return RETURN;
 "expr"     return EXPRESSION;
+"array"    return ARRAY;
 "inline"   return INLINE;
 "mips"     return MIPS;
 "__transargs"      return TRANSARGS;
@@ -280,6 +281,14 @@ vol\([0-9]+\.[0-9]+\) {
         thecl_sub_t* sub = g_parser_state->find_sub(g_parser_state->main_ecl, yytext);
         if (sub && sub->is_inline)
             return IDENTIFIER_EXPRLIST;
+    }
+    gooc_array_t* array;
+    list_for_each(&g_parser_state->main_ecl->arrays, array) {
+        if (!strcmp(array->name, yytext)) {
+            free(yylval.string);
+            yylval.integer = array->start;
+            return ARRAY_NAME;
+        }
     }
     return IDENTIFIER;
 }

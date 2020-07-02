@@ -236,6 +236,7 @@ int yydebug = 0;
 %token <integer> GOOL_INTEGER "gool integer"
 %token <string> DIRECTIVE "directive"
 %token <string> ENTRY "entry"
+%token <integer> ARRAY_NAME "array name"
 %token NIL "nil"
 %token DIRECTIVE_FONT "#font"
 %token DIRECTIVE_CHAR "#char"
@@ -272,6 +273,7 @@ int yydebug = 0;
 %token PARENTHESIS_CLOSE ")"
 %token DEREFERENCE "->"
 %token EXPRESSION "expr"
+%token ARRAY "array"
 %token LAMBDA "=>"
 %token ILLEGAL_TOKEN "illegal token"
 %token END_OF_FILE 0 "end of file"
@@ -464,6 +466,20 @@ Statement:
 
         state->current_interrupt = NULL;
       }
+    | "expr" IDENTIFIER "=" Expression { /* expression macro */
+        macro_create(state, $2, $4);
+        free($2);
+      }
+    | "array" IDENTIFIER "=" { /* const array */
+        state->current_array = malloc(sizeof(gooc_array_t));
+        state->current_array->name = strdup($2);
+        state->current_array->start = state->main_ecl->const_count;
+        free($2);
+      } "{" Array_Entries "}" {
+        state->current_array->end = state->main_ecl->const_count;
+        list_append_new(&state->main_ecl->arrays, state->current_array);
+        state->current_array = NULL;
+      }
     | DIRECTIVE IDENTIFIER INTEGER INTEGER {
         if (!strcmp($1, "gool")){
             state->main_ecl->eid = gool_to_eid($2);
@@ -512,10 +528,6 @@ Statement:
         free($1);
         free($2);
         free($3);
-      }
-    | EXPRESSION IDENTIFIER "=" Expression { /* expression macro */
-        macro_create(state, $2, $4);
-        free($2);
       }
     | DIRECTIVE TEXT {
         if (strcmp($1, "include") == 0) {
@@ -2522,7 +2534,6 @@ Entry:
       ENTRY {
         $$ = param_new('S');
         $$->value.val.S = gool_to_eid($1);
-        gool_pool_force_get_index(state->main_ecl, $$->value.val.S);
         free($1);
       }
     ;
@@ -2535,8 +2546,14 @@ Load_Type:
 
 Pointer_Type:
       "&" Load_Type {
-        $2->val_type = PARAM_POINTER;
         $$ = $2;
+        $$->val_type = PARAM_POINTER;
+      }
+    | ARRAY_NAME {
+        $$ = param_new('S');
+        $$->val_type = PARAM_POINTER;
+        $$->value.val.S = $1;
+        $$->object_link = -3;
       }
     ;
 
@@ -2544,6 +2561,19 @@ Literal_Int:
       INTEGER
     | "-" INTEGER { $$ = -$2; }
     | "+" INTEGER { $$ = +$2; }
+    ;
+
+Array_Entries:
+    %empty {
+        yyerror(state, "array '%s' has no values", state->current_array->name);
+      }
+    | Array_Entry
+    | Array_Entries "," Array_Entry
+    ;
+
+Array_Entry:
+      Literal_Int { gool_pool_force_make_index(state->main_ecl, $1); }
+    | ENTRY { gool_pool_force_make_index(state->main_ecl, gool_to_eid($1)); free($1); }
     ;
 %%
 

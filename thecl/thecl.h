@@ -86,6 +86,12 @@ typedef struct thecl_instr_t {
 } thecl_instr_t;
 
 typedef struct {
+    char* name;
+    int start;
+    int end;
+} gooc_array_t;
+
+typedef struct {
     unsigned int version;
 
     int is_defined;
@@ -100,6 +106,7 @@ typedef struct {
 
     size_t const_count;
     uint32_t* consts;
+    list_t arrays;
 
     size_t var_count;
     field_t** vars;
@@ -324,6 +331,7 @@ typedef struct {
     thecl_interrupt_t* current_interrupt;
     thecl_state_sub_t* current_state_sub;
     gool_anim_t* current_anim;
+    gooc_array_t* current_array;
     bool declared_tempfields;
     thecl_t* main_ecl;
     thecl_t* ecl;

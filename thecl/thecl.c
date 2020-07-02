@@ -98,6 +98,7 @@ thecl_new(
     list_init(&ecl->anims);
     list_init(&ecl->spawns);
     list_init(&ecl->interrupts);
+    list_init(&ecl->arrays);
     ecl->vars = malloc(0);
     ecl->consts = malloc(0);
     ecl->var_count = 0;
@@ -243,6 +244,12 @@ thecl_free(
     }
     list_free_nodes(&ecl->interrupts);
 
+    gooc_array_t* array;
+    list_for_each(&ecl->arrays, array) {
+        free(array);
+    }
+    list_free_nodes(&ecl->arrays);
+
     free(ecl);
 }
 
@@ -283,8 +290,16 @@ int gool_pool_get_index(
     uint32_t val)
 {
     for (int i = 0; i < ecl->const_count; ++i) {
+        gooc_array_t* array;
+        list_for_each(&ecl->arrays, array) {
+            if (i >= array->start && i < array->end) {
+                i = array->end-1;
+                goto CONT;
+            }
+        }
         if (ecl->consts[i] == val)
             return i;
+    CONT:;
     }
     return -1;
 }
