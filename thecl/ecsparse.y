@@ -3821,7 +3821,7 @@ expression_create_goto_pop(
         list_append_new(&state->current_sub->lines, line_make_goto(type, strdup(labelstr), cond ? expression_copy(cond) : NULL));
         return;
     }
-    if (state->mips_mode) {
+    if (state->mips_mode && false) {
         mips_stack_adjust(state, state->current_sub);
         if (type != GOTO) {
             expression_output(state, cond);
