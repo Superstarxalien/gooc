@@ -788,198 +788,82 @@ GlobalVarDeclaration:
       }
     ;
 
-Font_Chars:
-    %empty
-    | Font_Chars Font_Char
-    ;
-
-Font_Char:
-    DIRECTIVE_CHAR INTEGER INTEGER INTEGER INTEGER INTEGER INTEGER INTEGER INTEGER INTEGER INTEGER INTEGER { /* jesus christ */
+Texture_Info:
+      INTEGER[rgb] INTEGER[color] INTEGER[blend] INTEGER[clutx] INTEGER[cluty] INTEGER[x] INTEGER[y] INTEGER[w] INTEGER[h] {
         if (state->version == 1) {
-            c1_font_t* font = state->current_anim->anim;
-            font = realloc(font, sizeof(c1_font_t) + sizeof(c1_char_t) * ++font->char_count);
-            state->current_anim->anim = font;
-            state->current_anim->size = sizeof(c1_font_t) + sizeof(c1_char_t) * font->char_count;
+            c1_tex_t* tex = state->current_tex;
 
-            c1_char_t* character = font->chars + font->char_count - 1;
-            if ($7 >= 128) {
-                yyerror(state, "syntax error, texture x offset is out of bounds");
+            if ($x >= 128) {
+                yyerror(state, "%s:texture x offset is out of bounds", state->current_anim->name);
             }
             int uv = 0;
-            if (($9 != 0 && $9 != 4 && $9 != 8 && $9 != 16 && $9 != 32 && $9 != 64) ||
-                ($10 != 0 && $10 != 4 && $10 != 8 && $10 != 16 && $10 != 32 && $10 != 64)) {
-                yyerror(state, "syntax error, invalid texture width/height");
+            if (($w != 0 && $w != 4 && $w != 8 && $w != 16 && $w != 32 && $w != 64) ||
+                ($h != 0 && $h != 4 && $h != 8 && $h != 16 && $h != 32 && $h != 64)) {
+                yyerror(state, "%s:invalid texture width/height", state->current_anim->name);
             }
-            uint64_t zero = 0;
-            if ($9 == 0 && $9 == 4) uv = 0;
-            if ($9 == 8) uv = 1;
-            if ($9 == 16) uv = 2;
-            if ($9 == 32) uv = 3;
-            if ($9 == 64) uv = 4;
-            if ($10 == 0 && $10 == 4) uv += 0;
-            if ($10 == 8) uv += 5;
-            if ($10 == 16) uv += 10;
-            if ($10 == 32) uv += 15;
-            if ($10 == 64) uv += 20;
-            character->tex.r = $2 >> 0 & 0xFF;
-            character->tex.g = $2 >> 8 & 0xFF;
-            character->tex.b = $2 >> 16 & 0xFF;
-            character->tex.color = $3 & 0x3;
-            character->tex.blend = $4 & 0x3;
-            character->tex.cx = $5 & 0xF;
-            character->tex.cy = $6 & 0x7F;
-            character->tex.x = $7 & 0x1F;
-            character->tex.y = $8 & 0x1F;
-            character->tex.segment = ($7 / 0x20) & 0x3;
-            character->tex.uv = uv & 0x3FF;
-            character->tex.unk1 = 0;
-            character->tex.unk2 = 0;
-            if (memcmp(&character->tex, &zero, 8))
-                character->tex.textured = 1;
-            character->w = $11;
-            character->h = $12;
-        } else if (state->version == 2) {
-            c2_font_t* font = state->current_anim->anim;
-            font = realloc(font, sizeof(c2_font_t) + sizeof(c2_char_t) * ++font->char_count);
-            state->current_anim->anim = font;
-            state->current_anim->size = sizeof(c2_font_t) + sizeof(c2_char_t) * font->char_count;
-
-            c2_char_t* character = font->chars + font->char_count - 1;
-            int x = $7;
-            int y = $8;
-            int w = $9;
-            int h = $10;
-            int segsize = 256 >> $3;
-            if ((x & 0xff) + w > 256) {
-                yyerror(state, "syntax error, aligned texture is too wide");
-            }
-            if (y + h > 128) {
-                yyerror(state, "syntax error, texture is too tall");
-            }
-            if (y < 0 || x < 0) {
-                yyerror(state, "syntax error, invalid texture parameters");
-            }
-            --w;
-            --h;
-            character->tex.r = $2 >> 0 & 0xFF;
-            character->tex.g = $2 >> 8 & 0xFF;
-            character->tex.b = $2 >> 16 & 0xFF;
-            character->tex.primtype = $2 == 0 ? 0 : 11;
-            character->tex.unk1 = 0;
-            character->tex.unk2 = 0;
-            character->tex.unused1 = 0;
-            character->tex.unk3 = 0;
-            character->tex.additive = $4 >> 1 & 0x1;
-            character->tex.unk4 = 0;
-            character->tex.unk5 = 0;
-            character->tex.segment = x / segsize;
-            x &= segsize - 1;
-            character->tex.color = $3;
-            character->tex.blend = $4 & 0x1;
-            character->tex.cx = $5;
-            character->tex.cy = $6;
-            character->tex.u1 = x;
-            character->tex.v1 = y;
-            character->tex.u2 = x+w;
-            character->tex.v2 = y;
-            character->tex.u3 = x;
-            character->tex.v3 = y+h;
-            character->tex.u4 = x+w;
-            character->tex.v4 = y+h;
-            character->w = $11;
-            character->h = $12;
-        }
-      }
-    ;
-
-Sprite_Frames:
-    %empty
-    | Sprite_Frames Sprite_Frame
-    ;
-
-Sprite_Frame:
-    DIRECTIVE_TEXTURE INTEGER INTEGER INTEGER INTEGER INTEGER INTEGER INTEGER INTEGER INTEGER { /* rgb color blend cx cy x y w h */
-        if (state->version == 1) {
-            c1_sprite_t* sprite = state->current_anim->anim;
-            sprite = realloc(sprite, sizeof(c1_sprite_t) + sizeof(c1_tex_t) * ++sprite->count);
-            state->current_anim->anim = sprite;
-            state->current_anim->size = sizeof(c1_sprite_t) + sizeof(c1_tex_t) * sprite->count;
-
-            c1_tex_t* tex = sprite->frames + sprite->count - 1;
-            if ($7 >= 128) {
-                yyerror(state, "syntax error, texture x offset is out of bounds");
-            }
-            int uv = 0;
-            if (($9 != 0 && $9 != 4 && $9 != 8 && $9 != 16 && $9 != 32 && $9 != 64) ||
-                ($10 != 0 && $10 != 4 && $10 != 8 && $10 != 16 && $10 != 32 && $10 != 64)) {
-                yyerror(state, "syntax error, invalid texture width/height");
-            }
-            uint64_t zero = 0;
-            if ($9 == 0 && $9 == 4) uv = 0;
-            if ($9 == 8) uv = 1;
-            if ($9 == 16) uv = 2;
-            if ($9 == 32) uv = 3;
-            if ($9 == 64) uv = 4;
-            if ($10 == 0 && $10 == 4) uv += 0;
-            if ($10 == 8) uv += 5;
-            if ($10 == 16) uv += 10;
-            if ($10 == 32) uv += 15;
-            if ($10 == 64) uv += 20;
-            tex->r = $2 >> 0 & 0xFF;
-            tex->g = $2 >> 8 & 0xFF;
-            tex->b = $2 >> 16 & 0xFF;
-            tex->color = $3 & 0x3;
-            tex->blend = $4 & 0x3;
-            tex->cx = $5 & 0xF;
-            tex->cy = $6 & 0x7F;
-            tex->x = $7 & 0x1F;
-            tex->y = $8 & 0x1F;
-            tex->segment = ($7 / 0x20) & 0x3;
+            const uint64_t zero = 0;
+            if ($w == 0 && $w == 4) uv = 0;
+            if ($w == 8) uv = 1;
+            if ($w == 16) uv = 2;
+            if ($w == 32) uv = 3;
+            if ($w == 64) uv = 4;
+            if ($h == 0 && $h == 4) uv += 0;
+            if ($h == 8) uv += 5;
+            if ($h == 16) uv += 10;
+            if ($h == 32) uv += 15;
+            if ($h == 64) uv += 20;
+            tex->r = $rgb >> 0 & 0xFF;
+            tex->g = $rgb >> 8 & 0xFF;
+            tex->b = $rgb >> 16 & 0xFF;
+            tex->color = $color & 0x3;
+            tex->blend = $blend & 0x3;
+            tex->cx = $clutx & 0xF;
+            tex->cy = $cluty & 0x7F;
+            tex->x = $x & 0x1F;
+            tex->y = $y & 0x1F;
+            tex->segment = ($x / 0x20) & 0x3;
             tex->uv = uv & 0x3FF;
             tex->unk1 = 0;
             tex->unk2 = 0;
             if (memcmp(tex, &zero, 8))
                 tex->textured = 1;
-        } else if (state->version == 2) {
-            c2_sprite_t* sprite = state->current_anim->anim;
-            sprite = realloc(sprite, sizeof(c2_sprite_t) + sizeof(c2_tex_t) * ++sprite->count);
-            state->current_anim->anim = sprite;
-            state->current_anim->size = sizeof(c2_sprite_t) + sizeof(c2_tex_t) * sprite->count;
+        }
+        else if (state->version == 2) {
+            c2_tex_t* tex = state->current_tex;
 
-            c2_tex_t* tex = sprite->frames + sprite->count - 1;
-            int x = $7;
-            int y = $8;
-            int w = $9;
-            int h = $10;
-            int segsize = 256 >> $3;
+            int x = $x;
+            int y = $y;
+            int w = $w;
+            int h = $h;
+            int segsize = 256 >> $color;
             if ((x & 0xff) + w > 256) {
-                yyerror(state, "syntax error, aligned texture is too wide");
+                yyerror(state, "%s: aligned texture is too wide", state->current_anim->name);
             }
             if (y + h > 128) {
-                yyerror(state, "syntax error, texture is too tall");
+                yyerror(state, "%s: texture is too tall", state->current_anim->name);
             }
             if (y < 0 || x < 0) {
-                yyerror(state, "syntax error, invalid texture parameters");
+                yyerror(state, "%s: invalid texture parameters", state->current_anim->name);
             }
             --w;
             --h;
-            tex->r = $2 >> 0 & 0xFF;
-            tex->g = $2 >> 8 & 0xFF;
-            tex->b = $2 >> 16 & 0xFF;
-            tex->primtype = $2 == 0 ? 0 : 11;
+            tex->r = $rgb >> 0 & 0xFF;
+            tex->g = $rgb >> 8 & 0xFF;
+            tex->b = $rgb >> 16 & 0xFF;
+            tex->primtype = $rgb == 0 ? 0 : 11;
             tex->unk1 = 0;
             tex->unk2 = 0;
             tex->unused1 = 0;
             tex->unk3 = 0;
-            tex->additive = $4 >> 1 & 0x1;
+            tex->additive = $blend >> 1 & 0x1;
             tex->unk4 = 0;
             tex->unk5 = 0;
             tex->segment = x / segsize;
             x &= segsize - 1;
-            tex->color = $3;
-            tex->blend = $4 & 0x1;
-            tex->cx = $5;
-            tex->cy = $6;
+            tex->color = $color;
+            tex->blend = $blend & 0x1;
+            tex->cx = $clutx;
+            tex->cy = $cluty;
             tex->u1 = x;
             tex->v1 = y;
             tex->u2 = x+w;
@@ -990,6 +874,69 @@ Sprite_Frame:
             tex->v4 = y+h;
         }
       }
+    ;
+
+Font_Chars:
+    %empty
+    | Font_Chars Font_Char
+    ;
+
+Font_Char:
+      DIRECTIVE_CHAR {
+        if (state->version == 1) {
+            c1_font_t* font = state->current_anim->anim;
+            state->current_anim->anim = font = realloc(font, sizeof(c1_font_t) + sizeof(c1_char_t) * ++font->char_count);
+            state->current_anim->size = sizeof(c1_font_t) + sizeof(c1_char_t) * font->char_count;
+
+            c1_char_t* character = font->chars + font->char_count - 1;
+            state->current_tex = &character->tex;
+        }
+        else if (state->version == 2) {
+            c2_font_t* font = state->current_anim->anim;
+            state->current_anim->anim = font = realloc(font, sizeof(c2_font_t) + sizeof(c2_char_t) * ++font->char_count);
+            state->current_anim->size = sizeof(c2_font_t) + sizeof(c2_char_t) * font->char_count;
+
+            c2_char_t* character = font->chars + font->char_count - 1;
+            state->current_tex = &character->tex;
+        }
+      } Texture_Info INTEGER[w] INTEGER[h] {
+        if (state->version == 1) {
+            c1_font_t* font = state->current_anim->anim;
+            c1_char_t* character = font->chars + font->char_count - 1;
+            character->w = $w;
+            character->h = $h;
+        } else if (state->version == 2) {
+            c2_font_t* font = state->current_anim->anim;
+            c2_char_t* character = font->chars + font->char_count - 1;
+            character->w = $w;
+            character->h = $h;
+        }
+      }
+    ;
+
+Sprite_Frames:
+    %empty
+    | Sprite_Frames Sprite_Frame
+    ;
+
+Sprite_Frame:
+      DIRECTIVE_TEXTURE {
+        if (state->version == 1) {
+            c1_sprite_t* sprite = state->current_anim->anim;
+            state->current_anim->anim = sprite = realloc(sprite, sizeof(c1_sprite_t) + sizeof(c1_tex_t) * ++sprite->count);
+            state->current_anim->size = sizeof(c1_sprite_t) + sizeof(c1_tex_t) * sprite->count;
+
+            c1_tex_t* tex = sprite->frames + sprite->count - 1;
+            state->current_tex = tex;
+        } else if (state->version == 2) {
+            c2_sprite_t* sprite = state->current_anim->anim;
+            state->current_anim->anim = sprite = realloc(sprite, sizeof(c2_sprite_t) + sizeof(c2_tex_t) * ++sprite->count);
+            state->current_anim->size = sizeof(c2_sprite_t) + sizeof(c2_tex_t) * sprite->count;
+
+            c2_tex_t* tex = sprite->frames + sprite->count - 1;
+            state->current_tex = tex;
+        }
+      } Texture_Info
     ;
 
 String_List:
@@ -1019,105 +966,39 @@ Frags:
     ;
 
 Frag:
-    DIRECTIVE_FRAG INTEGER INTEGER INTEGER INTEGER INTEGER INTEGER INTEGER INTEGER INTEGER Literal_Int Literal_Int Literal_Int Literal_Int {
+      DIRECTIVE_FRAG {
         if (state->version == 1) {
             state->current_anim->anim = realloc(state->current_anim->anim, state->current_anim->size + sizeof(c1_frag_t));
             c1_fraganim_t* fraganim = state->current_anim->anim;
             c1_frag_t* frag = (char*)fraganim + state->current_anim->size;
-            state->current_anim->size += sizeof(c1_frag_t);
-            ++fraganim->sprite_count;
-
-            if ($7 >= 128) {
-                yyerror(state, "syntax error, texture x offset is out of bounds");
-            }
-            int uv = 0;
-            if (($9 != 0 && $9 != 4 && $9 != 8 && $9 != 16 && $9 != 32 && $9 != 64) ||
-                ($10 != 0 && $10 != 4 && $10 != 8 && $10 != 16 && $10 != 32 && $10 != 64)) {
-                yyerror(state, "syntax error, invalid texture width/height");
-            }
-            uint64_t zero = 0;
-            if ($9 == 0 && $9 == 4) uv = 0;
-            if ($9 == 8) uv = 1;
-            if ($9 == 16) uv = 2;
-            if ($9 == 32) uv = 3;
-            if ($9 == 64) uv = 4;
-            if ($10 == 0 && $10 == 4) uv += 0;
-            if ($10 == 8) uv += 5;
-            if ($10 == 16) uv += 10;
-            if ($10 == 32) uv += 15;
-            if ($10 == 64) uv += 20;
-            frag->tex.r = $2 >> 0 & 0xFF;
-            frag->tex.g = $2 >> 8 & 0xFF;
-            frag->tex.b = $2 >> 16 & 0xFF;
-            frag->tex.color = $3 & 0x3;
-            frag->tex.blend = $4 & 0x3;
-            frag->tex.cx = $5 & 0xF;
-            frag->tex.cy = $6 & 0x7F;
-            frag->tex.x = $7 & 0x1F;
-            frag->tex.y = $8 & 0x1F;
-            frag->tex.segment = ($7 / 0x20) & 0x3;
-            frag->tex.uv = uv & 0x3FF;
-            frag->tex.unk1 = 0;
-            frag->tex.unk2 = 0;
-            if (memcmp(&frag->tex, &zero, 8))
-                frag->tex.textured = 1;
-            frag->x = $11;
-            frag->y = $12;
-            frag->w = $13;
-            frag->h = $14;
+            state->current_tex = &frag->tex;
         }
         else if (state->version == 2) {
             state->current_anim->anim = realloc(state->current_anim->anim, state->current_anim->size + sizeof(c2_frag_t));
             c2_fraganim_t* fraganim = state->current_anim->anim;
             c2_frag_t* frag = (char*)fraganim + state->current_anim->size;
+            state->current_tex = &frag->tex;
+        }
+      } Texture_Info Literal_Int[x] Literal_Int[y] Literal_Int[w] Literal_Int[h] {
+        if (state->version == 1) {
+            c1_fraganim_t* fraganim = state->current_anim->anim;
+            c1_frag_t* frag = (char*)fraganim + state->current_anim->size;
+            frag->x = $x;
+            frag->y = $y;
+            frag->w = $w;
+            frag->h = $h;
+            state->current_anim->size += sizeof(c1_frag_t);
+            ++fraganim->sprite_count;
+        }
+        else if (state->version == 2) {
+            c2_fraganim_t* fraganim = state->current_anim->anim;
+            c2_frag_t* frag = (char*)fraganim + state->current_anim->size;
+            frag->x = $x;
+            frag->y = $y;
+            frag->w = $w;
+            frag->h = $h;
             state->current_anim->size += sizeof(c2_frag_t);
             ++fraganim->sprite_count;
-
-            int x = $7;
-            int y = $8;
-            int w = $9;
-            int h = $10;
-            int segsize = 256 >> $3;
-            if ((x & 0xff) + w > 256) {
-                yyerror(state, "syntax error, aligned texture is too wide");
-            }
-            if (y + h > 128) {
-                yyerror(state, "syntax error, texture is too tall");
-            }
-            if (y < 0 || x < 0) {
-                yyerror(state, "syntax error, invalid texture parameters");
-            }
-            --w;
-            --h;
-            frag->tex.r = $2 >> 0 & 0xFF;
-            frag->tex.g = $2 >> 8 & 0xFF;
-            frag->tex.b = $2 >> 16 & 0xFF;
-            frag->tex.primtype = $2 == 0 ? 0 : 11;
-            frag->tex.unk1 = 0;
-            frag->tex.unk2 = 0;
-            frag->tex.unused1 = 0;
-            frag->tex.unk3 = 0;
-            frag->tex.additive = $4 >> 1 & 0x1;
-            frag->tex.unk4 = 0;
-            frag->tex.unk5 = 0;
-            frag->tex.segment = x / segsize;
-            x &= segsize - 1;
-            frag->tex.color = $3;
-            frag->tex.blend = $4 & 0x1;
-            frag->tex.cx = $5;
-            frag->tex.cy = $6;
-            frag->tex.u1 = x;
-            frag->tex.v1 = y;
-            frag->tex.u2 = x+w;
-            frag->tex.v2 = y;
-            frag->tex.u3 = x;
-            frag->tex.v3 = y+h;
-            frag->tex.u4 = x+w;
-            frag->tex.v4 = y+h;
-            frag->x = $11;
-            frag->y = $12;
-            frag->w = $13;
-            frag->h = $14;
         }
       }
     ;
