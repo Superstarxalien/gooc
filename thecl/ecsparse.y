@@ -410,7 +410,7 @@ int yydebug = 0;
 %left MULTIPLY DIVIDE MODULO
 %precedence NOT B_NOT
 
-%expect 1
+%expect 0
 %%
 
 Statements:
@@ -874,7 +874,7 @@ Texture_Info:
             tex->v4 = y+h;
         }
       }
-    | INTEGER[rgb] INTEGER[color] INTEGER[blend] INTEGER[clutx] INTEGER[cluty] INTEGER[x] INTEGER[y] INTEGER[w] INTEGER[h] INTEGER[wind] INTEGER[flip] {
+    | INTEGER[rgb] INTEGER[color] INTEGER[blend] INTEGER[clutx] INTEGER[cluty] INTEGER[x] INTEGER[y] INTEGER[w] INTEGER[h] "!" INTEGER[wind] INTEGER[flip] {
         if (state->version == 1) {
             c1_tex_t* tex = state->current_tex;
 
