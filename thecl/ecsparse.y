@@ -2167,7 +2167,7 @@ Instruction:
                 instr_add(state, state->current_sub, instr_new(state, expr_get_by_symbol(state->version, RETURN)->id, "SSSSS", 0, 0, 0x25, 0, 2));
             }
         }
-        state->scope_stack[state->scope_cnt-1].returned = true;
+        //state->scope_stack[state->scope_cnt-1].returned = true;
       }
     ;
 
