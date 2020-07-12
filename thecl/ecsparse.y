@@ -406,8 +406,9 @@ int yydebug = 0;
 %left EQUAL INEQUAL
 %left LT LTEQ GT GTEQ
 %left LSHIFT RSHIFT
-%left ADD SUBTRACT
+%right ADD SUBTRACT
 %left MULTIPLY DIVIDE MODULO
+%left UADD USUBTRACT
 %precedence NOT B_NOT
 
 %expect 0
@@ -2297,8 +2298,8 @@ ExpressionSubset:
         $$ = EXPR_2(EQUAL,  $1, $3);
         $$ = EXPR_2(NOT,      expression_load_new(state, param_sp_new()), $$);
       }
-    | "+" Expression              { $$ = $2; }
-    | "-" Expression              { $$ = EXPR_2(SUBTRACT, EXPR_VAL(0), $2); }
+    | "+" Expression %prec UADD      { $$ = $2; }
+    | "-" Expression %prec USUBTRACT { $$ = EXPR_2(SUBTRACT, EXPR_VAL(0), $2); }
     | "abs" "(" Expression ")"    { $$ = EXPR_2(ABS,      expression_load_new(state, param_sp_new()), $3); }
     | "getanim" "(" Expression ")"{ $$ = EXPR_2(GETANIM,  expression_load_new(state, param_sp_new()), EXPR_2(LSHIFT, $3, EXPR_VAL(8))); }
     | "seek" "(" Expression "," Expression "," Expression ")"     { $$ = EXPR_3(SEEK, $3, $5, $7); }
