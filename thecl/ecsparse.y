@@ -440,7 +440,7 @@ Statement:
             list_append_new(&state->main_ecl->subs, state->current_sub);
         }
         free($3);
-      } "(" ArgumentDeclaration ")" Inline_Subroutine_Body {
+      } "(" ArgumentDeclaration ")" Subroutine_Modifiers Inline_Subroutine_Body {
         sub_finish(state);
       }
     | "state" IDENTIFIER {
@@ -1298,6 +1298,7 @@ Inline_Block:
       Inline_IfBlock
     | Inline_WhileBlock
     | Inline_CodeBlock
+    | Inline_OnceBlock
     | Inline_SaveBlock
     ;
 
@@ -1369,24 +1370,40 @@ Inline_SaveBlock:
       }
     ;
 
-OnceBlock:
+Inline_OnceBlock:
     "once" {
         state->current_sub->has_once = true;
-      } CodeBlock {
-        const expr_t* expr = expr_get_by_symbol(state->version, ASSIGN);
-
-        thecl_param_t* p1 = param_var_new("tpc");
-        thecl_param_t* p2 = param_var_new("pc");
-
-        instr_add(state, state->current_sub, instr_new(state, expr->id, "pp", p1, p2));
+      } Inline_CodeBlock {
+        var_assign(state, param_var_new("tpc"), expression_load_new(state, param_var_new("pc")));
       }
     | "nofirst" {
         state->current_sub->has_nofirst = true;
 
-        instr_add(state, state->current_sub, instr_new(state, expr_get_by_symbol(state->version, ADD)->id, "pp",
-        param_var_new("pc"), param_val_new(4*2)));
-        instr_add(state, state->current_sub, instr_new(state, expr_get_by_symbol(state->version, ASSIGN)->id, "pp",
-        param_var_new("tpc"), param_sp_new()));
+        var_assign(state, param_var_new("tpc"), EXPR_2(ADD, param_var_new("pc"), EXPR_VAL(4*2)));
+
+        char labelstr[256];
+        snprintf(labelstr, 256, "nofirst_%i_%i", yylloc.first_line, yylloc.first_column);
+        list_prepend_new(&state->block_stack, strdup(labelstr));
+        expression_create_goto(state, GOTO, labelstr, NULL);
+      } Inline_CodeBlock {
+        list_node_t *head = state->block_stack.head;
+        label_create(state, head->data);
+        state->block_stack.head = head->next;
+        free(head->data);
+        list_del(&state->block_stack, head);
+      }
+    ;
+
+OnceBlock:
+    "once" {
+        state->current_sub->has_once = true;
+      } CodeBlock {
+        var_assign(state, param_var_new("tpc"), expression_load_new(state, param_var_new("pc")));
+      }
+    | "nofirst" {
+        state->current_sub->has_nofirst = true;
+
+        var_assign(state, param_var_new("tpc"), EXPR_2(ADD, param_var_new("pc"), EXPR_VAL(4*2)));
 
         char labelstr[256];
         snprintf(labelstr, 256, "nofirst_%i_%i", yylloc.first_line, yylloc.first_column);
@@ -1648,6 +1665,7 @@ WhileBlock:
         label_create(state, labelstr_st);
       } DoBlock { scope_finish(state, true); }
     ;
+
 DoBlock:
       CodeBlock "while" ParenExpressionListNoScope[cond]  {
         if ($cond == NULL) {
@@ -1954,6 +1972,7 @@ Inline_WhileBlock:
         label_create(state, labelstr_st);
       } Inline_DoBlock { scope_finish(state, true); }
     ;
+
 Inline_DoBlock:
       Inline_CodeBlock "while" ParenExpressionListNoScope[cond]  {
         if ($cond == NULL) {
