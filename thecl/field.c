@@ -195,15 +195,18 @@ static const field_t
 c1_globals[] = {
     { "LEVEL",               0 },
 
+    { "GLOBALOBJ",           3 },
     { "GAMEFLAGS",           4 },
     { "RESPAWNCOUNT",        5 },
     { "FRUITDISPLAY",        6 },
     { "LIFEDISPLAY",         7 },
 
+    { "PREVGAMEFLAGS",       9 },
+
     { "PAUSEMENU",          12 },
     { "LIFEICONTRANSX",     13 },
     { "PICKUPDISPLAY",      14 },
-
+    { "NORMALCAMROT",       15 },
     { "DOCTOR",             16 },
 
     { "GAMEPROGRESS",       20 },
@@ -243,6 +246,8 @@ c1_globals[] = {
 
     { "DEMOTEXTOBJ",        76 },
 
+    { "GAMEFRAME",          79 },
+
     { "GEMCOUNT",           97 },
     { "KEYCOUNT",           98 },
 
@@ -250,6 +255,8 @@ c1_globals[] = {
     { "SPAWNTRANSY",       103 },
     { "SPAWNTRANSZ",       104 },
 
+    { "FADECONTROL",       106 },
+    { "FADEAMOUNT",        107 },
     { "DEATHCOUNT",        108 },
 
     { NULL, 0 }
@@ -292,10 +299,12 @@ c2_globals[] = {
     { "FRUITDISPLAY",        6 },
     { "LIFEDISPLAY",         7 },
 
+    { "PREVGAMEFLAGS",       9 },
+
     { "PAUSEMENU",          12 },
     { "LIFEICONTRANSX",     13 },
     { "PICKUPDISPLAY",      14 },
-
+    { "NORMALCAMROT",       15 },
     { "DOCTOR",             16 },
 
     { "GAMEPROGRESS",       20 },
@@ -337,6 +346,8 @@ c2_globals[] = {
     { "PREVLEVEL",          71 },
 
     { "DEMOTEXTOBJ",        76 },
+
+    { "GAMEFRAME",          79 },
 
     { "GEMCOUNT",           97 },
     { "KEYCOUNT",           98 },
