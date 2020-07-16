@@ -195,6 +195,7 @@ static const field_t
 c1_globals[] = {
     { "LEVEL",               0 },
 
+    { "SHAKEY",              2 },
     { "GLOBALOBJ",           3 },
     { "GAMEFLAGS",           4 },
     { "RESPAWNCOUNT",        5 },
@@ -238,6 +239,7 @@ c1_globals[] = {
 
     { "GEMTIME",            65 },
 
+    { "FIRSTZONE",          67 },
     { "DEBUG",              68 },
     { "CHECKPOINTID",       69 },
     { "PREVBOXCOUNT",       70 },
@@ -293,6 +295,8 @@ c1_events[] = {
 static const field_t
 c2_globals[] = {
     { "LEVEL",               0 },
+
+    { "SHAKEY",              2 },
 
     { "GAMEFLAGS",           4 },
     { "RESPAWNCOUNT",        5 },
