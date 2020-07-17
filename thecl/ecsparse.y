@@ -368,7 +368,7 @@ int yydebug = 0;
 %token ENTITYSTATEGET "entitygetstate"
 %token GAMEFUNC "gamefunc"
 %token GETVALIDEVENTOBJ "getvalideventobj"
-%token ISCOLLIDING "iscolliding"
+%token POINTCLIP "pointclip"
 %token UNK2 "__unk2"
 %token TRYLOAD "tryload"
 %token GETANIM "getanim"
@@ -2377,7 +2377,7 @@ ExpressionSubset:
     | "atan2_3d" "(" Expression "," Expression ")"                { $$ = EXPR_4(MISC, $5, $3, EXPR_VAL(8), EXPR_VAL(12)); }
     | "getvalideventobj" "(" Expression "," Expression "," Expression ")"   { $$ = EXPR_4(MISC, $3, $5, $7, EXPR_VAL(13)); }
     | "getvalideventobj" "(" Expression "," Expression ")"        { $$ = EXPR_4(MISC, $3, EXPR_VAL(0), $5, EXPR_VAL(13)); }
-    | "iscolliding" "(" Expression "," Expression ")"             { if (!is_post_c2(state->version)) $$ = EXPR_4(MISC, $3, $5, EXPR_VAL(0), EXPR_VAL(14)); }
+    | "pointclip" "(" Expression "," Expression ")"               { if (!is_post_c2(state->version)) $$ = EXPR_4(MISC, $3, $5, EXPR_VAL(0), EXPR_VAL(14)); }
 //  | "__unk2" "(" Expression "," Expression ")"                  { if (!is_post_c2(state->version)) $$ = EXPR_4(MISC, $3, EXPR_VAL(0), $5, EXPR_VAL(15)); }
 
     | "tryload" "(" Expression ")"                                { $$ = EXPR_2(NTRY, $3, EXPR_VAL(3)); }

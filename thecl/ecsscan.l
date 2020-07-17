@@ -172,7 +172,7 @@
 "entitygetstate"   return ENTITYSTATEGET;
 "gamefunc"         return GAMEFUNC;
 "getvalideventobj" return GETVALIDEVENTOBJ;
-"iscolliding"      return ISCOLLIDING;
+"pointclip"        return POINTCLIP;
 "__unk2"           return UNK2;
 "tryload"          return TRYLOAD;
 "getanim"          return GETANIM;
