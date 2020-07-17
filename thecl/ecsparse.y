@@ -1365,7 +1365,7 @@ SaveBlock:
 Inline_SaveBlock:
     "save" "(" Address_List ")" {
         list_append_new(&state->current_sub->lines, line_make_save_start($3));
-      } CodeBlock {
+      } Inline_CodeBlock {
         list_append_new(&state->current_sub->lines, line_make_save_end());
       }
     ;
