@@ -3335,6 +3335,7 @@ instr_create_inline_call(
                     const expr_t* color_expr = expr_get_by_symbol(state->version, CLOAD);
                     thecl_param_t *param;
                     list_for_each(line->list, param) {
+                        param = param_copy(param);
                         list_append_new(&state->addresses, param);
                         switch (param->val_type) {
                             default: instr_add(state, state->current_sub, instr_new(state, local_expr->id, "p", param)); break;
