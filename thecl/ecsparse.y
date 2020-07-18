@@ -5225,6 +5225,10 @@ var_assign(
     expression_t* expr_assign)
 {
     if (state->current_sub->is_inline) {
+        if (param->val_type == PARAM_FIELD && param->object_link == -1 && param->value.val.S < 0) {
+            yyerror(state, "inline subs cannot write to their arguments");
+            exit(2);
+        }
         list_append_new(&state->current_sub->lines, line_make_assignment(param, expr_assign));
         return;
     }
@@ -5299,38 +5303,7 @@ var_shorthand_assign(
 {
     /* Can't use the same param twice, so a copy is created. */
     expression_t* expr_main = EXPR_2(EXPR, expression_load_new(state, param_copy(param)), expr_assign);
-    if (state->current_sub->is_inline) {
-        if (param->val_type == PARAM_FIELD && param->object_link == -1 && param->value.val.S < 0) {
-            yyerror(state, "inline subs cannot write to their arguments");
-            exit(2);
-        }
-        list_append_new(&state->current_sub->lines, line_make_assignment(param, expr_main));
-        return;
-    }
-    expression_output(state, expr_main);
-    expression_free(expr_main);
-    /* expr_main will free recursively. */
-
-    if (param->val_type == PARAM_FIELD) {
-        if (param->object_link == -1 && param->value.val.S >= 3) {
-            state->current_sub->vars[param->value.val.S - 3]->is_written = true;
-        }
-        else if (param->object_link == -1 && param->value.val.S < 0) {
-            state->current_sub->args[-param->value.val.S - 1]->is_written = true;
-        }
-    }
-    if (state->mips_mode) {
-        mips_instr_new_store(state, param);
-    }
-    else {
-        if (param->val_type == PARAM_FIELD) {
-            instr_add(state, state->current_sub, instr_new(state, expr_get_by_symbol(state->version, ASSIGN)->id, "pp", param, param_sp_new()));
-        } else if (param->val_type == PARAM_GLOBAL) { /* WGL */
-            instr_add(state, state->current_sub, instr_new(state, expr_get_by_symbol(state->version, GASSIGN)->id, "Sp", param->value.val.S, param_sp_new()));
-        } else if (param->val_type == PARAM_COLOR) { /* CVMW */
-            instr_add(state, state->current_sub, instr_new(state, expr_get_by_symbol(state->version, CASSIGN)->id, "pSS", param_sp_new(), param->object_link, param->value.val.S));
-        }
-    }
+    var_assign(state, param, expr_main);
 }
 
 static void
