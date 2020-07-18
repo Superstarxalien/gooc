@@ -4556,7 +4556,7 @@ expression_optimize(
             expr = expr_get_by_symbol(state->version, RAND);
             expression_t* rand_expr = child_expr_1->id == expr->id ? child_expr_1 : (child_expr_2->id == expr->id ? child_expr_2 : NULL);
             expression_t* numb_expr = rand_expr == child_expr_1 ? child_expr_2 : child_expr_1;
-            if (rand_expr && numb_expr->type == EXPRESSION_VAL && expression_is_number(list_head(&rand_expr->children)) && ((expression_t*)list_head(&rand_expr->children))->value->value.val.S == 0) {
+            if (rand_expr && expression_is_number(numb_expr) && expression_is_number(list_head(&rand_expr->children)) && ((expression_t*)list_head(&rand_expr->children))->value->value.val.S == 0) {
                 rand_expr = expression_copy(list_tail(&rand_expr->children));
                 numb_expr = expression_copy(numb_expr);
 
