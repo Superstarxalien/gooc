@@ -4555,19 +4555,41 @@ expression_optimize(
 
             expr = expr_get_by_symbol(state->version, RAND);
             expression_t* rand_expr = child_expr_1->id == expr->id ? child_expr_1 : (child_expr_2->id == expr->id ? child_expr_2 : NULL);
+            expression_t* head_expr = list_head(&rand_expr->children);
             expression_t* numb_expr = rand_expr == child_expr_1 ? child_expr_2 : child_expr_1;
-            if (rand_expr && expression_is_number(numb_expr) && expression_is_number(list_head(&rand_expr->children)) && ((expression_t*)list_head(&rand_expr->children))->value->value.val.S == 0) {
+            if (rand_expr && expression_is_number(numb_expr) && expression_is_number(head_expr) && head_expr->value->value.val.S == 0) {
                 rand_expr = expression_copy(list_tail(&rand_expr->children));
                 numb_expr = expression_copy(numb_expr);
 
                 expression->id = expr->id;
-                param_free((child_expr_1->id == expr->id ? child_expr_2 : child_expr_1)->value);
+                if (child_expr_1->type == EXPRESSION_VAL) param_free(child_expr_1->value);
+                if (child_expr_2->type == EXPRESSION_VAL) param_free(child_expr_2->value);
                 expression_free(child_expr_1);
                 expression_free(child_expr_2);
                 list_free_nodes(&expression->children);
 
                 list_append_new(&expression->children, numb_expr);
                 list_append_new(&expression->children, EXPR_2(ADD, expression_copy(numb_expr), rand_expr));
+                return;
+            }
+
+            expr = expr_get_by_symbol(state->version, SUBTRACT);
+            expression_t* sub_expr = child_expr_1->id == expr->id ? child_expr_1 : (child_expr_2->id == expr->id ? child_expr_2 : NULL);
+                         head_expr = list_head(&sub_expr->children);
+                         numb_expr = sub_expr == child_expr_1 ? child_expr_2 : child_expr_1;
+            if (sub_expr && expression_is_number(head_expr) && head_expr->value->value.val.S == 0) {
+                sub_expr = expression_copy(list_tail(&sub_expr->children));
+                numb_expr = expression_copy(numb_expr);
+
+                expression->id = expr->id;
+                if (child_expr_1->type == EXPRESSION_VAL) param_free(child_expr_1->value);
+                if (child_expr_2->type == EXPRESSION_VAL) param_free(child_expr_2->value);
+                expression_free(child_expr_1);
+                expression_free(child_expr_2);
+                list_free_nodes(&expression->children);
+
+                list_append_new(&expression->children, numb_expr);
+                list_append_new(&expression->children, sub_expr);
                 return;
             }
         }
