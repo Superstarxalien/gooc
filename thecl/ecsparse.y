@@ -3843,7 +3843,7 @@ expression_create_goto_pop(
                 pcond = cond->value;
             }
         }
-        instr_add(state, state->current_sub, instr_new(state, expr_get_by_symbol(state->version, type)->id, "pSpSS", p1, pop, pcond, state->version == 1 ? (type == GOTO ? 0 : (type == IF ? 1 : (type == UNLESS ? 2 : 3))) : 0, 0));
+        instr_add(state, state->current_sub, instr_new(state, expr_get_by_symbol(state->version, type)->id, "pSpSS", p1, pop, pcond, type == GOTO ? 0 : (type == IF ? 1 : (type == UNLESS ? 2 : 3)), 0));
     }
 }
 
@@ -4555,7 +4555,7 @@ expression_optimize(
 
             expr = expr_get_by_symbol(state->version, RAND);
             expression_t* rand_expr = child_expr_1->id == expr->id ? child_expr_1 : (child_expr_2->id == expr->id ? child_expr_2 : NULL);
-            expression_t* head_expr = list_head(&rand_expr->children);
+            expression_t* head_expr = rand_expr ? list_head(&rand_expr->children) : NULL;
             expression_t* numb_expr = rand_expr == child_expr_1 ? child_expr_2 : child_expr_1;
             if (rand_expr && expression_is_number(numb_expr) && expression_is_number(head_expr) && head_expr->value->value.val.S == 0) {
                 rand_expr = expression_copy(list_tail(&rand_expr->children));
@@ -4575,7 +4575,7 @@ expression_optimize(
 
             expr = expr_get_by_symbol(state->version, SUBTRACT);
             expression_t* sub_expr = child_expr_1->id == expr->id ? child_expr_1 : (child_expr_2->id == expr->id ? child_expr_2 : NULL);
-                         head_expr = list_head(&sub_expr->children);
+                         head_expr = sub_expr ? list_head(&sub_expr->children) : NULL;
                          numb_expr = sub_expr == child_expr_1 ? child_expr_2 : child_expr_1;
             if (sub_expr && expression_is_number(head_expr) && head_expr->value->value.val.S == 0) {
                 sub_expr = expression_copy(list_tail(&sub_expr->children));
