@@ -391,6 +391,35 @@ vol\([0-9]+\.[0-9]+\) {
     yylval.string = strdup(yytext + 1);
     return DIRECTIVE;
 }
+#elifn?lev[\t\n\r ]+[0-9a-zA-Z\_\!]+[\t\n\r ]+ |
+<P_BLOCK>#elifn?lev[\t\n\r ]+[0-9a-zA-Z\_\!]+[\t\n\r ]+ {
+    if (g_reg_block_depth == 0 || g_reg_blocks[g_reg_block_depth - 1] & 2) {
+        yyerror(NULL, "invalid #elif");
+        yyterminate();
+    }
+    if (g_reg_blocks[g_reg_block_depth - 1] & 1) {
+        char* lev = strpbrk(yytext + 9, gool_ename_charmap);
+        int cmp = false;
+        if (lev != NULL) {
+            char l = lev++[0];
+            while ((l >= '0' && l <= '9') || (l >= 'a' && l <= 'z') || (l >= 'A' && l <= 'Z') || l == '_' || l == '!') {
+                cmp |= l == g_lev;
+                l = lev++[0];
+            }
+        }
+        cmp ^= yytext[5] == 'n';
+        g_reg_blocks = realloc(g_reg_blocks, sizeof(int) * ++g_reg_block_depth);
+        g_reg_blocks[g_reg_block_depth - 1] = !cmp;
+        if (!cmp) {
+            BEGIN(P_BLOCK);
+        }
+    }
+    else {
+        BEGIN(P_BLOCK);
+    }
+    yylval.string = strdup(yytext + 1);
+    return DIRECTIVE;
+}
 #else |
 <P_BLOCK>#else {
     if (g_reg_block_depth == 0 || g_reg_blocks[g_reg_block_depth - 1] & 2) {
