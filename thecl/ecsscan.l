@@ -366,6 +366,28 @@ vol\([0-9]+\.[0-9]+\) {
     yylval.string = strdup(yytext + 1);
     return DIRECTIVE;
 }
+#elifn?ver[\t\n\r ]+[0-9]+[\t\n\r ]+ |
+<P_BLOCK>#elifn?ver[\t\n\r ]+[0-9]+[\t\n\r ]+ {
+    if (g_reg_block_depth == 0 || g_reg_blocks[g_reg_block_depth - 1] & 2) {
+        yyerror(NULL, "invalid #elif");
+        yyterminate();
+    }
+    if (g_reg_blocks[g_reg_block_depth - 1] & 1) {
+        int cmp = (atoi(yytext + 9) == g_parser_state->version) ^ (yytext[5] == 'n');
+        g_reg_blocks[g_reg_block_depth - 1] = !cmp;
+        if (!cmp) {
+            BEGIN(P_BLOCK);
+        }
+        else {
+            BEGIN(INITIAL);
+        }
+    }
+    else {
+        BEGIN(P_BLOCK);
+    }
+    yylval.string = strdup(yytext + 1);
+    return DIRECTIVE;
+}
 #ifn?lev[\t\n\r ]+[0-9a-zA-Z\_\!]+[\t\n\r ]+ |
 <P_BLOCK>#ifn?lev[\t\n\r ]+[0-9a-zA-Z\_\!]+[\t\n\r ]+ {
     char* lev = strpbrk(yytext + 7, gool_ename_charmap);
