@@ -342,6 +342,7 @@ typedef struct {
     char** path_stack;
     thecl_sub_t* (*find_state_sub)(thecl_t* ecl, thecl_t* ecl_ext, thecl_state_sub_t* state_sub, thecl_state_sub_type type);
     thecl_sub_t* (*find_sub)(thecl_t* ecl, const char* name);
+    thecl_sub_t* (*find_sub_overload)(thecl_t* ecl, const char* name, int argc);
 
     uint16_t state_count;
     size_t spawn_count;

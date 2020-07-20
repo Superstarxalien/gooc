@@ -277,11 +277,6 @@ vol\([0-9]+\.[0-9]+\) {
         return IDENTIFIER;
     if (macro_get(g_parser_state, yytext))
         return MACRO;
-    if (g_parser_state->current_sub && !g_parser_state->current_sub->is_inline) {
-        thecl_sub_t* sub = g_parser_state->find_sub(g_parser_state->main_ecl, yytext);
-        if (sub && sub->is_inline)
-            return IDENTIFIER_EXPRLIST;
-    }
     gooc_array_t* array;
     list_for_each(&g_parser_state->main_ecl->arrays, array) {
         if (!strcmp(array->name, yytext)) {

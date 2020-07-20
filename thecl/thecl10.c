@@ -317,6 +317,7 @@ c1_parse(
     state->ecl_stack = malloc(0);
     state->ecl_cnt = 0;
     state->find_sub = th10_find_sub;
+    state->find_sub_overload = th10_find_sub_overload;
     state->find_state_sub = c1_find_state_sub;
 
     state->path_cnt = 0;
