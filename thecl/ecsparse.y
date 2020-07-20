@@ -4135,9 +4135,11 @@ expression_optimize(
             expr = expr_get_by_symbol(state->version, RAND);
             expression_t* rand_expr = child_expr_1->id == expr->id ? child_expr_1 : (child_expr_2->id == expr->id ? child_expr_2 : NULL);
             expression_t* head_expr = rand_expr ? list_head(&rand_expr->children) : NULL;
+            expression_t* tail_expr = rand_expr ? list_tail(&rand_expr->children) : NULL;
             expression_t* numb_expr = rand_expr == child_expr_1 ? child_expr_2 : child_expr_1;
-            if (rand_expr && expression_is_number(numb_expr) && expression_is_number(head_expr) && head_expr->value->value.val.S == 0) {
-                rand_expr = expression_copy(list_tail(&rand_expr->children));
+            if (rand_expr && expression_is_number(numb_expr) && expression_is_number(head_expr) && expression_is_number(tail_expr)) {
+                head_expr = expression_copy(head_expr);
+                tail_expr = expression_copy(tail_expr);
                 numb_expr = expression_copy(numb_expr);
 
                 expression->id = expr->id;
@@ -4147,8 +4149,8 @@ expression_optimize(
                 expression_free(child_expr_2);
                 list_free_nodes(&expression->children);
 
-                list_append_new(&expression->children, numb_expr);
-                list_append_new(&expression->children, EXPR_2(ADD, expression_copy(numb_expr), rand_expr));
+                list_append_new(&expression->children, EXPR_2(ADD, expression_copy(numb_expr), head_expr));
+                list_append_new(&expression->children, EXPR_2(ADD, expression_copy(numb_expr), tail_expr));
                 return;
             }
 
