@@ -355,6 +355,35 @@ vol\([0-9]+\.[0-9]+\) {
     yylval.string = strdup(yytext + 1);
     return DIRECTIVE;
 }
+#elifn?reg[\t\n\r ]+\"[a-zA-Z\-]+\"[\t\n\r ]+ |
+<P_BLOCK>#elifn?reg[\t\n\r ]+\"[a-zA-Z\-]+\"[\t\n\r ]+ {
+    if (g_reg_block_depth == 0 || g_reg_blocks[g_reg_block_depth - 1] & 2) {
+        yyerror(NULL, "invalid #elif");
+        yyterminate();
+    }
+    if (g_reg_blocks[g_reg_block_depth - 1] & 1) {
+        char* o_reg_text = strchr(yytext, '"') + 1;
+        int len = strchr_o(o_reg_text, '"');
+        char* reg_text = malloc(len + 1);
+        strncpy(reg_text, o_reg_text, len);
+        reg_text[len] = '\0';
+
+        int cmp = (yytext[5] == 'n') == strcmp(reg_text, g_region);
+        free(reg_text);
+        g_reg_blocks[g_reg_block_depth - 1] = !cmp;
+        if (!cmp) {
+            BEGIN(P_BLOCK);
+        }
+        else {
+            BEGIN(INITIAL);
+        }
+    }
+    else {
+        BEGIN(P_BLOCK);
+    }
+    yylval.string = strdup(yytext + 1);
+    return DIRECTIVE;
+}
 #ifn?ver[\t\n\r ]+[0-9]+[\t\n\r ]+ |
 <P_BLOCK>#ifn?ver[\t\n\r ]+[0-9]+[\t\n\r ]+ {
     int cmp = (atoi(yytext + 7) == g_parser_state->version) ^ (yytext[3] == 'n');
