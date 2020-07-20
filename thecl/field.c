@@ -380,10 +380,6 @@ c2_globals[] = {
 
     { "LEVELBOXCOUNT",     148 },
 
-    { "BOXBELOW",          160 },
-    { "BOXSTACKOFFSET",    161 },
-    { "BOXENTITYBELOW",    162 },
-
     { NULL, 0 }
 };
 
