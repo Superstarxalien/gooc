@@ -98,6 +98,8 @@ static void instr_create_call(parser_state_t *state, uint8_t type, char *name, l
 static void instr_create_inline_call(parser_state_t *state, thecl_sub_t *sub, list_t *params);
 static void instr_create_gool_ins(parser_state_t *state, const gool_ins_t *gool_ins, list_t *params);
 
+static list_t* convert_expr_list_to_params(parser_state_t *state, list_t *expr_list);
+
 static expression_t* expression_load_new(const parser_state_t* state, thecl_param_t* value);
 static expression_t* expression_val_new(const parser_state_t* state, int value);
 static expression_t* expression_pointer_new(const parser_state_t* state, thecl_param_t* value);
@@ -378,16 +380,13 @@ int yydebug = 0;
 
 %type <list> Address_List
 %type <list> Expression_List
-%type <list> Instruction_Parameters
 %type <list> ParenExpressionList
 %type <list> ParenExpressionListNoScope
 
 %type <expression> Expression
-%type <expression> ExpressionSubsetInstParam
 %type <expression> ExpressionLoadType
 %type <expression> ExpressionSubset
 
-%type <param> Instruction_Parameter
 %type <param> Address
 %type <param> Integer
 %type <param> Entry
@@ -2077,17 +2076,26 @@ Instruction:
         }
         free($1);
       }
-    | IDENTIFIER "(" Instruction_Parameters ")" {
+    | IDENTIFIER "(" Expression_List ")" {
+        list_t* param_list = convert_expr_list_to_params(state, $3);
+        if ($3) {
+            expression_t* expr;
+            list_for_each($3, expr) {
+                expression_free(expr);
+            }
+            list_free_nodes($3);
+            free($3);
+        }
         const gool_ins_t* gool_ins = gool_ins_get_by_name(state->version, $1);
         if (gool_ins) {
-            instr_create_gool_ins(state, gool_ins, $3);
+            instr_create_gool_ins(state, gool_ins, param_list);
         }
         else {
             const expr_t* expr = expr_get_by_symbol(state->version, CALL);
-            instr_create_call(state, expr->id, strdup($1), $3);
-            if ($3 != NULL) {
-                list_free_nodes($3);
-                free($3);
+            instr_create_call(state, expr->id, strdup($1), param_list);
+            if (param_list != NULL) {
+                list_free_nodes(param_list);
+                free(param_list);
             }
         }
         free($1);
@@ -2221,54 +2229,6 @@ Address_List:
     | Address_List "," Address { $$ = $1; list_append_new($$, $3); }
     ;
 
-Instruction_Parameters:
-      %empty { $$ = NULL; }
-    | Instruction_Parameter {
-        $$ = list_new();
-        list_append_new($$, $1);
-      }
-    | Instruction_Parameters "," Instruction_Parameter {
-        $$ = $1;
-        list_append_new($$, $3);
-      }
-    ;
-
-Instruction_Parameter:
-      Load_Type {
-        if ($1->val_type == PARAM_GLOBAL || $1->val_type == PARAM_COLOR) {
-            list_prepend_new(&state->expressions, expression_load_new(state, $1));
-
-            $$ = param_new('S');
-            $$->val_type = PARAM_FIELD;
-            $$->object_link = 0;
-            $$->is_expression_param = 1;
-            $$->value.val.S = 0x1F;
-        }
-      }
-    | Pointer_Type {
-        list_prepend_new(&state->expressions, expression_pointer_new(state, $1));
-
-        $$ = param_new('S');
-        $$->val_type = PARAM_FIELD;
-        $$->object_link = 0;
-        $$->is_expression_param = 1;
-        $$->value.val.S = 0x1F;
-      }
-    | ExpressionSubsetInstParam {
-        if ($1->type == EXPRESSION_VAL) {
-            $$ = param_copy($1->value);
-        } else {
-            list_prepend_new(&state->expressions, $1);
-
-            $$ = param_new('S');
-            $$->val_type = PARAM_FIELD;
-            $$->object_link = 0;
-            $$->is_expression_param = 1;
-            $$->value.val.S = 0x1F;
-        }
-      }
-    ;
-
 Expression_List:
     %empty { $$ = NULL; }
     | Expression { $$ = list_new(); list_append_new($$, $1); }
@@ -2278,10 +2238,6 @@ Expression_List:
 Expression:
       ExpressionLoadType
     | ExpressionSubset
-    ;
-
-ExpressionSubsetInstParam:
-      ExpressionSubset
     ;
 
 ExpressionLoadType:
@@ -3089,6 +3045,51 @@ instr_copy(thecl_instr_t* instr) {
     return new_instr;
 }
 
+static list_t*
+convert_expr_list_to_params(
+    parser_state_t* state,
+    list_t* expr_list)
+{
+    list_t* param_list = expr_list ? list_new() : NULL;
+
+    if (expr_list) {
+        thecl_param_t* param;
+        expression_t* expr;
+        list_for_each(expr_list, expr) {
+            param = expr->value;
+            if (expr->type == EXPRESSION_VAL && param->val_type != PARAM_POINTER) {
+                param = expr->value;
+            }
+            else if (expr->type == EXPRESSION_COLOR || expr->type == EXPRESSION_GLOBAL
+                 || (expr->type == EXPRESSION_VAL && param->val_type == PARAM_POINTER)) {
+                list_prepend_new(&state->expressions, expression_copy(expr));
+
+                param = param_new('S');
+                param->val_type = PARAM_FIELD;
+                param->object_link = 0;
+                param->is_expression_param = 1;
+                param->value.val.S = 0x1F;
+            }
+            else {
+                if (expr->type == EXPRESSION_VAL) {
+                    param = expr->value;
+                } else {
+                    list_prepend_new(&state->expressions, expression_copy(expr));
+
+                    param = param_new('S');
+                    param->val_type = PARAM_FIELD;
+                    param->object_link = 0;
+                    param->is_expression_param = 1;
+                    param->value.val.S = 0x1F;
+                }
+            }
+            list_append_new(param_list, param);
+        }
+    }
+
+    return param_list;
+}
+
 static void
 expression_replace_var(
     parser_state_t* state,
@@ -3197,54 +3198,19 @@ instr_create_inline_call(
                     list_append_new(&state->current_sub->lines, line_make_call(line->call.name, inline_expression_list_copy(state, line->call.expr_list, params_org)));
                 }
                 else {
-                    list_t* ins_params = line->call.expr_list ? list_new() : NULL;
-
+                    list_t *expr_list, *ins_params;
                     if (line->call.expr_list) {
-                        thecl_param_t* param;
+                        expr_list = list_new();
                         expression_t* expr;
                         list_for_each(line->call.expr_list, expr) {
-                            expr = inline_call_replace_params(state, expr, params_org);
-
-                            param = expr->value;
-                            if (expr->type != EXPRESSION_TERNARY && (expr_get_by_symbol(state->version, LOAD)->id == expr->id || expr_get_by_symbol(state->version, GLOAD)->id == expr->id || expr_get_by_symbol(state->version, CLOAD)->id == expr->id)) { /* Load_Type */
-                                if (param->val_type == PARAM_GLOBAL || param->val_type == PARAM_COLOR) {
-                                    list_prepend_new(&state->expressions, expression_copy(expr));
-
-                                    param = param_new('S');
-                                    param->val_type = PARAM_FIELD;
-                                    param->object_link = 0;
-                                    param->is_expression_param = 1;
-                                    param->value.val.S = 0x1F;
-                                }
-                                else {
-                                    param = param_copy(expr->value);
-                                }
-                            }
-                            else if (expr->type != EXPRESSION_TERNARY && expr_get_by_symbol(state->version, PLOAD)->id == expr->id) { /* Pointer_Type */
-                                list_prepend_new(&state->expressions, expression_copy(expr));
-
-                                param = param_new('S');
-                                param->val_type = PARAM_FIELD;
-                                param->object_link = 0;
-                                param->is_expression_param = 1;
-                                param->value.val.S = 0x1F;
-                            }
-                            else {
-                                if (expr->type == EXPRESSION_VAL) {
-                                    param = param_copy(expr->value);
-                                } else {
-                                    list_prepend_new(&state->expressions, expression_copy(expr));
-
-                                    param = param_new('S');
-                                    param->val_type = PARAM_FIELD;
-                                    param->object_link = 0;
-                                    param->is_expression_param = 1;
-                                    param->value.val.S = 0x1F;
-                                }
-                            }
-                            list_append_new(ins_params, param);
+                            list_append_new(expr_list, inline_call_replace_params(state, expr, params_org));
                         }
+                        ins_params = convert_expr_list_to_params(state, expr_list);
                     }
+                    else {
+                        expr_list = ins_params = NULL;
+                    }
+                    expression_t* expr;
                     const gool_ins_t* gool_ins = gool_ins_get_by_name(state->version, line->call.name);
                     if (gool_ins) {
                         instr_create_gool_ins(state, gool_ins, ins_params);
@@ -3255,6 +3221,14 @@ instr_create_inline_call(
                             list_free_nodes(ins_params);
                             free(ins_params);
                         }
+                    }
+
+                    if (expr_list) {
+                        list_for_each(expr_list, expr) {
+                            expression_free(expr);
+                        }
+                        list_free_nodes(expr_list);
+                        free(expr_list);
                     }
                 }
             } break;
