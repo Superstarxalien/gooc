@@ -408,10 +408,12 @@ vol\([0-9]+\.[0-9]+\) {
             }
         }
         cmp ^= yytext[5] == 'n';
-        g_reg_blocks = realloc(g_reg_blocks, sizeof(int) * ++g_reg_block_depth);
         g_reg_blocks[g_reg_block_depth - 1] = !cmp;
         if (!cmp) {
             BEGIN(P_BLOCK);
+        }
+        else {
+            BEGIN(INITIAL);
         }
     }
     else {
