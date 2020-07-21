@@ -1250,9 +1250,6 @@ Instructions:
     /*| Instructions IDENTIFIER ":" { label_create(state, $2); free($2); }*/
     | Instructions Instruction
     | Instructions Block
-    | Instructions DIRECTIVE {
-        free($2);
-      }
     ;
 
 ParenExpressionList:
