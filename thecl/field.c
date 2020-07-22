@@ -276,14 +276,28 @@ c1_events[] = {
     { "EventBoxStackBreak",      9 },
     { "EventHitInvincible",     10 },
 
-    { "EventRespawn",           19 },
+    { "EventUnpause",           14 },
+    { "EventStatus",            15 },
+    { "EventCombo",             16 },
 
+    { "EventRespawn",           19 },
+    { "EventEat",               20 },
     { "EventBounce",            21 },
     { "EventWarp",              22 },
 
+    { "EventSquash",            25 },
     { "EventDespawn",           26 },
 
+    { "EventBossWin",           29 },
     { "EventFling",             29 },
+
+    { "EventBurn",              31 },
+
+    { "EventDrown",             33 },
+
+    { "EventHitFence",          35 },
+
+    { "EventBoulderSquash",     37 },
 
     { "EventLevelEnd",          41 },
 
