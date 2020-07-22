@@ -294,6 +294,7 @@ c1_events[] = {
 
     { "EventDrown",             33 },
 
+    { "EventShock",             35 },
     { "EventHitFence",          35 },
 
     { "EventBoulderSquash",     37 },
