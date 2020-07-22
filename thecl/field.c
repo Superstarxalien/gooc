@@ -276,7 +276,6 @@ c1_events[] = {
     { "EventBoxStackBreak",      9 },
     { "EventHitInvincible",     10 },
 
-    { "EventUnpause",           14 },
     { "EventStatus",            15 },
     { "EventCombo",             16 },
 
