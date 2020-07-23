@@ -364,7 +364,7 @@ int yydebug = 0;
 %token ATAN2 "atan2"
 %token ATAN2_3D "atan2_3d"
 %token GETFIELD "getfield"
-%token ATAN2D "atan2_dist"
+%token ATAN2O "atan2_obj"
 %token OBJGET "objectget"
 %token ENTITYSTATEGET "entitygetstate"
 %token GAMEFUNC "gamefunc"
@@ -1926,7 +1926,7 @@ ExpressionSubset:
     | "atan2" "(" Expression ")"                                  { $$ = EXPR_4(MISC, $3, EXPR_VAL(0), EXPR_VAL(0), EXPR_VAL(2)); }
     | "getfield" "(" Expression "," Expression ")"                { $$ = EXPR_4(MISC, $5, $3, EXPR_VAL(0), EXPR_VAL(3)); }
 
-    | "atan2_dist" "(" Expression ")"                             { if (!is_post_c2(state->version)) $$ = EXPR_4(MISC, expression_load_new(state, param_null_new()), $3, EXPR_VAL(0), EXPR_VAL(5)); }
+    | "atan2_obj" "(" Expression ")"                              { if (!is_post_c2(state->version)) $$ = EXPR_4(MISC, expression_load_new(state, param_null_new()), $3, EXPR_VAL(0), EXPR_VAL(5)); }
     | "distance" "(" Expression "," Expression "," Expression ")" { $$ = EXPR_4(MISC, $3, $5, $7, EXPR_VAL(6)); }
     | "objectget" "(" Expression ")"                              { $$ = EXPR_4(MISC, $3, EXPR_VAL(5), EXPR_VAL(0), EXPR_VAL(7)); }
 

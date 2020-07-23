@@ -167,7 +167,7 @@
 "atan2"            return ATAN2;
 "atan2_3d"         return ATAN2_3D;
 "getfield"         return GETFIELD;
-"atan2_dist"       return ATAN2D;
+"atan2_obj"        return ATAN2O;
 "objectget"        return OBJGET;
 "entitygetstate"   return ENTITYSTATEGET;
 "gamefunc"         return GAMEFUNC;
