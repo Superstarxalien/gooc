@@ -2758,12 +2758,17 @@ inline_expression_list_copy(
     list_t* list,
     list_t* params)
 {
-    list_t* new_list = list_new();
-    expression_t* e;
-    list_for_each(list, e) {
-        list_append_new(new_list, inline_call_replace_params(state, e, params));
+    if (list) {
+        list_t* new_list = list_new();
+        expression_t* e;
+        list_for_each(list, e) {
+            list_append_new(new_list, inline_call_replace_params(state, e, params));
+        }
+        return new_list;
     }
-    return new_list;
+    else {
+        return NULL;
+    }
 }
 
 static void
