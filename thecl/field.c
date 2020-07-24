@@ -289,7 +289,7 @@ c1_events[] = {
 
     { "EventBossWin",           29 },
     { "EventFling",             29 },
-
+    { "EventExplode",           30 },
     { "EventBurn",              31 },
 
     { "EventDrown",             33 },
@@ -417,6 +417,8 @@ c2_events[] = {
     { "EventDespawn",           26 },
 
     { "EventFling",             29 },
+    { "EventExplode",           30 },
+    { "EventBurn",              31 },
 
     { "EventLevelEnd",          41 },
 
