@@ -276,10 +276,20 @@ c1_find_state_sub(
             return NULL;
         }
         else {
+            thecl_state_sub_t* target_ssub = NULL;
             switch (type) {
-            case STATE_SUB_CODE: return state->code ? c1_find_state_sub(ecl, ecl_ext, state->code, STATE_SUB_CODE) : NULL;
-            case STATE_SUB_EVENT: return state->event ? c1_find_state_sub(ecl, ecl_ext, state->event, STATE_SUB_EVENT) : NULL;
-            case STATE_SUB_TRANS: return state->trans ? c1_find_state_sub(ecl, ecl_ext, state->trans, STATE_SUB_TRANS) : NULL;
+            case STATE_SUB_CODE: target_ssub = state->code; break;
+            case STATE_SUB_EVENT: target_ssub = state->event; break;
+            case STATE_SUB_TRANS: target_ssub = state->trans; break;
+            }
+            if (target_ssub) {
+                if (!strcmp(target_ssub->lambda_name, state_sub->lambda_name)) {
+                    fprintf(stderr, "%s:%s: recursive state-sub for state %s", argv0, current_input, target_ssub->lambda_name);
+                    return NULL;
+                }
+                else {
+                    return c1_find_state_sub(ecl, ecl_ext, target_ssub, type);
+                }
             }
         }
     }
@@ -723,9 +733,9 @@ c1_write_gool(
             }
         }
         state_t gstate = { state->stateflag, state->statusc, gool_pool_force_get_index(ecl, state->exe->eid),
-            state->event == NULL ? 0x3FFFU : sub_e->start_offset | (sub_e->is_external ? 0x4000 : 0),
-            state->trans == NULL ? 0x3FFFU : sub_t->start_offset | (sub_t->is_external ? 0x4000 : 0),
-            state->code == NULL ? 0x3FFFU : sub_c->start_offset | (sub_c->is_external ? 0x4000 : 0) };
+            sub_e == NULL ? 0x3FFFU : sub_e->start_offset | (sub_e->is_external ? 0x4000 : 0),
+            sub_t == NULL ? 0x3FFFU : sub_t->start_offset | (sub_t->is_external ? 0x4000 : 0),
+            sub_c == NULL ? 0x3FFFU : sub_c->start_offset | (sub_c->is_external ? 0x4000 : 0) };
 
         if (!file_write(out, &gstate, sizeof(gstate))) return 0;
     }
