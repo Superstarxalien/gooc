@@ -1920,6 +1920,7 @@ ExpressionSubset:
     | "getval" "(" Expression "," Expression ")"                  { if (!is_post_c2(state->version)) $$ = EXPR_4(MISC, $3, EXPR_VAL(5), $5, EXPR_VAL(0));
                                                                     else $$ = EXPR_2(ARRL, expression_load_new(state, $3), $5);
                                                                   }
+    | "distance" "(" Expression ")"                               { $$ = EXPR_4(MISC, expression_load_new(state, param_null_new()), $3, EXPR_VAL(0), EXPR_VAL(1)); }
     | "distance" "(" Expression "," Expression ")"                { $$ = EXPR_4(MISC, expression_load_new(state, param_null_new()), $3, $5, EXPR_VAL(1)); }
     | "atan" "(" Expression "," Expression ")"                    { $$ = EXPR_2(ATAN, $3, $5); }
     | "atan2" "(" Expression "," Expression ")"                   { $$ = EXPR_4(MISC, $5, $3, EXPR_VAL(0), EXPR_VAL(2)); }
