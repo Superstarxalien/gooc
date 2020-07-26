@@ -101,6 +101,8 @@ c1_expressions[] = {
     { UNLESS,  0x82, 1, 0, 0, 0 }, /* unless (s0) goto p0 */
     { IF,      0x82, 1, 0, 0, 0 }, /* if (s0) goto p0 */
 
+    { EVHA,    0x89, 5, 0, 0, 0 }, /* accept event */
+    { EVHR,    0x8A, 5, 0, 0, 0 }, /* reject event */
     { NTRY,    0x8B, 2, 0, 0, 0 }, /* entry operation */
     { 0,          0, 0, 0, 0, 0 }
 };
@@ -127,6 +129,9 @@ c2_expressions[] = {
     { SIN,       43, 2, 0, 1, 1 }, /* sin(s0) */
     { COS,       44, 2, 0, 1, 1 }, /* cos(s0) */
     { ATAN,      45, 2, 0, 0, 0 }, /* atan(s1, s0) */
+
+    { EVHA,      62, 5, 0, 0, 0 }, /* accept event */
+    { EVHR,      63, 5, 0, 0, 0 }, /* reject event */
     { NTRY,      64, 2, 0, 0, 0 }, /* entry operation */
     { 0,          0, 0, 0, 0, 0 }
 };

@@ -289,6 +289,8 @@ int yydebug = 0;
 %token BREAK "break"
 %token CONTINUE "continue"
 %token SAVE "save"
+%token EVHA "accev"
+%token EVHR "rejev"
 %token AT "@"
 %token CALL
 %token LOAD
