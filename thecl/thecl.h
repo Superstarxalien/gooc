@@ -375,12 +375,12 @@ thecl_param_t* param_copy(
     thecl_param_t* param);
 void param_free(
     thecl_param_t* param);
-thecl_param_t* param_val_new(
-    int val);
-thecl_param_t* param_var_new(
-    char* var);
-thecl_param_t* param_null_new(
-    void);
+
+thecl_param_t* param_sp_new(void);
+thecl_param_t* param_sp2_new(void);
+thecl_param_t* param_val_new(int val);
+thecl_param_t* param_var_new(char* var);
+thecl_param_t* param_null_new(void);
 
 /* Miscellaneous version functions */
 
@@ -392,8 +392,7 @@ bool is_post_c2(
 
 /* Instruction functions */
 
-thecl_instr_t* thecl_instr_new(
-    void);
+thecl_instr_t* thecl_instr_new(void);
 
 thecl_instr_t* thecl_instr_label(
     unsigned int offset);
@@ -418,8 +417,7 @@ label_offset(
 
 /* TODO: Subroutine creation and deletion functions. */
 
-thecl_t* thecl_new(
-    void);
+thecl_t* thecl_new(void);
 
 /* GOOL functions */
 

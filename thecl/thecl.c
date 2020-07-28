@@ -411,6 +411,26 @@ param_val_new(
 }
 
 thecl_param_t*
+param_sp_new(void)
+{
+    thecl_param_t* param = param_new('S');
+    param->value.val.S = 0x1F;
+    param->val_type = PARAM_FIELD;
+    param->object_link = 0;
+    return param;
+}
+
+thecl_param_t*
+param_sp2_new(void)
+{
+    thecl_param_t* param = param_new('S');
+    param->value.val.S = 1;
+    param->val_type = PARAM_FIELD;
+    param->object_link = -2;
+    return param;
+}
+
+thecl_param_t*
 param_var_new(
     char* var)
 {

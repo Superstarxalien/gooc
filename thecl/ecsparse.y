@@ -120,6 +120,10 @@ static void expression_optimize(parser_state_t* state, expression_t* expr);
     expression_operation_new(state, a, (expression_t*[]){ A, NULL })
 #define EXPR_VAL(val) \
     expression_val_new(state, val)
+#define EXPR_SP() \
+    expression_load_new(state, param_sp_new())
+#define EXPR_NULL() \
+    expression_load_new(state, param_null_new())
 
 static expression_t *expression_copy(expression_t *expr);
 static void expression_create_goto(parser_state_t *state, int type, char *labelstr, expression_t* cond);
@@ -187,11 +191,6 @@ static void var_shorthand_assign(parser_state_t* state, thecl_param_t* param, ex
 static void label_create(parser_state_t* state, char* label);
 /* Returns the spawn of the given name, or NULL if it doesn't exist */
 static thecl_spawn_t* spawn_get(parser_state_t* state, const char* name);
-
-/* Creates a new param equivalent to a GOOL stack push/pop operand */
-static thecl_param_t* param_sp_new(void);
-/* Creates a new param equivalent to a GOOL double stack pop operand */
-static thecl_param_t* param_sp2_new(void);
 
 /* Returns the result of a math operation */
 static int math_preprocess(parser_state_t* state, int symbol, int val1, int val2);
@@ -1699,18 +1698,12 @@ Instruction:
                 free_expr = false;
             }
             else {
-                list_t* param_list = convert_expr_list_to_params(state, $3);
                 const gool_ins_t* gool_ins = gool_ins_get_by_name(state->version, $1);
                 if (gool_ins) {
-                    instr_create_gool_ins(state, gool_ins, param_list);
+                    instr_create_gool_ins(state, gool_ins, $3);
                 }
                 else {
-                    const expr_t* expr = expr_get_by_symbol(state->version, CALL);
-                    instr_create_call(state, expr->id, strdup($1), param_list);
-                    if (param_list != NULL) {
-                        list_free_nodes(param_list);
-                        free(param_list);
-                    }
+                    instr_create_call(state, expr_get_by_symbol(state->version, CALL)->id, strdup($1), $3);
                 }
             }
         }
@@ -1863,8 +1856,8 @@ ExpressionSubset:
     | Expression "<="  Expression { $$ = EXPR_2(LTEQ,     $1, $3); }
     | Expression ">"   Expression { $$ = EXPR_2(GT,       $1, $3); }
     | Expression ">="  Expression { $$ = EXPR_2(GTEQ,     $1, $3); }
-    | "!" Expression              { $$ = EXPR_2(NOT,      expression_load_new(state, param_sp_new()), $2); }
-    | "~" Expression              { $$ = EXPR_2(B_NOT,    expression_load_new(state, param_sp_new()), $2); }
+    | "!" Expression              { $$ = EXPR_2(NOT,      EXPR_SP(), $2); }
+    | "~" Expression              { $$ = EXPR_2(B_NOT,    EXPR_SP(), $2); }
     | Expression "||"  Expression { $$ = EXPR_2(OR,       $1, $3); }
     | Expression "&&"  Expression { $$ = EXPR_2(AND,      $1, $3); }
     | Expression "^"   Expression { $$ = EXPR_2(XOR,      $1, $3); }
@@ -1875,12 +1868,12 @@ ExpressionSubset:
     | Expression "\\"  Expression { $$ = EXPR_2(TEST,     $1, $3); }
     | Expression "!="  Expression {
         $$ = EXPR_2(EQUAL,  $1, $3);
-        $$ = EXPR_2(NOT,      expression_load_new(state, param_sp_new()), $$);
+        $$ = EXPR_2(NOT,      EXPR_SP(), $$);
       }
     | "+" Expression %prec UADD      { $$ = $2; }
     | "-" Expression %prec USUBTRACT { $$ = EXPR_2(SUBTRACT, EXPR_VAL(0), $2); }
-    | "abs" "(" Expression ")"    { $$ = EXPR_2(ABS,      expression_load_new(state, param_sp_new()), $3); }
-    | "getanim" "(" Expression ")"{ $$ = EXPR_2(GETANIM,  expression_load_new(state, param_sp_new()), EXPR_2(LSHIFT, $3, EXPR_VAL(8))); }
+    | "abs" "(" Expression ")"    { $$ = EXPR_2(ABS,      EXPR_SP(), $3); }
+    | "getanim" "(" Expression ")"{ $$ = EXPR_2(GETANIM,  EXPR_SP(), EXPR_2(LSHIFT, $3, EXPR_VAL(8))); }
     | "seek" "(" Expression "," Expression "," Expression ")"     { $$ = EXPR_3(SEEK, $3, $5, $7); }
     | "seek" "(" Expression "," Expression ")"                    { $$ = EXPR_2(SEEK, $3, $5); }
     | "degseek" "(" Expression "," Expression "," Expression ")"  { $$ = EXPR_3(DEGSEEK, $3, $5, $7); }
@@ -1911,19 +1904,19 @@ ExpressionSubset:
     | "dirbuffer" "(" Expression "," Expression ")"               { $$ = EXPR_5(PAD, EXPR_VAL(0), EXPR_VAL(0), EXPR_VAL(3), $3, $5); }
     | "spd" "(" Expression "," Expression ")"                     { $$ = EXPR_2(SPD, $3, $5); }
     | "spd" "(" Expression ")"                                    { $$ = EXPR_2(SPD, EXPR_VAL(0), $3); }
-    | "sin" "(" Expression "," Expression ")"                     { $$ = EXPR_2(PSIN, $3, $5); }
-    | "sin" "(" Expression ")"                                    { $$ = EXPR_2(SIN, expression_load_new(state, param_sp_new()), $3); }
-    | "cos" "(" Expression ")"                                    { $$ = EXPR_2(COS, expression_load_new(state, param_sp_new()), $3); }
-    | "fieldval" "(" Expression ")"                               { $$ = EXPR_2(FVAL, expression_load_new(state, param_sp_new()), $3); }
-    | "fieldrow" "(" Expression "," Expression ")"                { $$ = EXPR_2(FROW, $3, $5); }
+    | "sin" "(" Expression "," Expression ")"                     { $$ = EXPR_2(PSIN,$3, $5); }
+    | "sin" "(" Expression ")"                                    { $$ = EXPR_2(SIN, EXPR_SP(), $3); }
+    | "cos" "(" Expression ")"                                    { $$ = EXPR_2(COS, EXPR_SP(), $3); }
+    | "fieldval" "(" Expression ")"                               { $$ = EXPR_2(FVAL,EXPR_SP(), $3); }
+    | "fieldrow" "(" Expression "," Expression ")"                { $$ = EXPR_2(FROW,$3, $5); }
     | Address "[" Expression "]"                                  { if (!is_post_c2(state->version)) $$ = EXPR_4(MISC, expression_load_new(state, $1), EXPR_VAL(5), $3, EXPR_VAL(0));
                                                                     else $$ = EXPR_2(ARRL, expression_load_new(state, $1), $3);
                                                                   }
     | "getval" "(" Expression "," Expression ")"                  { if (!is_post_c2(state->version)) $$ = EXPR_4(MISC, $3, EXPR_VAL(5), $5, EXPR_VAL(0));
                                                                     else $$ = EXPR_2(ARRL, expression_load_new(state, $3), $5);
                                                                   }
-    | "distance" "(" Expression ")"                               { $$ = EXPR_4(MISC, expression_load_new(state, param_null_new()), $3, EXPR_VAL(0), EXPR_VAL(1)); }
-    | "distance" "(" Expression "," Expression ")"                { $$ = EXPR_4(MISC, expression_load_new(state, param_null_new()), $3, $5, EXPR_VAL(1)); }
+    | "distance" "(" Expression ")"                               { $$ = EXPR_4(MISC, EXPR_NULL(), $3, EXPR_VAL(0), EXPR_VAL(1)); }
+    | "distance" "(" Expression "," Expression ")"                { $$ = EXPR_4(MISC, EXPR_NULL(), $3, $5, EXPR_VAL(1)); }
     | "atan" "(" Expression "," Expression ")"                    { $$ = EXPR_2(ATAN, $3, $5); }
     | "atan2" "(" Expression "," Expression ")"                   { $$ = EXPR_4(MISC, $5, $3, EXPR_VAL(0), EXPR_VAL(2)); }
     | "atan2" "(" Expression ")"                                  { $$ = EXPR_4(MISC, $3, EXPR_VAL(0), EXPR_VAL(0), EXPR_VAL(2)); }
@@ -1934,7 +1927,7 @@ ExpressionSubset:
         }
         $$ = EXPR_4(MISC, $5, $3, EXPR_VAL(0), EXPR_VAL(3));
       }
-    | "atan2_obj" "(" Expression ")"                              { if (!is_post_c2(state->version)) $$ = EXPR_4(MISC, expression_load_new(state, param_null_new()), $3, EXPR_VAL(0), EXPR_VAL(5)); }
+    | "atan2_obj" "(" Expression ")"                              { if (!is_post_c2(state->version)) $$ = EXPR_4(MISC, EXPR_NULL(), $3, EXPR_VAL(0), EXPR_VAL(5)); }
     | "distance" "(" Expression "," Expression "," Expression ")" { $$ = EXPR_4(MISC, $3, $5, $7, EXPR_VAL(6)); }
     | "objectget" "(" Expression ")"                              { $$ = EXPR_4(MISC, $3, EXPR_VAL(5), EXPR_VAL(0), EXPR_VAL(7)); }
 
@@ -1962,7 +1955,7 @@ ExpressionSubset:
             $$ = EXPR_2(NTRY, EXPR_VAL(0), EXPR_VAL(5));
         }
       }
-    | "ntry4" "(" ")"                                             { $$ = EXPR_2(NTRY, expression_load_new(state, param_null_new()), EXPR_VAL(4)); }
+    | "ntry4" "(" ")"                                             { $$ = EXPR_2(NTRY, EXPR_NULL(), EXPR_VAL(4)); }
 
     | "getins" "(" Expression ")"                                 { $$ = EXPR_3(MOVC, $3, EXPR_VAL(0), EXPR_VAL(0x1F)); }
 
@@ -2667,30 +2660,22 @@ convert_expr_list_to_params(
         list_for_each(expr_list, expr) {
             param = expr->value;
             if (expr->type == EXPRESSION_VAL && param->val_type != PARAM_POINTER) {
-                param = expr->value;
-            }
-            else if (expr->type == EXPRESSION_COLOR || expr->type == EXPRESSION_GLOBAL
+                //param = param_copy(expr->value);
+            } else if (expr->type == EXPRESSION_COLOR || expr->type == EXPRESSION_GLOBAL
                  || (expr->type == EXPRESSION_VAL && param->val_type == PARAM_POINTER)) {
-                list_prepend_new(&state->expressions, expression_copy(expr));
-
                 param = param_new('S');
                 param->val_type = PARAM_FIELD;
                 param->object_link = 0;
                 param->is_expression_param = 1;
                 param->value.val.S = 0x1F;
-            }
-            else {
-                if (expr->type == EXPRESSION_VAL) {
-                    param = expr->value;
-                } else {
-                    list_prepend_new(&state->expressions, expression_copy(expr));
-
-                    param = param_new('S');
-                    param->val_type = PARAM_FIELD;
-                    param->object_link = 0;
-                    param->is_expression_param = 1;
-                    param->value.val.S = 0x1F;
-                }
+            } else if (expr->type == EXPRESSION_VAL) {
+                //param = param_copy(expr->value);
+            } else {
+                param = param_new('S');
+                param->val_type = PARAM_FIELD;
+                param->object_link = 0;
+                param->is_expression_param = 1;
+                param->value.val.S = 0x1F;
             }
             list_append_new(param_list, param);
         }
@@ -2812,29 +2797,24 @@ instr_create_inline_call(
                     list_append_new(&state->current_sub->lines, line_make_call(line->call.name, inline_expression_list_copy(state, line->call.expr_list, params_org)));
                 }
                 else {
-                    list_t *expr_list, *ins_params;
+                    list_t *expr_list;
                     if (line->call.expr_list) {
                         expr_list = list_new();
                         expression_t* expr;
                         list_for_each(line->call.expr_list, expr) {
                             list_append_new(expr_list, inline_call_replace_params(state, expr, params_org));
                         }
-                        ins_params = convert_expr_list_to_params(state, expr_list);
                     }
                     else {
-                        expr_list = ins_params = NULL;
+                        expr_list = NULL;
                     }
                     expression_t* expr;
                     const gool_ins_t* gool_ins = gool_ins_get_by_name(state->version, line->call.name);
                     if (gool_ins) {
-                        instr_create_gool_ins(state, gool_ins, ins_params);
+                        instr_create_gool_ins(state, gool_ins, expr_list);
                     }
                     else {
-                        instr_create_call(state, expr_get_by_symbol(state->version, CALL)->id, strdup(line->call.name), ins_params);
-                        if (ins_params != NULL) {
-                            list_free_nodes(ins_params);
-                            free(ins_params);
-                        }
+                        instr_create_call(state, expr_get_by_symbol(state->version, CALL)->id, strdup(line->call.name), expr_list);
                     }
 
                     if (expr_list) {
@@ -2982,38 +2962,10 @@ instr_create_call(
     name_param->value.val.z = name;
 
     int argc = 0;
-
     if (params != NULL) {
-        list_node_t* node_expr = state->expressions.tail;
-        thecl_param_t *param;
-        list_for_each(params, param) {
-            if (param->is_expression_param) {
-                expression_t* current_expr = (expression_t*)node_expr->data;
-                list_node_t* last_node = node_expr;
-                node_expr = node_expr->prev;
-
-                if (current_expr->type == EXPRESSION_VAL && !state->mips_mode) {
-                    const expr_t* expr = expr_get_by_id(state->version, current_expr->id);
-                    if (expr->symbol == LOAD) {
-                        param_free(param);
-                        param = current_expr->value;
-                        param->is_expression_param = 0;
-                        list_del(&state->expressions, last_node);
-                        expression_free(current_expr);
-                    }
-                } else if (current_expr->type == EXPRESSION_OP || current_expr->type == EXPRESSION_GLOBAL || current_expr->type == EXPRESSION_COLOR) {
-                    expression_output(state, current_expr);
-                    if (state->top_reg) {
-                        instr_add_delay_slot(state, state->current_sub, MIPS_INSTR_I("sw", state->stack_adjust, state->top_reg->index, get_reg(state->reg_block, "s6")->index));
-                        state->stack_adjust += 4;
-                    }
-                    list_del(&state->expressions, last_node);
-                    expression_free(current_expr);
-                }
-            }
-
-            instr_add(state, state->current_sub, instr_new(state, expr_get_by_symbol(state->version, LOAD)->id, "p", param));
-
+        expression_t* expr;
+        list_for_each(params, expr) {
+            expression_output(state, expr);
             ++argc;
         }
     }
@@ -3031,208 +2983,93 @@ instr_create_gool_ins(
     const gool_ins_t* gool_ins,
     list_t* params)
 {
-    if (gool_ins->varargs != 0) {
-        list_t* param_list = list_new();
-        list_t* arg_list = list_new();
+    list_t* param_list = list_new();
+    list_t* arg_list = list_new();
 
-        int argc = gool_ins->varargs;
-        if (params != NULL) {
-            list_node_t* node, *next_node;
-            list_for_each_node_safe(params, node, next_node) {
-                if (argc-- > 0)
-                    list_append_new(param_list, node->data);
-                else if (gool_ins->reverse_args)
-                    list_prepend_new(arg_list, node->data);
-                else
-                    list_append_new(arg_list, node->data);
+    /* Split expression list into instruction params and extra args */
+    list_node_t* late_node = NULL;
+    if (params != NULL) {
+        int i = 0;
+        list_node_t* node, *next_node;
+        list_for_each_node_safe(params, node, next_node) {
+            if (gool_ins->varargs <= 0 || (i < gool_ins->varargs)) {
+                list_append_new(param_list, node->data);
+                if (i == gool_ins->late_param)
+                    late_node = param_list->tail;
             }
+            else if (gool_ins->reverse_args)
+                list_prepend_new(arg_list, node->data);
+            else
+                list_append_new(arg_list, node->data);
+            ++i;
         }
+    }
 
-        thecl_param_t* param;
-        expression_t* late_expr = NULL;
-        thecl_param_t* late_param = NULL;
-        if (gool_ins->late_param >= 0) {
-            int i = 0;
-            list_node_t* e = state->expressions.tail;
-            list_for_each(param_list, param) {
-                if (i++ == gool_ins->late_param && param->is_expression_param) {
-                    late_expr = e->data;
-                    late_param = param;
-                    list_del(&state->expressions, e);
-                    break;
-                }
-                else if (i - 1 == gool_ins->late_param) {
-                    late_param = param;
-                    break;
-                }
-                else if (param->is_expression_param) {
-                    e = e->prev;
-                }
-            }
+    /* Output the varargs */
+    expression_t* expr;
+    list_for_each(arg_list, expr) {
+        expression_output(state, expr);
+        if (state->top_reg) {
+            instr_add_delay_slot(state, state->current_sub, MIPS_INSTR_I("sw", state->stack_adjust, state->top_reg->index, get_reg(state->reg_block, "s6")->index));
+            state->stack_adjust += 4;
         }
+    }
 
-        list_node_t* expr_node;
-        if (gool_ins->reverse_args)
-            expr_node = state->expressions.head;
-        else
-            expr_node = state->expressions.tail;
-
-        if (!gool_ins->reverse_args) {
-            list_for_each(param_list, param) {
-                if (param->is_expression_param && param != late_param) {
-                    expression_t* expression = expr_node->data;
-                    expression_output(state, expression);
-                    if (state->top_reg) {
-                        instr_add_delay_slot(state, state->current_sub, MIPS_INSTR_I("sw", state->stack_adjust, state->top_reg->index, get_reg(state->reg_block, "s6")->index));
-                        state->stack_adjust += 4;
-                    }
-                    expression_free(expression);
-                    if (gool_ins->reverse_args) {
-                        expr_node = expr_node->next;
-                    }
-                    else {
-                        expr_node = expr_node->prev;
-                    }
-                }
-            }
-        }
-        list_for_each(arg_list, param) {
-            if (!(param->val_type == PARAM_FIELD && param->object_link == 0 && param->value.val.S == 0x1F)) { /* argument is already on the stack */
-                if (param->val_type == PARAM_POINTER) {
-                    instr_add(state, state->current_sub, instr_new(state, expr_get_by_symbol(state->version, PLOAD)->id, "p", param));
-                }
-                else {
-                    if (state->mips_mode) {
-                        expression_t* expression = expression_load_new(state, param);
-                        expression_output(state, expression);
-                        if (state->top_reg) {
-                            instr_add_delay_slot(state, state->current_sub, MIPS_INSTR_I("sw", state->stack_adjust, state->top_reg->index, get_reg(state->reg_block, "s6")->index));
-                            state->stack_adjust += 4;
-                        }
-                        expression_free(expression);
-                    }
-                    else {
-                        instr_add(state, state->current_sub, instr_new(state, expr_get_by_symbol(state->version, LOAD)->id, "p", param));
-                    }
-                }
-            }
-            else if (param->is_expression_param) {
-                expression_t* expression = expr_node->data;
-                expression_output(state, expression);
-                if (state->top_reg) {
-                    instr_add_delay_slot(state, state->current_sub, MIPS_INSTR_I("sw", state->stack_adjust, state->top_reg->index, get_reg(state->reg_block, "s6")->index));
-                    state->stack_adjust += 4;
-                }
-                expression_free(expression);
-                if (gool_ins->reverse_args) {
-                    expr_node = expr_node->next;
-                }
-                else {
-                    expr_node = expr_node->prev;
-                }
-            }
-        }
-        if (gool_ins->reverse_args) {
-            list_for_each(param_list, param) {
-                if (param->is_expression_param) {
-                    expression_t* expression = expr_node->data;
-                    expression_output(state, expression);
-                    if (state->top_reg) {
-                        instr_add_delay_slot(state, state->current_sub, MIPS_INSTR_I("sw", state->stack_adjust, state->top_reg->index, get_reg(state->reg_block, "s6")->index));
-                        state->stack_adjust += 4;
-                    }
-                    expression_free(expression);
-                    if (gool_ins->reverse_args) {
-                        expr_node = expr_node->next;
-                    }
-                    else {
-                        expr_node = expr_node->prev;
-                    }
-                }
-            }
-        }
-        list_free_nodes(&state->expressions);
-
-        if (late_param) {
-            if ((late_expr && late_expr->type != EXPRESSION_VAL) || (late_param->val_type == PARAM_FIELD && late_param->object_link != 0) || (late_param->val_type == PARAM_LITERAL && late_param->object_link != -1) || (late_param->val_type != PARAM_LITERAL && late_param->val_type != PARAM_FIELD) || late_param->value.val.S < 0 || late_param->value.val.S > 0x3F) {
-                if (late_expr) {
-                    expression_output(state, late_expr);
-                    if (state->top_reg) {
-                        instr_add_delay_slot(state, state->current_sub, MIPS_INSTR_I("sw", state->stack_adjust, state->top_reg->index, get_reg(state->reg_block, "s6")->index));
-                        state->stack_adjust += 4;
-                    }
-                    expression_free(late_expr);
-                }
-                late_param->val_type = PARAM_FIELD;
-                late_param->object_link = 0;
-                late_param->value.val.S = 0x1F;
-            }
-        }
-
-        instr_add(state, state->current_sub, instr_new_list(state, gool_ins->id, gool_ins->param_list_validate(param_list, list_count(arg_list))));
-
-        if (gool_ins->pop_args) {
-            if (argc = list_count(arg_list)) {
-                if (state->mips_mode) {
-                    state->stack_adjust -= argc * 4;
-                    mips_stack_adjust(state, state->current_sub);
-                }
-                else {
-                    instr_add(state, state->current_sub, instr_new(state, expr_get_by_symbol(state->version, GOTO)->id, "SSSSS", 0, argc, 0x25, 0, 0));
-                }
-            }
-        }
-
-        list_free_nodes(param_list);
-        free(param_list);
-
-        list_free_nodes(arg_list);
-        free(arg_list);
+    /* Set the late expr to NULL if it does not need to be output */
+    expression_t* late_expr = late_node ? late_node->data : NULL;
+    thecl_param_t* late_param = (late_expr && late_expr->type == EXPRESSION_VAL) ? late_expr->value : NULL;
+    if (late_expr && (!late_param || (late_param && !((late_param->val_type == PARAM_FIELD && late_param->object_link == 0 && late_param->value.val.S >= 0 && late_param->value.val.S <= 0x3F) || late_param->val_type == PARAM_LITERAL)))) {
+        late_node->data = EXPR_SP();
     }
     else {
-        expression_t* expression;
-        list_for_each(&state->expressions, expression) {
-            expression_output(state, expression);
+        late_expr = NULL;
+    }
+
+    /* Output instruction parameters */
+    list_t* ins_params = convert_expr_list_to_params(state, param_list);
+    list_node_t* expr_node = params ? params->head : NULL;
+    thecl_param_t* param;
+    list_for_each(ins_params, param) {
+        if (param->is_expression_param) {
+            expression_output(state, expr_node->data);
             if (state->top_reg) {
                 instr_add_delay_slot(state, state->current_sub, MIPS_INSTR_I("sw", state->stack_adjust, state->top_reg->index, get_reg(state->reg_block, "s6")->index));
                 state->stack_adjust += 4;
             }
-            expression_free(expression);
         }
-        list_free_nodes(&state->expressions);
-
-        if (gool_ins->late_param >= 0) {
-            thecl_param_t* param = NULL;
-            int i = 0;
-            list_for_each(params, param) {
-                if (i++ == gool_ins->late_param && !param->is_expression_param) {
-                    break;
-                }
-                param = NULL;
-            }
-
-            if (param && (param->val_type != PARAM_FIELD || param->object_link != 0 || param->value.val.S < 0 || param->value.val.S > 0x3F)) {
-                expression_t* expression = expression_load_new(state, param);
-                expression_output(state, expression);
-                if (state->top_reg) {
-                    instr_add_delay_slot(state, state->current_sub, MIPS_INSTR_I("sw", state->stack_adjust, state->top_reg->index, get_reg(state->reg_block, "s6")->index));
-                    state->stack_adjust += 4;
-                }
-                expression_free(expression);
-                param->val_type = PARAM_FIELD;
-                param->object_link = 0;
-                param->value.val.S = 0x1F;
-            }
-        }
-        if (!params) {
-            params = list_new();
-        }
-        instr_add(state, state->current_sub, instr_new_list(state, gool_ins->id, gool_ins->param_list_validate(params, 0)));
+        expr_node = expr_node->next;
     }
-    if (params) {
-        list_free_nodes(params);
-        free(params);
+
+    /* Output the late parameter */
+    if (late_expr) {
+        expression_output(state, late_expr);
+        if (state->top_reg) {
+            instr_add_delay_slot(state, state->current_sub, MIPS_INSTR_I("sw", state->stack_adjust, state->top_reg->index, get_reg(state->reg_block, "s6")->index));
+            state->stack_adjust += 4;
+        }
+        expression_free(late_node->data);
     }
+    instr_add(state, state->current_sub, instr_new_list(state, gool_ins->id, gool_ins->param_list_validate(ins_params, list_count(arg_list))));
+    list_free_nodes(ins_params);
+    free(ins_params);
+
+    if (gool_ins->pop_args) {
+        int argc = list_count(arg_list);
+        if (argc) {
+            if (state->mips_mode) {
+                state->stack_adjust -= argc * 4;
+                mips_stack_adjust(state, state->current_sub);
+            }
+            else {
+                instr_add(state, state->current_sub, instr_new(state, expr_get_by_symbol(state->version, GOTO)->id, "SSSSS", 0, argc, 0x25, 0, 0));
+            }
+        }
+    }
+
+    list_free_nodes(param_list);
+    free(param_list);
+    list_free_nodes(arg_list);
+    free(arg_list);
 }
 
 static mips_reg_t*
@@ -4279,7 +4116,7 @@ expression_optimize(
                 list_free_nodes(&expression->children);
 
                 expression->id = expr_get_by_symbol(state->version, NOT)->id;
-                list_append_new(&expression->children, expression_load_new(state, param_sp_new()));
+                list_append_new(&expression->children, EXPR_SP());
                 list_append_new(&expression->children, zero_expr == child_expr_1 ? child_expr_2 : child_expr_1);
             }
         }
@@ -5132,26 +4969,6 @@ anim_create_anim_c2(
     anim_header->size = anim_size;
     anim_header->anim = anim;
     list_append_new(&state->main_ecl->anims, anim_header);
-}
-
-static thecl_param_t*
-param_sp_new(void)
-{
-    thecl_param_t* param_sp = param_new('S');
-    param_sp->val_type = PARAM_FIELD;
-    param_sp->object_link = 0;
-    param_sp->value.val.S = 0x1F;
-    return param_sp;
-}
-
-static thecl_param_t*
-param_sp2_new(void)
-{
-    thecl_param_t* param_sp = param_new('S');
-    param_sp->val_type = PARAM_FIELD;
-    param_sp->object_link = -2;
-    param_sp->value.val.S = 1;
-    return param_sp;
 }
 
 void
