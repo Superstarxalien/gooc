@@ -491,10 +491,12 @@ extern char* g_module_fmt;
 extern bool g_warn_deprecate_getcolor;
 extern bool g_warn_deprecate_setcolor;
 extern bool g_warn_deprecate_setfield;
+extern bool g_warn_deprecate_getfield;
 
 /* Expression functions */
 
 void expression_free(expression_t* expr);
+bool expression_is_number(expression_t* expr);
 
 /* Returns macro of the given name, or NULL if the macro doesn't exist */
 expr_macro_t* macro_get(parser_state_t* state, const char* name);

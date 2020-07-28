@@ -1927,8 +1927,13 @@ ExpressionSubset:
     | "atan" "(" Expression "," Expression ")"                    { $$ = EXPR_2(ATAN, $3, $5); }
     | "atan2" "(" Expression "," Expression ")"                   { $$ = EXPR_4(MISC, $5, $3, EXPR_VAL(0), EXPR_VAL(2)); }
     | "atan2" "(" Expression ")"                                  { $$ = EXPR_4(MISC, $3, EXPR_VAL(0), EXPR_VAL(0), EXPR_VAL(2)); }
-    | "getfield" "(" Expression "," Expression ")"                { $$ = EXPR_4(MISC, $5, $3, EXPR_VAL(0), EXPR_VAL(3)); }
-
+    | "getfield" "(" Expression "," Expression ")" {
+        if (expression_is_number($3) && g_warn_deprecate_setfield) {
+            fprintf(stderr, "%s:%s:getfield: deprecate use of literals as field offset. use as address instead (i.e. 'parent->ObjVar1')\n", argv0, current_input);
+            g_warn_deprecate_setfield = false;
+        }
+        $$ = EXPR_4(MISC, $5, $3, EXPR_VAL(0), EXPR_VAL(3));
+      }
     | "atan2_obj" "(" Expression ")"                              { if (!is_post_c2(state->version)) $$ = EXPR_4(MISC, expression_load_new(state, param_null_new()), $3, EXPR_VAL(0), EXPR_VAL(5)); }
     | "distance" "(" Expression "," Expression "," Expression ")" { $$ = EXPR_4(MISC, $3, $5, $7, EXPR_VAL(6)); }
     | "objectget" "(" Expression ")"                              { $$ = EXPR_4(MISC, $3, EXPR_VAL(5), EXPR_VAL(0), EXPR_VAL(7)); }
@@ -2132,13 +2137,6 @@ int_has_bit(
         if (v == (1 << i)) return true;
     }
     return false;
-}
-
-static bool
-expression_is_number(
-    expression_t* expr)
-{
-    return expr->type == EXPRESSION_VAL && expr->value->val_type == PARAM_LITERAL;
 }
 
 static bool

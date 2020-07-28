@@ -52,6 +52,7 @@ char* g_module_fmt = NULL;
 bool g_warn_deprecate_getcolor = true;
 bool g_warn_deprecate_setcolor = true;
 bool g_warn_deprecate_setfield = true;
+bool g_warn_deprecate_getfield = true;
 
 #define PI 3.1415926535897932384626433832795028841971693993751058209749445923078164062
 short sine_table[1025];
@@ -469,6 +470,13 @@ expression_free(
         list_free_nodes(&expr->children);
     }
     free(expr);
+}
+
+bool
+expression_is_number(
+    expression_t* expr)
+{
+    return expr->type == EXPRESSION_VAL && expr->value->val_type == PARAM_LITERAL;
 }
 
 expr_macro_t*
