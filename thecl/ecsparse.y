@@ -2660,7 +2660,6 @@ convert_expr_list_to_params(
         list_for_each(expr_list, expr) {
             param = expr->value;
             if (expr->type == EXPRESSION_VAL && param->val_type != PARAM_POINTER) {
-                //param = param_copy(expr->value);
             } else if (expr->type == EXPRESSION_COLOR || expr->type == EXPRESSION_GLOBAL
                  || (expr->type == EXPRESSION_VAL && param->val_type == PARAM_POINTER)) {
                 param = param_new('S');
@@ -2669,7 +2668,6 @@ convert_expr_list_to_params(
                 param->is_expression_param = 1;
                 param->value.val.S = 0x1F;
             } else if (expr->type == EXPRESSION_VAL) {
-                //param = param_copy(expr->value);
             } else {
                 param = param_new('S');
                 param->val_type = PARAM_FIELD;
