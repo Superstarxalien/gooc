@@ -2141,6 +2141,14 @@ expression_is_number(
     return expr->type == EXPRESSION_VAL && expr->value->val_type == PARAM_LITERAL;
 }
 
+static bool
+var_is_valid_field_ref(
+    parser_state_t* state,
+    thecl_param_t* param)
+{
+    return param->val_type == PARAM_FIELD && ((param->object_link == 0 && param->value.val.S <= 0x1FF && param->value.val.S >= 0) || (param->object_link >= 1 && param->object_link <= 7 && param->value.val.S <= 0x3F && param->value.val.S >= 0) || param->object_link == -1 || param->object_link == -2 || param->object_link == -3);
+}
+
 static thecl_instr_t*
 instr_init(
     parser_state_t* state)
@@ -2977,7 +2985,6 @@ instr_create_call(
 
     int argc = 0;
 
-    /* Add parameter casts */
     if (params != NULL) {
         list_node_t* node_expr = state->expressions.tail;
         thecl_param_t *param;
@@ -3280,6 +3287,10 @@ expression_load_new(
         expr = expr_get_by_symbol(state->version, CLOAD);
         ret->type = EXPRESSION_COLOR;
     }
+    else if (value->val_type == PARAM_FIELD && !var_is_valid_field_ref(state, value)) {
+        expr = expr_get_by_symbol(state->version, MISC);
+        ret->type = EXPRESSION_XVAL;
+    }
     else {
         expr = expr_get_by_symbol(state->version, LOAD);
         ret->type = EXPRESSION_VAL;
@@ -3364,7 +3375,7 @@ expression_copy(
     if (expr->type == EXPRESSION_OP || expr->type == EXPRESSION_TERNARY) {
         list_for_each(&expr->children, child_expr)
             list_append_new(&copy->children, expression_copy(child_expr));
-    } else if (expr->type == EXPRESSION_VAL) {
+    } else if (expr->type == EXPRESSION_VAL || expr->type == EXPRESSION_XVAL) {
         copy->value = param_copy(expr->value);
     }
     return copy;
@@ -3471,8 +3482,11 @@ expression_mips_load(
         else if (param->object_link == -1) { /* stack */
             instr_add_delay_slot(state, state->current_sub, MIPS_INSTR_I("lw", val * 4, reg->index, get_reg(state->reg_block, "s7")->index));
         }
+        else if (expr->type == EXPRESSION_XVAL) {
+            instr_add(state, state->current_sub, instr_new(state, expr->id, "SSSS", param->value.val.S << 8, param->object_link, 0, 3));
+        }
         else { /* other */
-            instr_add(state, state->current_sub, instr_new(state, expr->id, "p", expr->value));
+            instr_add(state, state->current_sub, instr_new(state, expr->id, "p", param));
         }
     }
     else if (param->val_type == PARAM_GLOBAL) { /* global */
@@ -3494,7 +3508,7 @@ expression_mips_load(
         }
     }
     else if (param->val_type == PARAM_POINTER) { /* pointer */
-        instr_add(state, state->current_sub, instr_new(state, expr->id, "p", expr->value));
+        instr_add(state, state->current_sub, instr_new(state, expr->id, "p", param));
     }
     state->top_reg = reg;
 }
@@ -3953,7 +3967,7 @@ expression_output_mips(
     parser_state_t* state,
     expression_t* expr)
 {
-    if (expr->type == EXPRESSION_VAL || expr->type == EXPRESSION_GLOBAL || expr->type == EXPRESSION_COLOR) {
+    if (expr->type == EXPRESSION_VAL || expr->type == EXPRESSION_XVAL || expr->type == EXPRESSION_GLOBAL || expr->type == EXPRESSION_COLOR) {
         expression_mips_load(state, expr);
     }
     else if (expr->type == EXPRESSION_OP) {
@@ -4002,6 +4016,8 @@ expression_output(
 
     if (expr->type == EXPRESSION_VAL) {
         instr_add(state, state->current_sub, instr_new(state, expr->id, "p", expr->value));
+    } else if (expr->type == EXPRESSION_XVAL) {
+        instr_add (state, state->current_sub, instr_new(state, expr->id, "SSSS", expr->value->value.val.S << 8, expr->value->object_link, 0, 3));
     } else if (expr->type == EXPRESSION_GLOBAL) {
         instr_add(state, state->current_sub, instr_new(state, expr->id, "S", expr->value->value.val.S));
     } else if (expr->type == EXPRESSION_COLOR) {
@@ -4811,14 +4827,6 @@ arg_exists(
         yyerror(state, "attempted to find argument outside sub scope: %s", name);
 
     return arg_get(state, sub, name) != NULL;
-}
-
-static bool
-var_is_valid_field_ref(
-    parser_state_t* state,
-    thecl_param_t* param)
-{
-    return param->val_type == PARAM_FIELD && ((param->object_link == 0 && param->value.val.S <= 0x1FF && param->value.val.S >= 0) || (param->object_link >= 1 && param->object_link <= 7 && param->value.val.S <= 0x3F && param->value.val.S >= 0) || param->object_link == -1 || param->object_link == -2 || param->object_link == -3);
 }
 
 static int

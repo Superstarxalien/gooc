@@ -143,6 +143,7 @@ typedef struct {
 enum expression_type {
     EXPRESSION_OP,
     EXPRESSION_VAL,
+    EXPRESSION_XVAL,
     EXPRESSION_GLOBAL,
     EXPRESSION_COLOR,
     EXPRESSION_TERNARY
