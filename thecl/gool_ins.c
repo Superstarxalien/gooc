@@ -412,6 +412,10 @@ c1_gool_ins_setfield_params(
     list_t* params,
     int argc)
 {
+    if (g_warn_deprecate_setfield) {
+        fprintf(stderr, "%s:%s:setfield: deprecate function. use as address instead (i.e. 'ObjVar1 = 10.5')\n", argv0, current_input);
+        g_warn_deprecate_setfield = false;
+    }
     thecl_param_t* param;
     size_t c = list_count(params);
     if (c == 2 && argc == 1) {

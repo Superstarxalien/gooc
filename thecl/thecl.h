@@ -489,6 +489,7 @@ extern char* g_module_fmt;
 
 extern bool g_warn_deprecate_getcolor;
 extern bool g_warn_deprecate_setcolor;
+extern bool g_warn_deprecate_setfield;
 
 /* Expression functions */
 

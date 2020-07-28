@@ -51,6 +51,7 @@ char* g_module_fmt = NULL;
 
 bool g_warn_deprecate_getcolor = true;
 bool g_warn_deprecate_setcolor = true;
+bool g_warn_deprecate_setfield = true;
 
 #define PI 3.1415926535897932384626433832795028841971693993751058209749445923078164062
 short sine_table[1025];

@@ -1984,7 +1984,6 @@ Address:
         thecl_spawn_t* spawn;
         const field_t* field;
         size_t anim_offset;
-        field_t* objfield;
         if (var_exists(state, state->current_sub, $1)) {
             $$ = param_new('S');
             $$->val_type = PARAM_FIELD;
@@ -2010,10 +2009,10 @@ Address:
         } else if (field = event_get(state->version, $1)) {
             $$ = param_new('S');
             $$->value.val.S = field->offset << 8;
-        } else if (objfield = objfield_get(state, $1)) {
+        } else if (field = objfield_get(state, $1)) {
             $$ = param_new('S');
             $$->val_type = PARAM_FIELD;
-            $$->value.val.S = objfield->offset + 64;
+            $$->value.val.S = field->offset + 64;
             $$->object_link = 0;
         } else if (spawn = spawn_get(state, $1)) {
             $$ = param_new('S');
@@ -2029,13 +2028,11 @@ Address:
         free($1);
       }
     | IDENTIFIER "->" IDENTIFIER {
+        const field_t* color = NULL, *objfield = NULL;
         const field_t* link = field_get($1);
         const field_t* field = field_get($3);
-        bool color = false;
-        if (field == NULL) {
-            field = color_get(state->version, $3);
-            color = true;
-        }
+        if (field == NULL) objfield = field = objfield_get(state, $3);
+        if (field == NULL) color = field = color_get(state->version, $3);
         if (link == NULL) {
             yyerror(state, "object link not found: %s", $1);
             free($1);
@@ -2051,12 +2048,12 @@ Address:
         if (link->offset >= 8 || link->offset < 0) {
             yyerror(state, "invalid object link: %s", $1);
         }
-        if (field->offset > 0x3F || field->offset < 0) {
-            yyerror(state, "invalid object field: %s", $1);
-        }
+        int field_off = 0, field_type = PARAM_FIELD;
+        if (field == objfield) { field_off = 64; }
+        else if (field == color) { field_type = PARAM_COLOR; }
         $$ = param_new('S');
-        $$->val_type = color ? PARAM_COLOR : PARAM_FIELD;
-        $$->value.val.S = field->offset;
+        $$->val_type = field_type;
+        $$->value.val.S = field->offset + field_off;
         $$->object_link = link->offset;
         free($1);
         free($3);
@@ -4816,6 +4813,14 @@ arg_exists(
     return arg_get(state, sub, name) != NULL;
 }
 
+static bool
+var_is_valid_field_ref(
+    parser_state_t* state,
+    thecl_param_t* param)
+{
+    return param->val_type == PARAM_FIELD && ((param->object_link == 0 && param->value.val.S <= 0x1FF && param->value.val.S >= 0) || (param->object_link >= 1 && param->object_link <= 7 && param->value.val.S <= 0x3F && param->value.val.S >= 0) || param->object_link == -1 || param->object_link == -2 || param->object_link == -3);
+}
+
 static int
 var_exists(
     parser_state_t* state,
@@ -4843,7 +4848,7 @@ var_assign(
     }
     const expr_t* expr = expr_get_by_id(state->version, expr_assign->id);
     thecl_param_t* src_param = expr != NULL && expr->is_unary ? ((expression_t*)list_head(&expr_assign->children))->value : NULL;
-    if (param->val_type == PARAM_FIELD && src_param && src_param->value.val.S == 0x1F && src_param->val_type == PARAM_FIELD && src_param->object_link == 0) {
+    if (var_is_valid_field_ref(state, param) && src_param && src_param->value.val.S == 0x1F && src_param->val_type == PARAM_FIELD && src_param->object_link == 0) {
         src_param->value.val.S = param->value.val.S;
         src_param->object_link = param->object_link;
         if (param->object_link == -1 && param->value.val.S >= 3) {
@@ -4879,14 +4884,18 @@ var_assign(
         }
     }
     else {
-        if (expr_assign->type == EXPRESSION_VAL && (param->val_type == PARAM_FIELD || ((param->val_type == PARAM_GLOBAL || param->val_type == PARAM_COLOR) && !expr->is_unary))) {
+        if (!var_is_valid_field_ref(state, param) && param->val_type == PARAM_FIELD) {
+            expression_output(state, expr_assign);
+            instr_add(state, state->current_sub, instr_new(state, expr_get_by_symbol(state->version, MISC)->id, "SSSS", param->value.val.S << 8, param->object_link, 0, 4));
+        }
+        else if (expr_assign->type == EXPRESSION_VAL && (param->val_type == PARAM_FIELD || ((param->val_type == PARAM_GLOBAL || param->val_type == PARAM_COLOR) && !expr->is_unary))) {
             src_param = expr_assign->value;
         } else {
             expression_output(state, expr_assign);
             src_param = param_sp_new();
         }
         expression_free(expr_assign);
-        if (param->val_type == PARAM_FIELD) {
+        if (var_is_valid_field_ref(state, param)) {
             instr_add(state, state->current_sub, instr_new(state, expr_get_by_symbol(state->version, src_param->val_type == PARAM_POINTER ? PASSIGN : ASSIGN)->id, "pp", param, src_param));
 
             if (param->object_link == -1 && param->value.val.S >= 3) {
