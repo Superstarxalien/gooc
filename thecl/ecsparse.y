@@ -1693,12 +1693,18 @@ Instruction:
             instr_create_inline_call(state, sub, $3);
         }
         else {
-            const gool_ins_t* gool_ins = gool_ins_get_by_name(state->version, $1);
-            if (gool_ins) {
-                instr_create_gool_ins(state, gool_ins, $3);
+            if (state->current_sub->is_inline) {
+                list_append_new(&state->current_sub->lines, line_make_call($1, $3));
+                free_expr = false;
             }
             else {
-                instr_create_call(state, expr_get_by_symbol(state->version, CALL)->id, strdup($1), $3);
+                const gool_ins_t* gool_ins = gool_ins_get_by_name(state->version, $1);
+                if (gool_ins) {
+                    instr_create_gool_ins(state, gool_ins, $3);
+                }
+                else {
+                    instr_create_call(state, expr_get_by_symbol(state->version, CALL)->id, strdup($1), $3);
+                }
             }
         }
         if ($3 && free_expr) {
