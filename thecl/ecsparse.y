@@ -1693,18 +1693,12 @@ Instruction:
             instr_create_inline_call(state, sub, $3);
         }
         else {
-            if (state->current_sub->is_inline) {
-                list_append_new(&state->current_sub->lines, line_make_call($1, $3));
-                free_expr = false;
+            const gool_ins_t* gool_ins = gool_ins_get_by_name(state->version, $1);
+            if (gool_ins) {
+                instr_create_gool_ins(state, gool_ins, $3);
             }
             else {
-                const gool_ins_t* gool_ins = gool_ins_get_by_name(state->version, $1);
-                if (gool_ins) {
-                    instr_create_gool_ins(state, gool_ins, $3);
-                }
-                else {
-                    instr_create_call(state, expr_get_by_symbol(state->version, CALL)->id, strdup($1), $3);
-                }
+                instr_create_call(state, expr_get_by_symbol(state->version, CALL)->id, strdup($1), $3);
             }
         }
         if ($3 && free_expr) {
@@ -2727,12 +2721,11 @@ inline_call_replace_params(
 {
     expr = expression_copy(expr);
 
-    int arg_stack = -1;
     if (params) {
+        int arg_stack = -list_count(params);
         expression_t* param_expr;
-        list_for_each_back(params, param_expr) {
-            expr = expression_replace_var_start(state, expr, arg_stack, param_expr);
-            --arg_stack;
+        list_for_each(params, param_expr) {
+            expr = expression_replace_var_start(state, expr, arg_stack++, param_expr);
         }
     }
 
@@ -2755,9 +2748,7 @@ inline_expression_list_copy(
         }
         return new_list;
     }
-    else {
-        return NULL;
-    }
+    return NULL;
 }
 
 static void
