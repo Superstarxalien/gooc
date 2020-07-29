@@ -4692,8 +4692,8 @@ var_assign(
     if (var_is_valid_field_ref(state, param) && src_param && src_param->value.val.S == 0x1F && src_param->val_type == PARAM_FIELD && src_param->object_link == 0) {
         src_param->value.val.S = param->value.val.S;
         src_param->object_link = param->object_link;
-        if (param->object_link == -1 && param->value.val.S >= 3) {
-            state->current_sub->vars[param->value.val.S - 3]->is_written = true;
+        if (param->object_link == -1 && param->value.val.S - state->current_sub->stack_offset >= 3) {
+            state->current_sub->vars[param->value.val.S - state->current_sub->stack_offset - 3]->is_written = true;
         }
         else if (param->object_link == -1 && param->value.val.S < 0) {
             state->current_sub->args[-param->value.val.S - 1]->is_written = true;
@@ -4717,8 +4717,8 @@ var_assign(
         expression_output(state, expr_assign);
         expression_free(expr_assign);
         mips_instr_new_store(state, param);
-        if (param->object_link == -1 && param->value.val.S >= 3) {
-            state->current_sub->vars[param->value.val.S - 3]->is_written = true;
+        if (param->object_link == -1 && param->value.val.S - state->current_sub->stack_offset >= 3) {
+            state->current_sub->vars[param->value.val.S - state->current_sub->stack_offset - 3]->is_written = true;
         }
         else if (param->object_link == -1 && param->value.val.S < 0) {
             state->current_sub->args[-param->value.val.S - 1]->is_written = true;
@@ -4739,8 +4739,8 @@ var_assign(
         if (var_is_valid_field_ref(state, param)) {
             instr_add(state, state->current_sub, instr_new(state, expr_get_by_symbol(state->version, src_param->val_type == PARAM_POINTER ? PASSIGN : ASSIGN)->id, "pp", param, src_param));
 
-            if (param->object_link == -1 && param->value.val.S >= 3) {
-                state->current_sub->vars[param->value.val.S - 3]->is_written = true;
+            if (param->object_link == -1 && param->value.val.S - state->current_sub->stack_offset >= 3) {
+                state->current_sub->vars[param->value.val.S - state->current_sub->stack_offset - 3]->is_written = true;
             }
             else if (param->object_link == -1 && param->value.val.S < 0) {
                 state->current_sub->args[-param->value.val.S - 1]->is_written = true;
