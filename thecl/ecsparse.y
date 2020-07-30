@@ -101,7 +101,6 @@ static void instr_create_gool_ins(parser_state_t *state, const gool_ins_t *gool_
 static list_t* convert_expr_list_to_params(parser_state_t *state, list_t *expr_list);
 
 static expression_t* expression_load_new(const parser_state_t* state, thecl_param_t* value);
-static expression_t* expression_val_new(const parser_state_t* state, int value);
 static expression_t* expression_pointer_new(const parser_state_t* state, thecl_param_t* value);
 static expression_t* expression_operation_new(const parser_state_t* state, const int symbol, expression_t** operands);
 static expression_t* expression_ternary_new(const parser_state_t* state, expression_t* cond, expression_t* val1, expression_t* val2);
@@ -119,7 +118,7 @@ static void expression_optimize(parser_state_t* state, expression_t* expr);
 #define EXPR_1(a, A) \
     expression_operation_new(state, a, (expression_t*[]){ A, NULL })
 #define EXPR_VAL(val) \
-    expression_val_new(state, val)
+    expression_load_new(state, param_val_new(val))
 #define EXPR_SP() \
     expression_load_new(state, param_sp_new())
 #define EXPR_NULL() \
@@ -491,7 +490,7 @@ Statement:
             gool_pool_force_get_index(state->main_ecl, state->main_ecl->eid);
 
             /* automatically create an expression macro that translates the ename to the GOOL ID */
-            macro_create(state, $2, expression_load_new(state, param_val_new($3)));
+            macro_create(state, $2, EXPR_VAL($3));
         }
         free($1);
         free($2);
@@ -3125,14 +3124,6 @@ expression_load_new(
     ret->id = expr->id;
     ret->value = value;
     return ret;
-}
-
-static expression_t*
-expression_val_new(
-    const parser_state_t* state,
-    int value)
-{
-    return expression_load_new(state, param_val_new(value));
 }
 
 static expression_t*
