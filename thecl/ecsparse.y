@@ -2725,10 +2725,10 @@ inline_call_replace_params(
     expr = expression_copy(expr);
 
     if (params) {
-        int arg_stack = -list_count(params);
+        int arg_stack = -1;
         expression_t* param_expr;
-        list_for_each(params, param_expr) {
-            expr = expression_replace_var_start(state, expr, arg_stack++, param_expr);
+        list_for_each_back(params, param_expr) {
+            expr = expression_replace_var_start(state, expr, arg_stack--, param_expr);
         }
     }
 
