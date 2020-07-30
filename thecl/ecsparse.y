@@ -1117,9 +1117,6 @@ ArgumentDeclaration:
 
 State_Instructions:
     %empty
-    | State_Instructions DIRECTIVE {
-        free($2);
-      }
     | State_Instructions "__transargs" {
         if (state->current_state->trans && state->current_state->event)
             yyerror(state, "useless modifier __transargs, trans and event blocks already defined");
