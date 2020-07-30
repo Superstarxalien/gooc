@@ -4099,9 +4099,9 @@ expression_optimize(
             }
         }
         else if (expr->symbol == EQUAL) {
-            if ((child_expr_1->type == EXPRESSION_VAL && child_expr_1->value->value.val.S == 0) ||
-            (child_expr_2->type == EXPRESSION_VAL && child_expr_2->value->value.val.S == 0)) {
-                expression_t* zero_expr = (child_expr_1->type == EXPRESSION_VAL && child_expr_1->value->value.val.S == 0) ? child_expr_1 : child_expr_2;
+            if ((expression_is_number(child_expr_1) && child_expr_1->value->value.val.S == 0) ||
+            (expression_is_number(child_expr_2) && child_expr_2->value->value.val.S == 0)) {
+                expression_t* zero_expr = (expression_is_number(child_expr_1) && child_expr_1->value->value.val.S == 0) ? child_expr_1 : child_expr_2;
 
                 param_free(zero_expr->value);
                 expression_free(zero_expr);
