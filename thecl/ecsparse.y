@@ -2679,76 +2679,93 @@ convert_expr_list_to_params(
 }
 
 static void
-expression_replace_var(
+expression_clear_inline_arg(
     parser_state_t* state,
-    expression_t* expression,
-    int var_stack,
-    expression_t* replace)
+    expression_t* expr)
 {
-    list_node_t* node;
-    list_for_each_node(&expression->children, node) {
-        expression = node->data;
-        if (expression->type == EXPRESSION_VAL && expression->value->val_type == PARAM_FIELD && expression->value->object_link == -1 && expression->value->value.val.S == var_stack) {
-            expression_free(expression);
-            node->data = expression_copy(replace);
-        }
-        else {
-            expression_replace_var(state, expression, var_stack, replace);
+    expr->is_inline_arg = false;
+}
+
+static void
+expression_cascade_func(
+    parser_state_t* state,
+    expression_t* expr,
+    void (*func)(parser_state_t*, expression_t*))
+{
+    func(state, expr);
+    if (expr->type == EXPRESSION_OP || expr->type == EXPRESSION_TERNARY) {
+        expression_t* e;
+        list_for_each(&expr->children, e) {
+            expression_cascade_func(state, e, func);
         }
     }
 }
 
-static expression_t*
-expression_replace_var_start(
-    parser_state_t* state,
-    expression_t* expression,
-    int var_stack,
-    expression_t* replace)
+static int
+expression_is_inline_replaceable(
+    expression_t* expr,
+    int var_stack)
 {
-    if (expression->type == EXPRESSION_VAL && expression->value->val_type == PARAM_FIELD && expression->value->object_link == -1 && expression->value->value.val.S == var_stack) {
-        expression_free(expression);
-        return expression_copy(replace); /* no point in continuing */
+    return expr->is_inline_arg == false && expr->type == EXPRESSION_VAL && expr->value->val_type == PARAM_FIELD && expr->value->object_link == -1 && expr->value->value.val.S == var_stack;
+}
+
+static expression_t*
+expression_replace_var(
+    parser_state_t* state,
+    int var_stack,
+    expression_t* old,
+    expression_t* new)
+{
+    if (expression_is_inline_replaceable(old, var_stack)) {
+        expression_free(old);
+        new = expression_copy(new);
+        new->is_inline_arg = true;
+        return new; /* no point in continuing */
     }
 
-    expression_replace_var(state, expression, var_stack, replace);
+    list_node_t* node;
+    list_for_each_node(&old->children, node) {
+        node->data = expression_replace_var(state, var_stack, node->data, new);
+    }
 
-    return expression;
+    return old;
 }
 
 static expression_t*
 inline_call_replace_params(
     parser_state_t* state,
-    expression_t* expr,
-    list_t* params)
+    expression_t* old_param,
+    list_t* new_params)
 {
-    expr = expression_copy(expr);
+    old_param = expression_copy(old_param);
 
-    if (params) {
+    if (new_params) {
         int arg_stack = -1;
-        expression_t* param_expr;
-        list_for_each_back(params, param_expr) {
-            expr = expression_replace_var_start(state, expr, arg_stack--, param_expr);
+        expression_t* new_param;
+        list_for_each_back(new_params, new_param) {
+            old_param = expression_replace_var(state, arg_stack--, old_param, new_param);
         }
     }
 
-    expression_optimize(state, expr);
+    expression_optimize(state, old_param);
+    expression_cascade_func(state, old_param, expression_clear_inline_arg);
 
-    return expr;
+    return old_param;
 }
 
 static list_t*
 inline_expression_list_copy(
     parser_state_t* state,
-    list_t* list,
+    list_t* old_params,
     list_t* params)
 {
-    if (list) {
-        list_t* new_list = list_new();
+    if (old_params) {
+        list_t* new_params = list_new();
         expression_t* e;
-        list_for_each(list, e) {
-            list_append_new(new_list, inline_call_replace_params(state, e, params));
+        list_for_each(old_params, e) {
+            list_append_new(new_params, inline_call_replace_params(state, e, params));
         }
-        return new_list;
+        return new_params;
     }
     return NULL;
 }
@@ -3123,6 +3140,7 @@ expression_load_new(
     }
     ret->id = expr->id;
     ret->value = value;
+    ret->is_inline_arg = false;
     return ret;
 }
 
@@ -3136,6 +3154,7 @@ expression_pointer_new(
     ret->type = EXPRESSION_VAL;
     ret->id = expr->id;
     ret->value = value;
+    ret->is_inline_arg = false;
     return ret;
 }
 
@@ -3151,6 +3170,7 @@ expression_operation_new(
     ret->type = EXPRESSION_OP;
     ret->id = expr->id;
     ret->value = NULL;
+    ret->is_inline_arg = false;
     list_init(&ret->children);
     for (size_t o = 0; o < expr->stack_arity; ++o) {
         if (!operands[o] && (!expr->has_double_param || (expr->has_double_param && o != expr->stack_arity - 1))) {

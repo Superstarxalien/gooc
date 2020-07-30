@@ -153,6 +153,7 @@ typedef struct expression_t {
     /* General things. */
     enum expression_type type;
     int id;
+    bool is_inline_arg;
     /* For values: The value. */
     thecl_param_t* value;
     /* For operators: The child expressions. */
