@@ -313,7 +313,6 @@ c1_parse(
 
     state->version = version;
     list_init(&state->delay_slots);
-    list_init(&state->expressions);
     list_init(&state->addresses);
     list_init(&state->block_stack);
     list_init(&state->expr_macros);
