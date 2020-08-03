@@ -339,7 +339,6 @@ c1_parse(
     state->top_reg = NULL;
     state->reg_block = mips_reg_block_new();
     state->declared_tempfields = false;
-    state->state_count = 0;
     state->spawn_count = 0;
 
     state->ignore_block = 0;
@@ -360,6 +359,12 @@ c1_parse(
     }
     list_free_nodes(&state->expr_macros);
     free(state->reg_block);
+
+    int i = 0;
+    thecl_state_t* gstate;
+    list_for_each(&state->main_ecl->states, gstate) {
+        gstate->index = i++;
+    }
 
     return state;
 }

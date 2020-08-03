@@ -4222,7 +4222,6 @@ state_begin(
     gstate->stateflag = 1;
     gstate->statusc = 2;
     gstate->trans_args = false;
-    gstate->index = state->state_count++;
     list_append_new(&state->main_ecl->states, gstate);
 
     state->current_state = gstate;

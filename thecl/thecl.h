@@ -280,7 +280,7 @@ typedef struct {
 
     bool trans_args;
 
-    uint16_t index;
+    int index;
 } thecl_state_t;
 
 typedef struct {
@@ -345,8 +345,7 @@ typedef struct {
     thecl_sub_t* (*find_sub)(thecl_t* ecl, const char* name);
     thecl_sub_t* (*find_sub_overload)(thecl_t* ecl, const char* name, int argc);
 
-    uint16_t state_count;
-    size_t spawn_count;
+    int spawn_count;
 
     list_t expr_macros;
 
