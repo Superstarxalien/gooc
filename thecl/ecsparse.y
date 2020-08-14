@@ -2678,25 +2678,51 @@ convert_expr_list_to_params(
     return param_list;
 }
 
+static thecl_param_t*
+param_adjust_inline_stack(
+    parser_state_t* state,
+    thecl_param_t* param,
+    int stack_adjust)
+{
+    if (param->val_type == PARAM_FIELD && param->object_link == -1 && param->value.val.S >= 3) {
+        param->value.val.S += stack_adjust;
+    }
+    return param;
+}
+
 static void
 expression_clear_inline_arg(
     parser_state_t* state,
-    expression_t* expr)
+    expression_t* expr,
+    void* args)
 {
     expr->is_inline_arg = false;
+}
+
+static void
+expression_adjust_inline_stack(
+    parser_state_t* state,
+    expression_t* expr,
+    void* args)
+{
+    int stack_adjust = *((int*)args);
+    if (expr->type == EXPRESSION_VAL) {
+        param_adjust_inline_stack(state, expr->value, stack_adjust);
+    }
 }
 
 static void
 expression_cascade_func(
     parser_state_t* state,
     expression_t* expr,
-    void (*func)(parser_state_t*, expression_t*))
+    void (*func)(parser_state_t*, expression_t*, void*),
+    void* args)
 {
-    func(state, expr);
+    func(state, expr, args);
     if (expr->type == EXPRESSION_OP || expr->type == EXPRESSION_TERNARY) {
         expression_t* e;
         list_for_each(&expr->children, e) {
-            expression_cascade_func(state, e, func);
+            expression_cascade_func(state, e, func, args);
         }
     }
 }
@@ -2735,9 +2761,11 @@ static expression_t*
 inline_call_replace_params(
     parser_state_t* state,
     expression_t* old_param,
-    list_t* new_params)
+    list_t* new_params,
+    int stack_adjust)
 {
     old_param = expression_copy(old_param);
+    expression_cascade_func(state, old_param, expression_adjust_inline_stack, &stack_adjust);
 
     if (new_params) {
         int arg_stack = -1;
@@ -2748,7 +2776,7 @@ inline_call_replace_params(
     }
 
     expression_optimize(state, old_param);
-    expression_cascade_func(state, old_param, expression_clear_inline_arg);
+    expression_cascade_func(state, old_param, expression_clear_inline_arg, NULL);
 
     return old_param;
 }
@@ -2757,13 +2785,14 @@ static list_t*
 inline_expression_list_copy(
     parser_state_t* state,
     list_t* old_params,
-    list_t* params)
+    list_t* params,
+    int stack_adjust)
 {
     if (old_params) {
         list_t* new_params = list_new();
         expression_t* e;
         list_for_each(old_params, e) {
-            list_append_new(new_params, inline_call_replace_params(state, e, params));
+            list_append_new(new_params, inline_call_replace_params(state, e, params, stack_adjust));
         }
         return new_params;
     }
@@ -2788,12 +2817,13 @@ instr_create_inline_call(
     char name[256], buf[512];
     snprintf(name, 256, "%s_%d_%d_%s_", state->current_sub->name, yylloc.first_line, yylloc.first_column, sub->name);
 
+    int stack_adjust = var_get_new_stack(state, state->current_sub)-3;
     thecl_line_t* line;
     list_for_each(&sub->lines, line) {
         switch (line->type) {
             default: yyerror(state, "invalid line type in sub '%s'", state->current_sub->name); break;
             case LINE_ASSIGNMENT: {
-                var_assign(state, param_copy(line->ass.address), inline_call_replace_params(state, line->ass.expr, params_org));
+                var_assign(state, param_adjust_inline_stack(state, param_copy(line->ass.address), stack_adjust), inline_call_replace_params(state, line->ass.expr, params_org, stack_adjust));
             } break;
             case LINE_LABEL: {
                 snprintf(buf, 512, "%s%s", name, line->name);
@@ -2802,7 +2832,7 @@ instr_create_inline_call(
             case LINE_INSTRUCTION:
             case LINE_CALL: {
                 if (state->current_sub->is_inline) {
-                    list_append_new(&state->current_sub->lines, line_make_call(line->call.name, inline_expression_list_copy(state, line->call.expr_list, params_org)));
+                    list_append_new(&state->current_sub->lines, line_make_call(line->call.name, inline_expression_list_copy(state, line->call.expr_list, params_org, stack_adjust)));
                 }
                 else {
                     list_t *expr_list;
@@ -2810,7 +2840,7 @@ instr_create_inline_call(
                         expr_list = list_new();
                         expression_t* expr;
                         list_for_each(line->call.expr_list, expr) {
-                            list_append_new(expr_list, inline_call_replace_params(state, expr, params_org));
+                            list_append_new(expr_list, inline_call_replace_params(state, expr, params_org, stack_adjust));
                         }
                     }
                     else {
@@ -2841,10 +2871,12 @@ instr_create_inline_call(
                 scope_finish(state, true);
             } break;
             case LINE_VAR_DECL: {
-                var_create(state, state->current_sub, line->var.name, true);
+                snprintf(buf, 512, "%s%s", name, line->var.name);
+                var_create(state, state->current_sub, buf, true);
             } break;
             case LINE_VAR_DECL_ASSIGN: {
-                var_create_assign(state, state->current_sub, line->var.name, inline_call_replace_params(state, line->var.expr, params_org));
+                snprintf(buf, 512, "%s%s", name, line->var.name);
+                var_create_assign(state, state->current_sub, buf, inline_call_replace_params(state, line->var.expr, params_org, stack_adjust));
             } break;
             case LINE_BREAK: {
                 if (state->current_sub->is_inline) {
@@ -2911,7 +2943,7 @@ instr_create_inline_call(
                     const expr_t* color_expr = expr_get_by_symbol(state->version, CLOAD);
                     thecl_param_t *param;
                     list_for_each(line->list, param) {
-                        param = param_copy(param);
+                        param = param_adjust_inline_stack(state, param_copy(param), stack_adjust);
                         list_append_new(&state->addresses, param);
                         switch (param->val_type) {
                             default: instr_add(state, state->current_sub, instr_new(state, local_expr->id, "p", param)); break;
@@ -2949,7 +2981,7 @@ instr_create_inline_call(
             } break;
             case LINE_GOTO: {
                 snprintf(buf, 512, "%s%s", name, line->go.label);
-                expression_create_goto(state, line->go.type, buf, line->go.expr ? inline_call_replace_params(state, line->go.expr, params_org) : NULL);
+                expression_create_goto(state, line->go.type, buf, line->go.expr ? inline_call_replace_params(state, line->go.expr, params_org, stack_adjust) : NULL);
             } break;
         }
     }
