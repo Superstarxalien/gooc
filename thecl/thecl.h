@@ -180,6 +180,7 @@ enum thecl_line_type {
     LINE_BREAK,
     LINE_CONTINUE,
     LINE_RETURN,
+    LINE_RETURN_SUP,
 
     LINE_SAVE_START,
     LINE_SAVE_END

@@ -251,6 +251,7 @@ int yydebug = 0;
 %token SUB "sub"
 %token VAR "var"
 %token RETURN "return"
+%token RETURN_SUP "return_sup"
 %token STATE "state"
 %token CODE "code"
 %token TRANS "trans"
@@ -1793,6 +1794,11 @@ Instruction:
             //state->scope_stack[state->scope_cnt-1].returned = true;
         }
       }
+    | "return_sup" {
+        if (state->current_sub->is_inline) {
+            list_append_new(&state->current_sub->lines, line_make(LINE_RETURN_SUP));
+        }
+      }
     ;
 
 Assignment:
@@ -2931,6 +2937,19 @@ instr_create_inline_call(
                 else {
                     snprintf(buf, 512, "%s%s", name, "inline_end");
                     expression_create_goto(state, GOTO, buf, NULL);
+                }
+            } break;
+            case LINE_RETURN_SUP: {
+                if (state->current_sub->is_inline) {
+                    list_append_new(&state->current_sub->lines, line_make(LINE_RETURN_SUP));
+                }
+                else {
+                    if (state->scope_stack[state->scope_cnt-1].mips) {
+                        instr_return_mips(state, state->current_sub);
+                    }
+                    else {
+                        instr_add(state, state->current_sub, instr_new(state, expr_get_by_symbol(state->version, RETURN)->id, "SSSSS", 0, 0, 0x25, 0, 2));
+                    }
                 }
             } break;
             case LINE_SAVE_START: {

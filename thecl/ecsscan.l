@@ -85,6 +85,7 @@
 "event"    return EVENT;
 "state"    return STATE;
 "return"   return RETURN;
+"return_sup" { if (g_parser_state->current_sub && g_parser_state->current_sub->is_inline) return RETURN_SUP; else { yylval.string = strdup(yytext); return IDENTIFIER; } };
 "expr"     return EXPRESSION;
 "array"    return ARRAY;
 "inline"   return INLINE;
