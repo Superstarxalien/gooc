@@ -209,7 +209,7 @@ c1_globals[] = {
     { "PAUSEMENU",          12 },
     { "LIFEICONTRANSX",     13 },
     { "PICKUPDISPLAY",      14 },
-    { "NORMALCAMROT",       15 },
+    { "GAMEDIR",            15 },
     { "DOCTOR",             16 },
 
     { "GAMEPROGRESS",       20 },
@@ -324,7 +324,7 @@ c2_globals[] = {
     { "PAUSEMENU",          12 },
     { "LIFEICONTRANSX",     13 },
     { "PICKUPDISPLAY",      14 },
-    { "NORMALCAMROT",       15 },
+    { "GAMEDIR",            15 },
     { "DOCTOR",             16 },
 
     { "GAMEPROGRESS",       20 },
