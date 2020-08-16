@@ -185,19 +185,19 @@
     char* afternum;
     long double num = strtold(yytext, &afternum);
     if (strstr(afternum, "hz") || strstr(afternum, "Hz"))
-        yylval.integer = (int)(num / 11025.0 * 0x400);
+        yylval.integer = (int)(num / 11025.0L * 0x400);
     else if (strstr(afternum, "deg"))
-        yylval.integer = (int)(num / 180.0 * 0x800);
+        yylval.integer = (int)(num / 180.0L * 2048.0L);
     else if (strchr(afternum, 'M') || strchr(afternum, 'm'))
-        yylval.integer = (int)(num * 102400);
+        yylval.integer = (int)(num * 102400.0L);
     else if (strchr(afternum, 'V') || strchr(afternum, 'v'))
-        yylval.integer = (int)(num * 0x3FFF);
+        yylval.integer = (int)(num * 16383.0L);
     else if (strchr(afternum, 's'))
-        yylval.integer = (int)(num * g_rate);
+        yylval.integer = (int)(num * (long double)g_rate);
     else if (strchr(afternum, 'S'))
-        yylval.integer = (int)(num * 0x1000);
+        yylval.integer = (int)(num * 4096.0L);
     else
-        yylval.integer = (int)(num * 0x100);
+        yylval.integer = (int)(num * 256.0L);
     return GOOL_INTEGER;
 }
 [0-9]+([GgMmVvSs]|[Hh]z|deg)? {
