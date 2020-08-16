@@ -183,7 +183,7 @@
 
 [0-9]+\.[0-9]+([MmSsVv]|[Hh]z|deg)? {
     char* afternum;
-    double num = strtod(yytext, &afternum);
+    long double num = strtold(yytext, &afternum);
     if (strstr(afternum, "hz") || strstr(afternum, "Hz"))
         yylval.integer = (int)(num / 11025.0 * 0x400);
     else if (strstr(afternum, "deg"))
