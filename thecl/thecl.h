@@ -490,6 +490,7 @@ extern bool g_warn_deprecate_getcolor;
 extern bool g_warn_deprecate_setcolor;
 extern bool g_warn_deprecate_setfield;
 extern bool g_warn_deprecate_getfield;
+extern bool g_warn_deprecate_anim;
 
 /* Expression functions */
 

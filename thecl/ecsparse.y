@@ -1875,7 +1875,7 @@ ExpressionSubset:
     | "+" Expression %prec UADD      { $$ = $2; }
     | "-" Expression %prec USUBTRACT { $$ = EXPR_2(SUBTRACT, EXPR_VAL(0), $2); }
     | "abs" "(" Expression ")"    { $$ = EXPR_2(ABS,      EXPR_SP(), $3); }
-    | "getanim" "(" Expression ")"{ $$ = EXPR_2(GETANIM,  EXPR_SP(), EXPR_2(LSHIFT, $3, EXPR_VAL(8))); }
+    | "getanim" "(" Expression ")"{ $$ = EXPR_2(GETANIM,  EXPR_SP(), $3); }
     | "seek" "(" Expression "," Expression "," Expression ")"     { $$ = EXPR_3(SEEK, $3, $5, $7); }
     | "seek" "(" Expression "," Expression ")"                    { $$ = EXPR_2(SEEK, $3, $5); }
     | "degseek" "(" Expression "," Expression "," Expression ")"  { $$ = EXPR_3(DEGSEEK, $3, $5, $7); }
@@ -2019,7 +2019,7 @@ Address:
             $$->value.val.S = spawn->offset;
         } else if ((anim_offset = anim_get_offset(state, $1)) != 0xFFFF) {
             $$ = param_new('S');
-            $$->value.val.S = anim_offset;
+            $$->value.val.S = anim_offset << 8;
         } else {
             $$ = param_new('o');
             $$->value.type = 'z';

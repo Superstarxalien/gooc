@@ -61,15 +61,13 @@ c1_gool_ins_anim_params(
     list_t* params,
     int argc)
 {
+    if (g_warn_deprecate_anim) {
+        fprintf(stderr, "%s:%s:anim: deprecate function. use getanim instead (i.e. 'animseq = getanim(AnimName)')\n", argv0, current_input);
+        g_warn_deprecate_anim = false;
+    }
     thecl_param_t* param;
     size_t c = list_count(params);
     if (c == 1) {
-        param = list_head(params);
-
-        if (param->val_type == PARAM_LITERAL && param->value.type == 'S') {
-            param->value.val.S <<= 8;
-        }
-
         list_prepend_new(params, param_var_new("animseq"));
     }
     else if (c == 2) {
@@ -99,6 +97,10 @@ c1_gool_ins_playanim_params(
         fprintf(stderr, "%s:%s:playanim: wrong number of arguments (expected 2, 3 or 4, got %zu)\n", argv0, current_input, c);
         return NULL;
     }
+    param = params->head->next->data;
+    if (param->val_type == PARAM_LITERAL && param->value.type == 'S') {
+        param->value.val.S >>= 8;
+    }
     return params;
 }
 
@@ -116,6 +118,10 @@ c1_gool_ins_playtext_params(
     else {
         fprintf(stderr, "%s:%s:playtext: wrong number of arguments (expected 2, got %zu)\n", argv0, current_input, c);
         return NULL;
+    }
+    param = params->head->next->data;
+    if (param->val_type == PARAM_LITERAL && param->value.type == 'S') {
+        param->value.val.S >>= 8;
     }
     return params;
 }
@@ -142,7 +148,7 @@ c1_gool_ins_changestate_params(
         list_append_new(params, param_val_new(1));
     }
     else {
-        fprintf(stderr, "%s:%s:%s:%s:wrong number of arguments (expected at least %d, got %zu)\n", argv0, current_input, type == 0 ? "changestate" : (type == 1 ? "changestateif" : "changestateifn"), 1 + (type == 1 || type == 2), c+argc);
+        fprintf(stderr, "%s:%s:%s:wrong number of arguments (expected at least %d, got %zu)\n", argv0, current_input, type == 0 ? "changestate" : (type == 1 ? "changestateif" : "changestateifn"), 1 + (type == 1 || type == 2), c+argc);
         return NULL;
     }
     return params;
