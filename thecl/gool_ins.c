@@ -439,7 +439,7 @@ c1_gool_ins_setfield_params(
 }
 
 static list_t*
-c1_gool_ins_movetozoneinposition_params(
+c1_gool_ins_movetozone_params(
     list_t* params,
     int argc)
 {
@@ -456,7 +456,7 @@ c1_gool_ins_movetozoneinposition_params(
         list_append_new(params, param_val_new(9));
     }
     else {
-        fprintf(stderr, "%s:%s:movetozoneinposition: wrong number of arguments (expected 1 or 2, got %zu)\n", argv0, current_input, c);
+        fprintf(stderr, "%s:%s:movetozone: wrong number of arguments (expected 1 or 2, got %zu)\n", argv0, current_input, c);
         return NULL;
     }
     return params;
@@ -1224,7 +1224,7 @@ c1_gool_ins[] = {
     { "settrans",                   24, 0, 0, 0, -1, c1_gool_ins_settrans_params },
     { "setfield",                   28, 2, 0, 0, -1, c1_gool_ins_setfield_params },
     { "entitysetspawn",             28, 0, 0, 0, -1, c1_gool_ins_entitysetspawn_params },
-    { "movetozoneinposition",       28, 0, 0, 0, -1, c1_gool_ins_movetozoneinposition_params },
+    { "movetozone",                 28, 0, 0, 0, -1, c1_gool_ins_movetozone_params },
     { "entitysetstate",             28, 0, 0, 0, -1, c1_gool_ins_entitysetstate_params },
     { "savecheckpoint",             28, 0, 0, 0, -1, c1_gool_ins_savecheckpoint_params },
     { "loadcheckpoint",             28, 0, 0, 0, -1, c1_gool_ins_loadcheckpoint_params },
