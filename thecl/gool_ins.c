@@ -445,6 +445,10 @@ c1_gool_ins_movetozoneinposition_params(
 {
     thecl_param_t* param;
     size_t c = list_count(params);
+    if (c == 1) {
+        list_append_new(params, param_null_new());
+        ++c;
+    }
     if (c == 2) {
         list_append_new(params, params->head->data);
         list_del(params, params->head);
@@ -452,7 +456,7 @@ c1_gool_ins_movetozoneinposition_params(
         list_append_new(params, param_val_new(9));
     }
     else {
-        fprintf(stderr, "%s:%s:movetozoneinposition: wrong number of arguments (expected 2, got %zu)\n", argv0, current_input, c);
+        fprintf(stderr, "%s:%s:movetozoneinposition: wrong number of arguments (expected 1 or 2, got %zu)\n", argv0, current_input, c);
         return NULL;
     }
     return params;
