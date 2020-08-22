@@ -775,6 +775,7 @@ c1_write_gool(
 
     entry_header->offsets[6] = file_tell(out);
 
+    header->eid_count = ecl->eid_count;
     if (!file_seek(out, entry_header->offsets[0])) return 0;
     if (!file_write(out, header, sizeof(gool_header_t))) return 0;
 
@@ -796,7 +797,7 @@ c1_compile_chain_common(
     }
 
     entry_header_t entry_header = { 0x100FFFFU, parser->main_ecl->eid, 11U, 6U, { 0, 0, 0, 0, 0, 0, 0 } };
-    gool_header_t header = { parser->main_ecl->id, parser->main_ecl->type << 8, 1, parser->main_ecl->var_count + 0x40, 0, parser->main_ecl->eid_count };
+    gool_header_t header = { parser->main_ecl->id, parser->main_ecl->type << 8, 1, parser->main_ecl->var_count + 0x40, 0, -1 };
     thecl_sub_t* sub;
     const thecl_state_t* state;
     thecl_instr_t* instr;
