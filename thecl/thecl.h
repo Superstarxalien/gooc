@@ -65,6 +65,7 @@ typedef struct thecl_param_t {
     value_t value;
     gooc_value_type val_type;
     char object_link;
+    char is_eid;
     char is_expression_param; /* Temporary variable for ecsparse.y */
 } thecl_param_t;
 
@@ -89,6 +90,7 @@ typedef struct {
     char* name;
     int start;
     int end;
+    uint32_t* data;
 } gooc_array_t;
 
 typedef struct {
@@ -106,7 +108,10 @@ typedef struct {
 
     size_t const_count;
     uint32_t* consts;
+    uint32_t* eids;
+    int eid_count;
     list_t arrays;
+    int array_off;
 
     size_t var_count;
     field_t** vars;
@@ -427,6 +432,10 @@ char* gool_to_ename(
 int gool_to_eid(
     const char* ename);
 
+int eid_pool_force_get_index(
+    thecl_t* ecl,
+    uint32_t eid);
+
 int gool_pool_get_index(
     thecl_t* ecl,
     uint32_t val);
@@ -524,7 +533,7 @@ PACK_BEGIN
     uint32_t exe_type;
     uint32_t stack_start;
     uint32_t interrupt_count;
-    uint32_t stack_depth;
+    uint32_t eid_count;
 PACK_END
 } PACK_ATTRIBUTE gool_header_t;
 

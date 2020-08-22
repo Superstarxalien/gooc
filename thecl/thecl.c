@@ -101,11 +101,14 @@ thecl_new(
     list_init(&ecl->anims);
     list_init(&ecl->spawns);
     list_init(&ecl->interrupts);
-    list_init(&ecl->arrays);
     ecl->vars = malloc(0);
     ecl->consts = malloc(0);
+    ecl->eids = malloc(0);
+    list_init(&ecl->arrays);
     ecl->var_count = 0;
     ecl->const_count = 0;
+    ecl->eid_count = 0;
+    ecl->array_off = 0;
     ecl->no_warn = false;
     ecl->eid = gool_null_eid;
     ecl->id = 0;
@@ -249,6 +252,7 @@ thecl_free(
 
     gooc_array_t* array;
     list_for_each(&ecl->arrays, array) {
+        free(array->data);
         free(array);
     }
     list_free_nodes(&ecl->arrays);
@@ -279,7 +283,7 @@ int gool_to_eid(
     int eid = 1;
     while (i--) {
         int c = strchr_o(gool_ename_charmap, ename[i]);
-        if (c == -(int)gool_ename_charmap) {
+        if (strchr(gool_ename_charmap, ename[i]) == NULL) {
             fprintf(stderr, "%s: ename has invalid character '%c': %s\n", argv0, ename[i], ename);
             return gool_null_eid;
         }
@@ -288,21 +292,26 @@ int gool_to_eid(
     return eid;
 }
 
+int eid_pool_force_get_index(
+    thecl_t* ecl,
+    uint32_t eid)
+{
+    for (int i = 0; i < ecl->eid_count; ++i) {
+        if (ecl->eids[i] == eid)
+            return i;
+    }
+    ecl->eids = realloc(ecl->eids, (ecl->eid_count + 1) * sizeof(uint32_t));
+    ecl->eids[ecl->eid_count] = eid;
+    return ecl->eid_count++;
+}
+
 int gool_pool_get_index(
     thecl_t* ecl,
     uint32_t val)
 {
     for (int i = 0; i < ecl->const_count; ++i) {
-        gooc_array_t* array;
-        list_for_each(&ecl->arrays, array) {
-            if (i >= array->start && i < array->end) {
-                i = array->end-1;
-                goto CONT;
-            }
-        }
         if (ecl->consts[i] == val)
             return i;
-    CONT:;
     }
     return -1;
 }
@@ -379,6 +388,7 @@ param_new(
     param->is_expression_param = 0;
     param->object_link = -1;
     param->val_type = PARAM_LITERAL;
+    param->is_eid = 0;
     return param;
 }
 

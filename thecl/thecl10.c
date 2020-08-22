@@ -437,6 +437,170 @@ c1_make_ref_extpool(int offset)
 }
 
 static int
+c1_instr_make_params(
+    const char* fn_name,
+    thecl_t* ecl,
+    thecl_t* ecl_ext,
+    thecl_sub_t* sub,
+    thecl_instr_t* instr,
+    const char* format,
+    bool ignore_error,
+    bool was_error)
+{
+    int ret = 0;
+    int total_bits = 0;
+    int i = 0;
+    char op;
+    const thecl_param_t* param;
+    list_for_each(&instr->params, param) {
+        if (total_bits >= 24 && !ignore_error) {
+            fprintf(stderr, "%s:%s: in sub %s: gool instruction %d parameter overflow\n", argv0, fn_name, sub->name, instr->id);
+            break;
+        }
+        int p;
+        if (param->type == 'o' || param->type == 'z') {
+            /* This calculates the relative offset from the current instruction. */
+            thecl_label_t* label = param->type == 'z' ? NULL : label_find(sub, param->value.val.z);
+            if (label) {
+                p = label->offset - (instr->offset + 1);
+            }
+            else {
+                const thecl_state_t* called_state;
+                int o = 0;
+                list_for_each(&ecl->states, called_state) {
+                    if (!strcmp(called_state->name, param->value.val.z))
+                        break;
+                    ++o;
+                    called_state = NULL;
+                }
+                if (!called_state) {
+                    /* Validate sub call parameters. */
+                    char* sub_name = param->value.val.z;
+                    const thecl_sub_t* called_sub = th10_find_sub(ecl, sub_name);
+                    if (!called_sub && ecl_ext) {
+                        called_sub = th10_find_sub(ecl_ext, sub_name);
+                    }
+                    if (called_sub) {
+                        if (instr->id == 59) {
+                            const thecl_param_t* sub_argc_param = node->next->next->data;
+                            called_sub = th10_find_sub_overload(ecl, sub_name, sub_argc_param->value.val.S);
+                            if (!called_sub && ecl_ext) {
+                                called_sub = th10_find_sub(ecl_ext, sub_name);
+                            }
+                        }
+                    }
+                    if (!called_sub) {
+                        if (!was_error && !ignore_error) {
+                            fprintf(stderr, "%s:%s: in sub %s: sub/state/label not found: %s\n", argv0, fn_name, sub->name, param->value.val.z);
+                        }
+                        p = o;
+                    }
+                    else {
+                        p = called_sub->start_offset;
+                    }
+                }
+                else
+                    p = o;
+            }
+        }
+        else
+            p = param->value.val.S;
+    RECHECK_PARAM:;
+        while ((op = format[i++]) == ' ');
+        int bits = total_bits;
+        int val = 0;
+        if (op == 'R') {
+            if (param->val_type != PARAM_LITERAL) {
+                if (param->object_link == 0) {
+                    val = c1_make_ref_reg(p); /* reg ref */
+                }
+                else if (param->object_link == -1) {
+                    val = c1_make_ref_stack(p); /* stack ref */
+                }
+                else if (param->object_link > 0 && param->object_link <= 7) {
+                    val = c1_make_ref_ireg(param->object_link, p); /* ireg ref */
+                }
+                else if (param->object_link == -2) {
+                    val = c1_make_ref_special(param->value.val.S); /* sp-double ref OR null ref */
+                }
+                else if (param->object_link == -3) {
+                    val = c1_make_ref_pool(p + ecl->array_off); /* pool array ref */
+                }
+            }
+            else {
+                if (!(p % 0x100) && p >= -256 * 0x100 && p <= 255 * 0x100) {
+                    val = c1_make_ref_int(p / 0x100); /* int ref */
+                }
+                else if (!(p % 0x10) && p >= -128 * 0x10 && p <= 127 * 0x10) {
+                    val = c1_make_ref_frac(p / 0x10); /* frac ref */
+                }
+                else {
+                    if (ecl_ext && ecl_ext->purge_data) {
+                        val = c1_make_ref_null(); /* null ref */
+                    }
+                    else {
+                        /* EXTPOOL DOES NOT WORK PROPERLY IN-GAME(?) */
+                        if (param->is_eid) {
+                            val = c1_make_ref_pool(eid_pool_force_get_index(ecl, p)); /* eid pool ref */
+                        }
+                        else {
+                            val = c1_make_ref_pool(gool_pool_force_get_index(ecl, p) + ecl->eid_count + ecl->array_off); /* pool ref */
+                        }
+                    }
+                }
+            }
+            total_bits += 12;
+        }
+        else if (op == 'I') {
+            const char* next_format;
+            uint32_t b = strtol(format + i, &next_format, 10);
+            i = next_format - format;
+            val = p & (0xFFFFFFFFU >> (32 - b));
+            if (((int64_t)p < -(1LL << b) || (int64_t)p >(1LL << b) - 1) && !ignore_error) {
+                fprintf(stderr, "%s:%s: in sub %s: parameter out of bounds for instruction %d (%u bits)\n", argv0, fn_name, sub->name, instr->id, b);
+            }
+            total_bits += b;
+        }
+        else if (op == 'N') {
+            const char* next_format;
+            uint32_t b = strtol(format + i, &next_format, 10);
+            i = next_format - format;
+            total_bits += b;
+            goto RECHECK_PARAM;
+        }
+        ret |= val << bits;
+    }
+    while (i < strlen(format)) {
+        while ((op = format[i++]) == ' ');
+        int bits = total_bits;
+        int val = 0;
+        if (op == 'R') {
+            val = c1_make_ref_null(); /* null ref */
+            total_bits += 12;
+        }
+        else if (op == 'I') {
+            const char* next_format;
+            uint32_t b = strtol(format + i, &next_format, 10);
+            i = next_format - format;
+            total_bits += b;
+        }
+        else if (op == 'N') {
+            const char* next_format;
+            uint32_t b = strtol(format + i, &next_format, 10);
+            i = next_format - format;
+            total_bits += b;
+        }
+        ret |= val << bits;
+    }
+
+    if (total_bits > 24 && !ignore_error) {
+        fprintf(stderr, "%s:%s: in sub %s: gool instruction %d format overflow\n", argv0, fn_name, sub->name, instr->id);
+    }
+
+    return ret;
+}
+
+static int
 c1_instr_serialize(
     thecl_t* ecl,
     thecl_t* ecl_ext,
@@ -444,8 +608,6 @@ c1_instr_serialize(
     thecl_instr_t* instr,
     bool ignore_error)
 {
-    const thecl_param_t* param;
-
     const char* format = th10_find_format(ecl->version, instr->id);
 
     int ret = c1_ins_init(instr->id);
@@ -488,156 +650,7 @@ c1_instr_serialize(
         }
     }
 
-    int total_bits = 0;
-    int i = 0;
-    char op;
-    list_for_each(&instr->params, param) {
-        if (total_bits >= 24 && !ignore_error) {
-            fprintf(stderr, "%s:c1_instr_serialize: in sub %s: gool instruction %d parameter overflow\n", argv0, sub->name, instr->id);
-            break;
-        }
-        int p;
-        if (param->type == 'o' || param->type == 'z') {
-            /* This calculates the relative offset from the current instruction. */
-            thecl_label_t* label = param->type == 'z' ? NULL :label_find(sub, param->value.val.z);
-            if (label) {
-                p = label->offset - (instr->offset + 1);
-            }
-            else {
-                const thecl_state_t* called_state;
-                int o = 0;
-                list_for_each(&ecl->states, called_state) {
-                    if (!strcmp(called_state->name, param->value.val.z))
-                        break;
-                    ++o;
-                    called_state = NULL;
-                }
-                if (!called_state) {
-                    /* Validate sub call parameters. */
-                    char* sub_name = param->value.val.z;
-                    const thecl_sub_t* called_sub = th10_find_sub(ecl, sub_name);
-                    if (!called_sub && ecl_ext) {
-                        called_sub = th10_find_sub(ecl_ext, sub_name);
-                    }
-                    if (called_sub) {
-                        if (instr->id == 59) {
-                            const thecl_param_t* sub_argc_param = node->next->next->data;
-                            called_sub = th10_find_sub_overload(ecl, sub_name, sub_argc_param->value.val.S);
-                            if (!called_sub && ecl_ext) {
-                                called_sub = th10_find_sub(ecl_ext, sub_name);
-                            }
-                        }
-                    }
-                    if (!called_sub) {
-                        if (!was_error && !ignore_error) {
-                            fprintf(stderr, "%s:c1_instr_serialize: in sub %s: sub/state/label not found: %s\n", argv0, sub->name, param->value.val.z);
-                        }
-                        p = o;
-                    }
-                    else {
-                        p = called_sub->start_offset;
-                    }
-                }
-                else
-                    p = o;
-            }
-        }
-        else
-            p = param->value.val.S;
-    RECHECK_PARAM:;
-        while ((op = format[i++]) == ' ');
-        int bits = total_bits;
-        int val = 0;
-        if (op == 'R') {
-            if (param->val_type != PARAM_LITERAL) {
-                if (param->object_link == 0) {
-                    val = c1_make_ref_reg(p); /* reg ref */
-                }
-                else if (param->object_link == -1) {
-                    val = c1_make_ref_stack(p); /* stack ref */
-                }
-                else if (param->object_link > 0 && param->object_link <= 7) {
-                    val = c1_make_ref_ireg(param->object_link, p); /* ireg ref */
-                }
-                else if (param->object_link == -2) {
-                    val = c1_make_ref_special(param->value.val.S); /* sp-double ref OR null ref */
-                }
-                else if (param->object_link == -3) {
-                    val = c1_make_ref_pool(p); /* pool array ref */
-                }
-            }
-            else {
-                if (!(p % 0x100) && p >= -256 * 0x100 && p <= 255 * 0x100) {
-                    val = c1_make_ref_int(p / 0x100); /* int ref */
-                }
-                else if (!(p % 0x10) && p >= -128 * 0x10 && p <= 127 * 0x10) {
-                    val = c1_make_ref_frac(p / 0x10); /* frac ref */
-                }
-                else {
-                    if (ecl_ext && ecl_ext->purge_data) {
-                        val = c1_make_ref_null(); /* null ref */
-                    }
-                    else {
-                        val = c1_make_ref_pool(gool_pool_force_get_index(ecl, p)); /* pool ref */
-                    }
-                    /* DOES NOT WORK IN-GAME! */
-                    //if (!ecl_ext || (ecl_ext && gool_pool_get_index(ecl, p) != -1)) {
-                    //    val = c1_make_ref_pool(gool_pool_force_get_index(ecl, p)); /* pool ref */
-                    //}
-                    //else {
-                    //    val = c1_make_ref_extpool(gool_pool_force_get_index(ecl_ext, p)); /* pool ref */
-                    //}
-                }
-            }
-            total_bits += 12;
-        }
-        else if (op == 'I') {
-            const char* next_format;
-            uint32_t b = strtol(format + i, &next_format, 10);
-            i = next_format - format;
-            val = p & (0xFFFFFFFFU >> (32-b));
-            if (((int64_t)p < -(1LL << b) || (int64_t)p > (1LL << b) - 1) && !ignore_error) {
-                fprintf(stderr, "%s:c1_instr_serialize: in sub %s: parameter out of bounds for instruction %d (%u bits)\n", argv0, sub->name, instr->id, b);
-            }
-            total_bits += b;
-        }
-        else if (op == 'N') {
-            const char* next_format;
-            uint32_t b = strtol(format + i, &next_format, 10);
-            i = next_format - format;
-            total_bits += b;
-            goto RECHECK_PARAM;
-        }
-        ret |= val << bits;
-    }
-    while (i < strlen(format)) {
-        while ((op = format[i++]) == ' ');
-        int bits = total_bits;
-        int val = 0;
-        if (op == 'R') {
-            val = c1_make_ref_null(); /* null ref */
-            total_bits += 12;
-        }
-        else if (op == 'I') {
-            const char* next_format;
-            uint32_t b = strtol(format + i, &next_format, 10);
-            i = next_format - format;
-            total_bits += b;
-        }
-        else if (op == 'N') {
-            const char* next_format;
-            uint32_t b = strtol(format + i, &next_format, 10);
-            i = next_format - format;
-            total_bits += b;
-        }
-        ret |= val << bits;
-    }
-
-    if (total_bits > 24 && !ignore_error) {
-        fprintf(stderr, "%s:c1_instr_serialize: in sub %s: gool instruction %d format overflow\n", argv0, sub->name, instr->id);
-    }
-
-    return ret;
+    return c1_instr_make_params("c1_instr_serialize", ecl, ecl_ext, sub, instr, format, ignore_error, was_error) & 0xFFFFFF | ret;
 }
 
 static int
@@ -650,6 +663,7 @@ c1_write_gool(
     thecl_sub_t* sub;
     thecl_state_t* state;
     gool_anim_t* anim;
+    gooc_array_t* arr;
 
     if (!file_write(out, entry_header, sizeof(entry_header_t) + (entry_header->count + 1) * sizeof(uint32_t))) return 0;
     entry_header->offsets[0] = file_tell(out);
@@ -668,7 +682,11 @@ c1_write_gool(
     }
 
     entry_header->offsets[2] = file_tell(out);
-    if (!file_write(out, ecl->consts, sizeof(int) * ecl->const_count)) return 0;
+    if (!file_write(out, ecl->eids, sizeof(uint32_t) * ecl->eid_count)) return 0;
+    list_for_each(&ecl->arrays, arr) {
+        if (!file_write(out, arr->data, sizeof(uint32_t) * (arr->end - arr->start))) return 0;
+    }
+    if (!file_write(out, ecl->consts, sizeof(uint32_t) * ecl->const_count)) return 0;
     entry_header->offsets[3] = file_tell(out);
 
     size_t pos = file_tell(out);
@@ -736,7 +754,7 @@ c1_write_gool(
                 fprintf(stderr, "%s: warning: state %s event block does not have 2 arguments\n", argv0, state->name);
             }
         }
-        state_t gstate = { state->stateflag, state->statusc, gool_pool_force_get_index(ecl, state->exe->eid),
+        state_t gstate = { state->stateflag, state->statusc, eid_pool_force_get_index(ecl, state->exe->eid),
             sub_e == NULL ? 0x3FFFU : sub_e->start_offset | (sub_e->is_external ? 0x4000 : 0),
             sub_t == NULL ? 0x3FFFU : sub_t->start_offset | (sub_t->is_external ? 0x4000 : 0),
             sub_c == NULL ? 0x3FFFU : sub_c->start_offset | (sub_c->is_external ? 0x4000 : 0) };
@@ -778,16 +796,17 @@ c1_compile_chain_common(
     }
 
     entry_header_t entry_header = { 0x100FFFFU, parser->main_ecl->eid, 11U, 6U, { 0, 0, 0, 0, 0, 0, 0 } };
-    gool_header_t header = { parser->main_ecl->id, parser->main_ecl->type << 8, 1, parser->main_ecl->var_count + 0x40, 0, 8 };
+    gool_header_t header = { parser->main_ecl->id, parser->main_ecl->type << 8, 1, parser->main_ecl->var_count + 0x40, 0, parser->main_ecl->eid_count };
     thecl_sub_t* sub;
     const thecl_state_t* state;
     thecl_instr_t* instr;
+    gooc_array_t* arr;
 
     thecl_t* ecl = parser->main_ecl;
 
     /* write GOOL EIDs to const pool before anything else */
     list_for_each(&ecl->states, state) {
-        gool_pool_force_get_index(ecl, state->exe->eid);
+        eid_pool_force_get_index(ecl, state->exe->eid);
     }
 
     /* compile all subs */
@@ -886,6 +905,7 @@ c1_compile_chain_common(
 
             entry_header.id = ecl->eid;
             header.exe_type = 0;
+            header.eid_count = ecl->eid_count;
 
             if (!file_write(out, &entry_header, sizeof(entry_header_t) + (entry_header.count + 1) * sizeof(uint32_t))) return 0;
             entry_header.offsets[0] = file_tell(out);
@@ -904,7 +924,11 @@ c1_compile_chain_common(
             }
 
             entry_header.offsets[2] = file_tell(out);
-            if (!file_write(out, ecl->consts, sizeof(int) * ecl->const_count)) return 0;
+            if (!file_write(out, ecl->eids, sizeof(uint32_t) * ecl->eid_count)) return 0;
+            list_for_each(&ecl->arrays, arr) {
+                if (!file_write(out, arr->data, sizeof(uint32_t) * (arr->end - arr->start))) return 0;
+            }
+            if (!file_write(out, ecl->consts, sizeof(uint32_t) * ecl->const_count)) return 0;
             entry_header.offsets[3] = file_tell(out);
 
             if (!file_seek(out, 0)) return 0;
@@ -950,6 +974,7 @@ c2_instr_serialize(
     thecl_instr_t* instr,
     bool ignore_error)
 {
+    /* convert some mips data */
     if (instr->mips) {
         if (instr->string) {
             thecl_label_t* label = label_find(sub, instr->string);
@@ -962,8 +987,6 @@ c2_instr_serialize(
         }
         return instr->ins.ins;
     }
-
-    const thecl_param_t* param;
 
     const char* format = th10_find_format(ecl->version, instr->id);
 
@@ -1006,156 +1029,7 @@ c2_instr_serialize(
         }
     }
 
-    int total_bits = 0;
-    int i = 0;
-    char op;
-    list_for_each(&instr->params, param) {
-        if (total_bits >= 24 && !ignore_error) {
-            fprintf(stderr, "%s:c2_instr_serialize: in sub %s: gool instruction %d parameter overflow\n", argv0, sub->name, instr->id);
-            break;
-        }
-        int p;
-        if (param->type == 'o' || param->type == 'z') {
-            /* This calculates the relative offset from the current instruction. */
-            thecl_label_t* label = param->type == 'z' ? NULL : label_find(sub, param->value.val.z);
-            if (label) {
-                p = label->offset - (instr->offset + 1);
-            }
-            else {
-                const thecl_state_t* called_state;
-                int o = 0;
-                list_for_each(&ecl->states, called_state) {
-                    if (!strcmp(called_state->name, param->value.val.z))
-                        break;
-                    ++o;
-                    called_state = NULL;
-                }
-                if (!called_state) {
-                    /* Validate sub call parameters. */
-                    char* sub_name = param->value.val.z;
-                    const thecl_sub_t* called_sub = th10_find_sub(ecl, sub_name);
-                    if (!called_sub && ecl_ext) {
-                        called_sub = th10_find_sub(ecl_ext, sub_name);
-                    }
-                    if (called_sub) {
-                        if (instr->id == 59) {
-                            const thecl_param_t* sub_argc_param = node->next->next->data;
-                            called_sub = th10_find_sub_overload(ecl, sub_name, sub_argc_param->value.val.S);
-                            if (!called_sub && ecl_ext) {
-                                called_sub = th10_find_sub(ecl_ext, sub_name);
-                            }
-                        }
-                    }
-                    if (!called_sub) {
-                        if (!was_error && !ignore_error) {
-                            fprintf(stderr, "%s:c2_instr_serialize: in sub %s: sub/state/label not found: %s\n", argv0, sub->name, param->value.val.z);
-                        }
-                        p = o;
-                    }
-                    else {
-                        p = called_sub->start_offset;
-                    }
-                }
-                else
-                    p = o;
-            }
-        }
-        else
-            p = param->value.val.S;
-    RECHECK_PARAM:;
-        while ((op = format[i++]) == ' ');
-        int bits = total_bits;
-        int val = 0;
-        if (op == 'R') {
-            if (param->val_type != PARAM_LITERAL) {
-                if (param->object_link == 0) {
-                    val = c1_make_ref_reg(p); /* reg ref */
-                }
-                else if (param->object_link == -1) {
-                    val = c1_make_ref_stack(p); /* stack ref */
-                }
-                else if (param->object_link > 0 && param->object_link <= 7) {
-                    val = c1_make_ref_ireg(param->object_link, p); /* ireg ref */
-                }
-                else if (param->object_link == -2) {
-                    val = c1_make_ref_special(param->value.val.S); /* sp-double ref OR null ref */
-                }
-                else if (param->object_link == -3) {
-                    val = c1_make_ref_pool(p); /* pool array ref */
-                }
-            }
-            else {
-                if (!(p % 0x100) && p >= -256 * 0x100 && p <= 255 * 0x100) {
-                    val = c1_make_ref_int(p / 0x100); /* int ref */
-                }
-                else if (!(p % 0x10) && p >= -128 * 0x10 && p <= 127 * 0x10) {
-                    val = c1_make_ref_frac(p / 0x10); /* frac ref */
-                }
-                else {
-                    if (ecl_ext && ecl_ext->purge_data) {
-                        val = c1_make_ref_null(); /* null ref */
-                    }
-                    else {
-                        val = c1_make_ref_pool(gool_pool_force_get_index(ecl, p)); /* pool ref */
-                    }
-                    /* DOES NOT WORK IN-GAME! */
-                    //if (!ecl_ext || (ecl_ext && gool_pool_get_index(ecl, p) != -1)) {
-                    //    val = c1_make_ref_pool(gool_pool_force_get_index(ecl, p)); /* pool ref */
-                    //}
-                    //else {
-                    //    val = c1_make_ref_extpool(gool_pool_force_get_index(ecl_ext, p)); /* pool ref */
-                    //}
-                }
-            }
-            total_bits += 12;
-        }
-        else if (op == 'I') {
-            const char* next_format;
-            uint32_t b = strtol(format + i, &next_format, 10);
-            i = next_format - format;
-            val = p & (0xFFFFFFFFU >> (32-b));
-            if (((int64_t)p < -(1LL << b) || (int64_t)p > (1LL << b) - 1) && !ignore_error) {
-                fprintf(stderr, "%s:c2_instr_serialize: in sub %s: parameter out of bounds for instruction %d (%u bits)\n", argv0, sub->name, instr->id, b);
-            }
-            total_bits += b;
-        }
-        else if (op == 'N') {
-            const char* next_format;
-            uint32_t b = strtol(format + i, &next_format, 10);
-            i = next_format - format;
-            total_bits += b;
-            goto RECHECK_PARAM;
-        }
-        ret |= val << bits;
-    }
-    while (i < strlen(format)) {
-        while ((op = format[i++]) == ' ');
-        int bits = total_bits;
-        int val = 0;
-        if (op == 'R') {
-            val = c1_make_ref_null(); /* null ref */
-            total_bits += 12;
-        }
-        else if (op == 'I') {
-            const char* next_format;
-            uint32_t b = strtol(format + i, &next_format, 10);
-            i = next_format - format;
-            total_bits += b;
-        }
-        else if (op == 'N') {
-            const char* next_format;
-            uint32_t b = strtol(format + i, &next_format, 10);
-            i = next_format - format;
-            total_bits += b;
-        }
-        ret |= val << bits;
-    }
-
-    if (total_bits > 24 && !ignore_error) {
-        fprintf(stderr, "%s:c2_instr_serialize: in sub %s: gool instruction %d format overflow\n", argv0, sub->name, instr->id);
-    }
-
-    return ret;
+    return c1_instr_make_params("c2_instr_serialize", ecl, ecl_ext, sub, instr, format, ignore_error, was_error) & 0xFFFFFF | ret;
 }
 
 static int

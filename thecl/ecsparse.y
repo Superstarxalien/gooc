@@ -472,11 +472,12 @@ Statement:
       }
     | "array" IDENTIFIER "=" { /* const array */
         state->current_array = malloc(sizeof(gooc_array_t));
+        state->current_array->data = malloc(0);
         state->current_array->name = strdup($2);
-        state->current_array->start = state->main_ecl->const_count;
+        state->current_array->start = state->main_ecl->array_off;
         free($2);
       } "{" Array_Entries "}" {
-        state->current_array->end = state->main_ecl->const_count;
+        state->current_array->end = state->main_ecl->array_off;
         list_append_new(&state->main_ecl->arrays, state->current_array);
         state->current_array = NULL;
       }
@@ -488,7 +489,7 @@ Statement:
 
             state->main_ecl->is_defined = 1;
 
-            gool_pool_force_get_index(state->main_ecl, state->main_ecl->eid);
+            eid_pool_force_get_index(state->main_ecl, state->main_ecl->eid);
 
             /* automatically create an expression macro that translates the ename to the GOOL ID */
             macro_create(state, $2, EXPR_VAL($3));
@@ -553,7 +554,7 @@ Statement:
                 }
             }
             thecl_t* ecl = thecl_new();
-            gool_pool_force_get_index(state->main_ecl, eid);
+            eid_pool_force_get_index(state->main_ecl, eid);
             ecl->eid = eid;
             state->ecl = ecl;
             state->ecl_stack = realloc(state->ecl_stack, sizeof(thecl_t*) * ++state->ecl_cnt);
@@ -2081,6 +2082,8 @@ Entry:
       ENTRY {
         $$ = param_new('S');
         $$->value.val.S = gool_to_eid($1);
+        eid_pool_force_get_index(state->main_ecl, $$->value.val.S);
+        $$->is_eid = 1;
         free($1);
       }
     ;
@@ -2119,8 +2122,10 @@ Array_Entries:
     ;
 
 Array_Entry:
-      Literal_Int { gool_pool_force_make_index(state->main_ecl, $1); }
-    | ENTRY { gool_pool_force_make_index(state->main_ecl, gool_to_eid($1)); free($1); }
+      Literal_Int {
+        state->current_array->data = realloc(state->current_array->data, (++state->main_ecl->array_off - state->current_array->start)*sizeof(uint32_t));
+        state->current_array->data[state->main_ecl->array_off - state->current_array->start - 1] = $1;
+      }
     ;
 %%
 
@@ -3997,6 +4002,14 @@ expression_optimize(
     list_for_each(&expression->children, child_expr) {
         if (child_expr->type == EXPRESSION_OP) {
             expression_optimize(state, child_expr);
+        }
+
+        if (child_expr->type == EXPRESSION_VAL && child_expr->value->is_eid &&
+        child_expr->id != expr_get_by_symbol(state->version, NTRY)->id &&
+        child_expr->id != expr_get_by_symbol(state->version, LOAD)->id &&
+        child_expr->id != expr_get_by_symbol(state->version, PLOAD)->id) {
+            yyerror(state, "cannot use EIDs in non-entry operations");
+            return;
         }
 
         if (child_cnt == 0) {
