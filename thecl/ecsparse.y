@@ -2082,7 +2082,6 @@ Entry:
       ENTRY {
         $$ = param_new('S');
         $$->value.val.S = gool_to_eid($1);
-        eid_pool_force_get_index(state->main_ecl, $$->value.val.S);
         $$->is_eid = 1;
         free($1);
       }
@@ -3900,6 +3899,10 @@ expression_output(
     if (expr->type != EXPRESSION_TERNARY && expr_get_by_id(state->version, expr->id)->id < -2) {
         yyerror(state, "error, cannot output non-compileable expression %d", expr->id);
         exit(2);
+    }
+
+    if (expr->type == EXPRESSION_VAL && expr->value->is_eid) {
+        eid_pool_force_get_index(state->main_ecl, expr->value->value.val.S);
     }
 
     if (state->mips_mode) {
