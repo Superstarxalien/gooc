@@ -802,7 +802,7 @@ Texture_Info:
             if ($w == 16) uv = 2;
             if ($w == 32) uv = 3;
             if ($w == 64) uv = 4;
-            if ($h == 0 && $h == 4) uv += 0;
+            if ($h == 0 || $h == 4) uv += 0;
             if ($h == 8) uv += 5;
             if ($h == 16) uv += 10;
             if ($h == 32) uv += 15;
@@ -882,12 +882,12 @@ Texture_Info:
                 yyerror(state, "%s:invalid texture width/height", state->current_anim->name);
             }
             const uint64_t zero = 0;
-            if ($w == 0 && $w == 4) uv = 0;
+            if ($w == 0 || $w == 4) uv = 0;
             if ($w == 8) uv = 1;
             if ($w == 16) uv = 2;
             if ($w == 32) uv = 3;
             if ($w == 64) uv = 4;
-            if ($h == 0 && $h == 4) uv += 0;
+            if ($h == 0 || $h == 4) uv += 0;
             if ($h == 8) uv += 5;
             if ($h == 16) uv += 10;
             if ($h == 32) uv += 15;
@@ -2651,6 +2651,32 @@ instr_copy(thecl_instr_t* instr) {
         list_append_new(&new_instr->params, new_param);
     }
     return new_instr;
+}
+
+static bool
+var_stack_used(
+    parser_state_t* state,
+    thecl_sub_t* sub,
+    int stack
+) {
+    for (size_t v=0; v<sub->var_count; ++v) {
+        if (sub->vars[v]->stack == stack && !sub->vars[v]->is_unused)
+            return true;
+    }
+    return false;
+}
+
+static int
+var_get_new_stack(
+    parser_state_t* state,
+    thecl_sub_t* sub
+) {
+    int stack = 3;
+    while(1) {
+        if (!var_stack_used(state, sub, stack))
+            return stack;
+        ++stack;
+    }
 }
 
 static list_t*
@@ -4447,32 +4473,6 @@ scope_finish(
 
     state->scope_stack = realloc(state->scope_stack, sizeof(thecl_scope_t)*--state->scope_cnt);
     state->block_bound = 1;
-}
-
-static bool
-var_stack_used(
-    parser_state_t* state,
-    thecl_sub_t* sub,
-    int stack
-) {
-    for (size_t v=0; v<sub->var_count; ++v) {
-        if (sub->vars[v]->stack == stack && !sub->vars[v]->is_unused)
-            return true;
-    }
-    return false;
-}
-
-static int
-var_get_new_stack(
-    parser_state_t* state,
-    thecl_sub_t* sub
-) {
-    int stack = 3;
-    while(1) {
-        if (!var_stack_used(state, sub, stack))
-            return stack;
-        ++stack;
-    }
 }
 
 static expr_macro_t*
