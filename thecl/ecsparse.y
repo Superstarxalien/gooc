@@ -2813,7 +2813,7 @@ instr_create_inline_call(
 ) {
     /* An inline sub can't call itself for obvious reasons. */
     if (strcmp(sub->name, state->current_sub->name) == 0 && sub->arg_count == state->current_sub->arg_count) {
-        yyerror(state, "an inline sub is not allowed to call itself");
+        yyerror(state, "inline sub '%s' is not allowed to call itself", sub->name);
         return;
     }
 
