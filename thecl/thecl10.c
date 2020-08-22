@@ -767,9 +767,10 @@ c1_write_gool(
 }
 
 static int
-c1_compile(
+c1_compile_chain_common(
     const parser_state_t* parser,
-    FILE* out)
+    FILE* out,
+    int (*serialize_func)(thecl_t*, thecl_t*, thecl_sub_t*, thecl_instr_t*, bool))
 {
     if (!file_seekable(out)) {
         fprintf(stderr, "%s: output is not seekable\n", argv0);
@@ -779,11 +780,10 @@ c1_compile(
     entry_header_t entry_header = { 0x100FFFFU, parser->main_ecl->eid, 11U, 6U, { 0, 0, 0, 0, 0, 0, 0 } };
     gool_header_t header = { parser->main_ecl->id, parser->main_ecl->type << 8, 1, parser->main_ecl->var_count + 0x40, 0, 8 };
     thecl_sub_t* sub;
+    const thecl_state_t* state;
     thecl_instr_t* instr;
 
     thecl_t* ecl = parser->main_ecl;
-
-    const thecl_state_t* state;
 
     /* write GOOL EIDs to const pool before anything else */
     list_for_each(&ecl->states, state) {
@@ -803,7 +803,7 @@ c1_compile(
 
             int j = 0;
             list_for_each(&sub->instrs, instr) {
-                sub->instr_data->data[j++] = c1_instr_serialize(parser->main_ecl, i > 0 ? ecl : NULL, sub, instr, true);
+                sub->instr_data->data[j++] = serialize_func(parser->main_ecl, i > 0 ? ecl : NULL, sub, instr, true);
             }
         }
     }
@@ -841,10 +841,10 @@ c1_compile(
                     sub->start_offset = comp_sub->start_offset;
 
                     goto double_break;
-                    different_subs:;
+                different_subs:;
                 }
             }
-            double_break:;
+        double_break:;
         }
     }
     /* re-compile with new offsets */
@@ -857,7 +857,7 @@ c1_compile(
 
             int j = 0;
             list_for_each(&sub->instrs, instr) {
-                sub->instr_data->data[j++] = c1_instr_serialize(parser->main_ecl, i > 0 ? ecl : NULL, sub, instr, false);
+                sub->instr_data->data[j++] = serialize_func(parser->main_ecl, i > 0 ? ecl : NULL, sub, instr, false);
             }
         }
     }
@@ -909,12 +909,20 @@ c1_compile(
 
             if (!file_seek(out, 0)) return 0;
             if (!file_write(out, &entry_header, sizeof(entry_header_t) + (entry_header.count + 1) * sizeof(uint32_t))) return 0;
-            
+
             fclose(out);
         }
     }
 
     return 1;
+}
+
+static int
+c1_compile(
+    const parser_state_t* parser,
+    FILE* out)
+{
+    if (!c1_compile_chain_common(parser, out, c1_instr_serialize)) return 0;
 }
 
 static int
@@ -1155,150 +1163,7 @@ c2_compile(
     const parser_state_t* parser,
     FILE* out)
 {
-    if (!file_seekable(out)) {
-        fprintf(stderr, "%s: output is not seekable\n", argv0);
-        return 0;
-    }
-
-    entry_header_t entry_header = { 0x100FFFFU, parser->main_ecl->eid, 11U, 6U, { 0, 0, 0, 0, 0, 0, 0 } };
-    gool_header_t header = { parser->main_ecl->id, parser->main_ecl->type << 8, 1, parser->main_ecl->var_count + 0x40, 0, 8 };
-    thecl_sub_t* sub;
-    const thecl_state_t* state;
-    gool_anim_t* anim;
-    thecl_instr_t* instr;
-
-    thecl_t* ecl = parser->main_ecl;
-
-    /* write GOOL EIDs to const pool before anything else */
-    list_for_each(&ecl->states, state) {
-        gool_pool_force_get_index(ecl, state->exe->eid);
-    }
-
-    /* compile all subs */
-    for (int i = 0; i < parser->ecl_cnt + 1; ++i) {
-        ecl = i == 0 ? parser->main_ecl : parser->ecl_stack[i - 1];
-
-        list_for_each(&ecl->subs, sub) {
-            if (sub->forward_declaration || sub->is_inline || sub->deleted)
-                continue;
-
-            sub->instr_data = malloc(sizeof(gool_sub_t) + sizeof(uint32_t) * sub->offset);
-            sub->instr_data->was_written = 0;
-
-            int j = 0;
-            list_for_each(&sub->instrs, instr) {
-                sub->instr_data->data[j++] = c2_instr_serialize(parser->main_ecl, i > 0 ? ecl : NULL, sub, instr, true);
-            }
-        }
-    }
-    /* remove duplicates */
-    for (int i = 0; i < parser->ecl_cnt + 1; ++i) {
-        ecl = i == 0 ? parser->main_ecl : parser->ecl_stack[i - 1];
-
-        list_for_each(&ecl->subs, sub) {
-            if (sub->forward_declaration || sub->is_inline || sub->deleted)
-                continue;
-
-            for (int e = 0; e < parser->ecl_cnt + 1; ++e) {
-                thecl_t* comp_ecl = e == 0 ? parser->main_ecl : parser->ecl_stack[e - 1];
-                if ((i == 0 && e > 0) || (i > 0 && (e != i && e > 0))) continue; /* main checks self; ext checks main+self */
-                thecl_sub_t* comp_sub;
-                list_for_each(&comp_ecl->subs, comp_sub) {
-                    if (comp_sub->deleted || comp_sub == sub || !comp_sub->instr_data || comp_sub->offset != sub->offset || (comp_sub->start_offset >= sub->start_offset && i == e))
-                        continue;
-
-                    for (int j = 0; j < sub->offset; ++j) {
-                        if (sub->instr_data->data[j] != comp_sub->instr_data->data[j])
-                            goto different_subs;
-                    }
-                    free(sub->instr_data);
-                    sub->instr_data = comp_sub->instr_data;
-                    sub->deleted = true;
-
-                    thecl_sub_t* sub2;
-                    list_for_each(&ecl->subs, sub2) {
-                        if (sub2->start_offset > sub->start_offset && sub2->is_external == sub->is_external)
-                            sub2->start_offset -= sub->offset;
-                    }
-
-                    sub->is_external = comp_sub->is_external;
-                    sub->start_offset = comp_sub->start_offset;
-
-                    goto double_break;
-                    different_subs:;
-                }
-            }
-            double_break:;
-        }
-    }
-    /* re-compile with new offsets */
-    for (int i = 0; i < parser->ecl_cnt + 1; ++i) {
-        ecl = i == 0 ? parser->main_ecl : parser->ecl_stack[i - 1];
-
-        list_for_each(&ecl->subs, sub) {
-            if (sub->forward_declaration || sub->is_inline || sub->deleted)
-                continue;
-
-            int j = 0;
-            list_for_each(&sub->instrs, instr) {
-                sub->instr_data->data[j++] = c2_instr_serialize(parser->main_ecl, i > 0 ? ecl : NULL, sub, instr, false);
-            }
-        }
-    }
-    ecl = parser->main_ecl;
-
-    /* write file contents */
-    if (!c1_write_gool(ecl, &entry_header, &header, out)) return 0;
-
-    if (parser->ecl_cnt && !g_module_fmt) {
-        fprintf(stderr, "%s: external module name format not specified\n", argv0);
-    }
-    else {
-        entry_header.count = 3;
-        for (int i = 0; i < parser->ecl_cnt; ++i) {
-            ecl = parser->ecl_stack[i];
-
-            char buf[_MAX_PATH + 1];
-            char ename[6];
-            snprintf(buf, _MAX_PATH + 1, g_module_fmt, gool_to_ename(ename, parser->ecl_stack[i]->eid));
-            FILE* out = fopen(buf, "wb");
-
-            if (!file_seekable(out)) {
-                fprintf(stderr, "%s: output is not seekable\n", argv0);
-                return 0;
-            }
-
-            entry_header.id = ecl->eid;
-            header.exe_type = 0;
-
-            if (!file_write(out, &entry_header, sizeof(entry_header_t) + (entry_header.count + 1) * sizeof(uint32_t))) return 0;
-            entry_header.offsets[0] = file_tell(out);
-            if (!file_write(out, &header, sizeof(gool_header_t))) return 0;
-            entry_header.offsets[1] = file_tell(out);
-
-            list_for_each(&ecl->subs, sub) {
-                if (sub->forward_declaration || sub->is_inline)
-                    continue;
-
-                if (sub->instr_data->was_written || sub->deleted)
-                    continue;
-                sub->instr_data->was_written = 1;
-
-                if (!file_write(out, &sub->instr_data->data, sizeof(uint32_t) * sub->offset)) return 0;
-            }
-
-            entry_header.offsets[2] = file_tell(out);
-            if (!file_write(out, ecl->consts, sizeof(int) * ecl->const_count)) return 0;
-            entry_header.offsets[3] = file_tell(out);
-
-            if (!file_seek(out, 0)) return 0;
-            if (!file_write(out, &entry_header, sizeof(entry_header_t) + (entry_header.count + 1) * sizeof(uint32_t))) return 0;
-            
-            fclose(out);
-        }
-    }
-
-    return 1;
+    if (!c1_compile_chain_common(parser, out, c2_instr_serialize)) return 0;
 }
 
 const thecl_module_t c1_gool = {
