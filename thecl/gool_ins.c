@@ -649,7 +649,7 @@ c1_gool_ins_soundspec_params(
         list_append_new(params, param_val_new(type));
     }
     else {
-        fprintf(stderr, "%s:%s:%s:%s:wrong number of arguments (expected 1, 2 or 3, got %zu)\n", argv0, current_input, name, c);
+        fprintf(stderr, "%s:%s:%s:wrong number of arguments (expected 1, 2 or 3, got %zu)\n", argv0, current_input, name, c);
         return NULL;
     }
     return params;
@@ -723,7 +723,7 @@ c1_gool_ins_ntry_params(
         list_append_new(params, param_val_new(type));
     }
     else {
-        fprintf(stderr, "%s:%s:%s:%s:wrong number of arguments (expected 1, got %zu)\n", argv0, current_input, name, c);
+        fprintf(stderr, "%s:%s:%s:wrong number of arguments (expected 1, got %zu)\n", argv0, current_input, name, c);
         return NULL;
     }
     return params;

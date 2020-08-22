@@ -947,6 +947,8 @@ c1_compile(
     FILE* out)
 {
     if (!c1_compile_chain_common(parser, out, c1_instr_serialize)) return 0;
+
+    return 1;
 }
 
 static int
@@ -1038,6 +1040,8 @@ c2_compile(
     FILE* out)
 {
     if (!c1_compile_chain_common(parser, out, c2_instr_serialize)) return 0;
+
+    return 1;
 }
 
 const thecl_module_t c1_gool = {

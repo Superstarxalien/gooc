@@ -532,7 +532,7 @@ PACK_BEGIN
     uint32_t type;
     uint32_t exe_type;
     uint32_t stack_start;
-    uint32_t interrupt_count;
+    int32_t interrupt_count;
     uint32_t eid_count;
 PACK_END
 } PACK_ATTRIBUTE gool_header_t;

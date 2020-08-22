@@ -797,7 +797,7 @@ Texture_Info:
                 yyerror(state, "%s:invalid texture width/height", state->current_anim->name);
             }
             const uint64_t zero = 0;
-            if ($w == 0 && $w == 4) uv = 0;
+            if ($w == 0 || $w == 4) uv = 0;
             if ($w == 8) uv = 1;
             if ($w == 16) uv = 2;
             if ($w == 32) uv = 3;
