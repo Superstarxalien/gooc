@@ -1265,6 +1265,11 @@ ParenExpressionList:
         { $$ = $list; }
     ;
 
+DoParenExpression:
+      %empty
+    | "(" Instructions_NoBlock ")"
+    ;
+
 ParenExpressionListNoScope:
       "(" Expression_List[list] ")"
         { $$ = $list; }
@@ -1597,18 +1602,7 @@ WhileBlock:
         list_del(&state->block_stack, head);
         scope_finish(state, true);
       }
-    | "do" {
-        char labelstr[256];
-        snprintf(labelstr, 256, "do_%i_%i", yylloc.first_line, yylloc.first_column);
-        char labelstr_st[256];
-        char labelstr_end[256];
-        snprintf(labelstr_st, 256, "%s_st", (char*)labelstr);
-        snprintf(labelstr_end, 256, "%s_end", (char*)labelstr);
-
-        list_prepend_new(&state->block_stack, strdup(labelstr));
-        label_create(state, labelstr_st);
-      } DoBlock
-    | "do" "(" { scope_begin(state); } VarDeclaration ")" {
+    | "do" { scope_begin(state); } DoParenExpression {
         char labelstr[256];
         snprintf(labelstr, 256, "do_%i_%i", yylloc.first_line, yylloc.first_column);
         char labelstr_st[256];
