@@ -215,6 +215,8 @@ c1_globals[] = {
     { "GAMEPROGRESS",       20 },
 
     { "LIFECOUNT",          24 },
+    { "HEALTH",             25 },
+    { "FRUITCOUNT",         26 },
 
     { "ZONEFLAGS",          30 },
     { "STARTLIVES",         31 },
