@@ -381,7 +381,7 @@ int yydebug = 0;
 %type <list> Address_List
 %type <list> Expression_List
 %type <list> ParenExpressionList
-%type <list> ParenExpressionListNoScope
+%type <list> DoParenExpressionList
 
 %type <expression> Expression
 %type <expression> ExpressionLoadType
@@ -1270,8 +1270,10 @@ DoParenExpression:
     | "(" Instructions_NoBlock ")"
     ;
 
-ParenExpressionListNoScope:
+DoParenExpressionList:
       "(" Expression_List[list] ")"
+        { $$ = $list; }
+    | "(" { scope_begin(state); } "{" Instructions_NoBlock "}" { scope_finish(state, true); } ";" Expression_List[list] ")"
         { $$ = $list; }
     ;
 
@@ -1616,7 +1618,7 @@ WhileBlock:
     ;
 
 DoBlock:
-      CodeBlock "while" ParenExpressionListNoScope[cond]  {
+      CodeBlock "while" DoParenExpressionList[cond]  {
         if ($cond == NULL) {
             yyerror(state, "warning: empty conditional");
             break;
@@ -1649,7 +1651,7 @@ DoBlock:
         free(head->data);
         list_del(&state->block_stack, head);
       }
-    | CodeBlock "until" ParenExpressionListNoScope[cond]  {
+    | CodeBlock "until" DoParenExpressionList[cond]  {
         if ($cond == NULL) {
             yyerror(state, "warning: empty conditional");
             break;
