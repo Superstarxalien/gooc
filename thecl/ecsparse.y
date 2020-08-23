@@ -1951,7 +1951,7 @@ ExpressionSubset:
         if ($3 != NULL) {
             $$ = EXPR_2(NTRY, EXPR_VAL(list_count($3)), EXPR_VAL(5));
             expression_t* expr;
-            list_for_each($3, expr) {
+            list_for_each_back($3, expr) {
                 list_append_new(&$$->children, expr);
             }
             list_free_nodes($3);
