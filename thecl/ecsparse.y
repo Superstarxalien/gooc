@@ -1251,10 +1251,17 @@ Instructions:
     | Instructions Block
     ;
 
+Instructions_NoBlock:
+    %empty
+    | Instructions_NoBlock Instruction
+    ;
+
 ParenExpressionList:
       "(" { scope_begin(state); } Expression_List[list] ")"
         { $$ = $list; }
     | "(" { scope_begin(state); } VarDeclaration ";" Expression_List[list] ")"
+        { $$ = $list; }
+    | "(" { scope_begin(state); } "{" Instructions_NoBlock "}" ";" Expression_List[list] ")"
         { $$ = $list; }
     ;
 
