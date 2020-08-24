@@ -217,7 +217,9 @@ c1_globals[] = {
     { "LIFECOUNT",          24 },
     { "HEALTH",             25 },
     { "FRUITCOUNT",         26 },
-
+    { "CORTEXCOUNT",        27 },
+    { "BRIOCOUNT",          28 },
+    { "TAWNACOUNT",         29 },
     { "ZONEFLAGS",          30 },
     { "STARTLIVES",         31 },
 
