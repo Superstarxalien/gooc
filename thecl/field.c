@@ -101,6 +101,7 @@ gool_fields[] = {
     { "zindex",         54 },
     { "eventreceived",  55 },
     { "vfx",            56 },
+    { "camdist",        56 },
     { "yzapproach",     57 },
     { "density",        58 },
     { "voice",          59 },
