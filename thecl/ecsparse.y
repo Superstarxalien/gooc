@@ -2966,7 +2966,7 @@ instr_create_inline_call(
                         ) {
                             char labelstr[256];
                             snprintf(labelstr, 256, "%s_continue", (char*)head->data);
-                            expression_create_goto(state, GOTO, labelstr, NULL);
+                            expression_create_goto_pop(state, GOTO, labelstr, NULL, stack_adjust);
                             break;
                         }
                     }
