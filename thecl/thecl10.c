@@ -755,9 +755,9 @@ c1_write_gool(
             }
         }
         state_t gstate = { state->stateflag, state->statusc, eid_pool_force_get_index(ecl, state->exe->eid),
-            sub_e == NULL ? 0x3FFFU : sub_e->start_offset | (sub_e->is_external ? 0x4000 : 0),
-            sub_t == NULL ? 0x3FFFU : sub_t->start_offset | (sub_t->is_external ? 0x4000 : 0),
-            sub_c == NULL ? 0x3FFFU : sub_c->start_offset | (sub_c->is_external ? 0x4000 : 0) };
+            sub_e == NULL ? 0x3FFFU : sub_e->start_offset | (is_post_c2(ecl->version) && sub_e->is_external ? 0x4000 : 0),
+            sub_t == NULL ? 0x3FFFU : sub_t->start_offset | (is_post_c2(ecl->version) && sub_t->is_external ? 0x4000 : 0),
+            sub_c == NULL ? 0x3FFFU : sub_c->start_offset | (is_post_c2(ecl->version) && sub_c->is_external ? 0x4000 : 0) };
 
         if (!file_write(out, &gstate, sizeof(gstate))) return 0;
     }
@@ -837,7 +837,8 @@ c1_compile_chain_common(
 
             for (int e = 0; e < parser->ecl_cnt + 1; ++e) {
                 thecl_t* comp_ecl = e == 0 ? parser->main_ecl : parser->ecl_stack[e - 1];
-                if ((i == 0 && e > 0) || (i > 0 && (e != i && e > 0))) continue; /* main checks self; ext checks main+self */
+                if (is_post_c2(ecl->version) && ((i == 0 && e > 0) || (i > 0 && (e != i && e > 0)))) continue;
+                else if (!is_post_c2(ecl->version) && i != e) continue; /* main checks self; ext checks main+self in c2, self checks self in c1 */
                 thecl_sub_t* comp_sub;
                 list_for_each(&comp_ecl->subs, comp_sub) {
                     if (comp_sub->deleted || comp_sub == sub || !comp_sub->instr_data || comp_sub->offset != sub->offset || (comp_sub->start_offset >= sub->start_offset && i == e))
