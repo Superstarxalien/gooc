@@ -510,7 +510,10 @@ c1_instr_make_params(
         int bits = total_bits;
         int val = 0;
         if (op == 'R') {
-            if (param->val_type != PARAM_LITERAL) {
+            if (param->is_eid) {
+                val = c1_make_ref_pool(eid_pool_force_get_index(ecl, p)); /* eid pool ref */
+            }
+            else if (param->val_type != PARAM_LITERAL) {
                 if (param->object_link == 0) {
                     val = c1_make_ref_reg(p); /* reg ref */
                 }
@@ -535,17 +538,12 @@ c1_instr_make_params(
                     val = c1_make_ref_frac(p / 0x10); /* frac ref */
                 }
                 else {
+                    /* EXTPOOL DOES NOT WORK PROPERLY IN-GAME(?) */
                     if (ecl_ext && ecl_ext->purge_data) {
                         val = c1_make_ref_null(); /* null ref */
                     }
                     else {
-                        /* EXTPOOL DOES NOT WORK PROPERLY IN-GAME(?) */
-                        if (param->is_eid) {
-                            val = c1_make_ref_pool(eid_pool_force_get_index(ecl, p)); /* eid pool ref */
-                        }
-                        else {
-                            val = c1_make_ref_pool(gool_pool_force_get_index(ecl, p) + ecl->eid_count + ecl->array_off); /* pool ref */
-                        }
+                        val = c1_make_ref_pool(gool_pool_force_get_index(ecl, p) + ecl->eid_count + ecl->array_off); /* pool ref */
                     }
                 }
             }

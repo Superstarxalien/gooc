@@ -432,6 +432,10 @@ char* gool_to_ename(
 int gool_to_eid(
     const char* ename);
 
+int eid_pool_get_index(
+    thecl_t* ecl,
+    uint32_t eid);
+
 int eid_pool_force_get_index(
     thecl_t* ecl,
     uint32_t eid);

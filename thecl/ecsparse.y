@@ -489,6 +489,11 @@ Statement:
 
             state->main_ecl->is_defined = 1;
 
+            if (eid_pool_get_index(state->main_ecl, state->main_ecl->eid) == -1) {
+                state->main_ecl->eids = realloc(state->main_ecl->eids, (state->main_ecl->eid_count + 1) * sizeof(uint32_t));
+                memmove(state->main_ecl->eids+1, state->main_ecl->eids, state->main_ecl->eid_count++);
+                state->main_ecl->eids[0] = state->main_ecl->eid;
+            }
             eid_pool_force_get_index(state->main_ecl, state->main_ecl->eid);
 
             /* automatically create an expression macro that translates the ename to the GOOL ID */
@@ -546,6 +551,10 @@ Statement:
       }
     | DIRECTIVE ENTRY {
         if (!strcmp($1, "module")) {
+            if (!state->main_ecl->is_defined) {
+                yyerror(state, "cannot define external modules without defining main module first");
+                goto outer_break_447;
+            }
             int eid = gool_to_eid($2);
             for (int i = 0; i < state->ecl_cnt; ++i) {
                 if (state->ecl_stack[i]->eid == eid) {
@@ -554,7 +563,11 @@ Statement:
                 }
             }
             thecl_t* ecl = thecl_new();
-            eid_pool_force_get_index(state->main_ecl, eid);
+            if (eid_pool_get_index(state->main_ecl, eid) == -1) {
+                state->main_ecl->eids = realloc(state->main_ecl->eids, (state->main_ecl->eid_count + 1) * sizeof(uint32_t));
+                memmove(state->main_ecl->eids+state->ecl_cnt+2, state->main_ecl->eids+state->ecl_cnt+1, state->main_ecl->eid_count++);
+                state->main_ecl->eids[state->ecl_cnt+1] = eid;
+            }
             ecl->eid = eid;
             state->ecl = ecl;
             state->ecl_stack = realloc(state->ecl_stack, sizeof(thecl_t*) * ++state->ecl_cnt);
@@ -3928,10 +3941,6 @@ expression_output(
     if (expr->type != EXPRESSION_TERNARY && expr_get_by_id(state->version, expr->id)->id < -2) {
         yyerror(state, "error, cannot output non-compileable expression %d", expr->id);
         exit(2);
-    }
-
-    if (expr->type == EXPRESSION_VAL && expr->value->is_eid) {
-        eid_pool_force_get_index(state->main_ecl, expr->value->value.val.S);
     }
 
     if (state->mips_mode) {

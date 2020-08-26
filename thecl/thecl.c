@@ -292,6 +292,17 @@ int gool_to_eid(
     return eid;
 }
 
+int eid_pool_get_index(
+    thecl_t* ecl,
+    uint32_t eid)
+{
+    for (int i = 0; i < ecl->eid_count; ++i) {
+        if (ecl->eids[i] == eid)
+            return i;
+    }
+    return -1;
+}
+
 int eid_pool_force_get_index(
     thecl_t* ecl,
     uint32_t eid)
