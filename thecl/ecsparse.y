@@ -2966,7 +2966,7 @@ instr_create_inline_call(
                         ) {
                             char labelstr[256];
                             snprintf(labelstr, 256, "%s_continue", (char*)head->data);
-                            expression_create_goto_pop(state, GOTO, labelstr, NULL, stack_adjust);
+                            expression_create_goto(state, GOTO, labelstr, NULL);
                             break;
                         }
                     }
@@ -2982,7 +2982,7 @@ instr_create_inline_call(
                 }
                 else {
                     snprintf(buf, 512, "%s%s", name, "inline_end");
-                    expression_create_goto(state, GOTO, buf, NULL);
+                    expression_create_goto_pop(state, GOTO, buf, NULL, var_get_new_stack(state, state->current_sub)-(stack_adjust+3));
                 }
             } break;
             case LINE_RETURN_SUP: {
