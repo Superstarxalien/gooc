@@ -1084,8 +1084,13 @@ c1_gool_ins_memcardfn_params(
         list_append_to(params, param_val_new(5), params->head);
         list_append_new(params, param_val_new(15));
     }
+    else if (c == 1) {
+        list_prepend_new(params, param_val_new(5));
+        list_prepend_new(params, param_val_new(0));
+        list_append_new(params, param_val_new(15));
+    }
     else {
-        fprintf(stderr, "%s:%s:memcardfn: wrong number of arguments (expected 2, got %zu)\n", argv0, current_input, c);
+        fprintf(stderr, "%s:%s:memcardfn: wrong number of arguments (expected 1 or 2, got %zu)\n", argv0, current_input, c);
         return NULL;
     }
     return params;
