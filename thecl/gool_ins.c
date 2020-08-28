@@ -956,6 +956,26 @@ c1_gool_ins_seqplay_params(
 }
 
 static list_t*
+c1_gool_ins_killobjs_params(
+    list_t* params,
+    int argc)
+{
+    thecl_param_t* param;
+    size_t c = list_count(params);
+    if (c == 0) {
+        list_append_new(params, param_null_new());
+        list_append_new(params, param_val_new(5));
+        list_append_new(params, param_val_new(7));
+        list_append_new(params, param_val_new(12));
+    }
+    else {
+        fprintf(stderr, "%s:%s:killobjs: wrong number of arguments (expected 0, got %zu)\n", argv0, current_input, c);
+        return NULL;
+    }
+    return params;
+}
+
+static list_t*
 c1_gool_ins_loadlevel_params(
     list_t* params,
     int argc)
@@ -1233,6 +1253,7 @@ c1_gool_ins[] = {
     { "gamefunc4",                  28, 0, 0, 0, -1, c1_gool_ins_gamefunc4_params },
     { "soundstop",                  28, 0, 0, 0, -1, c1_gool_ins_soundstop_params },
     { "seqplay",                    28, 0, 0, 0, -1, c1_gool_ins_seqplay_params },
+    { "killobjs",                   28, 0, 0, 0, -1, c1_gool_ins_killobjs_params },
     { "loadlevel",                  28, 0, 0, 0, -1, c1_gool_ins_loadlevel_params },
     { "gamefunc10",                 28, 0, 0, 0, -1, c1_gool_ins_gamefunc10_params },
     { "startgame",                  28, 0, 0, 0, -1, c1_gool_ins_startgame_params },
@@ -1451,6 +1472,7 @@ c2_gool_ins[] = {
     { "gamefunc4",                  28, 0, 0, 0, -1, c1_gool_ins_gamefunc4_params },
     { "soundstop",                  28, 0, 0, 0, -1, c1_gool_ins_soundstop_params },
     { "seqplay",                    28, 0, 0, 0, -1, c1_gool_ins_seqplay_params },
+    { "killobjs",                   28, 0, 0, 0, -1, c1_gool_ins_killobjs_params },
     { "loadlevel",                  28, 0, 0, 0, -1, c1_gool_ins_loadlevel_params },
     { "gamefunc10",                 28, 0, 0, 0, -1, c1_gool_ins_gamefunc10_params },
     { "startgame",                  28, 0, 0, 0, -1, c1_gool_ins_startgame_params },
