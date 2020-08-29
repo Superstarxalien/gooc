@@ -224,6 +224,7 @@ c1_globals[] = {
     { "ZONEFLAGS",          30 },
     { "STARTLIVES",         31 },
 
+    { "MONOSOUND",          33 },
     { "SFXVOL",             34 },
     { "MUSVOL",             35 },
 
@@ -344,6 +345,7 @@ c2_globals[] = {
     { "ZONEFLAGS",          30 },
     { "STARTLIVES",         31 },
 
+    { "MONOSOUND",          33 },
     { "SFXVOL",             34 },
     { "MUSVOL",             35 },
     { "CHECKPOINTCOUNT",    36 },
