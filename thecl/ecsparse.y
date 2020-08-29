@@ -1985,7 +1985,7 @@ ExpressionSubset:
     | "avg" "(" Expression "," Expression ")"                     { $$ = EXPR_2(RSHIFT, EXPR_2(ADD, $3, $5), EXPR_VAL(1)); }
     | Expression "?" Expression ":" Expression  %prec QUESTION    { $$ = expression_ternary_new(state, $1, $3, $5); }
     | "offsetof" "(" Expression ")"                               {
-        if ($3->type != EXPRESSION_VAL) {
+        if ($3->type != EXPRESSION_VAL && $3->type != EXPRESSION_GLOBAL) {
             yyerror(state, "syntax error, offsetof parameter must be value expression");
             exit(2);
         }
