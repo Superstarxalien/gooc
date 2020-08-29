@@ -377,6 +377,7 @@ int yydebug = 0;
 %token OFFSETOF "offsetof"
 %token NTRY4 "ntry4"
 %token NTRY5 "ntry5"
+%token GETGLOBAL "getglobal"
 
 %type <list> Address_List
 %type <list> Expression_List
@@ -1891,8 +1892,9 @@ ExpressionSubset:
       }
     | "+" Expression %prec UADD      { $$ = $2; }
     | "-" Expression %prec USUBTRACT { $$ = EXPR_2(SUBTRACT, EXPR_VAL(0), $2); }
-    | "abs" "(" Expression ")"    { $$ = EXPR_2(ABS,      EXPR_SP(), $3); }
-    | "getanim" "(" Expression ")"{ $$ = EXPR_2(GETANIM,  EXPR_SP(), $3); }
+    | "abs" "(" Expression ")"       { $$ = EXPR_2(ABS,      EXPR_SP(), $3); }
+    | "getanim" "(" Expression ")"   { $$ = EXPR_2(GETANIM,  EXPR_SP(), $3); }
+    | "getglobal" "(" Expression ")" { $$ = EXPR_2(GLOAD,    EXPR_SP(), $3); }
     | "seek" "(" Expression "," Expression "," Expression ")"     { $$ = EXPR_3(SEEK, $3, $5, $7); }
     | "seek" "(" Expression "," Expression ")"                    { $$ = EXPR_2(SEEK, $3, $5); }
     | "degseek" "(" Expression "," Expression "," Expression ")"  { $$ = EXPR_3(DEGSEEK, $3, $5, $7); }
@@ -1987,11 +1989,15 @@ ExpressionSubset:
             yyerror(state, "syntax error, offsetof parameter must be value expression");
             exit(2);
         }
-        if (!($3->value->val_type == PARAM_FIELD && $3->value->object_link >= 0 && $3->value->object_link <= 7)) {
+        if ($3->value->val_type == PARAM_FIELD && $3->value->object_link >= 0 && $3->value->object_link <= 7)
+            $$ = EXPR_VAL($3->value->value.val.S << 8);
+        else if ($3->value->val_type == PARAM_GLOBAL)
+            $$ = EXPR_VAL($3->value->value.val.S);
+        else {
             yyerror(state, "syntax error, offsetof parameter is an invalid expression");
             exit(2);
         }
-        $$ = EXPR_VAL($3->value->value.val.S << 8);
+        expression_free($3);
       }
     ;
 

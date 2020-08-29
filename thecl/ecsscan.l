@@ -180,6 +180,7 @@
 "offsetof"         return OFFSETOF;
 "ntry4"            return NTRY4;
 "ntry5"            return NTRY5;
+"getglobal"        return GETGLOBAL;
 
 ([0-9]+\.([0-9]+)?|([0-9]+)?\.[0-9]+)([MmSsVv]|[Hh]z|deg)? {
     char* afternum;
