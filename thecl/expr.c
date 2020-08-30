@@ -34,10 +34,9 @@
 
 static const expr_t
 global_expressions[] = {
-    /* The program checks against the number of params, as well as the
-     * requested stack depth, and does the replacements. */
+    /* The program checks against the number of params, */
+    /* and does the replacements. */
     /* p0 is the first param, p1 the second ... */
-    /* s0 is the previous instruction, s1 the one previous to s0 ... */
 
     /*SYM        ID  A SP2 O  U */
     { LOAD,      22, 0, 0, 0, 0 }, /* p0 */
@@ -54,7 +53,7 @@ global_expressions[] = {
     { MULTIPLY,   2, 2, 0, 1, 0 }, /* s1 * s0 */
     { DIVIDE,     3, 2, 0, 1, 0 }, /* s1 / s0 */
     { EQUAL,      4, 2, 0, 1, 0 }, /* s1 == s0 */
-    { INEQUAL,   -2, 2, 0, 1, 0 }, /* GOOL does not have this instruction, use NOT + CEQ instead /* s1 != s0 */
+    { INEQUAL,   -2, 2, 0, 1, 0 }, /* s1 != s0 */ /* GOOL does not have this instruction, use NOT + CEQ instead */
     { AND,        5, 2, 0, 1, 0 }, /* s1 && s0 */
     { OR,         6, 2, 0, 1, 0 }, /* s1 || s0 */
     { B_AND,      7, 2, 0, 1, 0 }, /* s1 & s0 */
@@ -78,6 +77,7 @@ global_expressions[] = {
     { MISC,      28, 4, 0, 0, 0 }, /* misc(s0, s1, s2, s3) */
     { PSIN,      29, 2, 0, 1, 0 }, /* sin(s0, s1) */
     { TIME,      30, 2, 0, 0, 0 }, /* time(s0, s1) */
+    { GETGLOBAL, 31, 1, 0, 0, 0 }, /* getglobal(p0) */
     { DEGDIST,   33, 2, 0, 0, 0 }, /* degdist(s0, s1) */
     { SEEK,      34, 3, 1, 0, 0 }, /* seek(s0, s1, s2) */
     { GETCOLOR,  35, 2, 0, 0, 0 }, /* getcolor(s0, s1) */

@@ -1894,7 +1894,7 @@ ExpressionSubset:
     | "-" Expression %prec USUBTRACT { $$ = EXPR_2(SUBTRACT, EXPR_VAL(0), $2); }
     | "abs" "(" Expression ")"       { $$ = EXPR_2(ABS,      EXPR_SP(), $3); }
     | "getanim" "(" Expression ")"   { $$ = EXPR_2(GETANIM,  EXPR_SP(), $3); }
-    | "getglobal" "(" Expression ")" { $$ = EXPR_2(GLOAD,    EXPR_SP(), $3); }
+    | "getglobal" "(" Expression ")" { $$ = EXPR_1(GETGLOBAL,$3, EXPR_NULL()); }
     | "seek" "(" Expression "," Expression "," Expression ")"     { $$ = EXPR_3(SEEK, $3, $5, $7); }
     | "seek" "(" Expression "," Expression ")"                    { $$ = EXPR_2(SEEK, $3, $5); }
     | "degseek" "(" Expression "," Expression "," Expression ")"  { $$ = EXPR_3(DEGSEEK, $3, $5, $7); }
