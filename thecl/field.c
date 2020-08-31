@@ -258,6 +258,22 @@ c1_globals[] = {
 
     { "GAMEFRAME",          79 },
 
+    { "CARDBLOCKDATA00",    82 },
+    { "CARDBLOCKDATA01",    83 },
+    { "CARDBLOCKDATA02",    84 },
+    { "CARDBLOCKDATA03",    85 },
+    { "CARDBLOCKDATA04",    86 },
+    { "CARDBLOCKDATA05",    87 },
+    { "CARDBLOCKDATA06",    88 },
+    { "CARDBLOCKDATA07",    89 },
+    { "CARDBLOCKDATA08",    90 },
+    { "CARDBLOCKDATA09",    91 },
+    { "CARDBLOCKDATA10",    92 },
+    { "CARDBLOCKDATA11",    93 },
+    { "CARDBLOCKDATA12",    94 },
+    { "CARDBLOCKDATA13",    95 },
+    { "CARDBLOCKDATA14",    96 },
+
     { "GEMCOUNT",           97 },
     { "KEYCOUNT",           98 },
 
