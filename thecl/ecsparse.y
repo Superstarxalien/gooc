@@ -810,7 +810,6 @@ Texture_Info:
                 ($h != 0 && $h != 4 && $h != 8 && $h != 16 && $h != 32 && $h != 64)) {
                 yyerror(state, "%s:invalid texture width/height", state->current_anim->name);
             }
-            const uint64_t zero = 0;
             if ($w == 0 || $w == 4) uv = 0;
             if ($w == 8) uv = 1;
             if ($w == 16) uv = 2;
@@ -834,8 +833,7 @@ Texture_Info:
             tex->uv = uv & 0x3FF;
             tex->unk1 = 0;
             tex->unk2 = 0;
-            if (memcmp(tex, &zero, 8))
-                tex->textured = 1;
+            tex->textured = !!memcmp(tex, zero_block, sizeof(c1_tex_t));
         }
         else if (state->version == 2) {
             c2_tex_t* tex = state->current_tex;
@@ -895,7 +893,6 @@ Texture_Info:
                 ($h != 0 && $h != 4 && $h != 8 && $h != 16 && $h != 32 && $h != 64)) {
                 yyerror(state, "%s:invalid texture width/height", state->current_anim->name);
             }
-            const uint64_t zero = 0;
             if ($w == 0 || $w == 4) uv = 0;
             if ($w == 8) uv = 1;
             if ($w == 16) uv = 2;
@@ -921,8 +918,7 @@ Texture_Info:
             tex->uv = uv & 0x3FF;
             tex->unk1 = 0;
             tex->unk2 = 0;
-            if (memcmp(tex, &zero, 8))
-                tex->textured = 1;
+            tex->textured = !!memcmp(tex, zero_block, sizeof(c1_tex_t));
         }
         else if (state->version == 2) {
             c2_tex_t* tex = state->current_tex;
