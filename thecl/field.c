@@ -284,6 +284,8 @@ c1_globals[] = {
     { "FADEAMOUNT",        107 },
     { "DEATHCOUNT",        108 },
 
+    { "DEMOID",            114 },
+
     { NULL, 0 }
 };
 
