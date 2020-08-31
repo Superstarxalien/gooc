@@ -273,7 +273,6 @@ c1_globals[] = {
     { "CARDBLOCKDATA12",    94 },
     { "CARDBLOCKDATA13",    95 },
     { "CARDBLOCKDATA14",    96 },
-
     { "GEMCOUNT",           97 },
     { "KEYCOUNT",           98 },
 
