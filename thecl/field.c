@@ -197,7 +197,7 @@ c2_colors[] = {
 static const field_t
 c1_globals[] = {
     { "LEVEL",               0 },
-
+    { "GLOBALVAL",           1 },
     { "SHAKEY",              2 },
     { "GLOBALOBJ",           3 },
     { "GAMEFLAGS",           4 },
@@ -256,7 +256,7 @@ c1_globals[] = {
 
     { "DEMOTEXTOBJ",        76 },
 
-    { "GAMEFRAME",          79 },
+    { "GAMETICK",           79 },
 
     { "CARDBLOCKDATA00",    82 },
     { "CARDBLOCKDATA01",    83 },
@@ -275,7 +275,9 @@ c1_globals[] = {
     { "CARDBLOCKDATA14",    96 },
     { "GEMCOUNT",           97 },
     { "KEYCOUNT",           98 },
-
+    { "SAVETYPE",           99 },
+    { "SAVEDITEMPOOL1",    100 },
+    { "SAVEDITEMPOOL2",    101 },
     { "SPAWNTRANSX",       102 },
     { "SPAWNTRANSY",       103 },
     { "SPAWNTRANSZ",       104 },
@@ -284,7 +286,17 @@ c1_globals[] = {
     { "FADEAMOUNT",        107 },
     { "DEATHCOUNT",        108 },
 
+    { "AUTOPASSWORD",      110 },
+    { "AUTOPASSWORDINPUT1",111 },
+    { "AUTOPASSWORDINPUT2",112 },
+    { "SAVEDLEVELCOUNT",   113 },
     { "DEMOID",            114 },
+    { "OPTIONSCHANGED",    115 },
+
+    /* NTSC-J only */
+
+    { "DOCTORHELPCOUNT",   116 },
+    { "CARDBIOSTEXTBUF",   117 },
 
     { NULL, 0 }
 };
@@ -391,10 +403,7 @@ c2_globals[] = {
 
     { "DEMOTEXTOBJ",        76 },
 
-    { "GAMEFRAME",          79 },
-
-    { "GEMCOUNT",           97 },
-    { "KEYCOUNT",           98 },
+    { "GAMETICK",           79 },
 
     { "SPAWNTRANSX",       102 },
     { "SPAWNTRANSY",       103 },
