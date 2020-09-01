@@ -204,7 +204,7 @@ c1_globals[] = {
     { "RESPAWNCOUNT",        5 },
     { "FRUITDISPLAY",        6 },
     { "LIFEDISPLAY",         7 },
-
+    { "AMBIANCEOBJ",         8 },
     { "PREVGAMEFLAGS",       9 },
 
     { "PAUSEMENU",          12 },
@@ -212,7 +212,9 @@ c1_globals[] = {
     { "PICKUPDISPLAY",      14 },
     { "GAMEDIR",            15 },
     { "DOCTOR",             16 },
-
+    { "GAMESTATE",          17 },
+    { "GAMESCREEN",         18 },
+    { "SAVEDSCREEN",        19 },
     { "CURRENTLEVEL",       20 },
 
     { "LIFECOUNT",          24 },
