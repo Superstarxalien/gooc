@@ -235,7 +235,8 @@ c1_globals[] = {
     { "CAMROTY",            41 },
     { "CAMROTZ",            42 },
     { "FRAMETIME",          43 },
-
+    { "SCREENOFFX",         44 },
+    { "SCREENOFFY",         45 },
     { "LEVELCOUNT",         46 },
     { "LEVELSUNLOCKED",     47 },
 
