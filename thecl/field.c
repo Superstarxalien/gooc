@@ -227,7 +227,7 @@ c1_globals[] = {
     { "MONOSOUND",          33 },
     { "SFXVOL",             34 },
     { "MUSVOL",             35 },
-
+    { "CAMSPINOBJ",         36 },
     { "CAMTRANSX",          37 },
     { "CAMTRANSY",          38 },
     { "CAMTRANSZ",          39 },
@@ -238,26 +238,36 @@ c1_globals[] = {
 
     { "LEVELCOUNT",         46 },
 
+    { "CAMSPINOBJVERT",     49 },
+
+    { "LIGHTSRCOBJ",        54 },
+
+    { "CAMSPINDISTSPD",     56 },
+    { "CAMSPINLOOKSPD",     57 },
     { "PERCENTCOMPLETE",    58 },
-
+    { "CARDSTATUS",         59 },
     { "BONUSROUND",         60 },
-
+    { "CARDBLOCKCOUNT",     61 },
     { "BOXCOUNT",           62 },
     { "ITEMPOOL1",          63 },
-
+    { "ISLANDCAMANGLE",     64 },
     { "GEMTIME",            65 },
-
+    { "ISLANDCAMSTATUS",    66 },
     { "FIRSTZONE",          67 },
     { "DEBUG",              68 },
     { "CHECKPOINTID",       69 },
     { "PREVBOXCOUNT",       70 },
     { "PREVLEVEL",          71 },
     { "ITEMPOOL2",          72 },
-
-    { "DEMOTEXTOBJ",        76 },
-
+    { "MAPLEVELLINKS",      73 },
+    { "TITLEPAUSESTATE",    74 },
+    { "MAPKEYLINKS",        75 },
+    { "ISLANDTEXTOBJ",      76 },
+    { "ISLANDTEXTANIM",     77 },
+    { "ISLANDTEXTFRAME",    78 },
     { "GAMETICK",           79 },
-
+    { "CARDTEXTBUF",        80 },
+    { "CARDICONBUF",        81 },
     { "CARDBLOCKDATA00",    82 },
     { "CARDBLOCKDATA01",    83 },
     { "CARDBLOCKDATA02",    84 },
