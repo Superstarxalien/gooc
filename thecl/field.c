@@ -213,7 +213,7 @@ c1_globals[] = {
     { "GAMEDIR",            15 },
     { "DOCTOR",             16 },
 
-    { "GAMEPROGRESS",       20 },
+    { "CURRENTLEVEL",       20 },
 
     { "LIFECOUNT",          24 },
     { "HEALTH",             25 },
@@ -237,6 +237,7 @@ c1_globals[] = {
     { "FRAMETIME",          43 },
 
     { "LEVELCOUNT",         46 },
+    { "LEVELSUNLOCKED",     47 },
 
     { "CAMSPINOBJVERT",     49 },
 
@@ -372,7 +373,7 @@ c2_globals[] = {
     { "GAMEDIR",            15 },
     { "DOCTOR",             16 },
 
-    { "GAMEPROGRESS",       20 },
+    { "CURRENTLEVEL",       20 },
 
     { "BONUSDEATHTIME",     22 },
 
