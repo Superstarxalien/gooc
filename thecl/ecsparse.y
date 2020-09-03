@@ -884,7 +884,8 @@ Base_Texture_Info:
     ;
 
 Texture_Info:
-      Base_Texture_Info "!" INTEGER[wind] INTEGER[flip] {
+      Base_Texture_Info
+    | Base_Texture_Info "!" INTEGER[wind] INTEGER[flip] {
         if (state->version == 1) {
             c1_tex_t* tex = state->current_tex;
             tex->uv += ($wind % 6) * 25;
