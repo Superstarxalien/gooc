@@ -797,7 +797,7 @@ GlobalVarDeclaration:
       }
     ;
 
-Texture_Info:
+Base_Texture_Info:
       INTEGER[rgb] INTEGER[color] INTEGER[blend] INTEGER[clutx] INTEGER[cluty] INTEGER[x] INTEGER[y] INTEGER[w] INTEGER[h] {
         if (state->version == 1) {
             c1_tex_t* tex = state->current_tex;
@@ -833,7 +833,7 @@ Texture_Info:
             tex->uv = uv & 0x3FF;
             tex->unk1 = 0;
             tex->unk2 = 0;
-            tex->textured = !!memcmp(tex, zero_block, sizeof(c1_tex_t));
+            tex->textured = !(!uv && !tex->r && !tex->g && !tex->b && !tex->color && !tex->blend && !tex->cx && !tex->cy && !tex->x && !tex->y && !tex->segment);
         }
         else if (state->version == 2) {
             c2_tex_t* tex = state->current_tex;
@@ -881,89 +881,18 @@ Texture_Info:
             tex->v4 = y+h;
         }
       }
-    | INTEGER[rgb] INTEGER[color] INTEGER[blend] INTEGER[clutx] INTEGER[cluty] INTEGER[x] INTEGER[y] INTEGER[w] INTEGER[h] "!" INTEGER[wind] INTEGER[flip] {
+    ;
+
+Texture_Info:
+      Base_Texture_Info "!" INTEGER[wind] INTEGER[flip] {
         if (state->version == 1) {
             c1_tex_t* tex = state->current_tex;
-
-            if ($x >= 128) {
-                yyerror(state, "%s:texture x offset is out of bounds", state->current_anim->name);
-            }
-            int uv = 0;
-            if (($w != 0 && $w != 4 && $w != 8 && $w != 16 && $w != 32 && $w != 64) ||
-                ($h != 0 && $h != 4 && $h != 8 && $h != 16 && $h != 32 && $h != 64)) {
-                yyerror(state, "%s:invalid texture width/height", state->current_anim->name);
-            }
-            if ($w == 0 || $w == 4) uv = 0;
-            if ($w == 8) uv = 1;
-            if ($w == 16) uv = 2;
-            if ($w == 32) uv = 3;
-            if ($w == 64) uv = 4;
-            if ($h == 0 || $h == 4) uv += 0;
-            if ($h == 8) uv += 5;
-            if ($h == 16) uv += 10;
-            if ($h == 32) uv += 15;
-            if ($h == 64) uv += 20;
-            uv += ($wind % 6) * 25;
-            uv += ($flip % 4) * 150;
-            tex->r = $rgb >> 0 & 0xFF;
-            tex->g = $rgb >> 8 & 0xFF;
-            tex->b = $rgb >> 16 & 0xFF;
-            tex->color = $color & 0x3;
-            tex->blend = $blend & 0x3;
-            tex->cx = $clutx & 0xF;
-            tex->cy = $cluty & 0x7F;
-            tex->x = $x & 0x1F;
-            tex->y = $y & 0x1F;
-            tex->segment = ($x / 0x20) & 0x3;
-            tex->uv = uv & 0x3FF;
-            tex->unk1 = 0;
-            tex->unk2 = 0;
-            tex->textured = !!memcmp(tex, zero_block, sizeof(c1_tex_t));
+            tex->uv += ($wind % 6) * 25;
+            tex->uv += ($flip % 4) * 150;
+            tex->uv = tex->uv & 0x3FF;
+            tex->textured = tex->textured || tex->uv;
         }
         else if (state->version == 2) {
-            c2_tex_t* tex = state->current_tex;
-
-            int x = $x;
-            int y = $y;
-            int w = $w;
-            int h = $h;
-            int segsize = 256 >> $color;
-            if ((x & 0xff) + w > 256) {
-                yyerror(state, "%s: aligned texture is too wide", state->current_anim->name);
-            }
-            if (y + h > 128) {
-                yyerror(state, "%s: texture is too tall", state->current_anim->name);
-            }
-            if (y < 0 || x < 0) {
-                yyerror(state, "%s: invalid texture parameters", state->current_anim->name);
-            }
-            --w;
-            --h;
-            tex->r = $rgb >> 0 & 0xFF;
-            tex->g = $rgb >> 8 & 0xFF;
-            tex->b = $rgb >> 16 & 0xFF;
-            tex->primtype = $rgb == 0 ? 0 : 11;
-            tex->unk1 = 0;
-            tex->unk2 = 0;
-            tex->unused1 = 0;
-            tex->unk3 = 0;
-            tex->additive = $blend >> 1 & 0x1;
-            tex->unk4 = 0;
-            tex->unk5 = 0;
-            tex->segment = x / segsize;
-            x &= segsize - 1;
-            tex->color = $color;
-            tex->blend = $blend & 0x1;
-            tex->cx = $clutx;
-            tex->cy = $cluty;
-            tex->u1 = x;
-            tex->v1 = y;
-            tex->u2 = x+w;
-            tex->v2 = y;
-            tex->u3 = x;
-            tex->v3 = y+h;
-            tex->u4 = x+w;
-            tex->v4 = y+h;
         }
       }
     ;
