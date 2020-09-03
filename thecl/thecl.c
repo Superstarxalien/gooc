@@ -40,7 +40,7 @@
 const char* gool_ename_charmap = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ_!";
 const int gool_null_eid = 0x6396347F;
 const char* gool_null_ename = "NONE!";
-const uint8_t zero_block[32] = { 0 };
+volatile const uint8_t zero_block[32] = { 0 };
 
 parser_state_t* g_parser_state = NULL;
 int g_rate = 30; /* ntsc default */
