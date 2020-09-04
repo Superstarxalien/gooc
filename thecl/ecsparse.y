@@ -378,6 +378,8 @@ int yydebug = 0;
 %token NTRY4 "ntry4"
 %token NTRY5 "ntry5"
 %token GETGLOBAL "getglobal"
+%token AUTOPAL "autopal"
+%token AUTONTSC "autontsc"
 
 %type <list> Address_List
 %type <list> Expression_List
@@ -1902,15 +1904,16 @@ ExpressionSubset:
             $$ = EXPR_2(NTRY, EXPR_VAL(0), EXPR_VAL(5));
         }
       }
-    | "ntry4" "(" ")"                                             { $$ = EXPR_2(NTRY, EXPR_NULL(), EXPR_VAL(4)); }
-
-    | "getins" "(" Expression ")"                                 { $$ = EXPR_3(MOVC, $3, EXPR_VAL(0), EXPR_VAL(0x1F)); }
+    | "ntry4" "(" ")"                                           { $$ = EXPR_2(NTRY, EXPR_NULL(), EXPR_VAL(4)); }
+    | "getins" "(" Expression ")"                               { $$ = EXPR_3(MOVC, $3, EXPR_VAL(0), EXPR_VAL(0x1F)); }
 
     /* Custom expressions. */
 
-    | "avg" "(" Expression "," Expression ")"                     { $$ = EXPR_2(RSHIFT, EXPR_2(ADD, $3, $5), EXPR_VAL(1)); }
-    | Expression "?" Expression ":" Expression  %prec QUESTION    { $$ = expression_ternary_new(state, $1, $3, $5); }
-    | "offsetof" "(" Expression ")"                               {
+    | "avg" "(" Expression "," Expression ")"                   { $$ = EXPR_2(RSHIFT, EXPR_2(ADD, $3, $5), EXPR_VAL(1)); }
+    | "autopal" "(" Expression ")"                              { $$ = !strncmp("ntsc", g_region, 4) ? $3 : EXPR_2(DIVIDE, EXPR_2(MULTIPLY, $3, EXPR_VAL(25)), EXPR_VAL(30)); }
+    | "autontsc" "(" Expression ")"                             { $$ = !strncmp("pal", g_region, 3) ? $3 : EXPR_2(DIVIDE, EXPR_2(MULTIPLY, $3, EXPR_VAL(30)), EXPR_VAL(25)); }
+    | Expression "?" Expression ":" Expression  %prec QUESTION  { $$ = expression_ternary_new(state, $1, $3, $5); }
+    | "offsetof" "(" Expression ")"                             {
         if ($3->type != EXPRESSION_VAL && $3->type != EXPRESSION_GLOBAL) {
             yyerror(state, "syntax error, offsetof parameter must be value expression");
             exit(2);
