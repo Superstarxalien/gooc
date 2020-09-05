@@ -506,22 +506,14 @@
     return DIRECTIVE;
 }
 
+#font     { return DIRECTIVE_FONT; }
+#char     { return DIRECTIVE_CHAR; }
+#text     { return DIRECTIVE_TEXT; }
+#tex      { return DIRECTIVE_TEXTURE; }
+#sprite   { return DIRECTIVE_SPRITE; }
+#fraganim { return DIRECTIVE_FANIM; }
+#frag     { return DIRECTIVE_FRAG; }
 #([a-zA-Z]+) {
-    char* txt = yytext + 1;
-    if (!strcmp(txt, "font"))
-        return DIRECTIVE_FONT;
-    else if (!strcmp(txt, "char"))
-        return DIRECTIVE_CHAR;
-    else if (!strcmp(txt, "text"))
-        return DIRECTIVE_TEXT;
-    else if (!strcmp(txt, "tex"))
-        return DIRECTIVE_TEXTURE;
-    else if (!strcmp(txt, "sprite"))
-        return DIRECTIVE_SPRITE;
-    else if (!strcmp(txt, "fraganim"))
-        return DIRECTIVE_FANIM;
-    else if (!strcmp(txt, "frag"))
-        return DIRECTIVE_FRAG;
     yylval.string = strdup(yytext + 1);
     return DIRECTIVE;
 }
