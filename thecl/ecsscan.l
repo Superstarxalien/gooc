@@ -175,11 +175,11 @@
 "getvalideventobj" return GETVALIDEVENTOBJ;
 "pointclip"        return POINTCLIP;
 "__unk2"           return UNK2;
-"tryload"          return TRYLOAD;
+"isloaded"         return ISLOADED;
 "getanim"          return GETANIM;
 "offsetof"         return OFFSETOF;
-"ntry4"            return NTRY4;
-"ntry5"            return NTRY5;
+"getfreepages"     return GETFREEPAGES;
+"getpayload"       return GETPAYLOAD;
 "getglobal"        return GETGLOBAL;
 "autopal"          return AUTOPAL;
 "autontsc"         return AUTONTSC;

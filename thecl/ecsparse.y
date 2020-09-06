@@ -372,11 +372,11 @@ int yydebug = 0;
 %token GETVALIDEVENTOBJ "getvalideventobj"
 %token POINTCLIP "pointclip"
 %token UNK2 "__unk2"
-%token TRYLOAD "tryload"
+%token ISLOADED "isloaded"
 %token GETANIM "getanim"
 %token OFFSETOF "offsetof"
-%token NTRY4 "ntry4"
-%token NTRY5 "ntry5"
+%token GETFREEPAGES "getfreepages"
+%token GETPAYLOAD "getpayload"
 %token GETGLOBAL "getglobal"
 %token AUTOPAL "autopal"
 %token AUTONTSC "autontsc"
@@ -1814,10 +1814,7 @@ ExpressionSubset:
     | Expression "<<"  Expression { $$ = EXPR_2(LSHIFT,   $1, $3); }
     | Expression ">>"  Expression { $$ = EXPR_2(RSHIFT,   $1, $3); }
     | Expression "\\"  Expression { $$ = EXPR_2(TEST,     $1, $3); }
-    | Expression "!="  Expression {
-        $$ = EXPR_2(EQUAL,  $1, $3);
-        $$ = EXPR_2(NOT,      EXPR_SP(), $$);
-      }
+    | Expression "!="  Expression { $$ = EXPR_2(NOT,      EXPR_SP(), EXPR_2(EQUAL,  $1, $3)); }
     | "+" Expression %prec UADD      { $$ = $2; }
     | "-" Expression %prec USUBTRACT { $$ = EXPR_2(SUBTRACT, EXPR_VAL(0), $2); }
     | "abs" "(" Expression ")"       { $$ = EXPR_2(ABS,      EXPR_SP(), $3); }
@@ -1889,8 +1886,8 @@ ExpressionSubset:
     | "pointclip" "(" Expression "," Expression ")"               { if (!is_post_c2(state->version)) $$ = EXPR_4(MISC, $3, $5, EXPR_VAL(0), EXPR_VAL(14)); }
 //  | "__unk2" "(" Expression "," Expression ")"                  { if (!is_post_c2(state->version)) $$ = EXPR_4(MISC, $3, EXPR_VAL(0), $5, EXPR_VAL(15)); }
 
-    | "tryload" "(" Expression ")"                                { $$ = EXPR_2(NTRY, $3, EXPR_VAL(3)); }
-    | "ntry5" "(" Expression_List ")" {
+    | "isloaded" "(" Expression ")"                               { $$ = EXPR_2(NTRY, $3, EXPR_VAL(3)); }
+    | "getpayload" "(" Expression_List ")" {
         if ($3 != NULL) {
             $$ = EXPR_2(NTRY, EXPR_VAL(list_count($3)), EXPR_VAL(5));
             expression_t* expr;
@@ -1904,16 +1901,16 @@ ExpressionSubset:
             $$ = EXPR_2(NTRY, EXPR_VAL(0), EXPR_VAL(5));
         }
       }
-    | "ntry4" "(" ")"                                           { $$ = EXPR_2(NTRY, EXPR_NULL(), EXPR_VAL(4)); }
-    | "getins" "(" Expression ")"                               { $$ = EXPR_3(MOVC, $3, EXPR_VAL(0), EXPR_VAL(0x1F)); }
+    | "getfreepages" "(" ")"                                      { $$ = EXPR_2(NTRY, EXPR_NULL(), EXPR_VAL(4)); }
+    | "getins" "(" Expression ")"                                 { $$ = EXPR_3(MOVC, $3, EXPR_VAL(0), EXPR_VAL(0x1F)); }
 
     /* Custom expressions. */
 
-    | "avg" "(" Expression "," Expression ")"                   { $$ = EXPR_2(RSHIFT, EXPR_2(ADD, $3, $5), EXPR_VAL(1)); }
-    | "autopal" "(" Expression ")"                              { $$ = !strncmp("ntsc", g_region, 4) ? $3 : EXPR_2(DIVIDE, EXPR_2(MULTIPLY, $3, EXPR_VAL(25)), EXPR_VAL(30)); }
-    | "autontsc" "(" Expression ")"                             { $$ = !strncmp("pal", g_region, 3) ? $3 : EXPR_2(DIVIDE, EXPR_2(MULTIPLY, $3, EXPR_VAL(30)), EXPR_VAL(25)); }
-    | Expression "?" Expression ":" Expression  %prec QUESTION  { $$ = expression_ternary_new(state, $1, $3, $5); }
-    | "offsetof" "(" Expression ")"                             {
+    | "avg" "(" Expression "," Expression ")"                  { $$ = EXPR_2(RSHIFT, EXPR_2(ADD, $3, $5), EXPR_VAL(1)); }
+    | "autopal" "(" Expression ")"                             { $$ = !strncmp("ntsc", g_region, 4) ? $3 : EXPR_2(DIVIDE, EXPR_2(MULTIPLY, $3, EXPR_VAL(25)), EXPR_VAL(30)); }
+    | "autontsc" "(" Expression ")"                            { $$ = !strncmp("pal", g_region, 3) ? $3 : EXPR_2(DIVIDE, EXPR_2(MULTIPLY, $3, EXPR_VAL(30)), EXPR_VAL(25)); }
+    | Expression "?" Expression ":" Expression  %prec QUESTION { $$ = expression_ternary_new(state, $1, $3, $5); }
+    | "offsetof" "(" Expression ")"                            {
         if ($3->type != EXPRESSION_VAL && $3->type != EXPRESSION_GLOBAL) {
             yyerror(state, "syntax error, offsetof parameter must be value expression");
             exit(2);
