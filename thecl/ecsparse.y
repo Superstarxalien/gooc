@@ -1886,7 +1886,27 @@ ExpressionSubset:
     | "pointclip" "(" Expression "," Expression ")"               { if (!is_post_c2(state->version)) $$ = EXPR_4(MISC, $3, $5, EXPR_VAL(0), EXPR_VAL(14)); }
 //  | "__unk2" "(" Expression "," Expression ")"                  { if (!is_post_c2(state->version)) $$ = EXPR_4(MISC, $3, EXPR_VAL(0), $5, EXPR_VAL(15)); }
 
-    | "isloaded" "(" Expression ")"                               { $$ = EXPR_2(NTRY, $3, EXPR_VAL(3)); }
+    | "isloaded" "(" Expression_List ")"                          {
+        if ($3 == NULL) {
+            yyerror(state, "isloaded must have at least one parameter");
+            exit(2);
+        }
+        else {
+            int first = 1;
+            expression_t* expr;
+            list_for_each($3, expr) {
+                if (first) {
+                    $$ = EXPR_2(NTRY, expr, EXPR_VAL(3));
+                    first = 0;
+                }
+                else {
+                    $$ = EXPR_2(AND, EXPR_2(NTRY, expr, EXPR_VAL(3)), $$);
+                }
+            }
+            list_free_nodes($3);
+            free($3);
+        }
+      }
     | "getpayload" "(" Expression_List ")" {
         if ($3 != NULL) {
             $$ = EXPR_2(NTRY, EXPR_VAL(list_count($3)), EXPR_VAL(5));
