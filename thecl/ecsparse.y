@@ -1329,7 +1329,7 @@ OnceBlock:
 
 CodeBlock:
     "{" { scope_begin(state); } Instructions "}" { scope_finish(state, true); }
-    | Instruction ";"
+    | Instruction_NoVar ";"
     ;
 
 IfBlock:
@@ -1628,7 +1628,7 @@ DoBlock:
       }
     ;
 
-Instruction:
+Instruction_NoVar:
       IDENTIFIER "(" Expression_List ")" {
         bool free_expr = true;
         thecl_sub_t* sub = state->find_sub_overload(state->main_ecl, $1, $3 ? list_count($3) : 0);
@@ -1664,7 +1664,6 @@ Instruction:
         expression_create_goto(state, GOTO, $2, NULL);
     }*/
     | Assignment
-    | VarDeclaration
     | "break" {
         if (state->current_sub->is_inline) {
             list_append_new(&state->current_sub->lines, line_make(LINE_BREAK));
@@ -1745,6 +1744,11 @@ Instruction:
             list_append_new(&state->current_sub->lines, line_make(LINE_RETURN_SUP));
         }
       }
+    ;
+
+Instruction:
+      Instruction_NoVar
+    | VarDeclaration
     ;
 
 Assignment:
