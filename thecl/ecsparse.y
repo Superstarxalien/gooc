@@ -1835,7 +1835,7 @@ ExpressionSubset:
     | "time" "(" Expression ")"                                   { $$ = EXPR_2(TIME, $3, EXPR_VAL(0)); }
     | "getcolor" "(" Expression "," Expression ")"                { if (g_warn_deprecate_getcolor) { yyerror(state, "getcolor: deprecate expression. use as address instead (i.e. 'color + 64')"); g_warn_deprecate_getcolor = false; }; $$ = EXPR_2(GETCOLOR, $3, $5); }
     | "getcolor" "(" Expression ")"                               { if (g_warn_deprecate_getcolor) { yyerror(state, "getcolor: deprecate expression. use as address instead (i.e. 'color + 64')"); g_warn_deprecate_getcolor = false; }; $$ = EXPR_2(GETCOLOR, EXPR_VAL(0), $3); }
-    | "pad" "(" Expression "," Expression "," Expression "," Expression "," Expression ")" { $$ = EXPR_5(PAD, $3, $5, $7, $9, $11); }
+    | "pad" "(" Expression "," Expression "," Expression "," Expression ")" { $$ = EXPR_5(PAD, $3, $5, $7, $9, EXPR_VAL(0)); }
     | "buttonpress" "(" Expression ")"                            { $$ = EXPR_5(PAD, $3, EXPR_VAL(1), EXPR_VAL(0), EXPR_VAL(8), EXPR_VAL(0)); }
     | "buttonhold" "(" Expression ")"                             { $$ = EXPR_5(PAD, $3, EXPR_VAL(2), EXPR_VAL(0), EXPR_VAL(8), EXPR_VAL(0)); }
     | "buttonbuffer" "(" Expression ")"                           { $$ = EXPR_5(PAD, $3, EXPR_VAL(3), EXPR_VAL(0), EXPR_VAL(8), EXPR_VAL(0)); }
