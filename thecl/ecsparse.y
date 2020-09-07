@@ -4032,7 +4032,7 @@ expression_optimize(
         /* Partial expression optimization */
         expr = expr_get_by_id(state->version, expression->id);
         if (expr->symbol == ADD) {
-            expression_t* zero_expr = expression_is_number(child_expr_1) && child_expr_1->value->value.val.S == 0 ? child_expr_1 : (expression_is_number(child_expr_2) && child_expr_2->value->value.val.S == 0 ? child_expr_2 : NULL);
+            expression_t* zero_expr = expression_is_zero(child_expr_1) ? child_expr_1 : (expression_is_zero(child_expr_2) ? child_expr_2 : NULL);
             if (zero_expr) {
                 expression_t* value_expr = zero_expr == child_expr_1 ? child_expr_2 : child_expr_1;
                 expression_t* new_expr = expression_copy(value_expr);
@@ -4072,7 +4072,7 @@ expression_optimize(
             expression_t* sub_expr = child_expr_1->id == expr->id ? child_expr_1 : (child_expr_2->id == expr->id ? child_expr_2 : NULL);
                          head_expr = sub_expr ? list_head(&sub_expr->children) : NULL;
                          numb_expr = sub_expr == child_expr_1 ? child_expr_2 : child_expr_1;
-            if (sub_expr && expression_is_number(head_expr) && head_expr->value->value.val.S == 0) {
+            if (sub_expr && expression_is_zero(head_expr)) {
                 sub_expr = expression_copy(list_tail(&sub_expr->children));
                 numb_expr = expression_copy(numb_expr);
 
@@ -4089,7 +4089,7 @@ expression_optimize(
             }
         }
         else if (expr->symbol == SUBTRACT) {
-            if (expression_is_number(child_expr_2) && child_expr_2->value->value.val.S == 0) {
+            if (expression_is_zero(child_expr_2)) {
                 expression_t* new_expr = expression_copy(child_expr_1);
                 memcpy(expression, new_expr, sizeof(expression_t));
                 free(new_expr);
@@ -4167,9 +4167,8 @@ expression_optimize(
             }
         }
         else if (expr->symbol == EQUAL) {
-            if ((expression_is_number(child_expr_1) && child_expr_1->value->value.val.S == 0) ||
-            (expression_is_number(child_expr_2) && child_expr_2->value->value.val.S == 0)) {
-                expression_t* zero_expr = (expression_is_number(child_expr_1) && child_expr_1->value->value.val.S == 0) ? child_expr_1 : child_expr_2;
+            if (expression_is_zero(child_expr_1) || expression_is_zero(child_expr_2) {
+                expression_t* zero_expr = expression_is_zero(child_expr_1) ? child_expr_1 : child_expr_2;
 
                 param_free(zero_expr->value);
                 expression_free(zero_expr);

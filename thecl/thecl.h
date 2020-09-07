@@ -509,6 +509,7 @@ extern bool g_warn_deprecate_anim;
 
 void expression_free(expression_t* expr);
 bool expression_is_number(expression_t* expr);
+bool expression_is_zero(expression_t* expr);
 
 /* Returns macro of the given name, or NULL if the macro doesn't exist */
 expr_macro_t* macro_get(parser_state_t* state, const char* name);

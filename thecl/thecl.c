@@ -521,6 +521,13 @@ expression_is_number(
     return expr->type == EXPRESSION_VAL && expr->value->val_type == PARAM_LITERAL;
 }
 
+bool
+expression_is_zero(
+    expression_t* expr)
+{
+    return expression_is_number(expr) && expr->value->value.val.S == 0;
+}
+
 expr_macro_t*
 macro_get(
     parser_state_t* state,
