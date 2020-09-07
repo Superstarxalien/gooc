@@ -403,8 +403,8 @@ int yydebug = 0;
 %right AND
 %left B_OR
 %left XOR
-%left TEST
 %left B_AND
+%left TEST
 %left EQUAL INEQUAL
 %left LT LTEQ GT GTEQ
 %left LSHIFT RSHIFT
