@@ -1839,15 +1839,9 @@ ExpressionSubset:
     | "buttonpress" "(" Expression ")"                            { $$ = EXPR_5(PAD, $3, EXPR_VAL(1), EXPR_VAL(0), EXPR_VAL(8), EXPR_VAL(0)); }
     | "buttonhold" "(" Expression ")"                             { $$ = EXPR_5(PAD, $3, EXPR_VAL(2), EXPR_VAL(0), EXPR_VAL(8), EXPR_VAL(0)); }
     | "buttonbuffer" "(" Expression ")"                           { $$ = EXPR_5(PAD, $3, EXPR_VAL(3), EXPR_VAL(0), EXPR_VAL(8), EXPR_VAL(0)); }
-    | "buttonpress" "(" Expression "," Expression ")"             { $$ = EXPR_5(PAD, $3, EXPR_VAL(1), EXPR_VAL(0), EXPR_VAL(8), $5); }
-    | "buttonhold" "(" Expression "," Expression ")"              { $$ = EXPR_5(PAD, $3, EXPR_VAL(2), EXPR_VAL(0), EXPR_VAL(8), $5); }
-    | "buttonbuffer" "(" Expression "," Expression ")"            { $$ = EXPR_5(PAD, $3, EXPR_VAL(3), EXPR_VAL(0), EXPR_VAL(8), $5); }
     | "dirpress" "(" Expression ")"                               { $$ = EXPR_5(PAD, EXPR_VAL(0), EXPR_VAL(0), EXPR_VAL(1), $3, EXPR_VAL(0)); }
     | "dirhold" "(" Expression ")"                                { $$ = EXPR_5(PAD, EXPR_VAL(0), EXPR_VAL(0), EXPR_VAL(2), $3, EXPR_VAL(0)); }
     | "dirbuffer" "(" Expression ")"                              { $$ = EXPR_5(PAD, EXPR_VAL(0), EXPR_VAL(0), EXPR_VAL(3), $3, EXPR_VAL(0)); }
-    | "dirpress" "(" Expression "," Expression ")"                { $$ = EXPR_5(PAD, EXPR_VAL(0), EXPR_VAL(0), EXPR_VAL(1), $3, $5); }
-    | "dirhold" "(" Expression "," Expression ")"                 { $$ = EXPR_5(PAD, EXPR_VAL(0), EXPR_VAL(0), EXPR_VAL(2), $3, $5); }
-    | "dirbuffer" "(" Expression "," Expression ")"               { $$ = EXPR_5(PAD, EXPR_VAL(0), EXPR_VAL(0), EXPR_VAL(3), $3, $5); }
     | "spd" "(" Expression "," Expression ")"                     { $$ = EXPR_2(SPD, $3, $5); }
     | "spd" "(" Expression ")"                                    { $$ = EXPR_2(SPD, EXPR_VAL(0), $3); }
     | "sin" "(" Expression "," Expression ")"                     { $$ = EXPR_2(PSIN,$3, $5); }
@@ -4188,6 +4182,25 @@ expression_optimize(
         else if (expr->symbol == TEST) {
             if (expression_is_number(child_expr_2) && int_has_bit(child_expr_2->value->value.val.S)) {
                 expression->id = expr_get_by_symbol(state->version, B_AND)->id;
+            }
+        }
+        else if (expr->symbol == NOT) {
+            expr = expr_get_by_symbol(state->version, PAD);
+            if (child_expr_2->id == expr->id) {
+                expression_t* pad_not_expr = list_tail(&child_expr_2->children);
+                if (expression_is_number(pad_not_expr)) {
+                    pad_not_expr->value->value.val.S = !pad_not_expr->value->value.val.S;
+
+                    expression_t* new_expr = expression_copy(child_expr_2);
+                    memcpy(expression, new_expr, sizeof(expression_t));
+                    free(new_expr);
+
+                    if (child_expr_1->type == EXPRESSION_VAL) param_free(child_expr_1->value);
+                    if (child_expr_2->type == EXPRESSION_VAL) param_free(child_expr_2->value);
+                    expression_free(child_expr_1);
+                    expression_free(child_expr_2);
+                    return;
+                }
             }
         }
         return;
