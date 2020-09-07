@@ -396,7 +396,7 @@ int yydebug = 0;
 %type <param> Load_Type
 %type <param> Pointer_Type
 
-%type <integer> Literal_Int
+%type <integer> Signed_Int
 
 %left QUESTION
 %right OR
@@ -1003,7 +1003,7 @@ Frag:
             c2_frag_t* frag = (char*)fraganim + state->current_anim->size;
             state->current_tex = &frag->tex;
         }
-      } Texture_Info Literal_Int[x] Literal_Int[y] Literal_Int[w] Literal_Int[h] {
+      } Texture_Info Signed_Int[x] Signed_Int[y] Signed_Int[w] Signed_Int[h] {
         if (state->version == 1) {
             c1_fraganim_t* fraganim = state->current_anim->anim;
             c1_frag_t* frag = (char*)fraganim + state->current_anim->size;
@@ -2074,7 +2074,7 @@ Pointer_Type:
       }
     ;
 
-Literal_Int:
+Signed_Int:
       INTEGER
     | "-" INTEGER { $$ = -$2; }
     | "+" INTEGER { $$ = +$2; }
@@ -2089,7 +2089,7 @@ Array_Entries:
     ;
 
 Array_Entry:
-      Literal_Int {
+      Signed_Int {
         state->current_array->data = realloc(state->current_array->data, (++state->main_ecl->array_off - state->current_array->start)*sizeof(uint32_t));
         state->current_array->data[state->main_ecl->array_off - state->current_array->start - 1] = $1;
       }
