@@ -1870,7 +1870,6 @@ ExpressionSubset:
     | "atan2_obj" "(" Expression ")"                              { if (!is_post_c2(state->version)) $$ = EXPR_4(MISC, EXPR_NULL(), $3, EXPR_VAL(0), EXPR_VAL(5)); }
     | "distance" "(" Expression "," Expression "," Expression ")" { $$ = EXPR_4(MISC, $3, $5, $7, EXPR_VAL(6)); }
     | "objectget" "(" Expression ")"                              { $$ = EXPR_4(MISC, $3, EXPR_VAL(5), EXPR_VAL(0), EXPR_VAL(7)); }
-
     | "entitygetstate" "(" Expression ")"                         { $$ = EXPR_4(MISC, expression_load_new(state, param_var_new("id")), EXPR_VAL(0), $3, EXPR_VAL(11)); }
     | "entitygetstate" "(" Expression "," Expression ")"          { $$ = EXPR_4(MISC, $3, EXPR_VAL(0), $5, EXPR_VAL(11)); }
 //  | "gamefunc" "(" Expression "," Expression ")"                { if (!is_post_c2(state->version)) $$ = EXPR_4(MISC, $3, EXPR_VAL(0), $5, EXPR_VAL(12)); }
@@ -1879,7 +1878,6 @@ ExpressionSubset:
     | "getvalideventobj" "(" Expression "," Expression ")"        { $$ = EXPR_4(MISC, $3, EXPR_VAL(0), $5, EXPR_VAL(13)); }
     | "pointclip" "(" Expression "," Expression ")"               { if (!is_post_c2(state->version)) $$ = EXPR_4(MISC, $3, $5, EXPR_VAL(0), EXPR_VAL(14)); }
 //  | "__unk2" "(" Expression "," Expression ")"                  { if (!is_post_c2(state->version)) $$ = EXPR_4(MISC, $3, EXPR_VAL(0), $5, EXPR_VAL(15)); }
-
     | "isloaded" "(" Expression_List ")"                          {
         if ($3 == NULL) {
             yyerror(state, "isloaded must have at least one parameter");
