@@ -4161,7 +4161,7 @@ expression_optimize(
             }
         }
         else if (expr->symbol == EQUAL) {
-            if (expression_is_zero(child_expr_1) || expression_is_zero(child_expr_2) {
+            if (expression_is_zero(child_expr_1) || expression_is_zero(child_expr_2)) {
                 expression_t* zero_expr = expression_is_zero(child_expr_1) ? child_expr_1 : child_expr_2;
 
                 param_free(zero_expr->value);
