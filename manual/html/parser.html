@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+		<title>GOOC Manual</title>
+		<link rel="stylesheet" href="styles.css">
+	</head>
+	<body>
+		<center>
+		<h1 class="back">GOOC - Game Oriented Object C</h1>
+		<h1>GOOC - Game Oriented Object C</h1>
+		</center>
+		<div style="font-size:125%;margin-top:0.25em;margin-bottom:0">
+		<div style="text-align:left;position:absolute;">
+		Next: <a href="lexer.html">Lexer Tokens</a>,
+		Previous: <a href="examples.html">Examples</a>,
+		Up: <a href="../index.html">Top</a>
+		</div>
+		<div style="text-align:right;">[<a href="../index.html">Contents</a>]</div>
+		</div>
+		<hr />
+		<span style="margin-left:25px">
+		<h2 class="back">4. The Parser</h2>
+		<h2>4. The Parser</h2>
+		</span>
+		<p>
+		The <em>GOOC</em> parser is the first step in converting a <spec>GOOC source code file</spec> into a <spec>GOOL executable file</spec>. It consists of a <spec>Flex-Bison</spec> program, located at <mono>ecsparse.l</mono> and <mono>ecsparse.y</mono> for the lexer and parser respectively. It takes a text input and a "parser state" structure, both also stored in global variables. The parser state structure serves as the context for the parser and will keep track of all the converted (so far) source code content.
+		</p>
+		<p>
+		The parser state keeps track of:
+		<ul>
+			<li>The game version selected for compiling.</li>
+			<li>The current instruction mode (MIPS or GOOL).</li>
+			<li>The current MIPS stack adjustment necessary.</li>
+			<li>A set of MIPS register status structures.</li>
+			<li>A stack of saved GOOL variables, from <spec>save</spec> blocks.</li>
+			<li>A stack of certain types of code blocks, such as <spec>if</spec> and <spec>while</spec> blocks.</li>
+			<li>The code scope stack.</li>
+			<li>The current <spec>subroutine</spec> being processed.</li>
+			<li>The current <spec>state</spec> being processed.</li>
+			<li>The current <spec>event interrupt</spec> being processed.</li>
+			<li>The current <spec>state-subroutine</spec> being processed.</li>
+			<li>The current <spec>animation descriptor</spec> being processed.</li>
+			<li>The current <spec>array</spec> being processed.</li>
+			<li>The current <spec>texture</spec> being processed.</li>
+			<li>The current <spec>GOOL module</spec> for conversion.</li>
+			<li>The main <spec>GOOL module</spec> for conversion.</li>
+			<li>A list of <spec>GOOL module</spec> for conversion.</li>
+			<li>A stack of include paths.</li>
+			<li>Three functions for looking up certain data.</li>
+			<li>The amount of <spec>spawns</spec>.</li>
+			<li>The list of processed <spec>expression macros</spec>.</li>
+			<li>Other minor functionality values, such as weather "temporary object fields" have been used already.</li>
+		</ul>
+		</p>
+	</body>
+</html>

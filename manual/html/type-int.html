@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+		<title>GOOC Manual</title>
+		<link rel="stylesheet" href="styles.css">
+	</head>
+	<body>
+		<center>
+		<h1 class="back">GOOC - Game Oriented Object C</h1>
+		<h1>GOOC - Game Oriented Object C</h1>
+		</center>
+		<div style="font-size:125%;margin-top:0.25em;margin-bottom:0">
+		<div style="text-align:left;position:absolute;">
+		Next: <a href="type-array.html">Arrays</a>,
+		Up: <a href="types.html">Data Types</a>
+		</div>
+		<div style="text-align:right;">[<a href="../index.html">Contents</a>]</div>
+		</div>
+		<hr />
+		<span style="margin-left:25px">
+		<h2 class="back">6.1. Integer & Fixed-Point Type</h2>
+		<h2>6.1. Integer & Fixed-Point Type</h2>
+		</span>
+		<p>
+		Integers are signed 32-bit values, meaning they can hold any whole number from -2,147,483,648 to 2,147,483,647. This is the default type used for all calculations and processing during parsing and compilation, in fact it is the only real "data type", however the games may interpret this integer value in various ways (including as a <a href="type-pointer.html">pointer</a> to a memory address). The base number unit in the games is a Q8 fixed point value, meaning the lower 8 bits of the 32-bit integer are used to define the fractional part and the upper 24 bits to define the whole part. Thus, one game unit is equivalent to the integer "256". Since all operations, both in the <em>GOOC</em> program and the game, use the integer type, extra care should be taken in regards to precision and overflow prevention when doing operations such as multiplication and division.
+		</p>
+		<p>
+		For example, if two Q8 fixed point numbers are multiplied together, the result will be a 16-bit fixed point value (8 + 8), which is 8 bits higher than expected, if we want our result to be in the base unit type (which has 8 bits of fractional part), the result needs to be right-shift by 8 bits:
+<code>INCORRECT: 1.0 * 1.0 = 256 * 256 = 65536 = 256.0
+CORRECT:   1.0 * 1.0 >> 8 = 256 * 256 >> 8 = 65536 >> 8 = 256 = 1.0
+</code>
+		Note that the result before right-shifting the result of the multiplication was very large. Multiplying fixed point values can greatly increase the chance of overflowing the result if proper care isn't taken. This will usually not be too big of an issue, but is worth keeping in mind nonetheless.
+		</p>
+		<p>
+		Dividing fixed point works in mostly the opposite way of multiplying them. Dividing two 8-bit fixed point values results in a quocient with precision 0 (8 - 8), meaning there is no fractional part at all. To solve this, we left shift the dividend by however many bits of precision we want (8 in the case of wanting the result in the base unit type):
+<code>INCORRECT: 50.0 / 100.0 = 12800 / 25600 = 0
+CORRECT:   (50.0 << 8) / 100.0 = 3276800 / 25600 = 128 = 0.5
+</code>
+		</p>
+		<p>
+		<spec>EIDs</spec>, while stored as integers, cannot be used in any sort of arithmetic or other mathematical operation, due to their mutability. You will get a compiler error if you try to use one. They are also not permitted in <a href="type-array.html">arrays</a>.
+		</p>
+	</body>
+</html>

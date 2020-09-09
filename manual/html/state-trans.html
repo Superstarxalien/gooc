@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+		<title>GOOC Manual</title>
+		<link rel="stylesheet" href="styles.css">
+	</head>
+	<body>
+		<center>
+		<h1 class="back">GOOC - Game Oriented Object C</h1>
+		<h1>GOOC - Game Oriented Object C</h1>
+		</center>
+		<div style="font-size:125%;margin-top:0.25em;margin-bottom:0">
+		<div style="text-align:left;position:absolute;">
+		Next: <a href="state-event.html">The <mono>event</mono> Block</a>,
+		Previous: <a href="state-code.html">The <mono>code</mono> Block</a>,
+		Up: <a href="states.html">States</a>
+		</div>
+		<div style="text-align:right;">[<a href="../index.html">Contents</a>]</div>
+		</div>
+		<hr />
+		<span style="margin-left:25px">
+		<h2 class="back">10.3. The <mono>trans</mono> Block</h2>
+		<h2>10.3. The <mono>trans</mono> Block</h2>
+		</span>
+		<p>
+		The <mono>trans</mono> block is one that runs continuously, every frame (<em>before</em> the execution of the <mono>code</mono> block). These are used for things like scaling a variable every frame.
+		</p>
+		<p>
+		A <mono>trans</mono> block does not have a list of parameters, but it can borrow the parameters from a previously-defined <mono>code</mono> block if the state has the <mono>__transargs</mono> <a href="state-modifiers.html">modifier</a>.
+		</p>
+		<p>
+		A <mono>trans</mono> block is defined like this:
+<code>trans <em>pre-modifiers</em>
+{
+    <em>subroutine-body</em>
+}
+</code>
+		Note that pre-subroutine modifiers are the only type of modifiers that can be used.
+		</p>
+		<p>
+		<mono>trans</mono> blocks have certain constructs that only makes sense to apply for them. Such constructs include the <mono>once</mono> statement. This statement everything after including and preceding its following block run only on the first execution of the trans block, after which the trans block pointer is moved to after the <mono>once</mono> statement. This is used to define variables that the state might use in the <mono>trans</mono> or <mono>code</mono> blocks, for example:
+<code>trans {
+    once {
+        var0 = 1S // we are going to be using this field so we define it right away
+    }
+    scalex = loopseek(var0, 1.2S, .1S)
+    scaley = scalex
+    scalez = scalex
+}
+</code>
+		</p>
+	</body>
+</html>

@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+		<title>GOOC Manual</title>
+		<link rel="stylesheet" href="styles.css">
+	</head>
+	<body>
+		<center>
+		<h1 class="back">GOOC - Game Oriented Object C</h1>
+		<h1>GOOC - Game Oriented Object C</h1>
+		</center>
+		<div style="font-size:125%;margin-top:0.25em;margin-bottom:0">
+		<div style="text-align:left;position:absolute;">
+		Next: <a href="token-constant.html">Constants</a>,
+		Previous: <a href="token-identifier.html">Identifiers</a>,
+		Up: <a href="lexer.html">Lexer Tokens</a>
+		</div>
+		<div style="text-align:right;">[<a href="../index.html">Contents</a>]</div>
+		</div>
+		<hr />
+		<span style="margin-left:25px">
+		<h2 class="back">5.2. Keywords</h2>
+		<h2>5.2. Keywords</h2>
+		</span>
+		<p>
+		Keywords are special identifiers reserved for use as part of the programming language itself. Most of these cannot be used for any other purpose. 
+		</p>
+		<p>
+		Here is a list of main keywords in <em>GOOC</em>:
+		<code>sub var default trans once nofirst code event state return expr array inline mips __transargs __mips __trans __args goto unless if else do while until break continue save</code>
+		The following keywords are used as part of expressions:
+		<code>avg abs seek degseek degdist time rand randi loopseek getcolor pad buttonpress buttonhold buttonbuffer dirpress dirhold dirbuffer spd sin cod fieldval fieldrow getins getval distance atan atan2 atan2_3d getfield atan2_obj objectget entitygetstate gamefunc getvalideventobj pointclip __unk2 tryload getanim offsetof ntry4 ntry5</code>
+		</p>
+		<p>
+		Certain keywords may actually be considered valid identifiers under certain circumstances:
+		<ul>
+		<li><mono>default</mono> - Identifier if inside a <spec>subroutine</spec>, keyword otherwise.</li>
+		<li><mono>trans</mono> - Identifier if inside a <spec>subroutine</spec>, keyword otherwise.</li>
+		<li><mono>once</mono> - Identifier if inside a <spec>trans-type subroutine</spec> that has not specified a <spec>once</spec> block yet, keyword otherwise.</li>
+		<li><mono>nofirst</mono> - Identifier if inside a <spec>trans-type subroutine</spec> that has not specified a <spec>nofirst</spec> block yet, keyword otherwise.</li>
+		<li><mono>__args</mono> - Keyword if the current (stateless) <spec>subroutine</spec> has specified a <mono>__trans</mono> modifier, identifier otherwise.</li>
+		</ul>
+		</p>
+	</body>
+</html>

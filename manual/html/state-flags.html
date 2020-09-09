@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+		<title>GOOC Manual</title>
+		<link rel="stylesheet" href="styles.css">
+	</head>
+	<body>
+		<center>
+		<h1 class="back">GOOC - Game Oriented Object C</h1>
+		<h1>GOOC - Game Oriented Object C</h1>
+		</center>
+		<div style="font-size:125%;margin-top:0.25em;margin-bottom:0">
+		<div style="text-align:left;position:absolute;">
+		Next: <a href="state-invalid.html">The Invalid State</a>,
+		Previous: <a href="state-trans.html">The <mono>event</mono> Block</a>,
+		Up: <a href="states.html">States</a>
+		</div>
+		<div style="text-align:right;">[<a href="../index.html">Contents</a>]</div>
+		</div>
+		<hr />
+		<span style="margin-left:25px">
+		<h2 class="back">10.5. State Change Flags</h2>
+		<h2>10.5. State Change Flags</h2>
+		</span>
+		<p>
+		States can define sets of flags to control what states an object can change to from. This is particularly useful for advanced error handling, but has a few other specific use cases. The two fields for these flags are <mono>stateflag</mono> and <mono>statusc</mono>.
+		</p>
+		<p>
+		A state's <mono>stateflag</mono> and <mono>statusc</mono> values can be set in the state statements, like so:
+<code>state FirstState {
+    stateflag 0x20
+    statusc 0x12
+    ...
+}
+
+state SecondState {
+    stateflag 0x10
+    statusc 0x12
+    ...
+}
+</code>
+		</p>
+		<p>
+		If these statements aren't presented, default values are used instead. The default <mono>stateflag</mono> is <mono>0x1</mono> and the default <mono>statusc</mono> is <mono>0x2</mono>. When an object's state is set (including when it spawns), the state's flags are copied onto the object's fields with the same names. An object can then modify these at will.
+		</p>
+		<p>
+		Whether an object's state can be changed into the target state is determined by whether the object's <mono>statusc</mono> has <em>any</em> of the flags in the state's <mono>stateflag</mono>, that is, whether the operation <mono>object->statusc & state->stateflag</mono> return zero or not. If the result is true, then no state change is performed and the object continues to run as if nothing had happened. Certain scenarios imply some extra flags, for example certain events will check using the operation <mono>(object->statusc | 0x1002) & state->stateflag</mono> instead. <unknown>TBD</unknown>
+		</p>
+		<p>
+		In the code above, the object starts at state <mono>FirstState</mono>, and its flags are set appropriately. However, if the object now tries to change into state <mono>SecondState</mono>, it will fail to do so, because <mono>SecondState</mono>'s <mono>stateflag</mono> and the object's <mono>statusc</mono> both share the <mono>0x10</mono> flag. The object must remove the <mono>0x10</mono> flag from its <mono>statusc</mono> field in order for the change to be successful.
+		</p>
+		<p>
+		You might have noticed that <mono>stateflag</mono> isn't used by the object in these calculations. This is because the field can be (and is) used to determine what kind of state the object is in. For example, you can know Crash is in a death animation if the flag <mono>0x20</mono> is set. <mono>stateflag</mono> also has other specific engine behavior, described in a later section.
+		</p>
+	</body>
+</html>

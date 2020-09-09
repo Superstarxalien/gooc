@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+		<title>GOOC Manual</title>
+		<link rel="stylesheet" href="html/styles.css">
+	</head>
+	<body>
+		<center style="margin-top:1.8em;margin-bottom:1.8em">
+		<h1 class="back">GOOC - Game Oriented Object C</h1>
+		<h1>GOOC - Game Oriented Object C</h1>
+		</center>
+		<span style="margin-left:25px">
+		<h2 class="back">Table of Contents</h2>
+		<h2>Table of Contents</h2>
+		<ul class="no-bullet">
+		<li><a href="html/intro.html">1. Introduction</a></li>
+		<li><a href="html/why.html">2. Why Not Lisp?</a></li>
+		<li><a href="html/examples.html">3. Examples</a></li>
+		<ul class="no-bullet">
+			<!-- <li><a href="html/example1.html">3.1. Rotation Example</a></li>
+			<ul class="no-bullet">
+				<li><a href="html/example1-1.html">3.1.1. Object Definition</a></li>
+				<li><a href="html/example1-2.html">3.1.2. Animations</a></li>
+				<li><a href="html/example1-3.html">3.1.3. Spawns</a></li>
+				<li><a href="html/example1-4.html">3.1.4. States</a></li>
+				<li><a href="html/example1-5.html">3.1.5. Compiling</a></li>
+			</ul> -->
+		</ul>
+		<li><a href="html/parser.html">4. The Parser</a></li>
+		<li><a href="html/lexer.html">5. Lexer Tokens</a></li>
+		<ul class="no-bullet">
+			<li><a href="html/token-identifier.html">5.1. Identifiers</a></li>
+			<li><a href="html/token-keyword.html">5.2. Keywords</a></li>
+			<li><a href="html/token-constant.html">5.3. Constants</a></li>
+			<li><a href="html/token-operator.html">5.4. Operators</a></li>
+			<li><a href="html/token-separator.html">5.5 Separators</a></li>
+			<li><a href="html/token-whitespace.html">5.6. Whitespace</a></li>
+			<li><a href="html/token-directive.html">5.7. Directives</a></li>
+		</ul>
+		<li><a href="html/types.html">6. Data Types</a></li>
+		<ul class="no-bullet">
+			<li><a href="html/type-int.html">6.1. Integer & Fixed-Point</a></li>
+			<li><a href="html/type-array.html">6.2. Arrays</a></li>
+			<li><a href="html/type-pointer.html">6.3. Pointers</a></li>
+		</ul>
+		<li><a href="html/expressions.html">7. Expressions and Operators</a></li>
+		<ul class ="no-bullet">
+			<li><a href="html/op-assignment.html">7.1. Assignment Operators</a></li>
+			<li><a href="html/op-arithmetic.html">7.2. Arithmetic Operators</a></li>
+			<li><a href="html/op-comparison.html">7.3. Comparison Operators</a></li>
+			<li><a href="html/op-logical.html">7.4. Logical Operators</a></li>
+			<li><a href="html/op-bitshift.html">7.5. Bitwise Shift Operators</a></li>
+			<li><a href="html/op-bitlogical.html">7.6. Bitwise Logical Operators</a></li>
+			<li><a href="html/op-address.html">7.7. Address-of Operator</a></li>
+			<li><a href="html/op-array.html">7.8. Array Subscripts</a></li>
+			<li><a href="html/op-eins.html">7.9. GOOL Instructions as Expressions</a></li>
+			<li><a href="html/op-field.html">7.10. Field Access Operator</a></li>
+			<li><a href="html/op-conditional.html">7.11. Conditional Expressions</a></li>
+			<li><a href="html/op-other.html">7.12. Other Operators</a></li>
+			<li><a href="html/op-precedence.html">7.13. Operator Precedence</a></li>
+		</ul>
+		<li><a href="html/statements.html">8. Statements</a></li>
+		<ul class ="no-bullet">
+			<li><a href="html/line-instruction.html">8.1. Instruction and Call Statements</a></li>
+			<li><a href="html/line-block.html">8.2. Blocks</a></li>
+			<li><a href="html/line-if.html">8.3. The <mono>if</mono> and <mono>unless</mono> Statements</a></li>
+			<li><a href="html/line-while.html">8.4. The <mono>while</mono> and <mono>until</mono> Statements</a></li>
+			<li><a href="html/line-do.html">8.5. The <mono>do</mono> Statement</a></li>
+			<li><a href="html/line-break.html">8.6. The <mono>break</mono> and <mono>continue</mono> Statements</a></li>
+			<li><a href="html/line-return.html">8.7. The <mono>return</mono> Statement</a></li>
+			<li><a href="html/line-return2.html">8.8. The <mono>return_sup</mono> Statement</a></li>
+		</ul>
+		<li><a href="html/subs.html">9. Subroutines</a></li>
+		<ul class ="no-bullet">
+			<li><a href="html/sub-define.html">9.1. Defining a Subroutine</a></li>
+			<li><a href="html/sub-params.html">9.2. Subroutine Parameters</a></li>
+			<li><a href="html/sub-paramsmem.html">9.3. Parameter Storage</a></li>
+			<li><a href="html/sub-expr.html">9.4. Subroutines as Expressions</a></li>
+			<li><a href="html/sub-inline.html">9.5. Inline Subroutines</a></li>
+			<li><a href="html/sub-modifier.html">9.6. Subroutine Modifiers</a></li>
+		</ul>
+		<li><a href="html/states.html">10. States</a></li>
+		<ul class="no-bullet">
+			<li><a href="html/state-define.html">10.1. Defining a State</a></li>
+			<li><a href="html/state-code.html">10.2. The <mono>code</mono> Block</a></li>
+			<li><a href="html/state-trans.html">10.3. The <mono>trans</mono> Block</a></li>
+			<li><a href="html/state-event.html">10.4. The <mono>event</mono> Block</a></li>
+			<li><a href="html/state-flags.html">10.5. State Change Flags</a></li>
+			<li><a href="html/state-invalid.html">10.6. The Invalid State</a></li>
+			<li><a href="html/state-extern.html">10.7. External Modules</a></li>
+			<li><a href="html/state-modifiers.html">10.8. State Modifiers</a></li>
+		</ul>
+		<li><a href="html/spawns.html">11. Spawns</a></li>
+		<li><a href="html/anims.html">12. Animations</a></li>
+		<ul class="no-bullet">
+			<li><a href="html/anim-vertex.html">12.1. Vertex (3D) Animations</a></li>
+			<li><a href="html/anim-sprite.html">12.1. Sprite Animations</a></li>
+			<li><a href="html/anim-font.html">12.1. Font Animations</a></li>
+			<li><a href="html/anim-text.html">12.1. Text Animations</a></li>
+			<li><a href="html/anim-frag.html">12.1. Fragmented Sprite Animations</a></li>
+		</ul>
+		<li><a href="html/start.html">13. Defining Your GOOL Object</a></li>
+		<li><unknown>This manual is incomplete.</unknown></li>
+		<!--
+		<li><a href="html/events.html">14. Event Handling</a></li>
+		<li><a href="html/objmem.html">15. Object Memory</a></li>
+		<li><a href="html/ins.html">16. Instructions List</a></li>
+		<ul class ="no-bullet">
+			<li><a href="html/ins-e.html">16.1. E-Instructions</a></li>
+			<li><a href="html/ins-i.html">16.2. I-Instructions</a></li>
+		</ul>
+		<li><a href="html/directives.html">17. Directives</a></li>
+		<li><a href="html/optims.html">18. Compiler Optimizations</a></li>
+		-->
+		<li><a href="html/license.html">License</a></li>
+		</ul>
+		</span>
+	</body>
+</html>

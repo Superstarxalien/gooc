@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+		<title>GOOC Manual</title>
+		<link rel="stylesheet" href="styles.css">
+	</head>
+	<body>
+		<center>
+		<h1 class="back">GOOC - Game Oriented Object C</h1>
+		<h1>GOOC - Game Oriented Object C</h1>
+		</center>
+		<div style="font-size:125%;margin-top:0.25em;margin-bottom:0">
+		<div style="text-align:left;position:absolute;">
+		Next: <a href="anims.html">Animations</a>,
+		Previous: <a href="spawns.html">Spawns</a>,
+		Up: <a href="../index.html">Top</a>
+		</div>
+		<div style="text-align:right;">[<a href="../index.html">Contents</a>]</div>
+		</div>
+		<hr />
+		<span style="margin-left:25px">
+		<h2 class="back">12. Animations</h2>
+		<h2>12. Animations</h2>
+		</span>
+		<p>
+		If you'd like to have your objects display graphics, you must first define "animations" that it can play. There are five types of animations, and different directives are used to define each of them. However, they all share the attribute of having a name. Using an animation name in an expression will return that animation's offset (in base unit form). In order to set an object's graphics, you need to set the object's <mono>animseq</mono> field to a pointer to the animation data, <mono>getanim</mono> is an expression that transforms an animation offset into an animation data pointer.
+<code>#anim TEST_ANIM [WiBlV] 8
+
+...
+animseq = getanim(TEST_ANIM)
+...
+</code>
+		</p>
+		<p>
+		There are five types of animations to choose from:
+		<ul>
+		<li><a href="anim-vertex.html">Vertex (3D) Animations</a></li>
+		<li><a href="anim-sprite.html">Sprite Animations</a></li>
+		<li><a href="anim-font.html">Font Animations</a></li>
+		<li><a href="anim-text.html">Text Animations</a></li>
+		<li><a href="anim-frag.html">Fragmented Sprite Animations</a></li>
+		</ul>
+		</p>
+	</body>
+</html>

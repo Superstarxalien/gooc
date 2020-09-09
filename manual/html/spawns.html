@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+		<title>GOOC Manual</title>
+		<link rel="stylesheet" href="styles.css">
+	</head>
+	<body>
+		<center>
+		<h1 class="back">GOOC - Game Oriented Object C</h1>
+		<h1>GOOC - Game Oriented Object C</h1>
+		</center>
+		<div style="font-size:125%;margin-top:0.25em;margin-bottom:0">
+		<div style="text-align:left;position:absolute;">
+		Next: <a href="anims.html">Animations</a>,
+		Previous: <a href="states.html">States</a>,
+		Up: <a href="../index.html">Top</a>
+		</div>
+		<div style="text-align:right;">[<a href="../index.html">Contents</a>]</div>
+		</div>
+		<hr />
+		<span style="margin-left:25px">
+		<h2 class="back">11. Spawns</h2>
+		<h2>11. Spawns</h2>
+		</span>
+		<p>
+		In order to spawn an object, its <spec>GOOL ID</spec> and <spec>spawn ID</spec> must be specified. The GOOL ID is the identification used in the output GOOL file while the spawn ID determines the initial state. The spawn ID itself is NOT the initial state. This is useful for giving two similar types of objects some separate code.
+		</p>
+		<p>
+		A spawn is defined using the spawn directive, in this format:
+<code>#spawn <em>spawn-name</em> <em>initial-state-name</em></code>
+		<mono><em>spawn-name</em></mono> is the name of the spawn, and <mono><em>initial-state-name</em></mono> is the name of the initial spawn state. The initial spawn state does not have to be unique or defined prior to defining the spawn, and in the case that the state does not exist at all, the spawn will instead be mapped to <a href="state-invalid.html">state 255</a>, and the object cannot spawn. This is not undefined behavior.
+		</p>
+		<p>
+		When used as an expression, the spawn name translates into the spawn ID. For <spec><em>Crash 3</em></spec>, spawns in expressions will translate into the GOOL ID in the upper 16 bits, and the spawn ID in the lower 16 bits, in order to differentiate where the spawn ID is from. This is the same value that will be stored in the <mono>spawn</mono> field, when the object is spawned.
+<code>#gool Foo_C 63 1
+
+#spawn S_FOO StateFoo
+#spawn S_BAR StateFoo
+
+state StateFoo {
+    code () {
+        x = 200.0
+        y = 200.0
+        if (spawn == S_FOO) {
+            x += 100.0
+        }
+        do { playframe(2.1s) } while (1)
+    }
+}
+</code>
+		If the selected version isn't <spec><em>Crash 3</em></spec>, <mono>S_BAR</mono> will translate into <mono>0x1</mono>, but if the selected version is <spec><em>Crash 3</em></spec>, then it will translate into <mono>0x3F0001</mono>.
+		</p>
+	</body>
+</html>

@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+		<title>GOOC Manual</title>
+		<link rel="stylesheet" href="styles.css">
+	</head>
+	<body>
+		<center>
+		<h1 class="back">GOOC - Game Oriented Object C</h1>
+		<h1>GOOC - Game Oriented Object C</h1>
+		</center>
+		<div style="font-size:125%;margin-top:0.25em;margin-bottom:0">
+		<div style="text-align:left;position:absolute;">
+		Next: <a href="line-do.html">The <mono>do</mono> Statement</a>,
+		Previous: <a href="line-if.html">The <mono>if</mono> and <mono>unless</mono> Statements</a>,
+		Up: <a href="statements.html">Statements</a>
+		</div>
+		<div style="text-align:right;">[<a href="../index.html">Contents</a>]</div>
+		</div>
+		<hr />
+		<span style="margin-left:25px">
+		<h2 class="back">8.4. The <mono>while</mono> and <mono>until</mono> Statements</h2>
+		<h2>8.4. The <mono>while</mono> and <mono>until</mono> Statements</h2>
+		</span>
+		<p>
+		The <mono>while</mono> and <mono>until</mono> statements are loop statements with an exit test at the beginning of the loop. Here is the general form of a <mono>while</mono> statement:
+<code>while (<em>test</em>)
+    <em>statement</em>
+</code>
+		The <mono>while</mono> statement first evaluates <em><mono>test</mono></em>. If <em><mono>test</mono></em> evaluates to true, <em><mono>statement</mono></em> is executed, and then <em><mono>test</mono></em> is evaluated again. <em><mono>statement</mono></em> continues to execute repeatedly as long as <em><mono>test</mono></em> is true after each execution of <em><mono>statement</mono></em>. If <mono>until</mono> is used instead of <mono>while</mono>, then the truth value of <mono>test</mono> is flipped, similarly to <mono>unless</mono>.
+		</p>
+		<p>
+		A <mono>break</mono> statement will cause a <mono>while</mono> or <mono>until</mono> loop to exit prematurely.
+		</p>
+		<p>
+		You can also optionally define variables within the condition. This is useful if you want to compare against a value that is only relevant within the loop. The scope of this variable lasts until the loop it was declared in is over.
+<code>while (var foo = 0; foo < 50.0) {
+    x += 1.0
+	foo += x >> 1
+}
+</code>
+		</p>
+	</body>
+</html>

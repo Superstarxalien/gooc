@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+		<title>GOOC Manual</title>
+		<link rel="stylesheet" href="styles.css">
+	</head>
+	<body>
+		<center>
+		<h1 class="back">GOOC - Game Oriented Object C</h1>
+		<h1>GOOC - Game Oriented Object C</h1>
+		</center>
+		<div style="font-size:125%;margin-top:0.25em;margin-bottom:0">
+		<div style="text-align:left;position:absolute;">
+		Next: <a href="examples.html">Examples</a>,
+		Previous: <a href="intro.html">Introduction</a>,
+		Up: <a href="../index.html">Top</a>
+		</div>
+		<div style="text-align:right;">[<a href="../index.html">Contents</a>]</div>
+		</div>
+		<hr />
+		<span style="margin-left:25px">
+		<h2 class="back">2. Why Not Lisp?</h2>
+		<h2>2. Why Not Lisp?</h2>
+		</span>
+		<p>
+		While <spec>GOOL</spec> is based on <a href="https://en.wikipedia.org/wiki/Lisp_(programming_language)"><em>Common Lisp</em></a>, <spec>GOOC</spec> is "based" on <a href="https://en.wikipedia.org/wiki/C_(programming_language)"><em>C</em></a>. Why was that decision made, and how does it affect the <em>GOOC</em> language itself?
+		</p>
+		<p>
+		One of Lisp's selling features is its limitless flexibility. Its list-based source code allow it to adapt to any type of data and function as desired. Its simple-yet-effective syntax also allows for an extremely powerful macro system, allowing the addition of new operations and functions without changing the core flow of the source code much if at all.
+		</p>
+		<p>
+		However, despite its unparalleled potential for a task like game object programming and customizable syntax, Lisp is simply not suited for a project like <em>GOOC</em> which aims to make the task of programming <em>GOOL</em> objects simple and easy. Lisp is a naturally complex language to learn and write effectively, and debugging it can be rather difficulty, specially with the lack of a built-in <em>GOOL</em> debugger. Since the capabilities of the <em>GOOL</em> engine are not going to change much either, the task adaptability of the language itself is not as necessary for this scenario. The syntax and features of the language are instead passed on to the compiler. <em>GOOL</em> (source code) is also not entirely public, so many of its features simply cannot be ported over and would have had to be "made-up" for the sake of language completion anyway.
+		</p>
+		<p>
+		<em>C</em> is one of the most popular programming languages out there and is a language that served as the basis for many of other really popular languages (with <em>Python</em> being one major exception) and a language many people - professional programmers, hobbyists, etc. - are bound to learn and understand. This makes <em>GOOC</em> far more approachable at the expense of a bit of purism. The name "<em>Game Oriented Object C</em>" stems from the basic syntactic features borrowed from <em>C</em>, and also a nice opportunity at a quirky backronym.
+		</p>
+		<p>
+		<em>GOOC</em> borrows certain syntactic features from <em>Lisp</em> and <em>GOOL</em>, which are explained later in this manual, such as slightly more advanced variable scoping. Its keyword list is also not fully borrowed from <em>C</em> or <em>Lisp</em>, and is an entirely specialized set.
+		</p>
+		<p>
+		In the end no language is ever perfect or usable in all scenarios, any suggestions or improvements to <spec>GOOC</spec> are welcome and encouraged, as the language and program are far from complete.
+		</p>
+	</body>
+</html>

@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+		<title>GOOC Manual</title>
+		<link rel="stylesheet" href="styles.css">
+	</head>
+	<body>
+		<center>
+		<h1 class="back">GOOC - Game Oriented Object C</h1>
+		<h1>GOOC - Game Oriented Object C</h1>
+		</center>
+		<div style="font-size:125%;margin-top:0.25em;margin-bottom:0">
+		<div style="text-align:left;position:absolute;">
+		Next: <a href="state-extern.html">External Modules</a>,
+		Previous: <a href="state-flags.html">State Change Flags</a>,
+		Up: <a href="states.html">States</a>
+		</div>
+		<div style="text-align:right;">[<a href="../index.html">Contents</a>]</div>
+		</div>
+		<hr />
+		<span style="margin-left:25px">
+		<h2 class="back">10.6. The Invalid State</h2>
+		<h2>10.6. The Invalid State</h2>
+		</span>
+		<p>
+		The 256th state (state <mono>0xFF</mono>) is always considered an invalid state. State changes to this state will always be rejected, no matter what.
+		</p>
+		<p>
+		On the extremely unlikely scenario that your object code has over 255 states, a compiler warning will be thrown regarding this invalid state.
+		</p>
+	</body>
+</html>

@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+		<title>GOOC Manual</title>
+		<link rel="stylesheet" href="styles.css">
+	</head>
+	<body>
+		<center>
+		<h1 class="back">GOOC - Game Oriented Object C</h1>
+		<h1>GOOC - Game Oriented Object C</h1>
+		</center>
+		<div style="font-size:125%;margin-top:0.25em;margin-bottom:0">
+		<div style="text-align:left;position:absolute;">
+		Next: <a href="state-code.html">The <mono>code</mono> Block</a>,
+		Up: <a href="states.html">States</a>
+		</div>
+		<div style="text-align:right;">[<a href="../index.html">Contents</a>]</div>
+		</div>
+		<hr />
+		<span style="margin-left:25px">
+		<h2 class="back">10.1. Defining a State</h2>
+		<h2>10.1. Defining a State</h2>
+		</span>
+		<p>
+		You write the state definition to specify what a state actually does and how it's made up. A state definition consists of information regarding the state’s name and the body of the state. The state body is a series of state statements enclosed in braces:
+<code>state <em>state-name</em> {
+    ...
+}
+</code>
+		<em><mono>state-name</mono></em> is the name of the state. The name must be unique to the state, otherwise a compiler error will be thrown.
+		</p>
+		<p>
+		Although not technically mandatory, a state cannot function if it does not have a <mono>code</mono> block defined. A compiler warning will be thrown if it isn't.
+		</p>
+		<p>
+		Each of the three blocks in a state can be defined in-line within the state (state subroutine), or through the lambda operator <mono>=></mono>: 
+<code>sub MySub () {
+    do {
+        playanim(0, 0)
+    } while (1)
+}
+
+state FirstState {
+    code => sub MySub // set the code block to the subroutine MySub
+    trans {
+        x += 1.0
+    }
+}
+
+state SecondState {
+    code => state FirstState // the code block used will be the same as FirstState's
+    trans => state FirstState // the trans block used will be the same as FirstState's
+}
+</code>
+		This allow quick and easy re-use of code and state functionality.
+		</p>
+	</body>
+</html>

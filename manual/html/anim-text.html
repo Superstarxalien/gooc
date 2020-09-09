@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+		<title>GOOC Manual</title>
+		<link rel="stylesheet" href="styles.css">
+	</head>
+	<body>
+		<center>
+		<h1 class="back">GOOC - Game Oriented Object C</h1>
+		<h1>GOOC - Game Oriented Object C</h1>
+		</center>
+		<div style="font-size:125%;margin-top:0.25em;margin-bottom:0">
+		<div style="text-align:left;position:absolute;">
+		Next: <a href="anim-frag.html">Fragmented Sprite Animations</a>,
+		Previous: <a href="anim-font.html">Font Animations</a>,
+		Up: <a href="anims.html">Animations</a>
+		</div>
+		<div style="text-align:right;">[<a href="../index.html">Contents</a>]</div>
+		</div>
+		<hr />
+		<span style="margin-left:25px">
+		<h2 class="back">12.4. Text Animations</h2>
+		<h2>12.4. Text Animations</h2>
+		</span>
+		<p>
+		Text animations describe a set of strings, which can include the standard specifiers like <mono>%d</mono> and a few custom ones like <mono>~n</mono>. Unlike other animations which use sprites, text animations can be colored at will using the object's four color vectors, one for each vertex of every single character of the string, though text animations are slower to process and take up more memory. Text animations are type 4.
+		</p>
+		<p>
+		The format for a font animation is as follows:
+<code>#text <em>anim-name</em> <em>font-name</em> <em>tpag-eid</em></code>
+		<mono><em>anim-name</em></mono> is an identifier for the animation's name. <mono><em>font-name</em></mono> is the name of a previously defined font that will be used by the text display. <mono><em>tpag-eid</em></mono> is the EID of the texture page that contains the sprite(s).
+		</p>
+		<p>
+		This is then followed by a list of text strings:
+<code>"STRING 1"
+"STRING 2"
+"STRING~n%d"</code>
+		Each string ends with a null terminator character (<mono>\0</mono>) and can have up to 4 individual format specifiers (beginning with %); they are processed with a call to <mono>sprintf</mono>, with 4 corresponding arguments the 1st, 2nd, 3rd, and 4th words, respectively, before (or below) the top of the object's stack.
+		</p>
+		<p>
+		These strings can also contain several types of extended format specifiers. These begin with a tilde <mono>~</mono> and can be specified as one of the following:
+<table>
+<tr><th>Specifier</th><th>Output/Function</th></tr>
+<tr><td><mono>~n</mono></td><td>Newline.</td></tr>
+<tr><td><mono>~%</mono></td><td>Newline.</td></tr>
+<tr><td><mono>~c0</mono></td><td>Disable shading (object's color vectors will not affect proceeding chars).</td></tr>
+<tr><td><mono>~c1</mono></td><td>Enable shading (object's color vectors will affect proceeding chars).</td></tr>
+<tr><td><mono>~p#</mono></td><td>Skips the following character if the value at in <mono>#</mono>th word before/below the top of the object's stack is 1. Used to auto change from singular to plural forms of the noun(s) introduced by the corresponding cardinal determiner (i.e. 1 'box' to n 'boxes' for n != 1).</td></tr>
+<tr><td><mono>~sx####</mono></td><td>Set width of following characters to <mono>#</mono> (min 1, max 4 digits).</td></tr>
+<tr><td><mono>~sy####</mono></td><td>Set height of following characters to <mono>#</mono> (min 1, max 4 digits).</td></tr>
+</table>
+		</p>
+		<p>
+		If flag <mono>0x4000000</mono> in <mono>statusb</mono> is set, the text will have a black backdrop. If flag <mono>0x400</mono> in <mono>statusb</mono> is set, the text will be center-aligned.
+		</p>
+	</body>
+</html>

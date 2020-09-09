@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+		<title>GOOC Manual</title>
+		<link rel="stylesheet" href="styles.css">
+	</head>
+	<body>
+		<center>
+		<h1 class="back">GOOC - Game Oriented Object C</h1>
+		<h1>GOOC - Game Oriented Object C</h1>
+		</center>
+		<div style="font-size:125%;margin-top:0.25em;margin-bottom:0">
+		<div style="text-align:left;position:absolute;">
+		Next: <a href="op-comparison.html">Comparison Operators</a>,
+		Previous: <a href="op-assignment.html">Assignment Operators</a>,
+		Up: <a href="expressions.html">Expressions and Operators</a>
+		</div>
+		<div style="text-align:right;">[<a href="../index.html">Contents</a>]</div>
+		</div>
+		<hr />
+		<span style="margin-left:25px">
+		<h2 class="back">7.2. Arithmetic Operators</h2>
+		<h2>7.2. Arithmetic Operators</h2>
+		</span>
+		<p>
+		<spec>GOOC</spec> provides operators for standard arithmetic operations: addition, subtraction, multiplication, and division, along with modular division and negation. Usage of these operators is pretty straightforward. 
+		</p>
+		<p>
+		Integer division of positive values truncates towards zero, so <mono>5/3</mono> is <mono>1</mono>. However, if either operand is negative, then I DONT KNOW FIXME
+		</p>
+		<p>
+		You use the modulus operator <mono>%</mono> to obtain the remainder produced by dividing its two operands. You put the operands on either side of the operator, and it does matter which operand goes on which side: <mono>3 % 5</mono> and <mono>5 % 3</mono> do not have the same result. Modular division returns the remainder produced after performing integer division on the two operands. The operands must be of a primitive integer type. Division of two registers on the MIPS R3000A chip takes about 36x the amount of time compared to addition of two registers, so usage of the modulus and division operators should be kept at minimum in source code.
+		</p>
+		<p>
+		The MIPS R3000A uses twos-complement arithmetic, meaning the most negative value is farther away from zero than the most positive value. Negating the minimum integer value therefore has no effect on its value.
+		</p>
+		<p>
+		You can also apply a positive operator to an expressions, which simply returns the expression and has no effect on program operation.
+		</p>
+	</body>
+</html>

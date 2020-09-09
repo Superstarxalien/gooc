@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+		<title>GOOC Manual</title>
+		<link rel="stylesheet" href="styles.css">
+	</head>
+	<body>
+		<center>
+		<h1 class="back">GOOC - Game Oriented Object C</h1>
+		<h1>GOOC - Game Oriented Object C</h1>
+		</center>
+		<div style="font-size:125%;margin-top:0.25em;margin-bottom:0">
+		<div style="text-align:left;position:absolute;">
+		Next: <a href="op-precedence.html">Operator Precedence</a>,
+		Previous: <a href="op-conditional.html">Conditional Expressions</a>,
+		Up: <a href="expressions.html">Expressions and Operators</a>
+		</div>
+		<div style="text-align:right;">[<a href="../index.html">Contents</a>]</div>
+		</div>
+		<hr />
+		<span style="margin-left:25px">
+		<h2 class="back">7.12. Other Operators</h2>
+		<h2>7.12. Other Operators</h2>
+		</span>
+		<p>
+		<spec>GOOC</spec> is equipped with a few miscellaneous operators. These operators are merely syntactic sugar for specific operations. These have the same precedence as <spec>E-instructions</spec>.
+		</p>
+		<ul>
+		<li><mono>avg(a, b)</mono> - The average between two numbers, expands to <mono>(a + b) >> 1</mono>.</li>
+		<li><mono>autopal(a)</mono> - Automatically converts an <em>NTSC</em> frame value into a <em>PAL</em> frame value. Expands to <mono>a * 25 / 30</mono> if the selected region is a <em>PAL</em> region, otherwise it simply expands to <mono>a</mono>.</li>
+		<li><mono>autontsc(a)</mono> - Automatically converts a <em>PAL</em> frame value into an <em>NTSC</em> frame value. Expands to <mono>a * 30 / 25</mono> if the selected region is an <em>NTSC</em> region, otherwise it simply expands to <mono>a</mono>.</li>
+		<li><mono>offsetof(a)</mono> - If <mono>a</mono> is a global variable, returns the offset of that variable. If <mono>a</mono> is a field variable, returns the offset of that field. If <mono>a</mono> is neither, an error will be thrown.</li>
+		</ul>
+	</body>
+</html>

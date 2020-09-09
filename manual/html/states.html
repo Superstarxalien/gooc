@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+		<title>GOOC Manual</title>
+		<link rel="stylesheet" href="styles.css">
+	</head>
+	<body>
+		<center>
+		<h1 class="back">GOOC - Game Oriented Object C</h1>
+		<h1>GOOC - Game Oriented Object C</h1>
+		</center>
+		<div style="font-size:125%;margin-top:0.25em;margin-bottom:0">
+		<div style="text-align:left;position:absolute;">
+		Next: <a href="spawns.html">Spawns</a>,
+		Previous: <a href="subs.html">Subroutines</a>,
+		Up: <a href="../index.html">Top</a>
+		</div>
+		<div style="text-align:right;">[<a href="../index.html">Contents</a>]</div>
+		</div>
+		<hr />
+		<span style="margin-left:25px">
+		<h2 class="back">10. States</h2>
+		<h2>10. States</h2>
+		</span>
+		<p>
+		A state is an object's current mode of operation. Game objects are <em>finite state machines</em>, meaning that, at any point in their existance, they are in a certain state. States are divided into up three blocks of code (referred to as state subroutines), wherein a <spec>thread</spec> will run on: the <mono>code</mono> block, <mono>trans</mono> block, and <mono>event</mono> block. States also have rules to determine whether an object can change to that state or not.
+		</p>
+		<ul>
+		<li><a href="state-define.html">Defining a State</a></li>
+		<li><a href="state-code.html">The <mono>code</mono> Block</a></li>
+		<li><a href="state-trans.html">The <mono>trans</mono> Block</a></li>
+		<li><a href="state-event.html">The <mono>event</mono> Block</a></li>
+		<li><a href="state-flags.html">State Change Flags</a></li>
+		<li><a href="state-invalid.html">The Invalid State</a></li>
+		<li><a href="state-extern.html">External Modules</a></li>
+		<li><a href="state-modifiers.html">State Modifiers</a></li>
+		</ul>
+	</body>
+</html>

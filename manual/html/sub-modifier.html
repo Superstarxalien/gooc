@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+		<title>GOOC Manual</title>
+		<link rel="stylesheet" href="styles.css">
+	</head>
+	<body>
+		<center>
+		<h1 class="back">GOOC - Game Oriented Object C</h1>
+		<h1>GOOC - Game Oriented Object C</h1>
+		</center>
+		<div style="font-size:125%;margin-top:0.25em;margin-bottom:0">
+		<div style="text-align:left;position:absolute;">
+		Previous: <a href="sub-inline.html">Inline Subroutines</a>,
+		Up: <a href="subs.html">Subroutines</a>
+		</div>
+		<div style="text-align:right;">[<a href="../index.html">Contents</a>]</div>
+		</div>
+		<hr />
+		<span style="margin-left:25px">
+		<h2 class="back">9.6. Subroutine Modifiers</h2>
+		<h2>9.6. Subroutine Modifiers</h2>
+		</span>
+		<p>
+		Subroutine modifiers may be used to give a subroutine some specific or extra behavior which may otherwise be very unintuitive to accomplish. These are divided into two types: pre-subroutine modifiers and normal subroutine modifiers. Pre-subroutine modifiers are placed before the parameters list, while subroutine modifiers are placed after. This has to do with the sequential parsing that is done.
+		</p>
+		<h3 class="back">Pre-Subroutine Modifiers</h3>
+		<h3>Pre-Subroutine Modifiers</h3>
+		<p>
+		There is only one pre-subroutine modifier.
+		<ul>
+		<li><mono>__mips</mono> - The subroutine will be compiled into MIPS instructions, instead of GOOL instructions. This only applies to game versions that support running MIPS machine code in a GOOL file (<spec><em>Crash 2</em></spec> onwards).</li>
+		</ul>
+		</p>
+		<h3 class="back">Subroutine Modifiers</h3>
+		<h3>Subroutine Modifiers</h3>
+		<p>
+		There are two subroutine modifiers.
+		<ul>
+		<li><mono>__trans</mono> - The subroutine will allow certain constructs normally only permitted within <mono>trans</mono> blocks, and subroutine parameters will be turned into direct field addresses.</li>
+		<li><mono>__args(a, b, c, ...)</mono> - Explicitly define those extra subroutine parameters. Only allowed if <mono>__trans</mono> has already been specified.</li>
+		</ul>
+		</p>
+	</body>
+</html>

@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+		<title>GOOC Manual</title>
+		<link rel="stylesheet" href="styles.css">
+	</head>
+	<body>
+		<center>
+		<h1 class="back">GOOC - Game Oriented Object C</h1>
+		<h1>GOOC - Game Oriented Object C</h1>
+		</center>
+		<div style="font-size:125%;margin-top:0.25em;margin-bottom:0">
+		<div style="text-align:left;position:absolute;">
+		Next: <a href="op-bitshift.html">Bitwise Shift Operators</a>,
+		Previous: <a href="op-comparison.html">Comparison Operators</a>,
+		Up: <a href="expressions.html">Expressions and Operators</a>
+		</div>
+		<div style="text-align:right;">[<a href="../index.html">Contents</a>]</div>
+		</div>
+		<hr />
+		<span style="margin-left:25px">
+		<h2 class="back">7.4. Logical Operators</h2>
+		<h2>7.4. Logical Operators</h2>
+		</span>
+		<p>
+		Logical operators test the truth value of a pair of operands. Any nonzero expression is considered true, while an expression that evaluates to zero is considered false.
+		</p>
+		<p>
+		The logical conjunction operator <mono>&&</mono> tests if two expressions are both true, while the logical disjunction operator <mono>||</mono> tests if <em>at least</em> one of two expressions it true.
+<code>if (foo == 4 && bar == 2) {
+    // code to run when foo is equal to 4 and bar is equal to 2
+}
+if (foo == 4 || bar == 2) {
+    // code to run when foo is equal to 4 OR bar is equal to 2
+}
+</code>
+		</p>
+		<p>
+		You can prepend a logical expression with a negation operator <mono>!</mono> to flip the truth value: 
+<code>if (!(foo < 0)) {
+    // code to run if foo is not lower than zero, i.e. negative
+}
+</code>
+		</p>
+		<p>
+		Unlike in <em>C</em>, the full logical expression is always evaluated, regardless of if the value is known to be either true or false at an earlier point in the evaluation.
+		</p>
+	</body>
+</html>

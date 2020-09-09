@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+		<title>GOOC Manual</title>
+		<link rel="stylesheet" href="styles.css">
+	</head>
+	<body>
+		<center>
+		<h1 class="back">GOOC - Game Oriented Object C</h1>
+		<h1>GOOC - Game Oriented Object C</h1>
+		</center>
+		<div style="font-size:125%;margin-top:0.25em;margin-bottom:0">
+		<div style="text-align:left;position:absolute;">
+		Next: <a href="line-while.html">The <mono>while</mono> and <mono>until</mono> Statements</a>,
+		Previous: <a href="line-block.html">Blocks</a>,
+		Up: <a href="statements.html">Statements</a>
+		</div>
+		<div style="text-align:right;">[<a href="../index.html">Contents</a>]</div>
+		</div>
+		<hr />
+		<span style="margin-left:25px">
+		<h2 class="back">8.3. The <mono>if</mono> and <mono>unless</mono> Statements</h2>
+		<h2>8.3. The <mono>if</mono> and <mono>unless</mono> Statements</h2>
+		</span>
+		<p>
+		You can use the <mono>if</mono> or <mono>unless</mono> statements to conditionally execute part of your program, based on the truth value of a given expression. Here is the general form of an <mono>if</mono> statement:
+<code>if (test)
+    <em>then-statement</em>
+else
+    <em>else-statement</em>
+</code>
+		If <mono>test</mono> evaluates to true, then <mono><em>then-statement</em></mono> is executed and <mono><em>else-statement</em></mono> is not. If <mono>test</mono> evaluates to false, then <mono><em>else-statement</em></mono> is executed and <mono><em>then-statement</em></mono> is not. The else clause is optional. If <mono>unless</mono> is used instead of <mono>if</mono>, then the truth value of <mono>test</mono> is flipped. Now, <mono><em>then-statement</em></mono> is executed if <mono>test</mono> is false, and so on.
+		</p>
+		<p>
+		You can use a series of <mono>if</mono> and/or <mono>unless</mono> statements to test for multiple conditions:
+<code>if (x == 1)
+    y = 10;
+else if (x == 2)
+    y = 20;
+else unless (x == 4)
+    y = 30;
+else
+    y = 50;
+</code>
+		</p>
+		<p>
+		You can also optionally define variables within the condition. This is useful if you want to compare an expression which does not have a consistent return value, such as <mono>rand</mono>. The scope of this variable lasts until the <mono>if</mono> (or <mono>unless</mono>) statement chain it was declared in is over.
+<code>/* rand(3) returns a random value from
+   0 to 2, and we run different code
+   depending on each of the three outcomes */
+if (var r = rand(3); r == 0)
+    y = 10;
+else if (r == 1)
+    y = 20;
+else if (r == 2)
+    y = 40;
+x = r // error
+</code>
+		</p>
+	</body>
+</html>

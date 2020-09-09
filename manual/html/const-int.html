@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+		<title>GOOC Manual</title>
+		<link rel="stylesheet" href="styles.css">
+	</head>
+	<body>
+		<center>
+		<h1 class="back">GOOC - Game Oriented Object C</h1>
+		<h1>GOOC - Game Oriented Object C</h1>
+		</center>
+		<div style="font-size:125%;margin-top:0.25em;margin-bottom:0">
+		<div style="text-align:left;position:absolute;">
+		Next: <a href="const-gint.html">GOOL Integer Constants</a>,
+		Up: <a href="token-constant.html">Constants</a>
+		</div>
+		<div style="text-align:right;">[<a href="../index.html">Contents</a>]</div>
+		</div>
+		<hr />
+		<span style="margin-left:25px">
+		<h2 class="back">5.3.1. Integer Constants</h2>
+		<h2>5.3.1. Integer Constants</h2>
+		</span>
+		<p>
+		An integer constant is a sequence of digits, with an optional prefix to denote its number base.
+		</p>
+		<p>
+		If the sequence of digits is preceded by <mono>0x</mono> or <mono>0X</mono>, then the constant is considered to be hexadecimal. Hexadecimal values may use the digits <mono>0</mono> to <mono>9</mono>, and the letters <mono>a</mono> to <mono>f</mono> or <mono>A</mono> to <mono>F</mono>. The following are all valid hexadecimal constants:
+<code>0x1f
+0x200
+0x04A
+0xbf0
+0xDe0
+0x8
+</code>
+		</p>
+		<p>
+		If a sequence of digits is preceded by <mono>0b</mono> or <mono>0B</mono>, then the constant is considered to be binary. Binary values may use the digits <mono>0</mono> and <mono>1</mono>. The following are all valid binary constants:
+<code>0b0110
+0b11
+0b11110
+</code>
+		</p>
+		<p>
+		In any other case, the sequence of digits is assumed to be decimal. Decimal values may use the digits <mono>0</mono> to <mono>9</mono>.
+		</p>
+	</body>
+</html>

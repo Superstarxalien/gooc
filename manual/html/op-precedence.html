@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+		<title>GOOC Manual</title>
+		<link rel="stylesheet" href="styles.css">
+	</head>
+	<body>
+		<center>
+		<h1 class="back">GOOC - Game Oriented Object C</h1>
+		<h1>GOOC - Game Oriented Object C</h1>
+		</center>
+		<div style="font-size:125%;margin-top:0.25em;margin-bottom:0">
+		<div style="text-align:left;position:absolute;">
+		Previous: <a href="op-other.html">Other Operators</a>,
+		Up: <a href="expressions.html">Expressions and Operators</a>
+		</div>
+		<div style="text-align:right;">[<a href="../index.html">Contents</a>]</div>
+		</div>
+		<hr />
+		<span style="margin-left:25px">
+		<h2 class="back">7.13. Operator Precedence</h2>
+		<h2>7.13. Operator Precedence</h2>
+		</span>
+		<p>
+		When an expression contains multiple operators, such as <mono>a + b * c >> 8</mono>, the operators are grouped based on rules of precedence. For instance, the meaning of that expression is to multiply <mono>b</mono> by <mono>c</mono>, right shift the result by <mono>8</mono>, then add that result to <mono>a</mono>. The rules of operator precedence determine the order of this expression.
+		</p>
+		<p>
+		The following is a list of types of expressions, presented in order of highest precedence first. Sometimes two or more operators have equal precedence; all those operators are applied from left to right unless stated otherwise.
+		<ol>
+		<li>Operators with operands enclosed in separators such as parenthesis, and field access operator <mono>-></mono>.</li>
+		<li>Unary operators: <mono>+</mono>, <mono>-</mono>, <mono>!</mono>, <mono>~</mono>, <mono>&</mono>.</li>
+		<li>Multiplication, division, and modular division: <mono>*</mono>, <mono>/</mono>, <mono>%</mono>.</li>
+		<li>Addition and subtraction expressions: <mono>+</mono>, <mono>-</mono>. These expressions are evaluated right-to-left.</li>
+		<li>Bitwise shifting expressions: <mono><<</mono>, <mono>>></mono>.</li>
+		<li>Greater-than, less-than, greater-than-or-equal-to, and less-than-or-equal-to expressions: <mono>></mono>, <mono><</mono>, <mono>>=</mono>, <mono><=</mono>.</li>
+		<li>Equal-to and not-equal-to expressions: <mono>==</mono>, <mono>!=</mono>.</li>
+		<li>Bitwise TEST expressions: <mono>\</mono>.</li>
+		<li>Bitwise AND expressions: <mono>&</mono>.</li>
+		<li>Bitwise XOR expressions: <mono>^</mono>.</li>
+		<li>Bitwise OR expressions: <mono>|</mono>.</li>
+		<li>Logical AND expressions: <mono>&&</mono>. These expressions are evaluated right-to-left.</li>
+		<li>Logical OR expressions: <mono>||</mono>. These expressions are evaluated right-to-left.</li>
+		<li>Conditional expressions: <mono>?:</mono>.</li>
+		</ol>
+		</p>
+	</body>
+</html>

@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+		<title>GOOC Manual</title>
+		<link rel="stylesheet" href="styles.css">
+	</head>
+	<body>
+		<center>
+		<h1 class="back">GOOC - Game Oriented Object C</h1>
+		<h1>GOOC - Game Oriented Object C</h1>
+		</center>
+		<div style="font-size:125%;margin-top:0.25em;margin-bottom:0">
+		<div style="text-align:left;position:absolute;">
+		Next: <a href="const-num.html">Real Number Constants</a>,
+		Previous: <a href="const-int.html">Integer Constants</a>,
+		Up: <a href="token-constant.html">Constants</a>
+		</div>
+		<div style="text-align:right;">[<a href="../index.html">Contents</a>]</div>
+		</div>
+		<hr />
+		<span style="margin-left:25px">
+		<h2 class="back">5.3.2. GOOL Integer Constants</h2>
+		<h2>5.3.2. GOOL Integer Constants</h2>
+		</span>
+		<p>
+		A GOOL integer constant is a special type of integer that is shifted eight bits to the left from its represented value. GOOL integers may be written in base 10 (decimal) or base 16 (hexadecimal).
+		</p>
+		<p>
+		Decimal GOOL integers are integer constants succeeded by the character <mono>G</mono> or <mono>g</mono>. The following are valid GOOL integers, and their final transformed value:
+<code>1G => 1 << 8, 256
+12G => 12 << 8, 3072
+100G => 100 << 8, 25600</code>
+		</p>
+		<p>
+		Hexadecimal GOOL integers are hexadecimal constants preceeded by the character <mono>G</mono> or <mono>g</mono>. The following are valid GOOL integers, and their final transformed value:
+<code>G0x30 => 0x30 << 8, 0x3000
+G0XB8 => 0xB8 << 8, 0xB800
+G0x64 => 0x64 << 8, 0x6400</code>
+		</p>
+	</body>
+</html>

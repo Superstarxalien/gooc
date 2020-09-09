@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+		<title>GOOC Manual</title>
+		<link rel="stylesheet" href="styles.css">
+	</head>
+	<body>
+		<center>
+		<h1 class="back">GOOC - Game Oriented Object C</h1>
+		<h1>GOOC - Game Oriented Object C</h1>
+		</center>
+		<div style="font-size:125%;margin-top:0.25em;margin-bottom:0">
+		<div style="text-align:left;position:absolute;">
+		Next: <a href="state-trans.html">The <mono>trans</mono> Block</a>,
+		Previous: <a href="state-define.html">Defining a State</a>,
+		Up: <a href="states.html">States</a>
+		</div>
+		<div style="text-align:right;">[<a href="../index.html">Contents</a>]</div>
+		</div>
+		<hr />
+		<span style="margin-left:25px">
+		<h2 class="back">10.2. The <mono>code</mono> Block</h2>
+		<h2>10.2. The <mono>code</mono> Block</h2>
+		</span>
+		<p>
+		The <mono>code</mono> block is the main block of functionality for a state. The <mono>code</mono> block functions like a normal subroutine would, but is temporarily suspended by specific graphics instructions (the ones that play graphics), and if it returns, the object is killed. Once the <mono>code</mono> block thread is suspended, the game proceeds to do all physics calculations, collision, rendering, etc. and the thread on the block resumes after a specified time.
+		</p>
+		<p>
+		A <mono>code</mono> block has a list of parameters, which are passed when the object is spawned, or changes state (<spec><em>Crash 2</em></spec> onwards).
+		</p>
+		<p>
+		A <mono>code</mono> block is defined like this:
+<code>code <em>pre-modifiers</em> (<em>parameter-list</em>)
+{
+    <em>subroutine-body</em>
+}
+</code>
+		Note that pre-subroutine modifiers are the only type of modifiers that can be used.
+		</p>
+	</body>
+</html>

@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+		<title>GOOC Manual</title>
+		<link rel="stylesheet" href="styles.css">
+	</head>
+	<body>
+		<center>
+		<h1 class="back">GOOC - Game Oriented Object C</h1>
+		<h1>GOOC - Game Oriented Object C</h1>
+		</center>
+		<div style="font-size:125%;margin-top:0.25em;margin-bottom:0">
+		<div style="text-align:left;position:absolute;">
+		Next: <a href="const-eid.html">EID Constants</a>,
+		Previous: <a href="const-deg.html">Angle Constants</a>,
+		Up: <a href="token-constant.html">Constants</a>
+		</div>
+		<div style="text-align:right;">[<a href="../index.html">Contents</a>]</div>
+		</div>
+		<hr />
+		<span style="margin-left:25px">
+		<h2 class="back">5.3.9. Time Constants</h2>
+		<h2>5.3.9. Time Constants</h2>
+		</span>
+		<p>
+		A <spec>time constant</spec> is a value that represents a timespan in seconds. Using <spec>gooc</spec>'s <mono>-r</mono> parameter lets you select the target region for the compiled output (<spec>NTSC-U</spec> is the default region), which determines how time constants are parsed. <spec>NTSC</spec> regions run at 30 frames per second, while <spec>PAL</spec> regions run at 25 frames per second, meaning one second is transformed into <mono>30</mono> if NTSC is selected and <mono>25</mono> if PAL is selected. A time constant can be written as any integer or real number followed by the suffix <mono>s</mono>.
+		</p>
+		<p>
+		Either the integer part or the fractional part may be omitted, but not both. Here are some examples of valid time constants:
+<code>.5s
+1s
+60s
+300s
+</code>
+		</p>
+	</body>
+</html>

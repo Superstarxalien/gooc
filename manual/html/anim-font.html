@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+		<title>GOOC Manual</title>
+		<link rel="stylesheet" href="styles.css">
+	</head>
+	<body>
+		<center>
+		<h1 class="back">GOOC - Game Oriented Object C</h1>
+		<h1>GOOC - Game Oriented Object C</h1>
+		</center>
+		<div style="font-size:125%;margin-top:0.25em;margin-bottom:0">
+		<div style="text-align:left;position:absolute;">
+		Next: <a href="anim-text.html">Text Animations</a>,
+		Previous: <a href="anim-sprite.html">Sprite Animations</a>,
+		Up: <a href="anims.html">Animations</a>
+		</div>
+		<div style="text-align:right;">[<a href="../index.html">Contents</a>]</div>
+		</div>
+		<hr />
+		<span style="margin-left:25px">
+		<h2 class="back">12.3. Font Animations</h2>
+		<h2>12.3. Font Animations</h2>
+		</span>
+		<p>
+		Font animations define a font to be used by text animations. Font animations are not actually meant to be used by objects themselves, and nothing will display if they are used. Fonts function similarly to sprite animations, they specify a sprite to use for each ASCII character. The first sprite describes the character <mono>0x20</mono> in the encoding, which corresponds to a space character, and each following sprite describes the next character, and so on. NTSC-J versions of the games have special behavior for character 128 and onwards, so upwards of 96 characters may be defined in a single font. Font animations are type 3.
+		</p>
+		<h3 class="back">Crash 1</h3>
+		<h3>Crash 1</h3>
+		<p>
+		The format for a font animation is as follows:
+<code>#font <em>anim-name</em> <em>tpag-eid</em></code>
+		<mono><em>anim-name</em></mono> is an identifier for the animation's name. <mono><em>tpag-eid</em></mono> is the EID of the texture page that contains the sprite(s).
+		</p>
+		<p>
+		This is then followed by a list of character definitions:
+<code>#char <em>rgb</em> <em>color-mode</em> <em>blend-mode</em> <em>tex-x</em> <em>tex-y</em> <em>clut-x</em> <em>clut-y</em> <em>tex-w</em> <em>tex-h</em> <em>char-w</em> <em>char-h</em></code>
+<code>#char <em>rgb</em> <em>color-mode</em> <em>blend-mode</em> <em>tex-x</em> <em>tex-y</em> <em>clut-x</em> <em>clut-y</em> <em>tex-w</em> <em>tex-h</em> ! <em>flip</em> <em>wind</em> <em>char-w</em> <em>char-h</em></code>
+		<mono><em>rgb</em></mono>, <mono><em>color-mode</em></mono>, <mono><em>blend-mode</em></mono>, <mono><em>tex-x</em></mono>, <mono><em>tex-y</em></mono>, <mono><em>clut-x</em></mono>, <mono><em>clut-y</em></mono>, <mono><em>tex-w</em></mono>, <mono><em>tex-h</em></mono>, <mono><em>flip</em></mono>, and <mono><em>wind</em></mono> are the same parameters as in <a href="anim-sprite.html">sprite animations</a>. <mono><em>char-w</em></mono> and <mono><em>char-h</em></mono> specify the width and height of the character, with 400 corresponding to a "normal" size. <mono><em>char-h</em></mono> can also be zero, in which case it assumes a default value.
+		</p>
+		<h3 class="back">Crash 2</h3>
+		<h3>Crash 2</h3>
+		<p>
+		The format for a font animation is as follows:
+<code>#font <em>anim-name</em> <em>tpag-eid</em></code>
+		<mono><em>anim-name</em></mono> is an identifier for the animation's name. <mono><em>tpag-eid</em></mono> is the EID of the texture page that contains the sprite(s).
+		</p>
+		<p>
+		This is then followed by a list of character definitions:
+<code>#char <em>rgb</em> <em>color-mode</em> <em>blend-mode</em> <em>tex-x</em> <em>tex-y</em> <em>clut-x</em> <em>clut-y</em> <em>tex-w</em> <em>tex-h</em> <em>char-w</em> <em>char-h</em></code>
+		<mono><em>rgb</em></mono>, <mono><em>color-mode</em></mono>, <mono><em>blend-mode</em></mono>, <mono><em>tex-x</em></mono>, <mono><em>tex-y</em></mono>, <mono><em>clut-x</em></mono>, <mono><em>clut-y</em></mono>, <mono><em>tex-w</em></mono>, and <mono><em>tex-h</em></mono> are the same parameters as in <a href="anim-sprite.html">sprite animations</a>. <mono><em>char-w</em></mono> and <mono><em>char-h</em></mono> specify the width and height of the character, with 400 corresponding to a "normal" size. <mono><em>char-h</em></mono> can also be zero, in which case it assumes a default value.
+		</p>
+	</body>
+</html>

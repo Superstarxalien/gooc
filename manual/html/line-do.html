@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+		<title>GOOC Manual</title>
+		<link rel="stylesheet" href="styles.css">
+	</head>
+	<body>
+		<center>
+		<h1 class="back">GOOC - Game Oriented Object C</h1>
+		<h1>GOOC - Game Oriented Object C</h1>
+		</center>
+		<div style="font-size:125%;margin-top:0.25em;margin-bottom:0">
+		<div style="text-align:left;position:absolute;">
+		Next: <a href="line-break.html">The <mono>break</mono> and <mono>continue</mono> Statements</a>,
+		Previous: <a href="line-while.html">The <mono>while</mono> and <mono>until</mono> Statements</a>,
+		Up: <a href="statements.html">Statements</a>
+		</div>
+		<div style="text-align:right;">[<a href="../index.html">Contents</a>]</div>
+		</div>
+		<hr />
+		<span style="margin-left:25px">
+		<h2 class="back">8.5. The <mono>do</mono> Statement</h2>
+		<h2>8.5. The <mono>do</mono> Statement</h2>
+		</span>
+		<p>
+		The <mono>do</mono> statement is a loop statement with an exit test at the end of the loop. Here is the general form of a <mono>do</mono> + <mono>while</mono> statement:
+<code>do
+    <em>statement</em>
+while (<em>test</em>)
+</code>
+		The <mono>do</mono> statement first executes <em><mono>statement</mono></em>. After that, it evaluates <em><mono>test</mono></em>. If <em><mono>test</mono></em> is true, then <em><mono>statement</mono></em> is executed again. <em><mono>statement</mono></em> continues to execute repeatedly as long as <em><mono>test</mono></em> is true after each execution of <em><mono>statement</mono></em>. If <mono>until</mono> is used instead of <mono>while</mono>, then the truth value of <mono>test</mono> is flipped, similarly to <mono>unless</mono>.
+		</p>
+		<p>
+		A <mono>break</mono> statement will cause a <mono>do</mono> loop to exit prematurely.
+		</p>
+		<p>
+		You can also optionally define variables after the <mono>do</mono> keyword. This is useful if you want to compare against a value that is only relevant within the loop, such as a loop counter. The scope of this variable lasts until the loop it was declared in is over.
+<code>do (var i = 0) {
+    x += 5.0
+    i += 1.0
+} while (i < 10.0)
+</code>
+		The caveat in this particular (but quite common) scenario is that <mono>i</mono> will not be incremented in the case of a <mono>continue</mono> statement. This can be amended using the step block. The step block is a block of code placed before the condition expression, which always runs before the condition is tested, like this: <unknown>or at least it should...</unknown>
+<code>do (var i = 0) {
+    x += 5.0
+} while ({i += 1.0}; i < 10.0)
+</code>
+		This is, in turn, similar to a <mono>for</mono> statement in <em>C</em>.
+		</p>
+	</body>
+</html>

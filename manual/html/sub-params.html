@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+		<title>GOOC Manual</title>
+		<link rel="stylesheet" href="styles.css">
+	</head>
+	<body>
+		<center>
+		<h1 class="back">GOOC - Game Oriented Object C</h1>
+		<h1>GOOC - Game Oriented Object C</h1>
+		</center>
+		<div style="font-size:125%;margin-top:0.25em;margin-bottom:0">
+		<div style="text-align:left;position:absolute;">
+		Next: <a href="sub-paramsmem.html">Parameter Storage</a>,
+		Previous: <a href="sub-define.html">Defining a Subroutine</a>,
+		Up: <a href="subs.html">Subroutines</a>
+		</div>
+		<div style="text-align:right;">[<a href="../index.html">Contents</a>]</div>
+		</div>
+		<hr />
+		<span style="margin-left:25px">
+		<h2 class="back">9.2. Subroutine Parameters</h2>
+		<h2>9.2. Subroutine Parameters</h2>
+		</span>
+		<p>
+		Function parameters can be any expression—a literal value, a value stored in variable, an address in memory, or a more complex expression built by combining these.
+		</p>
+		<p>
+		From the callee's perspective, the (evaluated) parameter is a local copy of the value passed into the subroutine; you cannot change the value passed in by the caller by changing the local copy.
+<code>sub Times2 (a) {
+    a = a<<1
+    a = misc
+}
+
+...
+x = 4.0
+Times2(x)
+...
+</code>
+		In that example, even though the parameter <mono>a</mono> is modified in the subroutine <mono>Times2</mono>, the variable <mono>x</mono> that is passed to the subroutine does not change.
+		</p>
+		<p>
+		If the value that you pass to a subroutine is a memory address (that is, a pointer), then you can access (and change) the data stored at the memory address. This achieves an effect similar to pass-by-reference in other languages, but is not the same: the memory address is simply a value, just like any other value, and cannot itself be changed. The difference between passing a pointer and passing an integer lies in what you can do using the value within the subroutine.
+		</p>
+		<p>
+		Here is an example of calling a function with a pointer parameter: <unknown>this is not actually valid code yet lol</unknown>
+<code>sub Times2(a) {
+    a[0] = a[0] << 1
+}
+
+...
+var foo = 4.0
+Times2(&foo)
+...
+</code>
+		Here we pass the memory location of the local variable <mono>foo</mono> to the subroutine <mono>Times2</mono>. The subroutine then dereferences the pointer (this can be achieved by simply accessing its first member as if it were an array), which gets the actual value stored at that address. That value is then multiplied by two (via left shift), and stored back as the first value of the "array".
+		</p>
+	</body>
+</html>

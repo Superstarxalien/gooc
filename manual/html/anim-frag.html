@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+		<title>GOOC Manual</title>
+		<link rel="stylesheet" href="styles.css">
+	</head>
+	<body>
+		<center>
+		<h1 class="back">GOOC - Game Oriented Object C</h1>
+		<h1>GOOC - Game Oriented Object C</h1>
+		</center>
+		<div style="font-size:125%;margin-top:0.25em;margin-bottom:0">
+		<div style="text-align:left;position:absolute;">
+		Previous: <a href="anim-text.html">Text Animations</a>,
+		Up: <a href="anims.html">Animations</a>
+		</div>
+		<div style="text-align:right;">[<a href="../index.html">Contents</a>]</div>
+		</div>
+		<hr />
+		<span style="margin-left:25px">
+		<h2 class="back">12.5. Fragmented Sprite Animations</h2>
+		<h2>12.5. Fragmented Sprite Animations</h2>
+		</span>
+		<p>
+		Fragmented sprite animations are sprite animations that are assembled through multiple smaller sprites, a necessity for larger sprites due to size and packing limitations. Fragmented sprite animations are type 5.
+		</p>
+		<h3 class="back">Crash 1</h3>
+		<h3>Crash 1</h3>
+		<p>
+		The format for a fragmented sprite animation is as follows:
+<code>#fraganim <em>anim-name</em> <em>tpag-eid</em> <em>frag-count</em></code>
+		<mono><em>anim-name</em></mono> is an identifier for the animation's name. <mono><em>tpag-eid</em></mono> is the EID of the texture page that contains the sprite(s). <mono><em>frag-count</em></mono> is the number of fragments (sprites) for each frame of animation.
+		</p>
+		<p>
+		This is then followed by a list of fragment definitions:
+<code>#frag <em>rgb</em> <em>color-mode</em> <em>blend-mode</em> <em>tex-x</em> <em>tex-y</em> <em>clut-x</em> <em>clut-y</em> <em>tex-w</em> <em>tex-h</em> <em>frag-x</em> <em>frag-w</em> <em>frag-y</em> <em>frag-h</em></code>
+<code>#frag <em>rgb</em> <em>color-mode</em> <em>blend-mode</em> <em>tex-x</em> <em>tex-y</em> <em>clut-x</em> <em>clut-y</em> <em>tex-w</em> <em>tex-h</em> ! <em>flip</em> <em>wind</em> <em>frag-x</em> <em>frag-w</em> <em>frag-y</em> <em>frag-h</em></code>
+		<mono><em>rgb</em></mono>, <mono><em>color-mode</em></mono>, <mono><em>blend-mode</em></mono>, <mono><em>tex-x</em></mono>, <mono><em>tex-y</em></mono>, <mono><em>clut-x</em></mono>, <mono><em>clut-y</em></mono>, <mono><em>tex-w</em></mono>, <mono><em>tex-h</em></mono>, <mono><em>flip</em></mono>, and <mono><em>wind</em></mono> are the same parameters as in <a href="anim-sprite.html">sprite animations</a>. <mono><em>frag-x</em></mono> and <mono><em>frag-y</em></mono> specify the X and Y offsets of the fragment, and <mono><em>frag-w</em></mono> and <mono><em>frag-h</em></mono> specify the width and height of the fragment, with 400 corresponding to a "normal" size. The width or height can also be zero, in which case they assume a default value.
+		</p>
+		<h3 class="back">Crash 2</h3>
+		<h3>Crash 2</h3>
+		<p>
+		The format for a fragmented sprite animation is as follows:
+<code>#fraganim <em>anim-name</em> <em>tpag-eid</em> <em>frag-count</em></code>
+		<mono><em>anim-name</em></mono> is an identifier for the animation's name. <mono><em>tpag-eid</em></mono> is the EID of the texture page that contains the sprite(s). <mono><em>frag-count</em></mono> is the number of fragments (sprites) for each frame of animation.
+		</p>
+		<p>
+		This is then followed by a list of fragment definitions:
+<code>#frag <em>rgb</em> <em>color-mode</em> <em>blend-mode</em> <em>tex-x</em> <em>tex-y</em> <em>clut-x</em> <em>clut-y</em> <em>tex-w</em> <em>tex-h</em> <em>frag-x</em> <em>frag-w</em> <em>frag-y</em> <em>frag-h</em></code>
+		<mono><em>rgb</em></mono>, <mono><em>color-mode</em></mono>, <mono><em>blend-mode</em></mono>, <mono><em>tex-x</em></mono>, <mono><em>tex-y</em></mono>, <mono><em>clut-x</em></mono>, <mono><em>clut-y</em></mono>, <mono><em>tex-w</em></mono>, and <mono><em>tex-h</em></mono> are the same parameters as in <a href="anim-sprite.html">sprite animations</a>. <mono><em>frag-x</em></mono> and <mono><em>frag-y</em></mono> specify the X and Y offsets of the fragment, and <mono><em>frag-w</em></mono> and <mono><em>frag-h</em></mono> specify the width and height of the fragment. The width or height can also be zero, in which case they assume the default value of 400, corresponding to a base unit.
+		</p>
+	</body>
+</html>

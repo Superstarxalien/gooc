@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+		<title>GOOC Manual</title>
+		<link rel="stylesheet" href="styles.css">
+	</head>
+	<body>
+		<center>
+		<h1 class="back">GOOC - Game Oriented Object C</h1>
+		<h1>GOOC - Game Oriented Object C</h1>
+		</center>
+		<div style="font-size:125%;margin-top:0.25em;margin-bottom:0">
+		<div style="text-align:left;position:absolute;">
+		Next: <a href="op-address.html">Address-of Operator</a>,
+		Previous: <a href="op-bitshift.html">Bitwise Shift Operators</a>,
+		Up: <a href="expressions.html">Expressions and Operators</a>
+		</div>
+		<div style="text-align:right;">[<a href="../index.html">Contents</a>]</div>
+		</div>
+		<hr />
+		<span style="margin-left:25px">
+		<h2 class="back">7.6. Bitwise Logical Operators</h2>
+		<h2>7.6. Bitwise Logical Operators</h2>
+		</span>
+		<p>
+		Provided are operators for performing bitwise conjunction, inclusive disjunction, exclusive disjunction, and negation (complement).
+		</p>
+		<p>
+		Biwise conjunction examines each bit in its two operands, and when two corresponding bits are both 1, the resulting bit is 1. All other resulting bits are 0. Here is an example of how this works, using binary numbers:
+<code>11001001 & 10011011 = 10001001</code>
+		</p>
+		<p>
+		Bitwise inclusive disjunction examines each bit in its two operands, and when two corresponding bits are both 0, the resulting bit is 0. All other resulting bits are 1.
+<code>11001001 | 10011011 = 11011011</code>
+		</p>
+		<p>
+		Bitwise exclusive disjunction examines each bit in its two operands, and when two corresponding bits are different, the resulting bit is 1. All other resulting bits are 0.
+<code>11001001 ^ 10011011 = 01010010</code>
+		</p>
+		<p>
+		Bitwise negation reverses each bit in its operand:
+<code>~11001001 = 00110110</code>
+		</p>
+	</body>
+</html>

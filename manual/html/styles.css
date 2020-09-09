@@ -1,0 +1,312 @@
+html {
+	background-color: #CCC;
+}
+
+body
+{
+	text-shadow:
+	.03em .03em 0 black,
+	-.03em .03em 0 black,
+	.03em -.03em 0 black,
+	-.03em -.03em 0 black,
+	0 -.03em 0 black,
+	0 .03em 0 black,
+	-.03em 0 0 black,
+	.03em 0 0 black;
+	color: #88A8FF;
+	background-color: #111;
+	font-family: "SimianDisplay Orangutan", "Trebuchet MS", "Times New Roman";
+	font-size-adjust:0.42;
+	font-size:19px;
+	max-width: 60em;
+	margin:0 auto 25px auto;
+	padding: .5em 1em 1em 1em;
+	border:1px solid black;
+	box-shadow: 1px 1px 1em 0 black;
+}
+
+div.display {
+    margin-left: 3.2em;
+}
+
+pre.display {
+	font-family: inherit;
+}
+
+a:link {
+	color: #44f;
+}
+
+a:visited {
+	color: #b3e;
+}
+
+a:hover {
+}
+
+a:active {
+	color: red;
+} 
+
+ul.no-bullet {
+	list-style: none;
+	list-style-position: outside;
+	list-style-image: none;
+	list-style-type: none;
+}
+
+h1, h2, h3 {
+	display:inline-block;
+	background-color:black;
+	background-clip: text;
+	-webkit-background-clip: text;
+	-webkit-text-fill-color: transparent;
+	padding-left:0.5em;
+	padding-right:0.5em;
+	padding-top:4px;
+	padding-bottom:4px;
+	margin-top:0px;
+	margin-bottom:0px;
+	text-shadow:0 0 0;
+	position:relative;
+	z-index:10;
+}
+
+.back {
+	background-image:none;
+	background-clip:border-box;
+	-webkit-background-clip:border-box;
+	z-index:5;
+	background-color:black;
+	position:absolute;
+	color:black;
+	border-radius:1em;
+}
+
+h1 {
+	background-image: -webkit-linear-gradient(270deg, #FFFF30, #FFFF30, #808018, #808018);
+	color:#FFFF30;
+}
+
+h2 {
+	margin-top:0.5em;
+	background-image: -webkit-linear-gradient(270deg, #c08040, #c08040, #604020, #604020);
+	color:#c08040;
+}
+
+h3 {
+	background-image: -webkit-linear-gradient(270deg, #FFFFFF, #FFFFFF, #808080, #808080);
+	color:#FFFFFF;
+}
+
+p, li { line-height: 1.5em; }
+
+code
+{
+	margin: 8px;
+	padding-right:8px;
+	padding-left:8px;
+	padding-top:4px;
+	padding-bottom:4px;
+	display: table;
+	white-space: pre-wrap;
+	border: 4px solid gray;
+	background-color: silver;
+	font-family: monospace;
+	font-size-adjust: initial;
+	color:black;
+	font-size:14px;
+	text-shadow:initial;
+	line-height:1.3em;
+}
+
+blockquote
+{
+	margin: 8px;
+	padding: 8px;
+	display: table;
+	border: 4px solid gray;
+	background-color: silver;
+}
+
+table
+{
+	margin: 4px;
+	border: 2px solid gray;
+	border-spacing: 0px;
+	empty-cells: show;
+}
+
+caption
+{
+	padding: 4px;
+	color: white;
+	background-color: teal;
+	font-size: 110%;
+	font-weight: bold;
+	border-radius: 8px 8px 0px 0px;
+	-moz-border-radius: 8px 8px 0px 0px;
+	-webkit-border-radius: 8px 8px 0px 0px;
+}
+
+td
+{
+	margin: 0px;
+	padding: 4px;
+}
+
+thead tr,tbody tr th
+{
+	background-color: silver;
+	text-align: center;
+	color:white;
+	padding-left:1em;
+	padding-right:1em;
+}
+
+tbody tr td
+{
+	border: 1px solid gray;
+	background-color:#080808;
+}
+
+tfoot tr
+{
+	color: white;
+	background-color: navy;
+	font-style: italic;
+}
+
+tfoot tr.warning
+{
+	background-color: red;
+}
+
+a
+{
+	text-decoration: none;
+	outline-style: none;
+}
+
+a:hover
+{
+	text-decoration: underline;
+}
+
+unknown,.unknown,.note
+{
+	color: gray;
+	font-style: italic;
+}
+
+.mono,mono
+{
+	font-family: monospace;
+	font-size:75%;
+	padding:0.15em;
+	padding-bottom:0;
+	text-shadow:initial;
+	color:white;
+}
+
+spec,em.spec {
+	color:#C08040;
+}
+
+du {
+	text-decoration-line:underline;
+	text-decoration-style:dotted;
+}
+
+#toc
+{
+	float: right;
+	margin: 8px;
+	padding: 8px;
+	display: table;
+	border: 2px solid silver;
+	background-color: #ddd;
+}
+
+#toc span
+{
+	background-image: -webkit-linear-gradient(270deg, #c08040, #c08040, #604020, #604020);
+	background-clip: text;
+	-webkit-background-clip: text;
+	-webkit-text-fill-color: transparent;
+	margin: 8px;
+	display: block;
+	text-align: center;
+	font-weight: bold;
+}
+
+#toc ul
+{
+	padding-left: 12px;
+	text-shadow:unset;
+}
+
+#toc ul li
+{
+	margin: 4px;
+	/*list-style-position: inside;*/
+}
+
+#toc ul li ul
+{
+	padding-left: 16px;
+}
+
+#toc ul li ul li
+{
+	margin: 4px;
+	font-size: 85%;
+}
+
+#formatchart
+{
+	width: 800px;
+	table-layout: fixed;
+}
+
+#formatchart tbody tr td,#typenamechart tbody tr td
+{
+	text-align: center;
+}
+
+#formatchart tbody tr td.supported
+{
+	background-color: lime;
+}
+
+#formatchart tbody tr td.halfsupported
+{
+	background-color: yellow;
+}
+
+#formatchart tbody tr td.shouldsupport
+{
+	background-color: aqua;
+}
+
+#formatchart tbody tr td.unsupported
+{
+	background-color: red;
+}
+
+#formatchart tbody tr td.unknown
+{
+	color: white;
+	background-color: purple;
+}
+
+#formatchart tbody tr td.nonexistant
+{
+	background-color: gray;
+}
+
+.deadtype th
+{
+	color: silver;
+	background-color: black;
+}

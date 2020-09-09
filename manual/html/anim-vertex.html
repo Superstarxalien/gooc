@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+		<title>GOOC Manual</title>
+		<link rel="stylesheet" href="styles.css">
+	</head>
+	<body>
+		<center>
+		<h1 class="back">GOOC - Game Oriented Object C</h1>
+		<h1>GOOC - Game Oriented Object C</h1>
+		</center>
+		<div style="font-size:125%;margin-top:0.25em;margin-bottom:0">
+		<div style="text-align:left;position:absolute;">
+		Next: <a href="anim-sprite.html">Sprite Animations</a>,
+		Up: <a href="anims.html">Animations</a>
+		</div>
+		<div style="text-align:right;">[<a href="../index.html">Contents</a>]</div>
+		</div>
+		<hr />
+		<span style="margin-left:25px">
+		<h2 class="back">12.1. Vertex (3D) Animations</h2>
+		<h2>12.1. Vertex (3D) Animations</h2>
+		</span>
+		<p>
+		Vertex animations are animations that use a 3D model, made up polygons connected by vertices, with the vertices being stored in animation entries. These are type 1 animations, and also the simplest to define, although their format is different in each game.
+		</p>
+		<h3 class="back">Crash 1</h3>
+		<h3>Crash 1</h3>
+		<p>
+		The format for a vertex animation is as follows:
+<code>#anim <em>anim-name</em> <em>anim-eid</em> <em>frame-count</em></code>
+		<mono><em>anim-name</em></mono> is an identifier for the animation's name. <mono><em>anim-eid</em></mono> is the EID for the animation entry that contains the vertex animation, this can be either a shaded vertex animation (SVTX) or colored vertex animation (CVTX). <mono><em>frame-count</em></mono> is the amount of frames of animation present in that entry.
+		</p>
+		<h3 class="back">Crash 2</h3>
+		<h3>Crash 2</h3>
+		<p>
+		The format for a vertex animation is as follows:
+<code>#anim <em>anim-name</em> <em>anim-eid</em> <em>frame-count</em> <em>interpolate</em></code>
+		<mono><em>anim-name</em></mono> is an identifier for the animation's name. <mono><em>anim-eid</em></mono> is the EID for the animation entry that contains the vertex animation. <mono><em>frame-count</em></mono> is the amount of frames in total in the animation. <mono><em>interpolate</em></mono> determines whether the animation uses interpolation or not. If enabled, the game can generate an extra frame of animation that is averaged from two stored frames, turning an animation that only has 5 frames stored in it, for example, to have 9 unique frames. In this case, <mono><em>frame-count</em></mono> must also include these interpolated frames.
+		</p>
+	</body>
+</html>

@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+		<title>GOOC Manual</title>
+		<link rel="stylesheet" href="styles.css">
+	</head>
+	<body>
+		<center>
+		<h1 class="back">GOOC - Game Oriented Object C</h1>
+		<h1>GOOC - Game Oriented Object C</h1>
+		</center>
+		<div style="font-size:125%;margin-top:0.25em;margin-bottom:0">
+		<div style="text-align:left;position:absolute;">
+		Next: <a href="events.html">Event Handling</a>,
+		Previous: <a href="anims.html">Animations</a>,
+		Up: <a href="../index.html">Top</a>
+		</div>
+		<div style="text-align:right;">[<a href="../index.html">Contents</a>]</div>
+		</div>
+		<hr />
+		<span style="margin-left:25px">
+		<h2 class="back">13. Defining Your GOOL Object</h2>
+		<h2>13. Defining Your GOOL Object</h2>
+		</span>
+		<p>
+		In order to even have a functional GOOL object at all, you must first define some basic GOOL parameters for it. These are simply the GOOL EID, the GOOL ID, and the category. This is done using the equally simple <mono>#gool</mono> directive:
+<code>#gool <em>gool-eid</em> <em>gool-id</em> <em>gool-category</em></code>
+		<mono><em>gool-eid</em></mono> is a 5-character name using only valid ename characters (which MUST end in the character <mono>C</mono>), <mono><em>gool-id</em></mono> is a valid GOOL ID (from 0 to 63 in <spec><em>Crash 1</em></spec> and <spec><em>Crash 2</em></spec>, and 0 to 127 in <spec><em>Crash 3</em></spec>), and <mono><em>gool-category</em></mono> is the object's category, which determines a handful of specific behaviors and is used in a few GOOL instructions.
+		</p>
+		<p>
+		Keep in mind that, even though you're defining only one "GOOL object", you can include multiple types of objects within it. For example, <mono>RWaOC</mono> in <spec><em>Crash 1</em></spec> contains code for the slide platforms, pushers, bats and iguana enemies, <mono>PartC</mono> in <spec><em>Crash 2</em></spec> contains code for particles, elevators, the audio streamer. Although you can define multiple unique objects in just one GOOL file, some things such as the object category and <a href="events.html">event interrupt table</a> are shared by every object in it, so a bit of care must be taken. The slide platforms and pushers cannot be spun away despite the spin event being mapped to the interrupt table due to their <a href="state-flags.html">state flags</a>, for example.
+		</p>
+		<p>
+		While not mandatory, by convention this is the first line of a <em>gooc</em> source code file.
+		</p>
+	</body>
+</html>

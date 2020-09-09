@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+		<title>GOOC Manual</title>
+		<link rel="stylesheet" href="styles.css">
+	</head>
+	<body>
+		<center>
+		<h1 class="back">GOOC - Game Oriented Object C</h1>
+		<h1>GOOC - Game Oriented Object C</h1>
+		</center>
+		<div style="font-size:125%;margin-top:0.25em;margin-bottom:0">
+		<div style="text-align:left;position:absolute;">
+		Next: <a href="state-modifiers.html">State Modifiers</a>,
+		Previous: <a href="state-invalid.html">The Invalid State</a>,
+		Up: <a href="states.html">States</a>
+		</div>
+		<div style="text-align:right;">[<a href="../index.html">Contents</a>]</div>
+		</div>
+		<hr />
+		<span style="margin-left:25px">
+		<h2 class="back">10.7. External Modules</h2>
+		<h2>10.7. External Modules</h2>
+		</span>
+		<p>
+		Using the <mono>#module</mono> directive makes all code within the directive block part of the specified module, including states. If a state is part of an external module, then its blocks must specific rules, depending on the game version. For <spec><em>Crash 1</em></spec>, all blocks must be within the same module, and cannot be in the main default module. For <spec><em>Crash 2</em></spec> onwards, the blocks must be either in the main default module, or within the currently selected module.
+		</p>
+	</body>
+</html>

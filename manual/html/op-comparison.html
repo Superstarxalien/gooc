@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+		<title>GOOC Manual</title>
+		<link rel="stylesheet" href="styles.css">
+	</head>
+	<body>
+		<center>
+		<h1 class="back">GOOC - Game Oriented Object C</h1>
+		<h1>GOOC - Game Oriented Object C</h1>
+		</center>
+		<div style="font-size:125%;margin-top:0.25em;margin-bottom:0">
+		<div style="text-align:left;position:absolute;">
+		Next: <a href="op-logical.html">Logical Operators</a>,
+		Previous: <a href="op-arithmetic.html">Arithmetic Operators</a>,
+		Up: <a href="expressions.html">Expressions and Operators</a>
+		</div>
+		<div style="text-align:right;">[<a href="../index.html">Contents</a>]</div>
+		</div>
+		<hr />
+		<span style="margin-left:25px">
+		<h2 class="back">7.3. Comparison Operators</h2>
+		<h2>7.3. Comparison Operators</h2>
+		</span>
+		<p>
+		You use the comparison operators to determine how two operands relate to each other: are they equal to each other, is one larger than the other, is one smaller than the other, and so on. When you use any of the comparison operators, the result is either 1 or 0.
+		</p>
+		<p>The equal-to operator <mono>==</mono> tests its two operands for equality. The result is 1 if the operands are equal, and 0 if the operands are not equal.</p>
+		<p>The not-equal-to operator <mono>!=</mono> tests its two operands for equality. It is syntactic sugar for the expression <mono>!(foo == bar)</mono>. The result is the opposite of the equal-to operator, that is, 1 if the operands are not equal, and 0 if they are.</p>
+		<p>Comparing decimal values for exact equality or inequality can produce unexpected results, due to limited precision.</p>
+		<p>Beyond equality and inequality, there are operators you can use to test if one value is less than, greater than, less-than-or-equal-to, or greater-than-or-equal-to another value:</p>
+		<ul>
+		<li><mono><</mono> results in 1 if its left operand is less than its right operand, and 0 otherwise.</li>
+		<li><mono>></mono> results in 1 if its left operand is greater than its right operand, and 0 otherwise.</li>
+		<li><mono><=</mono> results in 1 if its left operand is less than OR equal to its right operand, and 0 otherwise.</li>
+		<li><mono>>=</mono> results in 1 if its left operand is greater than OR equal to its right operand, and 0 otherwise.</li>
+		</ul>
+		<p>Lastly, there is one comparison operator specifically for use with operands that store flags, where each bit corresponds to a flag. The bitwise-test operator <mono>\</mono> (backwards slash, not to be confused with division) is unique to <spec>GOOC</spec>. The result is 1 if all of the bits that are enabled (set to 1) in the right operand are also enabled in the left operand, and 0 otherwise. This is used to verify if a number of flags (or bits) are enabled.</p>
+	</body>
+</html>

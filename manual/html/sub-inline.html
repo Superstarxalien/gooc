@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+		<title>GOOC Manual</title>
+		<link rel="stylesheet" href="styles.css">
+	</head>
+	<body>
+		<center>
+		<h1 class="back">GOOC - Game Oriented Object C</h1>
+		<h1>GOOC - Game Oriented Object C</h1>
+		</center>
+		<div style="font-size:125%;margin-top:0.25em;margin-bottom:0">
+		<div style="text-align:left;position:absolute;">
+		Next: <a href="sub-modifier.html">Subroutine Modifiers</a>,
+		Previous: <a href="sub-expr.html">Subroutines as Expressions</a>,
+		Up: <a href="subs.html">Subroutines</a>
+		</div>
+		<div style="text-align:right;">[<a href="../index.html">Contents</a>]</div>
+		</div>
+		<hr />
+		<span style="margin-left:25px">
+		<h2 class="back">9.5. Inline Subroutines</h2>
+		<h2>9.5. Inline Subroutines</h2>
+		</span>
+		<p>
+		A subroutine may be marked as <spec>inline</spec> by prefacing it with <mono>inline sub</mono> instead of <mono>sub</mono>. Such subroutines are not compiled into GOOL instructions, instead the compiler stores them as a series of compiler instructions. Calling an inline subroutine will not output a call instruction with parameters, instead the contents of the called subroutine will be placed almost verbatim where they were called from (in their own <a href="line-block.html">block</a>), and the parameters in the call will verbatim replace the parameters in the inline subroutine. Inline subroutines are one of the most powerful development tools in <em>GOOC</em>, as they allow you to quickly segment your code in a more natural way which doesn't incur any overhead of calling functions, or wrapping a series of statements (or just a single, more complex statement) into a single line that may otherwise be more tedious to copy around, code readability is improved and error proneness is reduced.
+		</p>
+		<p>
+		Take the following inline subroutine:
+<code>inline sub Foobar(a) {
+    x += a
+    y += a
+}</code>
+		Now, this piece of code,
+<code>...
+FooBar(50.0)
+...
+</code>
+		will be turned into
+<code>...
+{
+    x += 50.0
+    y += 50.0
+}
+...
+</code>
+		Keep in mind the inline sub parameters are replaced, but <em>not</em> evaluated, so a more volatile expression like <mono>rand(50.0)</mono> may have unexpected side effects:
+<code>...
+{
+    x += rand(50.0)
+    y += rand(50.0)
+}
+...
+</code>
+		Instead of being called only once and having its return value stored, <mono>rand(50.0)</mono> will instead be called twice, and the result will be different each time.
+		</p>
+		<p>
+		Inline subroutines are subject to a few rule changes compared to regular subroutines:
+		<ul>
+		<li>Inline subroutines CAN share names with other inline subroutines, as long as they have differing parameter counts. This is referred to as overloading.</li>
+		<li>Inline subroutine calls MUST have the correct parameter count for the subroutine trying to be called.</li>
+		<li>Inline subroutine cannot call themselves (but can call other overloads).</li>
+		<li>Inline subroutine can only be called if they have already been defined.</li>
+		<li>Inline subroutines cannot be part of expressions. The compiler will simply not find them.</li>
+		<li>Inline subroutine paramaters <em>cannot</em> be written to.</li>
+		</ul>
+		</p>
+		<p>
+		Inline subroutines also may use different subroutine modifiers, described in the next chapter.
+		</p>
+		<p>
+		A <mono>return</mono> statement inside an inline subroutine will instead be turned into an unconditional jump to after the subroutine.
+		</p>
+	</body>
+</html>

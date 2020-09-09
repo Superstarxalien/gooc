@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+		<title>GOOC Manual</title>
+		<link rel="stylesheet" href="styles.css">
+	</head>
+	<body>
+		<center>
+		<h1 class="back">GOOC - Game Oriented Object C</h1>
+		<h1>GOOC - Game Oriented Object C</h1>
+		</center>
+		<div style="font-size:125%;margin-top:0.25em;margin-bottom:0">
+		<div style="text-align:left;position:absolute;">
+		Next: <a href="sub-expr.html">Subroutines as Expressions</a>,
+		Previous: <a href="sub-params.html">Subroutine Parameters</a>,
+		Up: <a href="subs.html">Subroutines</a>
+		</div>
+		<div style="text-align:right;">[<a href="../index.html">Contents</a>]</div>
+		</div>
+		<hr />
+		<span style="margin-left:25px">
+		<h2 class="back">9.3. Parameter Storage</h2>
+		<h2>9.3. Parameter Storage</h2>
+		</span>
+		<p>
+		It is important to understand how the GOOL system stores parameters in memory and how they are passed.
+		</p>
+		<p>
+		The GOOL system passes parameters by pushing them onto the callee's stack (for subroutines, the callee and the caller are the same). That is, the following subroutine call:
+<code>sub MySub (a, b, c) {
+    x = a
+    y = b
+    z = c
+}
+
+MySub(10, 25, 50)</code>
+		Will first push these three parameters to the stack like so:
+<code>..., 10, 25, 50</code>
+		And afterwards, fill it in with a <spec>stack frame</spec> which stores information about where the caller left off, once the called subroutine <mono>MySub</mono> returns:
+<code>..., 10, 25, 50, <em>stack frame</em></code>
+		</p>
+		<p>
+		GOOL accesses parameters (either for an object state or a subroutine) by going <em>backwards</em> starting from the stack frame. This means that the "first" parameter is described as being in <mono>fp-(1*4)</mono>:
+<code>..., 10, 25, 50, <em>stack frame</em>
+     ^   ^   ^
+     |   |   |
+    3rd 2nd 1st
+</code>
+		</p>
+		<p>
+		<spec>GOOC</spec> deliberately has no protection against passing in the "wrong" amount of parameters, since that is completely acceptable and expected behavior. Now watch what happens when too few parameters are passed:
+<code>MySub(10, 25)</code>
+<code>..., 10, 25, <em>stack frame</em></code>
+		Since only two parameters were passed, only the last two parameters of the <mono>MySub</mono> subroutine have proper defined values.
+		</p>
+		<p>
+		On the other hand, passing in too many parameters to the left will have this effect:
+<code>MySub(100, 200, 300, 10, 25, 50)</code>
+<code>..., 100, 200, 300, 10, 25, 50, <em>stack frame</em></code>
+		Now, the last three paramaters have defined values, while the extra parameters we passed are inoffensively just taking up stack space. However, since their memory location is based on a predictable pattern, you can actually use pointers to access these parameters. Here is an example of how the <mono>MySub</mono> subroutine can be changed to make use of this (this following code is specifically in <spec><em>Crash 2</em></spec> fornat):
+<code>sub MySub (count, a, b, c) {
+    x = a
+    y = b
+    z = c
+    var va_start = &count - count*4
+    if (count > 0) {
+        do (var i = 0) {
+            x += va_start[i]
+        } while ({i += 1.0}; i < count)
+    }
+}
+
+...
+MySub(20.0, 30.0, 40.0, 3, 10.0, 25.0, 50.0)
+...
+</code>
+		The variable <mono>va_start</mono> is set to the memory location of the first extra parameter to the left, assuming <mono>count</mono> is correct, then its elements are iterated through.
+		</p>
+	</body>
+</html>

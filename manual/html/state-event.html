@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+		<title>GOOC Manual</title>
+		<link rel="stylesheet" href="styles.css">
+	</head>
+	<body>
+		<center>
+		<h1 class="back">GOOC - Game Oriented Object C</h1>
+		<h1>GOOC - Game Oriented Object C</h1>
+		</center>
+		<div style="font-size:125%;margin-top:0.25em;margin-bottom:0">
+		<div style="text-align:left;position:absolute;">
+		Next: <a href="state-flags.html">State Change Flags</a>,
+		Previous: <a href="state-trans.html">The <mono>trans</mono> Block</a>,
+		Up: <a href="states.html">States</a>
+		</div>
+		<div style="text-align:right;">[<a href="../index.html">Contents</a>]</div>
+		</div>
+		<hr />
+		<span style="margin-left:25px">
+		<h2 class="back">10.4. The <mono>event</mono> Block</h2>
+		<h2>10.4. The <mono>event</mono> Block</h2>
+		</span>
+		<p>
+		The <mono>event</mono> block is one that runs whenever an event is sent to the object. The <mono>event</mono> block is the first <spec>event handler</spec>, it can accept or reject the event, or leave it unhandled for the other event handlers.
+		</p>
+		<p>
+		An <mono>event</mono> block MUST define two parameters: the first parameter is the ID of the received event, while the second parameter is a pointer to the event arguments. If two parameters aren't defined, a compiler warning will be thrown.
+		</p>
+		<p>
+		An <mono>event</mono> block is defined like this:
+<code>event <em>pre-modifiers</em> (<em>parameter-list</em>)
+{
+    <em>subroutine-body</em>
+}
+</code>
+		Note that pre-subroutine modifiers are the only type of modifiers that can be used.
+		</p>
+		<p>
+		The <mono>event</mono> block has a series of instructions specifically to be used in it, for accepting or rejecting events with various side effects.
+		</p>
+	</body>
+</html>

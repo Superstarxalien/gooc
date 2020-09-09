@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+		<title>GOOC Manual</title>
+		<link rel="stylesheet" href="styles.css">
+	</head>
+	<body>
+		<center>
+		<h1 class="back">GOOC - Game Oriented Object C</h1>
+		<h1>GOOC - Game Oriented Object C</h1>
+		</center>
+		<div style="font-size:125%;margin-top:0.25em;margin-bottom:0">
+		<div style="text-align:left;position:absolute;">
+		Next: <a href="sub-params.html">Subroutine Parameters</a>,
+		Up: <a href="subs.html">Subroutines</a>
+		</div>
+		<div style="text-align:right;">[<a href="../index.html">Contents</a>]</div>
+		</div>
+		<hr />
+		<span style="margin-left:25px">
+		<h2 class="back">9.1. Defining a Subroutine</h2>
+		<h2>9.1. Defining a Subroutine</h2>
+		</span>
+		<p>
+		You write a subroutine definition to specify what a subroutine actually does. A subroutine definition consists of information regarding the subroutine’s name, names of parameters, extra subroutine modifiers, and the body of the subroutine. The subroutine body is a series of statements enclosed in braces, similar to a <a href="line-block.html">block</a>.
+		</p>
+		<p>
+		Here is the general form of a subroutine definition:
+<code>sub <em>subroutine-name</em> <em>pre-modifiers</em> (<em>parameter-list</em>) <em>modifiers</em>
+{
+    <em>subroutine-body</em>
+}
+</code>
+		<em><mono>subroutine-name</mono></em> is the name of the subroutine. The name must be unique to the subroutine, otherwise a compiler error will be thrown. <em><mono>parameter-list</mono></em> is the list of parameters' names that can be used by the defined subroutine, separated by commas. <em><mono>modifiers</mono></em> and <em><mono>pre-modifiers</mono></em> are sets of subroutine modifiers (which also includes none at all), described in a later section. <em><mono>subroutine-body</mono></em> is the statements content of the subroutine.
+		</p>
+		<p>
+		Here is an example of a simple subroutine, which simply increases the <mono>x</mono> field by a set amount:
+<code>sub AddX (amount) {
+    x += amount
+}
+</code>
+		</p>
+		<p>
+		Unlike in <em>C</em>, subroutines cannot return values. If you wish to store the result of a subroutine, you will have to make the subroutine write said result into some field, at least temporarily, so it can be later retrieved if needed:
+<code>sub GetSquare(number) {
+    misc = number * number
+}
+</code>
+		Here, the result of the power of 2 of <mono>number</mono> will be stored in the <mono>misc</mono> field. Code that calls this subroutine can then read the <mono>misc</mono> field after calling it in order to get the result:
+<code>...
+GetSquare(3)
+var the_square = misc
+...</code>
+		</p>
+	</body>
+</html>

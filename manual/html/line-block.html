@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+		<title>GOOC Manual</title>
+		<link rel="stylesheet" href="styles.css">
+	</head>
+	<body>
+		<center>
+		<h1 class="back">GOOC - Game Oriented Object C</h1>
+		<h1>GOOC - Game Oriented Object C</h1>
+		</center>
+		<div style="font-size:125%;margin-top:0.25em;margin-bottom:0">
+		<div style="text-align:left;position:absolute;">
+		Next: <a href="line-if.html">The <mono>if</mono> and <mono>unless</mono> Statements</a>,
+		Previous: <a href="line-instruction.html">Instruction Statements</a>,
+		Up: <a href="statements.html">Statements</a>
+		</div>
+		<div style="text-align:right;">[<a href="../index.html">Contents</a>]</div>
+		</div>
+		<hr />
+		<span style="margin-left:25px">
+		<h2 class="back">8.2. Blocks</h2>
+		<h2>8.2. Blocks</h2>
+		</span>
+		<p>
+		A block is a set of zero or more statements enclosed in braces. Often, a block is used as the body of an <mono>if</mono> or <mono>unless</mono> statement or a loop statement, to group statements together.
+<code>if (x <= 0) {
+    x += 400.0
+}
+</code>
+		</p>
+		<p>
+		Since a block is a statement that groups statements together, they can include other blocks.
+<code>if (x <= 0) {
+    if (x < 400.0) {
+        x += 400.0
+    }
+}
+</code>
+		</p>
+		<p>
+		You can declare variables inside a block; such variables are local to that block. It is common to introduce a block simply for the purpose of making the scope of a local variable more specific, due to limited stack space.
+<code>{
+    var foo = 15.0 + y
+    if (x <= 0) {
+        x += foo
+    }
+}
+x = foo // compiler error, foo does not exist outside of the previous block.
+</code>
+		</p>
+		<p>
+		Certain statements will always expect a block proceding them. If you only wish your block to have a single statement without having to write braces, simply append a semicolon <mono>;</mono> after your statement.
+<code>if (x <= 0)
+    x += 400.0;
+</code>
+		</p>
+		<p>
+		Since blocks can contain themselves, a series of blocks can be written by using these single-statement blocks. Therefore, the semicolon is actually completely optional and valid for almost every scenario bar the one described one, however single-instruction blocks <em>cannot</em> declare new variables. This type of syntax is therefore not recommended.
+<code>x += 400.0;
+nop();
+var foo = 15.0 + y; // error, single-instruction blocks cannot define new variables
+x = foo;
+</code>
+		</p>
+	</body>
+</html>
