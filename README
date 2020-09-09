@@ -5,3 +5,6 @@ supported for each game.
 
 Action   1 2 3
 gooc c   y y n
+
+
+If you wish to read the manual, simply clone/download this repository and open the "index.html" file located in the "manual" directory.
