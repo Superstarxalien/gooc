@@ -825,6 +825,20 @@ c1_compile_chain_common(
             }
         }
     }
+    /* re-compile with new data pool */
+    for (int i = 0; i < parser->ecl_cnt + 1; ++i) {
+        ecl = i == 0 ? parser->main_ecl : parser->ecl_stack[i - 1];
+
+        list_for_each(&ecl->subs, sub) {
+            if (sub->forward_declaration || sub->is_inline || sub->deleted)
+                continue;
+
+            int j = 0;
+            list_for_each(&sub->instrs, instr) {
+                sub->instr_data->data[j++] = serialize_func(parser->main_ecl, i > 0 ? ecl : NULL, sub, instr, false);
+            }
+        }
+    }
     /* remove duplicates */
     for (int i = 0; i < parser->ecl_cnt + 1; ++i) {
         ecl = i == 0 ? parser->main_ecl : parser->ecl_stack[i - 1];
