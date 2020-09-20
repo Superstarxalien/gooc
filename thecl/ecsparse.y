@@ -1632,7 +1632,7 @@ Instruction_NoVar:
       IDENTIFIER "(" Expression_List ")" {
         bool free_expr = true;
         thecl_sub_t* sub = state->find_sub_overload(state->main_ecl, $1, $3 ? list_count($3) : 0);
-        if (sub && sub != state->current_sub && sub->is_inline) {
+        if (sub && sub->is_inline) {
             instr_create_inline_call(state, sub, $3);
         }
         else {
@@ -2806,7 +2806,7 @@ instr_create_inline_call(
     list_t* params_org
 ) {
     /* An inline sub can't call itself for obvious reasons. */
-    if (strcmp(sub->name, state->current_sub->name) == 0 && sub->arg_count == state->current_sub->arg_count) {
+    if (sub == state->current_sub) {
         yyerror(state, "inline sub '%s' is not allowed to call itself", sub->name);
         return;
     }
