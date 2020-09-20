@@ -834,9 +834,9 @@ c1_compile_chain_common(
                 continue;
 
             for (int e = 0; e < parser->ecl_cnt + 1; ++e) {
-                thecl_t* comp_ecl = e == 0 ? parser->main_ecl : parser->ecl_stack[e - 1];
                 if (is_post_c2(ecl->version) && ((i == 0 && e > 0) || (i > 0 && (e != i && e > 0)))) continue;
                 else if (!is_post_c2(ecl->version) && i != e) continue; /* main checks self; ext checks main+self in c2, self checks self in c1 */
+                thecl_t* comp_ecl = e == 0 ? parser->main_ecl : parser->ecl_stack[e - 1];
                 thecl_sub_t* comp_sub;
                 list_for_each(&comp_ecl->subs, comp_sub) {
                     if (comp_sub->deleted || comp_sub == sub || !comp_sub->instr_data || comp_sub->offset != sub->offset || (comp_sub->start_offset >= sub->start_offset && i == e))
