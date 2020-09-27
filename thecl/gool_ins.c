@@ -995,7 +995,7 @@ c1_gool_ins_loadlevel_params(
 }
 
 static list_t*
-c1_gool_ins_gamefunc10_params(
+c1_gool_ins_preloadlevel_params(
     list_t* params,
     int argc)
 {
@@ -1007,7 +1007,7 @@ c1_gool_ins_gamefunc10_params(
         list_append_new(params, param_val_new(12));
     }
     else {
-        fprintf(stderr, "%s:%s:gamefunc10: wrong number of arguments (expected 1, got %zu)\n", argv0, current_input, c);
+        fprintf(stderr, "%s:%s:preloadlevel: wrong number of arguments (expected 1, got %zu)\n", argv0, current_input, c);
         return NULL;
     }
     return params;
@@ -1280,7 +1280,7 @@ c1_gool_ins[] = {
     { "seqplay",                    28, 0, 0, 0, -1, c1_gool_ins_seqplay_params },
     { "killobjs",                   28, 0, 0, 0, -1, c1_gool_ins_killobjs_params },
     { "loadlevel",                  28, 0, 0, 0, -1, c1_gool_ins_loadlevel_params },
-    { "gamefunc10",                 28, 0, 0, 0, -1, c1_gool_ins_gamefunc10_params },
+    { "preloadlevel",               28, 0, 0, 0, -1, c1_gool_ins_preloadlevel_params },
     { "startgame",                  28, 0, 0, 0, -1, c1_gool_ins_startgame_params },
     { "unkget",                     28, 0, 0, 0, -1, c1_gool_ins_unkget_params },
     { "unkset",                     28, 0, 0, 0, -1, c1_gool_ins_unkset_params },
@@ -1500,7 +1500,7 @@ c2_gool_ins[] = {
     { "seqplay",                    28, 0, 0, 0, -1, c1_gool_ins_seqplay_params },
     { "killobjs",                   28, 0, 0, 0, -1, c1_gool_ins_killobjs_params },
     { "loadlevel",                  28, 0, 0, 0, -1, c1_gool_ins_loadlevel_params },
-    { "gamefunc10",                 28, 0, 0, 0, -1, c1_gool_ins_gamefunc10_params },
+    { "preloadlevel",               28, 0, 0, 0, -1, c1_gool_ins_preloadlevel_params },
     { "startgame",                  28, 0, 0, 0, -1, c1_gool_ins_startgame_params },
     { "unkget",                     28, 0, 0, 0, -1, c1_gool_ins_unkget_params },
     { "unkset",                     28, 0, 0, 0, -1, c1_gool_ins_unkset_params },
