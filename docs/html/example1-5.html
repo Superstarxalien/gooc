@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+		<title>GOOC Manual</title>
+		<link rel="stylesheet" href="styles.css">
+	</head>
+	<body>
+		<center>
+		<h1 class="back">GOOC - Game Oriented Object C</h1>
+		<h1>GOOC - Game Oriented Object C</h1>
+		</center>
+		<div style="font-size:125%;margin-top:0.25em;margin-bottom:0">
+		<div style="text-align:left;position:absolute;">
+		Next: <a href="parser.html">The Parser</a>,
+		Previous: <a href="example1-4.html">States</a>,
+		Up: <a href="example1.html">Rotation Example</a>
+		</div>
+		<div style="text-align:right;">[<a href="../index.html">Contents</a>]</div>
+		</div>
+		<hr />
+		<span style="margin-left:25px">
+		<h2 class="back">3.1.5. Compiling</h2>
+		<h2>3.1.5. Compiling</h2>
+		</span>
+		<p>
+		Here's how to compile the GOOC source code file into a GOOL executable file:
+		</p>
+		<code>gooc -c 2 DbgOC.gooc DbgOC.nsentry</code>
+		<p>
+		<mono>.nsentry</mono> is the conventional extension used for exported entries in <em>CrashEdit</em>.
+		</p>
+		<p>
+		Just place the resulting entry in the game, patch any other files you may need to patch, decide how you want to spawn (such as with an entity) and you're good to go.
+		</p>
+		<p>
+		If you would like to spawn this object from others stored in different GOOL executables, you will need to use the following command instead: 
+		</p>
+		<code>gooc -c 2 -h DbgOC.gooh DbgOC.gooc DbgOC.nsentry</code>
+		<p>
+		This creates a header file which contains some <spec>expression macros</spec> for the spawns and GOOL ID, so that their names can be used instead of having to type in numbers manually and hope they're correct.
+		</p>
+		<img src="example1.png"/>
+	</body>
+</html>

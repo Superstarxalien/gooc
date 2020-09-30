@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+		<title>GOOC Manual</title>
+		<link rel="stylesheet" href="styles.css">
+	</head>
+	<body>
+		<center>
+		<h1 class="back">GOOC - Game Oriented Object C</h1>
+		<h1>GOOC - Game Oriented Object C</h1>
+		</center>
+		<div style="font-size:125%;margin-top:0.25em;margin-bottom:0">
+		<div style="text-align:left;position:absolute;">
+		Next: <a href="example1-4.html">States</a>,
+		Previous: <a href="example1-2.html">Animations</a>,
+		Up: <a href="example1.html">Rotation Example</a>
+		</div>
+		<div style="text-align:right;">[<a href="../index.html">Contents</a>]</div>
+		</div>
+		<hr />
+		<span style="margin-left:25px">
+		<h2 class="back">3.1.3. Spawns</h2>
+		<h2>3.1.3. Spawns</h2>
+		</span>
+		<p>
+		In order for an object to appear it needs to be spawned, and <spec>GOOC</spec> uses <spec>spawn definitions</spec> to determine how to spawn a certain object. See <a href="spawns.html">Spawns</a>. You can compare an object's <mono>spawn</mono> field against a spawn in order to run some spawn-specific code without having to write multiple states. For this example we will only need one spawn.
+		</p>
+		<code>#spawn S_ROT_TEST Rot_Test_Main</code>
+		<p>
+		Our spawn is named <spec><mono>S_ROT_TEST</mono></spec> and its spawn state is <spec><mono>Rot_Test_Main</mono></spec>.
+		</p>
+	</body>
+</html>

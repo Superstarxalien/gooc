@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+		<title>GOOC Manual</title>
+		<link rel="stylesheet" href="styles.css">
+	</head>
+	<body>
+		<center>
+		<h1 class="back">GOOC - Game Oriented Object C</h1>
+		<h1>GOOC - Game Oriented Object C</h1>
+		</center>
+		<div style="font-size:125%;margin-top:0.25em;margin-bottom:0">
+		<div style="text-align:left;position:absolute;">
+		Next: <a href="example1-3.html">Spawns</a>,
+		Previous: <a href="example1-1.html">Object Definition</a>,
+		Up: <a href="example1.html">Rotation Example</a>
+		</div>
+		<div style="text-align:right;">[<a href="../index.html">Contents</a>]</div>
+		</div>
+		<hr />
+		<span style="margin-left:25px">
+		<h2 class="back">3.1.2. Animations</h2>
+		<h2>3.1.2. Animations</h2>
+		</span>
+		<p>
+		Here are the animation definitions that we will use for our test object. Keep in mind the format of these is highly susceptible to change for each different game.
+		</p>
+		<code>#anim TEST_ANIM [CE10V] 28 1
+#anim BOX_ANIM [BN10V] 1 0</code>
+		<p>
+		These two lines both describe a new vertex animation each. The first one we named <spec><mono>TEST_ANIM</mono></spec> and mapped it to the animation file called <spec><mono>CE10V</mono></spec> - Crash's explosion death animation. We also say that it has <spec><mono>12</mono></spec> frames of animation and that the animation should have <mono>1</mono> frame of interpolation (this will squeeze in an extra frame of animation inbetween every stored frame). Each game has a slightly different format for these types of animations. See <a href="animvertex">Vertex Animations</a>.
+		</p>
+		<p>
+		The second one is named <spec><mono>BOX_ANIM</mono></spec>, mapped it to animation <spec><mono>BN10V</mono></spec>, say that it has <spec><mono>1</mono></spec> frame of animation and that it should not be interpolated (which requires at least 2 frames to work anyway).
+		</p>
+	</body>
+</html>

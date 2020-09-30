@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+		<title>GOOC Manual</title>
+		<link rel="stylesheet" href="styles.css">
+	</head>
+	<body>
+		<center>
+		<h1 class="back">GOOC - Game Oriented Object C</h1>
+		<h1>GOOC - Game Oriented Object C</h1>
+		</center>
+		<div style="font-size:125%;margin-top:0.25em;margin-bottom:0">
+		<div style="text-align:left;position:absolute;">
+		Next: <a href="example1-2.html">Animations</a>,
+		Up: <a href="example1.html">Rotation Example</a>
+		</div>
+		<div style="text-align:right;">[<a href="../index.html">Contents</a>]</div>
+		</div>
+		<hr />
+		<span style="margin-left:25px">
+		<h2 class="back">3.1.1. Object Definition</h2>
+		<h2>3.1.1. Object Definition</h2>
+		</span>
+		<p>
+		We start off the object with a GOOL declaration:
+		</p>
+		<code>// Declare a DbgOC GOOL executable.
+#gool DbgOC 63 2
+
+// Include a file we made.
+#include "GOOL_EXPR.gooc"</code>
+		<p>
+		Just like in C, comment blocks are placed between <mono>/*...*/</mono> and single-line comments are placed after <mono>//</mono>.
+		</p>
+		<p>
+		The <mono>#gool DbgOC 63 2</mono> line defines the properties of our GOOL executable. It sets the name to <mono>DbgOC</mono>, the <spec>GOOL object ID</spec> (see <a href="goolid.html">Object IDs</a>) to 63 and the <spec>GOOL object type</spec> (see <a href="gooltype.html">Object Types</a>) to 2. This line is necessary because the name, ID and type fields are mandatory. If this line is not present, the compiler will only parse our code but not compile it. This line will also create a new <spec>expression macro</spec> with the name <mono>DbgOC</mono> (our name) with value <mono>63</mono> (our ID), so that it can be used for code that requires object ID, such as spawning children objects.
+		</p>
+		<p>
+		The <mono>#include</mono> directive includes the file <mono>GOOL_EXPR.gooc</mono> (which is in the same folder as our main file) verbatim. This is a file that includes a bunch of <spec>expression macros</spec> and <spec>inline functions</spec> which will come in handy when making our GOOL objects.
+		</p>
+	</body>
+</html>

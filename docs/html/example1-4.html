@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+		<title>GOOC Manual</title>
+		<link rel="stylesheet" href="styles.css">
+	</head>
+	<body>
+		<center>
+		<h1 class="back">GOOC - Game Oriented Object C</h1>
+		<h1>GOOC - Game Oriented Object C</h1>
+		</center>
+		<div style="font-size:125%;margin-top:0.25em;margin-bottom:0">
+		<div style="text-align:left;position:absolute;">
+		Next: <a href="example1-5.html">Compiling</a>,
+		Previous: <a href="example1-3.html">Spawns</a>,
+		Up: <a href="example1.html">Rotation Example</a>
+		</div>
+		<div style="text-align:right;">[<a href="../index.html">Contents</a>]</div>
+		</div>
+		<hr />
+		<span style="margin-left:25px">
+		<h2 class="back">3.1.4. States</h2>
+		<h2>3.1.4. States</h2>
+		</span>
+		<p>
+		Being state machines, GOOL objects run on <spec>states</spec>. These will contain the actual GOOL code that will be run by the game. The initial state an object has is determined by its spawn's <spec>spawn state</spec>, which we previously set as <spec><mono>Rot_Test_Main</mono></spec>. We will also only use one state in this example, to keep things simple.
+		</p>
+		<code>var rots_enabled
+
+// Define a state called Rot_Test_Main
+state Rot_Test_Main {
+    // Define the code block for this state
+    code (r) {
+        rots_enabled = r
+        statusb = FLAG_COLLIDABLE | FLAG_SOLID_ALL
+        sleepanim(0, BOX_ANIM)
+    }
+    // Define the trans block for this state
+    trans {
+        // Do not run this code on the first frame of execution, as it would use unset variables.
+        if (!STATUS_FIRSTFRAME) {
+            if (rots_enabled & 0x100) {
+                rotx += 90deg / 1s
+            }
+            if (rots_enabled & 0x200) {
+                roty += 90deg / 1s
+            }
+            if (rots_enabled & 0x400) {
+                rotz += 90deg / 1s
+            }
+        }
+    }
+}</code>
+		<p>
+		The first line declares a new variable named <mono>rots_enabled</mono>. Variables like these declared outside state scope will act as an extra field on an object. These are placed in a general object memory space, which pushes the stack further (see <a href="goolstack.html">The GOOL Stack</a>). Every object - except for the player object - has space for <spec>63</spec> fields. The player object has extra memory for 64 more. The more variables allocated, the less space we will have for the stack. However, unless an extremely complex expression is being made, using up to 25 variables is usually reasonable enough.
+		</p>
+		<p>
+		<mono>state Rot_Test_Main</mono> is a state declaration, and must be followed by a state body, which we make using the curly brackets.
+		</p>
+		<p>
+		The <mono>code (r)</mono> line defines this state's code block and that it uses one argument named <mono>r</mono>. Arguments for a code block are passed on either from the spawner <spec>object</spec> or, after <em class="spec">Crash 1</em>, the parent <spec>entity</spec>.
+		</p>
+		<p>
+		<mono>FLAG_COLLIDABLE</mono> and <mono>FLAG_SOLID_ALL</mono> are <spec>expression macros</spec> from the <mono>GOOL_EXPR.gooc</mono> file included earlier.
+		</p>
+		<code>expr FLAG_SOLID_SIDES        = 0x10000 // statusb
+expr FLAG_SOLID_TOP          = 0x20000 // statusb
+expr FLAG_SOLID_BOTTOM       = 0x8000000 // statusb
+expr FLAG_SOLID_ALL          = FLAG_SOLID_TOP | FLAG_SOLID_SIDES // statusb
+
+expr FLAG_COLLIDABLE         = 0x10 // statusb
+</code>
+		<p>
+		<mono>sleepanim</mono> is one of the <spec>inline functions</spec> from the same file.
+		</p>
+		<code>inline sub sleepanim(frame, anim) {
+    do {
+        playanim(frame, anim, 2.1s)
+    } while (true)
+}</code>
+		<p>
+		The <mono>trans</mono> block cannot have arguments. <spec>Trans</spec> blocks run before <spec>code</spec> blocks, so since we're going to be using a variable which is set in the code block, we use the <mono>STATUS_FIRSTFRAME</mono> expression.
+		</p>
+		<code>expr FLAG_FIRSTFRAME         = 0x20 // statusa
+
+expr STATUS_FIRSTFRAME       = statusa \ FLAG_FIRSTFRAME</code>
+		<p>
+		<mono>FLAG_FIRSTFRAME</mono> is set on the first frame of a state running.
+		</p>
+		<p>
+		We set up the object such that you can choose which axes to rotate in based on the bits enabled in the argument. The values are <mono>0x100</mono>, <mono>0x200</mono> and <mono>0x400</mono> instead of <mono>0x1</mono>, <mono>0x2</mono> and <mono>0x4</mono> due to <spec>data optimizations</spec>. See <a href="gooloptim.html">Optimizing Source Code</a>.
+		</p>
+		<p>
+		<mono>deg</mono> and <mono>s</mono> are suffixes for special data types recognized by <spec>GOOC</spec>. They are converted to integer types when parsed: <mono>90deg</mono> will be turned into <mono>2048</mono> internally, while <mono>1s</mono> will be turned either into <mono>30 (1 * 30)</mono> or <mono>25 (1 * 25)</mono>, depending on the selected region's framerate (NTSC or PAL).
+		</p>
+	</body>
+</html>
