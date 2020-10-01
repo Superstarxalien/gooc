@@ -12,26 +12,26 @@
 		</center>
 		<div style="font-size:125%;margin-top:0.25em;margin-bottom:0">
 		<div style="text-align:left;position:absolute;">
-		Next: <a href="type-pointer.html">Pointers</a>,
-		Previous: <a href="type-int.html">Integer & Fixed-Point</a>,
-		Up: <a href="types.html">Data Types</a>
+		Next: <a href="objmem.html">Object Memory</a>,
+		Previous: <a href="events.html">Event Handling</a>,
+		Up: <a href="../index.html">Top</a>
 		</div>
 		<div style="text-align:right;">[<a href="../index.html">Contents</a>]</div>
 		</div>
 		<hr />
 		<span style="margin-left:25px">
-		<h2 class="back">6.2. Arrays</h2>
-		<h2>6.2. Arrays</h2>
+		<h2 class="back">15. Arrays</h2>
+		<h2>15. Arrays</h2>
 		</span>
 		<p>
-		An array is a data structure that lets you store one or more elements consecutively in the <spec>GOOL data pool</spec>. Array elements are indexed beginning at position zero, not one.
+		An array is a data structure that lets you store one or more read-only elements consecutively in the <spec>GOOL data pool</spec>. Array elements are indexed beginning at position zero, not one.
 		</p>
 		<p>
-		To define an array, you need to specify the data type <mono>array</mono>, its name, and then the list of elements, separated by commas, in a set of braces. Array elements must be integers, and cannot be <spec>EIDs</spec>. Once defined, arrays are merely an index into the GOOL data pool where the elements are stored, meaning they are not valid addresses that can be written to.
-<code>array MyArray1 = { 1, 2, 4, 8, 16 }</code>
+		Arrays are defined in global scope, that is, outside of any state or subroutine definition. To define an array, you need to write <mono>array</mono>, its name, and then the list of elements, separated by commas, in a set of braces. Array elements must be integers, and cannot be <spec>EIDs</spec>. Once defined, referencing arrays translates into a GOOL data pool reference, indexed to where the array begins.
+<code>array MyArray1 = { 1, 3, 9, 27, 81 }</code>
 		</p>
 		<p>
-		Arrays are data structures meant to be passed as a parameter for certain instructions, and are usually not meant to have their elements directly accessed inside source code. In <spec><em>Crash 1</em></spec>, the specialized dereference instruction must take a constant element index number. There is never bounds detection for arrays, nor is their size stored anywhere.
+		Arrays are structures meant to be passed as a parameter for certain instructions, and are usually not meant to have their elements directly accessed inside source code. In <spec><em>Crash 1</em></spec>, the specialized dereference instruction must take a constant element index number. There is never bounds detection for arrays, nor is their size stored anywhere.
 		</p>
 	</body>
 </html>

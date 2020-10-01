@@ -12,18 +12,22 @@
 		</center>
 		<div style="font-size:125%;margin-top:0.25em;margin-bottom:0">
 		<div style="text-align:left;position:absolute;">
-		Next: <a href="type-array.html">Arrays</a>,
-		Up: <a href="types.html">Data Types</a>
+		Next: <a href="expressions.html">Expressions and Operators</a>,
+		Previous: <a href="lexer.html">Lexer Tokens</a>,
+		Up: <a href="../index.html">Top</a>
 		</div>
 		<div style="text-align:right;">[<a href="../index.html">Contents</a>]</div>
 		</div>
 		<hr />
 		<span style="margin-left:25px">
-		<h2 class="back">6.1. Integer & Fixed-Point Type</h2>
-		<h2>6.1. Integer & Fixed-Point Type</h2>
+		<h2 class="back">6. Integers & Fixed-Point Arithmetic</h2>
+		<h2>6. Integers & Fixed-Point Arithmetic</h2>
 		</span>
 		<p>
-		Integers are signed 32-bit values, meaning they can hold any whole number from -2,147,483,648 to 2,147,483,647. This is the default type used for all calculations and processing during parsing and compilation, in fact it is the only real "data type", however the games may interpret this integer value in various ways (including as a <a href="type-pointer.html">pointer</a> to a memory address). The base number unit in the games is a Q8 fixed point value, meaning the lower 8 bits of the 32-bit integer are used to define the fractional part and the upper 24 bits to define the whole part. Thus, one game unit is equivalent to the integer "256". Since all operations, both in the <em>GOOC</em> program and the game, use the integer type, extra care should be taken in regards to precision and overflow prevention when doing operations such as multiplication and division.
+		There is only one distinct data type in <em>GOOC</em>: the 32-bit integer, can hold any whole number from -2,147,483,648 to 2,147,483,647. Any numbered value, be it a pointer, instruction offset, or animation offset, is converted into an integer of this type at some point during program execution. Even though the underlying type is a <em>signed</em> integer, the parser allows for any 32-bit unsigned integer as well. The value 4,294,967,295 for example, will be parsed correctly as <mono>0xFFFFFFFF</mono>, but the actual value the parser will use is <mono>-1</mono>.
+		</p>
+		<p>
+		Even though only one data type is ever used, this integer can be interpreted in various different ways. The base number unit in the games is a Q8 fixed point value, meaning the lower 8 bits of the 32-bit integer are used to define the fractional part and the upper 24 bits to define the whole part. Thus, one game unit is equivalent to the integer "256". Since all operations, both in the <em>GOOC</em> program and the game, use the integer type, extra care should be taken in regards to precision and overflow prevention when doing operations such as multiplication and division.
 		</p>
 		<p>
 		For example, if two Q8 fixed point numbers are multiplied together, the result will be a 16-bit fixed point value (8 + 8), which is 8 bits higher than expected, if we want our result to be in the base unit type (which has 8 bits of fractional part), the result needs to be right-shift by 8 bits:
