@@ -1312,7 +1312,7 @@ OnceBlock:
     | "nofirst" {
         state->current_sub->has_nofirst = true;
 
-        var_assign(state, param_var_new("tpc"), EXPR_2(ADD, param_var_new("pc"), EXPR_VAL(4*2)));
+        var_assign(state, param_var_new("tpc"), EXPR_2(ADD, expression_load_new(state, param_var_new("pc")), EXPR_VAL(4*2)));
 
         char labelstr[256];
         snprintf(labelstr, 256, "nofirst_%i_%i", yylloc.first_line, yylloc.first_column);

@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+		<title>GOOC Manual</title>
+		<link rel="stylesheet" href="styles.css">
+	</head>
+	<body>
+		<center>
+		<h1 class="back">GOOC - Game Oriented Object C</h1>
+		<h1>GOOC - Game Oriented Object C</h1>
+		</center>
+		<div style="font-size:125%;margin-top:0.25em;margin-bottom:0">
+		<div style="text-align:left;position:absolute;">
+		Next: <a href="event-handle.html">Handling Events</a>,
+		Previous: <a href="event-send.html">Sending Events</a>,
+		Up: <a href="events.html">Event System</a>
+		</div>
+		<div style="text-align:right;">[<a href="../index.html">Contents</a>]</div>
+		</div>
+		<hr />
+		<span style="margin-left:25px">
+		<h2 class="back">14.2. Multiple-Object Event Test</h2>
+		<h2>14.2. Multiple-Object Event Test</h2>
+		</span>
+		<p>
+		When using event broadcasting or cascading, it's likely that you can encounter a scenario where you want only a specific set of objects to receive the event. The parameter that is used to determine the target object for those two types of events is instead used as the type of test to be run during event cascading or broadcasting<spec><sup>1</sup></spec>.
+		</p>
+		<p>
+		The test routine keeps track of how many objects have passed the test. This does not necessarily relate to the amount of objects that have received the event.
+		</p>
+		<p>
+		There are six types of test.
+		<ul class="no-bullet">
+		<li><mono>0</mono> - Pass test and send event.</li>
+		<li><mono>1</mono> - Pass test and send event if sender and receiver hitboxes clip.</li>
+		<li><mono>2</mono> - Pass test and send event if sender is inside the receiver's hitbox clip.</li>
+		<li><mono>3</mono> - Same as <mono>2</mono>, but only if the receiver's object category is 3 or 4.</li>
+		<li><mono>4</mono> - Same as <mono>1</mono>, but only if the receiver's object category is 3 or 4.</li>
+		<li><mono>5</mono> - Pass test if: The receiver's object category is 3 or 4 and the receiver's hitbox clips with a bounding box with width, height and depth determined by the sender's <mono>trot</mono> vector. Send event if less than two objects have passed the test or if it's the 5th or any multiple of 5 (10, 15, etc.).</li>
+		<li>Default - Same as <mono>0</mono>.</li>
+		</ul>
+		</p>
+		<hr />
+		<p>
+		<spec><sup>1</sup></spec> Event cascading <em>does</em> use a target object, giving this field double duty in this scenario. Pay very close attention to how you use it!
+		</p>
+	</body>
+</html>

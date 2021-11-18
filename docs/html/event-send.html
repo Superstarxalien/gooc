@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+		<title>GOOC Manual</title>
+		<link rel="stylesheet" href="styles.css">
+	</head>
+	<body>
+		<center>
+		<h1 class="back">GOOC - Game Oriented Object C</h1>
+		<h1>GOOC - Game Oriented Object C</h1>
+		</center>
+		<div style="font-size:125%;margin-top:0.25em;margin-bottom:0">
+		<div style="text-align:left;position:absolute;">
+		Next: <a href="event-test.html">Multiple-Object Event Test</a>,
+		Up: <a href="events.html">Event System</a>
+		</div>
+		<div style="text-align:right;">[<a href="../index.html">Contents</a>]</div>
+		</div>
+		<hr />
+		<span style="margin-left:25px">
+		<h2 class="back">14.1. Sending Events</h2>
+		<h2>14.1. Sending Events</h2>
+		</span>
+		<p>
+		An event is sent from a sender object to a receiver object, using an object pointer stored in one of the link fields, with an <spec>event ID</spec> and a set of arguments (up to a maximum of 7). Optionally, a condition may be used to determine whether to send the event or not. The specifics of the event instructions are specified in the instructions list chapter.
+		</p>
+		<p>
+		There are three methods of sending events to other objects: sending an event directly, broadcasting an event to all objects, and cascading an event from a parent object. In all of these methods, the sender of the event is the object that called the event instruction.
+		</p>
+		<span style="margin-left:20px"><h3 class="back">Direct Event</h3><h3>Direct Event</h3></span>
+		<p>Sends an event directly to another object. The receiver is the object specified in the instruction.</p>
+		<span style="margin-left:20px"><h3 class="back">Broadcast Event</h3><h3>Broadcast Event</h3></span>
+		<p>Sends an event to all living objects. This type of event also runs a test on all potential objects to make it so only certain objects can receive the event. Whether an object receives the event is determined by the event test.</p>
+		<span style="margin-left:20px"><h3 class="back">Cascade Event</h3><h3>Cascade Event</h3></span>
+		<p>Recursively sends an event to all children of a target object. This type of event also runs a test on all potential objects to make it so only certain objects can receive the event. Whether an object receives the event is determined by the event test.</p>
+	</body>
+</html>
