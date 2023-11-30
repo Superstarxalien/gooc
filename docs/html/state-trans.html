@@ -39,7 +39,7 @@
 		Note that pre-subroutine modifiers are the only type of modifiers that can be used.
 		</p>
 		<p>
-		<mono>trans</mono> blocks have certain constructs that only makes sense to apply for them. Such constructs include the <mono>once</mono> statement. This statement everything after including and preceding its following block run only on the first execution of the trans block, after which the trans block pointer is moved to after the <mono>once</mono> statement. This is used to define variables that the state might use in the <mono>trans</mono> or <mono>code</mono> blocks, for example:
+		<mono>trans</mono> blocks have certain constructs that only makes sense to apply for them. Such constructs include the <mono>once</mono> statement. This statement, everything after, including, and preceding its following block run only on the first execution of the trans block, after which the trans block pointer is moved to after the <mono>once</mono> statement. This is used to define variables that the state might use in the <mono>trans</mono> or <mono>code</mono> blocks, for example:
 <code>trans {
     once {
         var0 = 1S // we are going to be using this field so we define it right away
